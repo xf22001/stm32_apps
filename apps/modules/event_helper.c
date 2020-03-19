@@ -6,7 +6,7 @@
  *   文件名称：event_helper.c
  *   创 建 者：肖飞
  *   创建日期：2020年01月07日 星期二 09时56分01秒
- *   修改日期：2020年01月07日 星期二 11时35分11秒
+ *   修改日期：2020年03月19日 星期四 15时15分00秒
  *   描    述：
  *
  *================================================================*/
@@ -18,7 +18,7 @@ event_pool_t *alloc_event_pool(void)
 	event_pool_t *event_pool = NULL;
 	osStatus status;
 
-	osMessageQDef(queue, 1, uint16_t);
+	osMessageQDef(queue, 10, uint16_t);
 	osMutexDef(mutex);
 
 	event_pool = (event_pool_t *)os_alloc(sizeof(event_pool_t));
@@ -140,10 +140,12 @@ int event_pool_put_event(event_pool_t *event_pool, void *event)
 
 	list_add_tail(&event_item->list_head, &event_pool->list_event);
 
-	status = osMessagePut(event_pool->queue, 0, 0);
+	status = osMessagePut(event_pool->queue, 0, 10);
 
 	if(status == osOK) {
 		ret = 0;
+	} else {
+		list_del(&event_item->list_head);
 	}
 
 	if(event_pool->mutex) {
@@ -151,6 +153,10 @@ int event_pool_put_event(event_pool_t *event_pool, void *event)
 
 		if(status != osOK) {
 		}
+	}
+
+	if(ret != 0) {
+		os_free(event_item);
 	}
 
 	return ret;
