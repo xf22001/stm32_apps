@@ -6,7 +6,7 @@
 #   文件名称：user.mk
 #   创 建 者：肖飞
 #   创建日期：2019年10月25日 星期五 13时04分38秒
-#   修改日期：2020年03月19日 星期四 14时17分26秒
+#   修改日期：2020年03月19日 星期四 14时41分43秒
 #   描    述：
 #
 #================================================================
@@ -14,6 +14,7 @@
 C_INCLUDES += -Iapps
 C_INCLUDES += -Iapps/modules
 C_INCLUDES += -Iapps/modules/fw_1.7.0
+C_INCLUDES += -Iapps/tasks
 C_SOURCES += apps/app.c
 C_SOURCES += apps/modules/os_utils.c
 C_SOURCES += apps/modules/usart_txrx.c
@@ -30,7 +31,7 @@ C_SOURCES += apps/modules/test_gpio.c
 C_SOURCES += apps/modules/test_charger_bms.c
 C_SOURCES += apps/modules/test_modbus.c
 C_SOURCES += apps/modules/request.c
-C_SOURCES += apps/modules/task_probe_tool.c
+C_SOURCES += apps/tasks/task_probe_tool.c
 C_SOURCES += apps/modules/net_protocol_tcp.c
 C_SOURCES += apps/modules/net_protocol_udp.c
 C_SOURCES += apps/modules/net_protocol_ws.c
