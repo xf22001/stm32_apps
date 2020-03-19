@@ -6,7 +6,7 @@
  *   文件名称：app.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月11日 星期五 16时54分03秒
- *   修改日期：2020年03月19日 星期四 14时02分25秒
+ *   修改日期：2020年03月19日 星期四 14时15分33秒
  *   描    述：
  *
  *================================================================*/
@@ -16,21 +16,21 @@
 
 #include "stm32f2xx_hal_tim.h"
 
-#include "modules/os_utils.h"
-#include "modules/usart_txrx.h"
-#include "modules/can_txrx.h"
-#include "modules/spi_txrx.h"
-#include "modules/modbus_txrx.h"
-#include "modules/test_serial.h"
-#include "modules/test_can.h"
-#include "modules/test_gpio.h"
-#include "modules/test_charger_bms.h"
-#include "modules/bms.h"
-#include "modules/charger.h"
-#include "modules/eeprom.h"
-#include "modules/task_probe_tool.h"
-#include "modules/net_client.h"
-#include "modules/channels.h"
+#include "os_utils.h"
+#include "usart_txrx.h"
+#include "can_txrx.h"
+#include "spi_txrx.h"
+#include "modbus_txrx.h"
+#include "test_serial.h"
+#include "test_can.h"
+#include "test_gpio.h"
+#include "test_charger_bms.h"
+#include "bms.h"
+#include "charger.h"
+#include "eeprom.h"
+#include "task_probe_tool.h"
+#include "net_client.h"
+#include "channels.h"
 
 extern IWDG_HandleTypeDef hiwdg;
 

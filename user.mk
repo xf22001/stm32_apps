@@ -6,16 +6,18 @@
 #   文件名称：user.mk
 #   创 建 者：肖飞
 #   创建日期：2019年10月25日 星期五 13时04分38秒
-#   修改日期：2020年03月13日 星期五 11时38分32秒
+#   修改日期：2020年03月19日 星期四 14时16分14秒
 #   描    述：
 #
 #================================================================
 
 C_INCLUDES += -Iapps
+C_INCLUDES += -Iapps/modules
+C_INCLUDES += -Iapps/modules/fw_1.7.0
 C_SOURCES += apps/app.c
-C_SOURCES += apps/os_utils.c
-C_SOURCES += apps/usart_txrx.c
-C_SOURCES += apps/can_txrx.c
+C_SOURCES += apps/modules/os_utils.c
+C_SOURCES += apps/modules/usart_txrx.c
+C_SOURCES += apps/modules/fw_1.7.0/can_txrx.c
 C_SOURCES += apps/spi_txrx.c
 C_SOURCES += apps/modbus_txrx.c
 C_SOURCES += apps/charger.c
