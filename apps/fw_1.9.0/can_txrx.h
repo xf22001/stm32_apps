@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时29分22秒
- *   修改日期：2020年03月18日 星期三 09时06分46秒
+ *   修改日期：2020年03月19日 星期四 13时49分21秒
  *   描    述：
  *
  *================================================================*/
@@ -25,7 +25,7 @@ extern "C"
 #include "stm32f2xx_hal_can.h"
 #include "cmsis_os.h"
 
-#include "list.h"
+#include "list_utils.h"
 
 typedef struct {
 	uint32_t StdId;    /*!< Specifies the standard identifier.
