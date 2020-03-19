@@ -6,7 +6,7 @@
 #   文件名称：user.mk
 #   创 建 者：肖飞
 #   创建日期：2019年10月25日 星期五 13时04分38秒
-#   修改日期：2020年03月19日 星期四 14时16分14秒
+#   修改日期：2020年03月19日 星期四 14时17分26秒
 #   描    述：
 #
 #================================================================
@@ -18,34 +18,34 @@ C_SOURCES += apps/app.c
 C_SOURCES += apps/modules/os_utils.c
 C_SOURCES += apps/modules/usart_txrx.c
 C_SOURCES += apps/modules/fw_1.7.0/can_txrx.c
-C_SOURCES += apps/spi_txrx.c
-C_SOURCES += apps/modbus_txrx.c
-C_SOURCES += apps/charger.c
-C_SOURCES += apps/charger_handler.c
-C_SOURCES += apps/bms.c
-C_SOURCES += apps/bms_handler.c
-C_SOURCES += apps/test_serial.c
-C_SOURCES += apps/test_can.c
-C_SOURCES += apps/test_gpio.c
-C_SOURCES += apps/test_charger_bms.c
-C_SOURCES += apps/test_modbus.c
-C_SOURCES += apps/request.c
-C_SOURCES += apps/task_probe_tool.c
-C_SOURCES += apps/net_protocol_tcp.c
-C_SOURCES += apps/net_protocol_udp.c
-C_SOURCES += apps/net_protocol_ws.c
-C_SOURCES += apps/net_client.c
-C_SOURCES += apps/request_default.c
-C_SOURCES += apps/request_ws.c
-C_SOURCES += apps/net_callback.c
-C_SOURCES += apps/eeprom.c
-C_SOURCES += apps/flash.c
-C_SOURCES += apps/iap.c
-C_SOURCES += apps/channels.c
-C_SOURCES += apps/event_helper.c
-C_SOURCES += apps/bitmap_ops.c
-C_SOURCES += apps/https.c
-C_SOURCES += apps/test_https.c
+C_SOURCES += apps/modules/spi_txrx.c
+C_SOURCES += apps/modules/modbus_txrx.c
+C_SOURCES += apps/modules/charger.c
+C_SOURCES += apps/modules/charger_handler.c
+C_SOURCES += apps/modules/bms.c
+C_SOURCES += apps/modules/bms_handler.c
+C_SOURCES += apps/modules/test_serial.c
+C_SOURCES += apps/modules/test_can.c
+C_SOURCES += apps/modules/test_gpio.c
+C_SOURCES += apps/modules/test_charger_bms.c
+C_SOURCES += apps/modules/test_modbus.c
+C_SOURCES += apps/modules/request.c
+C_SOURCES += apps/modules/task_probe_tool.c
+C_SOURCES += apps/modules/net_protocol_tcp.c
+C_SOURCES += apps/modules/net_protocol_udp.c
+C_SOURCES += apps/modules/net_protocol_ws.c
+C_SOURCES += apps/modules/net_client.c
+C_SOURCES += apps/modules/request_default.c
+C_SOURCES += apps/modules/request_ws.c
+C_SOURCES += apps/modules/net_callback.c
+C_SOURCES += apps/modules/eeprom.c
+C_SOURCES += apps/modules/flash.c
+C_SOURCES += apps/modules/iap.c
+C_SOURCES += apps/modules/channels.c
+C_SOURCES += apps/modules/event_helper.c
+C_SOURCES += apps/modules/bitmap_ops.c
+C_SOURCES += apps/modules/https.c
+C_SOURCES += apps/modules/test_https.c
 
 BMS_VERSION_YEAR := $(shell date '+%-Y')
 BMS_VERSION_MONTH := $(shell date '+%-m')
