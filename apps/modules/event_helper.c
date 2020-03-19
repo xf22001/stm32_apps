@@ -140,7 +140,7 @@ int event_pool_put_event(event_pool_t *event_pool, void *event)
 
 	list_add_tail(&event_item->list_head, &event_pool->list_event);
 
-	status = osMessagePut(event_pool->queue, 0, 10);
+	status = osMessagePut(event_pool->queue, 0, 0);
 
 	if(status == osOK) {
 		ret = 0;
