@@ -6,7 +6,7 @@
  *   文件名称：spi_txrx.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 10时30分53秒
- *   修改日期：2020年01月20日 星期一 10时54分43秒
+ *   修改日期：2020年03月19日 星期四 13时44分21秒
  *   描    述：
  *
  *================================================================*/
@@ -23,7 +23,7 @@ extern "C"
 
 #include "cmsis_os.h"
 #include "stm32f2xx_hal.h"
-#include "list.h"
+#include "list_utils.h"
 
 typedef struct {
 	struct list_head list;

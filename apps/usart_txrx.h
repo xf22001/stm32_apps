@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分40秒
- *   修改日期：2020年01月19日 星期日 17时19分51秒
+ *   修改日期：2020年03月19日 星期四 13时43分41秒
  *   描    述：
  *
  *================================================================*/
@@ -23,7 +23,7 @@ extern "C"
 
 #include "cmsis_os.h"
 #include "stm32f2xx_hal.h"
-#include "list.h"
+#include "list_utils.h"
 
 typedef struct {
 	struct list_head list;

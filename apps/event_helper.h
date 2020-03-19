@@ -6,7 +6,7 @@
  *   文件名称：event_helper.h
  *   创 建 者：肖飞
  *   创建日期：2020年01月07日 星期二 09时56分07秒
- *   修改日期：2020年01月07日 星期二 11时23分30秒
+ *   修改日期：2020年03月19日 星期四 13时44分42秒
  *   描    述：
  *
  *================================================================*/
@@ -24,7 +24,7 @@ extern "C"
 #include "stm32f2xx_hal.h"
 #include "cmsis_os.h"
 
-#include "list.h"
+#include "list_utils.h"
 
 typedef struct {
 	struct list_head list_head;

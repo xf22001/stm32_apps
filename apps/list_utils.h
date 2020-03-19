@@ -1,17 +1,17 @@
 
 
 /*================================================================
- *   Copyright (C) 2017年08月18日 肖飞 All rights reserved
- *
- *   文件名称：list.h
+ *   
+ *   
+ *   文件名称：list_utils.h
  *   创 建 者：肖飞
- *   创建日期：2017年08月18日 星期五 09时34分44秒
- *   修改日期：2019年07月19日 星期五 13时04分17秒
+ *   创建日期：2020年03月19日 星期四 13时41分50秒
+ *   修改日期：2020年03月19日 星期四 13时42分22秒
  *   描    述：
  *
  *================================================================*/
-#ifndef _LIST_H
-#define _LIST_H
+#ifndef _LIST_UTILS_H
+#define _LIST_UTILS_H
 #ifdef __cplusplus
 extern "C"
 {
@@ -254,5 +254,4 @@ static inline int list_empty(const struct list_head *head)
 #ifdef __cplusplus
 }
 #endif
-
-#endif //_LIST_H
+#endif //_LIST_UTILS_H
