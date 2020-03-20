@@ -1,24 +1,26 @@
+
+
+/*================================================================
+ *   
+ *   
+ *   文件名称：task_probe_tool.c
+ *   创 建 者：肖飞
+ *   创建日期：2020年03月20日 星期五 13时37分12秒
+ *   修改日期：2020年03月20日 星期五 13时37分32秒
+ *   描    述：
+ *
+ *================================================================*/
+#include "task_probe_tool.h"
+
 #include "stm32f2xx_hal.h"
 #include "cmsis_os.h"
 #include "lwip.h"
 #include "lwip/sockets.h"
-#include "lwip/inet.h"
-#include "lwip/netdb.h"
 
-#include <stdint.h>
 #include <string.h>
-#include <stdarg.h>
 
-#define UDP_LOG
-#include "task_probe_tool.h"
-
-#include "net_client.h"
-#include "flash.h"
-#include "iap.h"
-#include "bms.h"
 #include "os_utils.h"
-
-extern struct netif gnetif;
+#include "probe_tool_handler.h"
 
 static int broadcast_sock = -1;
 static struct sockaddr_in broadcast_addr;
@@ -80,348 +82,10 @@ static int chunk_sendto(uint32_t fn, uint32_t stage, int server_sock, void *data
 	return ret;
 }
 
-static int probe_server_chunk_sendto(uint32_t fn, void *data, size_t size)
+int probe_server_chunk_sendto(uint32_t fn, void *data, size_t size)
 {
 	return chunk_sendto(fn, 0, probe_server_sock, data, size, (struct sockaddr *)&probe_client_address_in, sizeof(probe_client_address_in));
 }
-
-static void loopback(request_t *request)
-{
-	int send_size = request->header.data_size + sizeof(request_t);
-
-	sendto(probe_server_sock, request, send_size, 0, (struct sockaddr *)&probe_client_address_in, sizeof(probe_client_address_in));
-}
-
-static void fn0(request_t *request)
-{
-	loopback(request);
-}
-
-static void fn1(request_t *request)
-{
-	probe_server_chunk_sendto(request->payload.fn, (void *)0x8000000, 512);
-}
-
-static void fn2(request_t *request)
-{
-	probe_server_chunk_sendto(request->payload.fn, (void *)0x8000000, 512);
-}
-
-static void fn3(request_t *request)
-{
-	static uint32_t file_crc32 = 0;
-
-	int send_size = request->header.data_size + sizeof(request_t);
-	uint32_t data_size = request->header.data_size;
-	uint32_t data_offset = request->header.data_offset;
-	uint32_t total_size = request->header.total_size;
-	uint32_t stage = request->payload.stage;
-	uint8_t *data = (uint8_t *)(request + 1);
-	uint8_t is_app = 0;
-	uint8_t start_app = 0;
-
-#if defined(USER_APP)
-	is_app = 1;
-#endif
-
-	if(is_app == 1) {
-		uint8_t flag = 0x00;
-		flash_write(APP_CONFIG_ADDRESS, &flag, 1);
-		udp_log_printf("in app, reset for upgrade!\n");
-		HAL_NVIC_SystemReset();
-		return;
-	}
-
-	if(stage == 0) {
-		flash_erase_sector(FLASH_SECTOR_6, 2);//擦除第6和7扇区
-	} else if(stage == 1) {
-		if(data_size == 4) {
-			uint32_t *p = (uint32_t *)data;
-			file_crc32 = *p;
-		}
-	} else if(stage == 2) {
-		flash_write(USER_FLASH_FIRST_PAGE_ADDRESS + data_offset, data, data_size);
-
-		if(data_offset + data_size == total_size) {
-			uint32_t read_offset = 0;
-			uint32_t crc32 = 0;
-
-			while(read_offset < total_size) {
-				uint32_t i;
-				uint32_t left = total_size - read_offset;
-				uint32_t read_size = (left > 32) ? 32 : left;
-				uint8_t *read_buffer = (uint8_t *)(USER_FLASH_FIRST_PAGE_ADDRESS + read_offset);
-
-				for(i = 0; i < read_size; i++) {
-					crc32 += read_buffer[i];
-				}
-
-				read_offset += read_size;
-			}
-
-			udp_log_printf("crc32:%x, file_crc32:%x\n", crc32, file_crc32);
-
-			if(crc32 == file_crc32) {
-				start_app = 1;
-			}
-		}
-	}
-
-	sendto(probe_server_sock, request, send_size, 0, (struct sockaddr *)&probe_client_address_in, sizeof(probe_client_address_in));
-
-	if(start_app) {
-		uint8_t flag = 0x01;
-
-		udp_log_printf("start app!\n");
-		flash_write(APP_CONFIG_ADDRESS, &flag, 1);
-		HAL_NVIC_SystemReset();
-	}
-}
-
-static void p_select_timeout_statistic(void)
-{
-	uint32_t duration = osKernelSysTick() - select_timeout_count_stamp;
-
-	if(duration != 0) {
-		udp_log_printf("select_timeout_count per second:%d\n", (select_timeout_count * 1000) / duration);
-	}
-
-	select_timeout_count = 0;
-}
-
-static int p_host(struct hostent *ent)
-{
-	int ret = 0;
-	char **cp;
-
-	if(ent == NULL) {
-		ret = -1;
-		return ret;
-	}
-
-	udp_log_printf("\n");
-
-	udp_log_printf("h_name:%s\n", ent->h_name);
-	udp_log_printf("h_aliases:\n");
-	cp = ent->h_aliases;
-
-	while(*cp != NULL) {
-		udp_log_printf("%s\n", *cp);
-		cp += 1;
-
-		if(*cp != NULL) {
-			//udp_log_printf(", ");
-		}
-	}
-
-	udp_log_printf("h_addrtype:%d\n", ent->h_addrtype);
-
-	udp_log_printf("h_length:%d\n", ent->h_length);
-
-	udp_log_printf("h_addr_list:\n");
-	cp = ent->h_addr_list;
-
-	while(*cp != NULL) {
-		udp_log_printf("%s\n", inet_ntoa(**cp));
-		cp += 1;
-
-		if(*cp != NULL) {
-			//udp_log_printf(", ");
-		}
-	}
-
-	return ret;
-}
-
-static void get_host_by_name(char *content, uint32_t size)
-{
-	struct hostent *ent;
-	char *hostname = (char *)os_alloc(RECV_BUFFER_SIZE);
-	int ret;
-	int fn;
-	int catched;
-
-	//udp_log_hexdump("content", (const char *)content, size);
-
-	if(hostname == NULL) {
-		return;
-	}
-
-	hostname[0] = 0;
-
-	ret = sscanf(content, "%d %s%n", &fn, hostname, &catched);
-
-	if(ret == 2) {
-		udp_log_printf("hostname:%s!\n", hostname);
-		ent = gethostbyname(hostname);
-		p_host(ent);
-	} else {
-		udp_log_printf("no hostname!\n");
-	}
-
-	os_free(hostname);
-}
-
-static void fn4(request_t *request)
-{
-	p_select_timeout_statistic();
-
-	udp_log_printf("local host ip:%s\n", inet_ntoa(gnetif.ip_addr));
-
-	get_host_by_name((char *)(request + 1), request->header.data_size);
-	memset(request, 0, RECV_BUFFER_SIZE);
-}
-
-static void fn5(request_t *request)
-{
-	int size = xPortGetFreeHeapSize();
-	uint8_t *os_thread_info;
-	uint8_t is_app = 0;
-
-#if defined(USER_APP)
-	is_app = 1;
-#endif
-
-	udp_log_printf("free heap size:%d\n", size);
-
-	if(size < 4 * 1024) {
-		return;
-	}
-
-	size = 1024;
-
-	os_thread_info = (uint8_t *)os_alloc(size);
-
-	if(os_thread_info == NULL) {
-		return;
-	}
-
-	osThreadList(os_thread_info);
-
-	udp_log_puts((const char *)os_thread_info);
-
-	os_free(os_thread_info);
-
-	if(is_app) {
-		udp_log_printf("in app!\n");
-	} else {
-		udp_log_printf("in bootloader!\n");
-	}
-}
-
-static void fn6(request_t *request)
-{
-	char *content = (char *)(request + 1);
-	char *protocol = (char *)os_alloc(RECV_BUFFER_SIZE);
-	int fn;
-	int catched;
-	int ret = 0;
-
-	ret = sscanf(content, "%d %s%n", &fn, protocol, &catched);
-
-	if(ret == 2) {
-		udp_log_printf("protocol:%s!\n", protocol);
-
-		if(memcmp(protocol, "tcp", 3) == 0) {
-			set_net_client_protocol(TRANS_PROTOCOL_TCP);
-		} else if(memcmp(protocol, "udp", 3) == 0) {
-			set_net_client_protocol(TRANS_PROTOCOL_UDP);
-		}
-
-		set_client_state(CLIENT_RESET);
-	} else {
-		udp_log_printf("no protocol!\n");
-	}
-}
-
-#include "eeprom.h"
-#include "bms_spec.h"
-extern SPI_HandleTypeDef hspi3;
-static void fn7(request_t *request)
-{
-	uint8_t id;
-	//char *buffer = (char *)os_alloc(1024);
-	//int ret;
-	//bms_data_settings_t *settings = (bms_data_settings_t *)0;
-
-	//if(buffer == NULL) {
-	//	return;
-	//}
-	spi_info_t *spi_info = get_spi_info(&hspi3);
-
-	if(spi_info == NULL) {
-		return;
-	}
-
-	eeprom_info_t *eeprom_info = get_eeprom_info(spi_info);
-
-	if(eeprom_info == NULL) {
-		return;
-	}
-
-	id = eeprom_id(eeprom_info);
-	udp_log_printf("eeprom id:0x%x\n", id);
-	//udp_log_printf("test ...\n");
-
-	//memset(buffer, 0, 1024);
-
-	//eeprom_write(eeprom_info, 5 * 1024 + 1, (uint8_t *)0x8000000, 1024);
-	//eeprom_read(eeprom_info, 5 * 1024 + 1, (uint8_t *)buffer, 1024);
-
-	//ret = memcmp(buffer, (const void *)0x8000000, 1024);
-
-	//if(ret == 0) {
-	//	udp_log_printf("read write successful!\n");
-	//} else {
-	//	udp_log_printf("read write failed!\n");
-	//}
-
-	//os_free(buffer);
-	//udp_log_printf("bms_data_settings_t size:%d\n", sizeof(bms_data_settings_t));
-
-	//udp_log_printf("settings->cem_data.u1 offset:%d\n", (void *)&settings->cem_data.u1 - (void *)settings);
-}
-
-static void fn8(request_t *request)
-{
-	show_modbus_data_offset();
-}
-
-#include "test_https.h"
-static void fn9(request_t *request)
-{
-	//test_https();
-}
-
-void set_connect_enable(uint8_t enable);
-uint8_t get_connect_enable(void);
-static void fn10(request_t *request)
-{
-	set_connect_enable(1);
-
-	while(get_connect_enable() == 1) {
-		continue;
-	}
-}
-
-static void fn_hello(request_t *request)
-{
-}
-
-serve_map_t serve_map[] = {
-	{0, fn0},
-	{1, fn1},
-	{2, fn2},
-	{3, fn3},
-	{4, fn4},
-	{5, fn5},
-	{6, fn6},
-	{7, fn7},
-	{8, fn8},
-	{9, fn9},
-	{10, fn10},
-	{0xffffffff, fn_hello},
-};
 
 
 static int init_broadcast_socket(void)
@@ -492,9 +156,31 @@ static int init_probe_server_socket(void)
 	return ret;
 }
 
+void loopback(request_t *request)
+{
+	int send_size = request->header.data_size + sizeof(request_t);
+
+	sendto(probe_server_sock, request, send_size, 0, (struct sockaddr *)&probe_client_address_in, sizeof(probe_client_address_in));
+}
+
+void fn_hello(request_t *request)
+{
+}
+
+static void p_select_timeout_statistic(void)
+{
+	uint32_t duration = osKernelSysTick() - select_timeout_count_stamp;
+
+	if(duration != 0) {
+		udp_log_printf("select_timeout_count per second:%d\n", (select_timeout_count * 1000) / duration);
+	}
+
+	select_timeout_count = 0;
+}
+
+
 static void probe_server_process_message(int size)
 {
-	int map_size = sizeof(serve_map) / sizeof(serve_map_t);
 	int i;
 	uint8_t found = 0;
 	request_t *request;
@@ -509,11 +195,18 @@ static void probe_server_process_message(int size)
 
 	request = (request_t *)request_buffer;
 
-	for(i = 1; i < map_size; i++) {
-		serve_map_t *serve_item = serve_map + i;
+	p_select_timeout_statistic();
 
-		if(serve_item->fn == request->payload.fn) {
-			serve_item->response(request);
+	if(request->payload.fn == 0xffffffff) {
+		fn_hello(request);
+		return;
+	}
+
+	for(i = 1; i < server_map_info.server_map_size; i++) {
+		server_item_t *server_item = server_map_info.server_map + i;
+
+		if(server_item->fn == request->payload.fn) {
+			server_item->response(request);
 			found = 1;
 			break;
 		}

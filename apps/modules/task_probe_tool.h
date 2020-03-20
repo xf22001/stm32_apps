@@ -23,11 +23,19 @@ typedef void (*response_t)(request_t *request);
 typedef struct {
 	uint32_t fn;
 	response_t response;
-} serve_map_t;
+} server_item_t;
 
-void task_probe_tool(void const *argument);
-uint8_t is_log_client_address_valid(void);
+typedef struct {
+	server_item_t *server_map;
+	size_t server_map_size;
+} server_map_info_t;
+
 int log_udp_data(void *data, size_t size);
+int probe_server_chunk_sendto(uint32_t fn, void *data, size_t size);
+void loopback(request_t *request);
+void fn_hello(request_t *request);
+uint8_t is_log_client_address_valid(void);
+void task_probe_tool(void const *argument);
 
 #if defined(UDP_LOG)
 #define udp_log_printf(fmt, ...) log_printf((log_fn_t)log_udp_data, fmt, ## __VA_ARGS__)
