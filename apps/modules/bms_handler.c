@@ -6,7 +6,7 @@
  *   文件名称：bms_handler.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时18分53秒
- *   修改日期：2020年03月19日 星期四 10时20分58秒
+ *   修改日期：2020年03月20日 星期五 15时56分40秒
  *   描    述：
  *
  *================================================================*/
@@ -264,7 +264,7 @@ static int prepare_state_bhm(bms_info_t *bms_info)
 	int ret = 0;
 	uint32_t ticks = osKernelSysTick();
 
-	bms_info->send_stamp = ticks;
+	bms_info->send_stamp = ticks - FN_BHM_SEND_PERIOD;
 	bms_info->stamp = ticks;
 	return ret;
 }
@@ -356,7 +356,7 @@ static int prepare_state_brm(bms_info_t *bms_info)
 	memset(&bms_info->settings->bst_data, 0, sizeof(bst_data_t));
 	memset(&bms_info->settings->bem_data, 0, sizeof(bem_data_t));
 
-	bms_info->send_stamp = ticks;
+	bms_info->send_stamp = ticks - FN_BRM_SEND_PERIOD;
 	bms_info->stamp = ticks;
 	bms_info->bms_data_multi_fn = FN_INVALID;
 
@@ -457,7 +457,7 @@ static int prepare_state_bcp(bms_info_t *bms_info)
 	int ret = 0;
 	uint32_t ticks = osKernelSysTick();
 
-	bms_info->send_stamp = ticks;
+	bms_info->send_stamp = ticks - FN_BCP_SEND_PERIOD;
 	bms_info->stamp = ticks;
 
 	bms_info->bms_data_multi_fn = FN_INVALID;
@@ -542,7 +542,7 @@ static int prepare_state_bro(bms_info_t *bms_info)
 	int ret = 0;
 	uint32_t ticks = osKernelSysTick();
 
-	bms_info->send_stamp = ticks;
+	bms_info->send_stamp = ticks - FN_BRO_SEND_PERIOD;
 	bms_info->stamp = ticks;
 	bms_info->settings->bro_data.bro_result = 0x00;
 	bms_info->settings->cro_data.cro_result = 0xff;
@@ -648,9 +648,9 @@ static int prepare_state_bcl_bcs_bsm_bmv_bmt_bsp(bms_info_t *bms_info)
 	int ret = 0;
 	uint32_t ticks = osKernelSysTick();
 
-	bms_info->send_stamp = ticks;//bcl
-	bms_info->send_stamp_1 = ticks;//bcs
-	bms_info->send_stamp_2 = ticks;//bsm
+	bms_info->send_stamp = ticks - FN_BCL_SEND_PERIOD;//bcl
+	bms_info->send_stamp_1 = ticks - FN_BCS_SEND_PERIOD;//bcs
+	bms_info->send_stamp_2 = ticks - FN_BSM_SEND_PERIOD;//bsm
 	bms_info->stamp = ticks;
 
 	bms_info->received_ccs = 0;
@@ -826,7 +826,7 @@ static int prepare_state_bst(bms_info_t *bms_info)
 	int ret = 0;
 	uint32_t ticks = osKernelSysTick();
 
-	bms_info->send_stamp = ticks;//bcl
+	bms_info->send_stamp = ticks - FN_BST_SEND_PERIOD;//bcl
 	bms_info->stamp = ticks;
 	bms_info->stamp_1 = ticks;//保存首次发cst的时间
 
@@ -912,8 +912,8 @@ static int prepare_state_bsd_bem(bms_info_t *bms_info)
 
 	bms_info->stamp = ticks;
 
-	bms_info->send_stamp = ticks;//bcl
-	bms_info->send_stamp_1 = ticks;//bcl
+	bms_info->send_stamp = ticks - FN_BEM_SEND_PERIOD;//bcl
+	bms_info->send_stamp_1 = ticks - FN_BSD_SEND_PERIOD;//bcl
 
 	bms_info->received_csd = 0;
 	bms_info->received_cem = 0;
@@ -1022,7 +1022,7 @@ static int handle_state_bsd_bem_request(bms_info_t *bms_info)
 
 	if(is_bem_valid(bms_info) == 1) {
 		if((bms_info->sent_bem == 0) || (is_no_current(bms_info) == 0)) {
-			if(ticks - bms_info->send_stamp_1 >= FN_BEM_SEND_PERIOD) {
+			if(ticks - bms_info->send_stamp >= FN_BEM_SEND_PERIOD) {
 				if(bms_info->modbus_data->disable_bem == 0) {
 					send_bem(bms_info);
 					bms_info->send_stamp = ticks;
@@ -1033,8 +1033,6 @@ static int handle_state_bsd_bem_request(bms_info_t *bms_info)
 	} else {
 		if(bms_info->received_csd == 0) {
 			if(ticks - bms_info->send_stamp_1 >= FN_BSD_SEND_PERIOD) {
-				set_gun_on_off(bms_info, 0);
-
 				if(bms_info->modbus_data->disable_bsd == 0) {
 					send_bsd(bms_info);
 					bms_info->send_stamp_1 = ticks;

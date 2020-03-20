@@ -6,7 +6,7 @@
  *   文件名称：modbus_txrx.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月26日 星期二 14时25分28秒
- *   修改日期：2020年03月20日 星期五 10时37分32秒
+ *   修改日期：2020年03月20日 星期五 14时25分19秒
  *   描    述：
  *
  *================================================================*/
@@ -39,7 +39,6 @@ typedef struct {
 	uint16_t end_addr;
 	uint32_t rx_timeout;
 	uint32_t tx_timeout;
-	void *bms_info;
 	callback_chain_t *data_changed_chain;
 } modbus_info_t;
 

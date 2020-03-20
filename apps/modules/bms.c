@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年03月20日 星期五 10时33分24秒
+ *   修改日期：2020年03月20日 星期五 16时20分15秒
  *   描    述：
  *
  *================================================================*/
@@ -177,8 +177,11 @@ static void reset_bms_data_settings_charger_data(bms_info_t *bms_info)
 	memset_0(bms_info->settings->crm_data);
 	memset_0(bms_info->settings->cts_data);
 	memset_0(bms_info->settings->cml_data);
+	bms_info->settings->cml_data.max_output_current = 4000;
+	bms_info->settings->cml_data.min_output_current = 4000;
 	memset_0(bms_info->settings->cro_data);
 	memset_0(bms_info->settings->ccs_data);
+	bms_info->settings->ccs_data.output_current = 4000;
 	memset_0(bms_info->settings->cst_data);
 	memset_0(bms_info->settings->csd_data);
 	memset_0(bms_info->settings->cem_data);
@@ -893,6 +896,9 @@ void bms_restore_data(bms_info_t *bms_info)
 		bms_data_to_modbus_data(bms_info, 1);
 	}
 
+	reset_bms_data_settings_charger_data(bms_info);
+	bms_data_to_modbus_data(bms_info, 0);
+
 	if(ret != 0) {
 		save_eeprom_modbus_data(bms_info);
 	}
@@ -971,7 +977,7 @@ void set_bms_state(bms_info_t *bms_info, bms_state_t state)
 		return;
 	}
 
-	if(get_bms_state(bms_info) == BMS_STATE_IDLE) {
+	if(state == BMS_STATE_IDLE) {
 		reset_bms_data_settings_charger_data(bms_info);
 	}
 
@@ -986,6 +992,7 @@ void set_bms_state(bms_info_t *bms_info, bms_state_t state)
 	bms_info->state = state;
 
 	bms_data_to_modbus_data(bms_info, 0);
+	save_eeprom_modbus_data(bms_info);
 	bms_info->modbus_data->bms_state = bms_info->state;
 }
 
@@ -1100,8 +1107,8 @@ uint8_t is_bms_poweron_enable(bms_info_t *bms_info)
 	}
 
 	if(state == GPIO_PIN_RESET) {
-		//return 0;
-		return 1;
+		return 0;
+		//return 1;
 	} else {
 		return 1;
 	}

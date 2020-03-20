@@ -6,7 +6,7 @@
  *   文件名称：modbus_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月26日 星期二 14时24分54秒
- *   修改日期：2020年03月20日 星期五 10时37分15秒
+ *   修改日期：2020年03月20日 星期五 14时25分42秒
  *   描    述：
  *
  *================================================================*/
@@ -14,7 +14,6 @@
 #include "modbus_spec.h"
 #include "os_utils.h"
 #include "task_probe_tool.h"
-#include "bms.h"
 
 static LIST_HEAD(modbus_info_list);
 
@@ -76,7 +75,6 @@ modbus_info_t *alloc_modbus_info(uart_info_t *uart_info)
 	}
 
 	modbus_info->uart_info = uart_info;
-	modbus_info->bms_info = NULL;
 	modbus_info->modbus_data = NULL;
 	modbus_info->start_addr = 0;
 	modbus_info->end_addr = 0;
@@ -455,10 +453,6 @@ static int modubs_decode_request(modbus_info_t *modbus_info)
 	//udp_log_printf("head->fn:%02x\n", head->fn);
 
 	if(modbus_info->modbus_data == NULL) {
-		return ret;
-	}
-
-	if(modbus_info->bms_info == NULL) {
 		return ret;
 	}
 
