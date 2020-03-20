@@ -93,6 +93,7 @@ int  http_post(HTTP_INFO *hi, char *url, char *data, char *response, int size);
 void http_strerror(char *buf, int len);
 int  http_open(HTTP_INFO *hi, char *url);
 int  http_write_header(HTTP_INFO *hi);
+int  http_write_ws_header(HTTP_INFO *hi);
 int  http_write(HTTP_INFO *hi, char *data, int len);
 int  http_write_end(HTTP_INFO *hi);
 int  http_read_chunked(HTTP_INFO *hi, char *response, int size);

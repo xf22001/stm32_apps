@@ -6,7 +6,7 @@
  *   文件名称：modbus_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月26日 星期二 14时24分54秒
- *   修改日期：2020年01月20日 星期一 14时04分12秒
+ *   修改日期：2020年03月20日 星期五 10时37分15秒
  *   描    述：
  *
  *================================================================*/
@@ -47,6 +47,9 @@ void free_modbus_info(modbus_info_t *modbus_info)
 		modbus_info->tx_size = 0;
 	}
 
+	free_callback_chain(modbus_info->data_changed_chain);
+	modbus_info->data_changed_chain = NULL;
+
 	os_free(modbus_info);
 }
 
@@ -66,6 +69,12 @@ modbus_info_t *alloc_modbus_info(uart_info_t *uart_info)
 		return modbus_info;
 	}
 
+	modbus_info->data_changed_chain = alloc_callback_chain();
+
+	if(modbus_info->data_changed_chain == NULL) {
+		goto failed;
+	}
+
 	modbus_info->uart_info = uart_info;
 	modbus_info->bms_info = NULL;
 	modbus_info->modbus_data = NULL;
@@ -77,6 +86,34 @@ modbus_info_t *alloc_modbus_info(uart_info_t *uart_info)
 	list_add_tail(&modbus_info->list, &modbus_info_list);
 
 	return modbus_info;
+
+failed:
+
+	if(modbus_info != NULL) {
+		os_free(modbus_info);
+		modbus_info = NULL;
+	}
+
+	return modbus_info;
+}
+
+int add_modbus_data_changed_cb(modbus_info_t *modbus_info, callback_item_t *callback_item)
+{
+	int ret = -1;
+	ret = register_callback(modbus_info->data_changed_chain, callback_item);
+	return ret;
+}
+
+int remove_modbus_data_changed_cb(modbus_info_t *modbus_info, callback_item_t *callback_item)
+{
+	int ret = -1;
+	ret = remove_callback(modbus_info->data_changed_chain, callback_item);
+	return ret;
+}
+
+static void modbus_data_changed(modbus_info_t *modbus_info)
+{
+	do_callback_chain(modbus_info->data_changed_chain, modbus_info);
 }
 
 static void modbus_read(modbus_info_t *modbus_info)
@@ -279,8 +316,7 @@ static int fn_0x06(modbus_info_t *modbus_info)//write one number
 	uart_tx_data(modbus_info->uart_info, modbus_info->tx_buffer, modbus_info->tx_size, modbus_info->tx_timeout);
 	//udp_log_hexdump("modbus_info->tx_buffer", (const char *)modbus_info->tx_buffer, modbus_info->tx_size);
 
-	modbus_data_to_bms_data((bms_info_t *)modbus_info->bms_info);
-	save_eeprom_modbus_data((bms_info_t *)modbus_info->bms_info);
+	modbus_data_changed(modbus_info);
 
 	ret = 0;
 	return ret;
@@ -371,8 +407,7 @@ static int fn_0x10(modbus_info_t *modbus_info)//write more number
 	uart_tx_data(modbus_info->uart_info, modbus_info->tx_buffer, modbus_info->tx_size, modbus_info->tx_timeout);
 	//udp_log_hexdump("modbus_info->tx_buffer", (const char *)modbus_info->tx_buffer, modbus_info->tx_size);
 
-	modbus_data_to_bms_data((bms_info_t *)modbus_info->bms_info);
-	save_eeprom_modbus_data((bms_info_t *)modbus_info->bms_info);
+	modbus_data_changed(modbus_info);
 
 	ret = 0;
 	return ret;
@@ -445,7 +480,7 @@ int modbus_process_request(modbus_info_t *modbus_info)
 	return modubs_decode_request(modbus_info);
 }
 
-static int set_modbus_data(modbus_info_t *modbus_info, uint16_t *modbus_data, uint16_t start_addr, uint16_t end_addr)
+int set_modbus_data(modbus_info_t *modbus_info, uint16_t *modbus_data, uint16_t start_addr, uint16_t end_addr)
 {
 	int ret = 0;
 	modbus_info->modbus_data = modbus_data;
@@ -453,15 +488,4 @@ static int set_modbus_data(modbus_info_t *modbus_info, uint16_t *modbus_data, ui
 	modbus_info->end_addr = end_addr;
 
 	return ret;
-}
-
-void modbus_set_bms_info(modbus_info_t *modbus_info, void *bms_info)
-{
-	if(bms_info != NULL) {
-		modbus_info->bms_info = bms_info;
-		set_modbus_data(modbus_info, (uint16_t *)((bms_info_t *)bms_info)->modbus_data, 0, sizeof(modbus_data_t));
-	} else {
-		modbus_info->bms_info = NULL;
-		set_modbus_data(modbus_info, NULL, 0, 0);
-	}
 }

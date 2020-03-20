@@ -6,7 +6,7 @@
  *   文件名称：callback_chain.c
  *   创 建 者：肖飞
  *   创建日期：2020年03月20日 星期五 08时20分36秒
- *   修改日期：2020年03月20日 星期五 09时41分42秒
+ *   修改日期：2020年03月20日 星期五 10时21分11秒
  *   描    述：
  *
  *================================================================*/
@@ -160,7 +160,7 @@ int remove_callback(callback_chain_t *callback_chain, callback_item_t *callback_
 	return ret;
 }
 
-void do_callback_chain(callback_chain_t *callback_chain, void *callback_ctx)
+void do_callback_chain(callback_chain_t *callback_chain, void *chain_ctx)
 {
 	osStatus status;
 	callback_item_t *callback_item = NULL;
@@ -178,7 +178,7 @@ void do_callback_chain(callback_chain_t *callback_chain, void *callback_ctx)
 
 	list_for_each_entry(callback_item, &callback_chain->list_callback, callback_item_t, list_head) {
 		if(callback_item->fn != NULL) {
-			callback_item->fn(callback_ctx);
+			callback_item->fn(callback_item->fn_ctx, chain_ctx);
 		}
 	}
 

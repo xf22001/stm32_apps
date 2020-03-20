@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分40秒
- *   修改日期：2020年03月19日 星期四 13时43分41秒
+ *   修改日期：2020年03月20日 星期五 12时39分17秒
  *   描    述：
  *
  *================================================================*/
@@ -39,7 +39,15 @@ uint16_t crc_check_for_dcph(uint8_t *data, uint16_t size);
 int uart_tx_data(uart_info_t *info, uint8_t *data, uint16_t size, uint32_t timeout);
 int uart_rx_data(uart_info_t *info, uint8_t *data, uint16_t size, uint32_t timeout);
 void set_log_uart_info(UART_HandleTypeDef *huart);
-int uart_log_printf(const char *fmt, ...);
-void uart_log_hexdump(const char *label, const char *data, int len);
-int uart_log_puts(const char *s);
+int log_uart_data(void *data, size_t size);
+
+#if defined(UART_LOG)
+#define uart_log_printf(fmt, ...) log_printf((log_fn_t)log_uart_data, fmt, ## __VA_ARGS__)
+#define uart_log_hexdump(label, data, len) log_hexdump((log_fn_t)log_uart_data, label, data, len)
+#define uart_log_puts(s) log_puts((log_fn_t)log_uart_data, s)
+#else//#if defined(UART_LOG)
+#define uart_log_printf(fmt, ...)
+#define uart_log_hexdump(label, data, len)
+#define uart_log_puts(s)
+#endif//#if defined(UART_LOG)
 #endif //_USART_TXRX_H

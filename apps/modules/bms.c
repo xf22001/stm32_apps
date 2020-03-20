@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年03月19日 星期四 12时45分13秒
+ *   修改日期：2020年03月20日 星期五 10时33分24秒
  *   描    述：
  *
  *================================================================*/
@@ -42,6 +42,8 @@ extern CAN_HandleTypeDef hcan2;
 static LIST_HEAD(bms_info_list);
 
 static bitmap_t *eeprom_modbus_data_bitmap = NULL;
+
+static callback_item_t modbus_data_changed_cb;
 
 typedef struct {
 	CAN_HandleTypeDef *hcan;
@@ -219,7 +221,8 @@ void free_bms_info(bms_info_t *bms_info)
 	}
 
 	list_del(&bms_info->list);
-	modbus_set_bms_info(bms_info->modbus_info, NULL);
+	set_modbus_data(bms_info->modbus_info, NULL, 0, 0);
+	remove_modbus_data_changed_cb(bms_info->modbus_info, &modbus_data_changed_cb);
 
 	set_bitmap_value(eeprom_modbus_data_bitmap, bms_info->eeprom_modbus_data_index, 0);
 
@@ -354,10 +357,24 @@ failed:
 	return bms_info;
 }
 
+static void modbus_data_changed(void *fn_ctx, void *chain_ctx)
+{
+	//udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+	modbus_data_to_bms_data((bms_info_t *)fn_ctx);
+	save_eeprom_modbus_data((bms_info_t *)fn_ctx);
+}
+
+
 void bms_set_modbus_info(bms_info_t *bms_info, modbus_info_t *modbus_info)
 {
 	bms_info->modbus_info = modbus_info;
-	modbus_set_bms_info(modbus_info, (void *)bms_info);
+
+	set_modbus_data(bms_info->modbus_info, (uint16_t *)bms_info->modbus_data, 0, sizeof(modbus_data_t));
+
+	modbus_data_changed_cb.fn = modbus_data_changed;
+	modbus_data_changed_cb.fn_ctx = bms_info;
+
+	add_modbus_data_changed_cb(bms_info->modbus_info, &modbus_data_changed_cb);
 }
 
 void bms_set_eeprom_info(bms_info_t *bms_info, eeprom_info_t *eeprom_info)

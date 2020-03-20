@@ -6,7 +6,7 @@
  *   文件名称：os_utils.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分36秒
- *   修改日期：2020年01月19日 星期日 13时46分31秒
+ *   修改日期：2020年03月20日 星期五 11时11分14秒
  *   描    述：
  *
  *================================================================*/
@@ -50,7 +50,12 @@ typedef union
   uint16_t v;
 } u_uint16_bytes_t;
 
+typedef int (*log_fn_t)(const char *buffer, size_t size);
+
 void *os_alloc(size_t size);
 void os_free(void *p);
 void app_panic(void);
+int log_printf(log_fn_t log_fn, const char *fmt, ...);
+void log_hexdump(log_fn_t log_fn, const char *label, const char *data, int len);
+int log_puts(log_fn_t log_fn, const char *s);
 #endif //_OS_UTILS_H

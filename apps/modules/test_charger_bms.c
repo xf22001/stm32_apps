@@ -6,7 +6,7 @@
  *   文件名称：test_charger_bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时28分36秒
- *   修改日期：2020年03月17日 星期二 17时22分20秒
+ *   修改日期：2020年03月20日 星期五 10时43分29秒
  *   描    述：
  *
  *================================================================*/
@@ -20,7 +20,7 @@
 
 #include "bms.h"
 #include "charger.h"
-#include "test_modbus.h"
+#include "task_modbus.h"
 
 extern CAN_HandleTypeDef hcan1;
 extern CAN_HandleTypeDef hcan2;
@@ -133,8 +133,8 @@ void test_charger_bms(void)
 			app_panic();
 		}
 
-		osThreadDef(test_modbus, task_modbus, osPriorityNormal, 0, 128 * 3);
-		osThreadCreate(osThread(test_modbus), uart_info);
+		osThreadDef(task_modbus, task_modbus, osPriorityNormal, 0, 128 * 3);
+		osThreadCreate(osThread(task_modbus), uart_info);
 	}
 
 	{
