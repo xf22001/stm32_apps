@@ -21,10 +21,10 @@ extern "C"
 }
 #endif
 
-#include "stm32f2xx_hal.h"
+#include "app_platform.h"
 #include "main.h"
 #include "spi_txrx.h"
-#include "list.h"
+#include "list_utils.h"
 
 typedef struct {
 	struct list_head list;

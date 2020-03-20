@@ -17,7 +17,7 @@ extern "C"
 {
 #endif
 
-#include "stm32f2xx_hal.h"
+#include "app_platform.h"
 #include "stm32f2xx_hal_can.h"
 #include "cmsis_os.h"
 

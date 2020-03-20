@@ -22,7 +22,7 @@ extern "C"
 #endif
 
 #include "event_helper.h"
-#include "list.h"
+#include "list_utils.h"
 
 #define CHANNEL_INSTANCES_NUMBER 4
 #define CHANNEL_TASK_PERIODIC (50)

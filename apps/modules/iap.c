@@ -12,7 +12,7 @@
  *================================================================*/
 #include "iap.h"
 
-#include "stm32f2xx_hal.h"
+#include "app_platform.h"
 
 typedef  void (*app_entry_t)(void);
 void jump_to_app(void)

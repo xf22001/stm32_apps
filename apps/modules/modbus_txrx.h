@@ -6,7 +6,7 @@
  *   文件名称：modbus_txrx.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月26日 星期二 14时25分28秒
- *   修改日期：2020年01月20日 星期一 10时25分27秒
+ *   修改日期：2020年03月20日 星期五 09时45分31秒
  *   描    述：
  *
  *================================================================*/
@@ -22,7 +22,7 @@ extern "C"
 #endif
 
 #include "usart_txrx.h"
-#include "list.h"
+#include "callback_chain.h"
 
 #define MODBUS_BUFFER_SIZE 192
 #define MODBUS_SLAVE_ID  1

@@ -10,7 +10,7 @@
  *   描    述：
  *
  *================================================================*/
-#include "stm32f2xx_hal.h"
+#include "app_platform.h"
 #include "cmsis_os.h"
 #include "lwip.h"
 #include "lwip/sockets.h"

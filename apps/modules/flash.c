@@ -12,7 +12,7 @@
  *================================================================*/
 #include "flash.h"
 
-#include "stm32f2xx_hal.h"
+#include "app_platform.h"
 
 int8_t flash_erase_sector(uint32_t start, uint32_t sectors)
 {

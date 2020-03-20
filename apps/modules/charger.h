@@ -21,7 +21,7 @@ extern "C"
 }
 #endif
 
-#include "stm32f2xx_hal.h"
+#include "app_platform.h"
 #include "stm32f2xx_hal_can.h"
 #include "cmsis_os.h"
 
@@ -29,7 +29,7 @@ extern "C"
 
 #include "bms_spec.h"
 
-#include "list.h"
+#include "list_utils.h"
 
 typedef enum {
 	CHARGER_STATE_IDLE = 0,
