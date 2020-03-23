@@ -6,13 +6,13 @@
  *   文件名称：task_probe_tool.c
  *   创 建 者：肖飞
  *   创建日期：2020年03月20日 星期五 13时37分12秒
- *   修改日期：2020年03月20日 星期五 13时37分32秒
+ *   修改日期：2020年03月23日 星期一 08时54分51秒
  *   描    述：
  *
  *================================================================*/
 #include "task_probe_tool.h"
 
-#include "stm32f2xx_hal.h"
+#include "app_platform.h"
 #include "cmsis_os.h"
 #include "lwip.h"
 #include "lwip/sockets.h"
