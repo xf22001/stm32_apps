@@ -6,7 +6,7 @@
  *   文件名称：channels.c
  *   创 建 者：肖飞
  *   创建日期：2020年01月02日 星期四 08时53分35秒
- *   修改日期：2020年03月19日 星期四 15时31分19秒
+ *   修改日期：2020年03月24日 星期二 10时48分48秒
  *   描    述：
  *
  *================================================================*/
@@ -164,7 +164,7 @@ void task_channel_event(void const *argument)
 			int ret;
 
 			channel_event->channel_id = id;
-			ret = event_pool_put_event(event_pool, channel_event);
+			ret = event_pool_put_event(event_pool, channel_event, 0);
 
 			if(ret != 0) {
 				os_free(channel_event);
