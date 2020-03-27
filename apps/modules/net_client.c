@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2020年03月19日 星期四 12时33分11秒
+ *   修改日期：2020年03月27日 星期五 08时48分14秒
  *   描    述：
  *
  *================================================================*/
@@ -37,28 +37,9 @@ static net_message_buffer_t recv_message_buffer = {0};
 static net_message_buffer_t send_message_buffer = {0};
 static trans_protocol_type_t trans_protocol_type = TRANS_PROTOCOL_WS;
 
-static void blink_led_lan(uint32_t periodic)
-{
-	static uint8_t led_lan_state = 0;
-	static uint32_t led_lan_stamp = 0;
+extern request_callback_t request_callback_ws;
 
-	uint32_t ticks = osKernelSysTick();
-
-	if((ticks - led_lan_stamp) < periodic) {
-		return;
-	}
-
-	led_lan_stamp = ticks;
-
-	if(led_lan_state == 0) {
-		HAL_GPIO_WritePin(led_lan_GPIO_Port, led_lan_Pin, GPIO_PIN_RESET);
-		led_lan_state = 1;
-	} else {
-		HAL_GPIO_WritePin(led_lan_GPIO_Port, led_lan_Pin, GPIO_PIN_SET);
-		led_lan_state = 0;
-	}
-}
-
+request_callback_t *request_callback = &request_callback_ws;
 
 trans_protocol_type_t get_net_client_protocol(void)
 {
@@ -143,16 +124,32 @@ client_state_t get_client_state(void)
 	return net_client_info.state;
 }
 
-extern request_callback_t request_callback_ws;
-
-request_callback_t *request_callback = &request_callback_ws;
-
 static void default_init(void)
 {
 	srand(osKernelSysTick());
 
 	if(request_callback->init != NULL) {
 		request_callback->init();
+	} else {
+		udp_log_printf("%s:%s\n", __FILE__, __func__);
+	}
+}
+
+static void blink_led_lan(uint32_t periodic)
+{
+	static uint8_t led_lan_state = 0;
+	static uint32_t led_lan_stamp = 0;
+
+	uint32_t ticks = osKernelSysTick();
+
+	if((ticks - led_lan_stamp) < periodic) {
+		return;
+	}
+
+	led_lan_stamp = ticks;
+
+	if(request_callback->set_lan_led_state != NULL) {
+		request_callback->set_lan_led_state(led_lan_state);
 	} else {
 		udp_log_printf("%s:%s\n", __FILE__, __func__);
 	}
@@ -434,14 +431,13 @@ static int recv_from_server(void)
 
 int send_to_server(uint8_t *buffer, size_t len)
 {
-	int ret = 0;
+	int ret = -1;
 	struct fd_set fds;
 	struct timeval tv = {0, 1000 * TASK_NET_CLIENT_PERIODIC};
 	int max_fd = 0;
 
 	if(net_client_info.sock_fd == -1) {
 		udp_log_printf("[%s] socket fd is not valid!\n", __func__);
-		ret = -1;
 		return ret;
 	}
 
@@ -456,10 +452,14 @@ int send_to_server(uint8_t *buffer, size_t len)
 	ret = select(max_fd + 1, NULL, &fds, NULL, &tv);
 
 	if(ret > 0) {
-		ret = net_client_info.protocol_if->net_send(&net_client_info, buffer, len);
+		if(FD_ISSET(net_client_info.sock_fd, &fds)) {
+			ret = net_client_info.protocol_if->net_send(&net_client_info, buffer, len);
 
-		if(ret <= 0) {
-			udp_log_printf("[%s] net_send error!\n", __func__);
+			if(ret <= 0) {
+				udp_log_printf("[%s] net_send error!\n", __func__);
+			}
+		} else {
+			ret = -1;
 		}
 
 	} else {

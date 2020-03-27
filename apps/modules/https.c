@@ -1072,6 +1072,8 @@ int http_write_header(HTTP_INFO *hi)
 		ret = -1;
 	}
 
+	os_free(request);
+
 	ret = 0;
 
 	return ret;
@@ -1132,6 +1134,8 @@ int http_write_ws_header(HTTP_INFO *hi)
 
 		ret = -1;
 	}
+
+	os_free(request);
 
 	ret = 0;
 

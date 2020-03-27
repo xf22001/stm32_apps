@@ -6,7 +6,7 @@
  *   文件名称：request_default.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月05日 星期四 10时09分49秒
- *   修改日期：2020年02月23日 星期日 18时04分43秒
+ *   修改日期：2020年03月27日 星期五 08时37分19秒
  *   描    述：
  *
  *================================================================*/
@@ -15,6 +15,7 @@
 #include "net_client.h"
 #include "request.h"
 #include "task_probe_tool.h"
+#include "main.h"
 
 static int chunk_sendto(uint32_t fn, void *data, size_t size, char *send_buffer, size_t send_buffer_size)
 {
@@ -45,6 +46,15 @@ static int chunk_sendto(uint32_t fn, void *data, size_t size, char *send_buffer,
 	}
 
 	return ret;
+}
+
+static void request_set_lan_led_state(uint32_t state)
+{
+	if(state == 0) {
+		HAL_GPIO_WritePin(led_lan_GPIO_Port, led_lan_Pin, GPIO_PIN_RESET);
+	} else {
+		HAL_GPIO_WritePin(led_lan_GPIO_Port, led_lan_Pin, GPIO_PIN_SET);
+	}
 }
 
 static void request_init(void)
@@ -93,6 +103,7 @@ static void request_periodic(uint8_t *send_buffer, uint16_t send_buffer_size)
 
 request_callback_t request_callback_default = {
 	.name = "zr",
+	.set_lan_led_state = request_set_lan_led_state,
 	.init = request_init,
 	.before_connect = request_before_create_server_connect,
 	.after_connect = request_after_create_server_connect,

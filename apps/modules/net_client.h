@@ -6,7 +6,7 @@
  *   文件名称：net_client.h
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时38分02秒
- *   修改日期：2020年02月17日 星期一 14时53分09秒
+ *   修改日期：2020年03月27日 星期五 08时38分50秒
  *   描    述：
  *
  *================================================================*/
@@ -56,6 +56,7 @@ typedef struct {
 	uint8_t buffer[NET_MESSAGE_BUFFER_SIZE];
 } net_message_buffer_t;
 
+typedef void (*set_lan_led_state_t)(uint32_t state);
 typedef void (*init_t)(void);
 typedef void (*before_connect_t)(void);
 typedef void (*after_connect_t)(void);
@@ -66,6 +67,7 @@ typedef void (*process_t)(uint8_t *request, uint16_t request_size, uint8_t *send
 typedef void (*periodic_t)(uint8_t *send_buffer, uint16_t send_buffer_size);
 typedef struct {
 	char *name;
+	set_lan_led_state_t set_lan_led_state;
 	init_t init;
 	before_connect_t before_connect;
 	after_connect_t after_connect;
