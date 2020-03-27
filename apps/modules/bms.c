@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年03月20日 星期五 16时20分15秒
+ *   修改日期：2020年03月27日 星期五 12时25分00秒
  *   描    述：
  *
  *================================================================*/
@@ -19,6 +19,8 @@
 #include <string.h>
 #define UDP_LOG
 #include "task_probe_tool.h"
+
+#include "app.h"
 
 #ifndef BMS_VERSION_SERIAL
 #define BMS_VERSION_SERIAL 0
@@ -512,6 +514,10 @@ void show_modbus_data_offset(void)
 	p_offset(bms_gun_connect);
 	p_offset(bms_poweron_enable);
 	p_offset(gun_on_off_state);
+
+	p_offset(version_major);
+	p_offset(version_minor);
+	p_offset(version_rev);
 }
 
 void bms_data_to_modbus_data(bms_info_t *bms_info, uint8_t do_init)
@@ -645,6 +651,10 @@ void bms_data_to_modbus_data(bms_info_t *bms_info, uint8_t do_init)
 	bms_info->modbus_data->bms_gun_connect = is_gun_connected(bms_info);
 	bms_info->modbus_data->bms_poweron_enable = is_bms_poweron_enable(bms_info);
 	bms_info->modbus_data->gun_on_off_state = get_gun_on_off(bms_info);
+
+	bms_info->modbus_data->version_major = VER_MAJOR;
+	bms_info->modbus_data->version_minor = VER_MINOR;
+	bms_info->modbus_data->version_rev = VER_REV;
 
 	if(bms_info->bms_data_mutex) {
 		os_status = osMutexRelease(bms_info->bms_data_mutex);

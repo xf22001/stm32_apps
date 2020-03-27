@@ -6,7 +6,7 @@
  *   文件名称：bms.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分57秒
- *   修改日期：2020年03月23日 星期一 08时53分00秒
+ *   修改日期：2020年03月27日 星期五 12时21分42秒
  *   描    述：
  *
  *================================================================*/
@@ -159,6 +159,10 @@ typedef struct {
 	uint16_t bms_gun_connect;
 	uint16_t bms_poweron_enable;
 	uint16_t gun_on_off_state;
+
+	uint16_t version_major;
+	uint16_t version_minor;
+	uint16_t version_rev;
 } modbus_data_t;
 
 typedef struct {
