@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2020年03月29日 星期日 14时28分31秒
+ *   修改日期：2020年03月29日 星期日 15时00分03秒
  *   描    述：
  *
  *================================================================*/
@@ -87,7 +87,8 @@ uart_info_t *alloc_uart_info(UART_HandleTypeDef *huart)
 	uart_info->huart = huart;
 	uart_info->tx_msg_q = osMessageCreate(osMessageQ(tx_msg_q), NULL);
 	uart_info->huart_mutex = osMutexCreate(osMutex(huart_mutex));
-	uart_info->rx_poll_interval = 5;
+	uart_info->rx_poll_interval = 1;
+	uart_info->max_pending_duration = 5;
 
 	list_add_tail(&uart_info->list, &uart_info_list);
 
@@ -166,6 +167,11 @@ static void set_rx_poll_duration(uart_info_t *uart_info, uint32_t rx_poll_interv
 	uart_info->rx_poll_interval = rx_poll_interval;
 }
 
+static void set_max_pending_duration(uart_info_t *uart_info, uint32_t max_pending_duration)
+{
+	uart_info->max_pending_duration = max_pending_duration;
+}
+
 int uart_tx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t timeout)
 {
 	int ret = 0;
@@ -209,6 +215,7 @@ static uint16_t wait_for_uart_receive(uart_info_t *uart_info, uint16_t size, uin
 	uint16_t pre_received = 0;
 	uint16_t received = get_uart_received(uart_info);
 	uint32_t enter_ticks = osKernelSysTick();
+	uint32_t pre_received_ticks = enter_ticks;
 	uint32_t duration = 0;
 	uint32_t wait_ticks;
 
@@ -218,10 +225,14 @@ static uint16_t wait_for_uart_receive(uart_info_t *uart_info, uint16_t size, uin
 				break;
 			}
 
-			if(pre_received == received) {//pending for a long time(poll interval)
-				//udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
-				break;
+			if(pre_received == received) {
+				//pending for a long time(poll interval)
+				if(osKernelSysTick() - pre_received_ticks >= uart_info->max_pending_duration) {
+					//udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+					break;
+				}
 			} else {
+				pre_received_ticks = osKernelSysTick();
 				pre_received = received;
 			}
 		}
