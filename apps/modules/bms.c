@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年03月27日 星期五 12时25分00秒
+ *   修改日期：2020年03月27日 星期五 13时43分37秒
  *   描    述：
  *
  *================================================================*/
@@ -645,6 +645,7 @@ void bms_data_to_modbus_data(bms_info_t *bms_info, uint8_t do_init)
 		bms_info->modbus_data->disable_bem = 0;
 		bms_info->modbus_data->stop_bms = 0;
 		bms_info->modbus_data->reset_bms_configure = 0;
+		bms_info->modbus_data->toggle_gun_on_off = 0;
 	}
 
 	bms_info->modbus_data->bms_state = bms_info->state;

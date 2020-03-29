@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2020年03月20日 星期五 12时41分18秒
+ *   修改日期：2020年03月29日 星期日 14时28分31秒
  *   描    述：
  *
  *================================================================*/
@@ -87,6 +87,7 @@ uart_info_t *alloc_uart_info(UART_HandleTypeDef *huart)
 	uart_info->huart = huart;
 	uart_info->tx_msg_q = osMessageCreate(osMessageQ(tx_msg_q), NULL);
 	uart_info->huart_mutex = osMutexCreate(osMutex(huart_mutex));
+	uart_info->rx_poll_interval = 5;
 
 	list_add_tail(&uart_info->list, &uart_info_list);
 
@@ -108,6 +109,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 		}
 	}
 }
+
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 }
@@ -149,48 +151,24 @@ uint16_t crc_check_for_dcph(uint8_t *data, uint16_t size)
 	return (crc);
 }
 
-static uint16_t huart_rx_until_cplt(UART_HandleTypeDef *huart, uint32_t timeout)
+static uint16_t get_uart_sent(uart_info_t *uart_info)
 {
-	uint16_t pre_received = 0;
-	uint16_t received = 0;
-	uint32_t enter_ticks = osKernelSysTick();
+	return (uart_info->huart->TxXferSize - __HAL_DMA_GET_COUNTER(uart_info->huart->hdmatx));
+}
 
-	while(1) {
-		uint32_t duration = osKernelSysTick() - enter_ticks;
+static uint16_t get_uart_received(uart_info_t *uart_info)
+{
+	return (uart_info->huart->RxXferSize - __HAL_DMA_GET_COUNTER(uart_info->huart->hdmarx));
+}
 
-		received = huart->RxXferSize - __HAL_DMA_GET_COUNTER(huart->hdmarx);
-
-		if(received > 0) {
-			if(pre_received == received) {
-				//udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
-				break;
-			}
-		}
-
-		pre_received = received;
-
-		if(timeout != osWaitForever) {
-			if(duration > timeout) {
-				//udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
-				break;
-			} else {
-				uint32_t left_ticks = timeout - duration;
-
-				if(left_ticks > 5) {
-					left_ticks = 5;
-				}
-
-				osDelay(left_ticks);
-			}
-		}
-	}
-
-	return received;
+static void set_rx_poll_duration(uart_info_t *uart_info, uint32_t rx_poll_interval)
+{
+	uart_info->rx_poll_interval = rx_poll_interval;
 }
 
 int uart_tx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t timeout)
 {
-	int ret = -1;
+	int ret = 0;
 	HAL_StatusTypeDef status;
 	//osStatus os_status;
 
@@ -216,15 +194,56 @@ int uart_tx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t 
 	if(uart_info->tx_msg_q != NULL) {
 		osEvent event = osMessageGet(uart_info->tx_msg_q, timeout);
 
-		if(event.status == osEventMessage) {
-			ret = 0;
-		} else {
+		ret = get_uart_sent(uart_info);
+
+		if(event.status != osEventMessage) {
+			HAL_UART_AbortTransmit(uart_info->huart);
 		}
 	}
 
-	ret =  uart_info->huart->TxXferSize - __HAL_DMA_GET_COUNTER(uart_info->huart->hdmatx);
-
 	return ret;
+}
+
+static uint16_t wait_for_uart_receive(uart_info_t *uart_info, uint16_t size, uint32_t timeout)
+{
+	uint16_t pre_received = 0;
+	uint16_t received = get_uart_received(uart_info);
+	uint32_t enter_ticks = osKernelSysTick();
+	uint32_t duration = 0;
+	uint32_t wait_ticks;
+
+	while(duration < timeout) {
+		if(received > 0) {
+			if(received == size) {//complete
+				break;
+			}
+
+			if(pre_received == received) {//pending for a long time(poll interval)
+				//udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+				break;
+			} else {
+				pre_received = received;
+			}
+		}
+
+		wait_ticks = timeout - duration;
+
+		if(wait_ticks > uart_info->rx_poll_interval) {
+			wait_ticks = uart_info->rx_poll_interval;
+		}
+
+		osDelay(wait_ticks);
+
+		duration = osKernelSysTick() - enter_ticks;
+
+		received = get_uart_received(uart_info);
+	}
+
+	if(received != size) {
+		HAL_UART_AbortReceive(uart_info->huart);
+	}
+
+	return received;
 }
 
 int uart_rx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t timeout)
@@ -240,13 +259,6 @@ int uart_rx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t 
 		//}
 	}
 
-	HAL_UART_ErrorCallback(uart_info->huart);
-
-	status = HAL_UART_DMAStop(uart_info->huart);
-
-	if(status != HAL_OK) {
-	}
-
 	status = HAL_UART_Receive_DMA(uart_info->huart, data, size);
 
 	if(status != HAL_OK) {
@@ -259,7 +271,7 @@ int uart_rx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t 
 		//}
 	}
 
-	ret = huart_rx_until_cplt(uart_info->huart, timeout);
+	ret = wait_for_uart_receive(uart_info, size, timeout);
 
 	return ret;
 }
@@ -290,5 +302,6 @@ int log_uart_data(void *data, size_t size)
 	if(uart_info != NULL) {
 		ret = uart_tx_data(uart_info, (uint8_t *)data, size, 1000);
 	}
+
 	return ret;
 }
