@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2020年03月29日 星期日 15时00分03秒
+ *   修改日期：2020年03月29日 星期日 15时23分39秒
  *   描    述：
  *
  *================================================================*/
@@ -56,6 +56,13 @@ void free_uart_info(uart_info_t *uart_info)
 		}
 	}
 
+	if(uart_info->rx_msg_q) {
+		os_status = osMessageDelete(uart_info->rx_msg_q);
+
+		if(osOK != os_status) {
+		}
+	}
+
 	if(uart_info->huart_mutex) {
 		os_status = osMutexDelete(uart_info->huart_mutex);
 
@@ -70,6 +77,7 @@ uart_info_t *alloc_uart_info(UART_HandleTypeDef *huart)
 {
 	uart_info_t *uart_info = NULL;
 	osMessageQDef(tx_msg_q, 1, uint16_t);
+	osMessageQDef(rx_msg_q, 1, uint16_t);
 	osMutexDef(huart_mutex);
 
 	uart_info = get_uart_info(huart);
@@ -86,6 +94,7 @@ uart_info_t *alloc_uart_info(UART_HandleTypeDef *huart)
 
 	uart_info->huart = huart;
 	uart_info->tx_msg_q = osMessageCreate(osMessageQ(tx_msg_q), NULL);
+	uart_info->rx_msg_q = osMessageCreate(osMessageQ(rx_msg_q), NULL);
 	uart_info->huart_mutex = osMutexCreate(osMutex(huart_mutex));
 	uart_info->rx_poll_interval = 1;
 	uart_info->max_pending_duration = 5;
@@ -162,12 +171,12 @@ static uint16_t get_uart_received(uart_info_t *uart_info)
 	return (uart_info->huart->RxXferSize - __HAL_DMA_GET_COUNTER(uart_info->huart->hdmarx));
 }
 
-static void set_rx_poll_duration(uart_info_t *uart_info, uint32_t rx_poll_interval)
+void set_rx_poll_duration(uart_info_t *uart_info, uint32_t rx_poll_interval)
 {
 	uart_info->rx_poll_interval = rx_poll_interval;
 }
 
-static void set_max_pending_duration(uart_info_t *uart_info, uint32_t max_pending_duration)
+void set_max_pending_duration(uart_info_t *uart_info, uint32_t max_pending_duration)
 {
 	uart_info->max_pending_duration = max_pending_duration;
 }
@@ -214,12 +223,30 @@ static uint16_t wait_for_uart_receive(uart_info_t *uart_info, uint16_t size, uin
 {
 	uint16_t pre_received = 0;
 	uint16_t received = get_uart_received(uart_info);
-	uint32_t enter_ticks = osKernelSysTick();
-	uint32_t pre_received_ticks = enter_ticks;
+	uint32_t cur_ticks = osKernelSysTick();
+	uint32_t enter_ticks = cur_ticks;
+	uint32_t pre_received_ticks = cur_ticks;
 	uint32_t duration = 0;
 	uint32_t wait_ticks;
 
 	while(duration < timeout) {
+		wait_ticks = timeout - duration;
+
+		if(wait_ticks > uart_info->rx_poll_interval) {
+			wait_ticks = uart_info->rx_poll_interval;
+		}
+
+		if(uart_info->rx_msg_q != NULL) {
+			osEvent event = osMessageGet(uart_info->rx_msg_q, wait_ticks);
+
+			if(event.status != osEventMessage) {
+			}
+		}
+
+		cur_ticks = osKernelSysTick();
+
+		received = get_uart_received(uart_info);
+
 		if(received > 0) {
 			if(received == size) {//complete
 				break;
@@ -227,31 +254,18 @@ static uint16_t wait_for_uart_receive(uart_info_t *uart_info, uint16_t size, uin
 
 			if(pre_received == received) {
 				//pending for a long time(poll interval)
-				if(osKernelSysTick() - pre_received_ticks >= uart_info->max_pending_duration) {
+				if(cur_ticks - pre_received_ticks >= uart_info->max_pending_duration) {
 					//udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+					HAL_UART_AbortReceive(uart_info->huart);
 					break;
 				}
 			} else {
-				pre_received_ticks = osKernelSysTick();
+				pre_received_ticks = cur_ticks;
 				pre_received = received;
 			}
 		}
 
-		wait_ticks = timeout - duration;
-
-		if(wait_ticks > uart_info->rx_poll_interval) {
-			wait_ticks = uart_info->rx_poll_interval;
-		}
-
-		osDelay(wait_ticks);
-
-		duration = osKernelSysTick() - enter_ticks;
-
-		received = get_uart_received(uart_info);
-	}
-
-	if(received != size) {
-		HAL_UART_AbortReceive(uart_info->huart);
+		duration = cur_ticks - enter_ticks;
 	}
 
 	return received;
