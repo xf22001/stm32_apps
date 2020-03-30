@@ -6,7 +6,7 @@
  *   文件名称：bms_spec.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月01日 星期五 09时51分27秒
- *   修改日期：2020年01月15日 星期三 09时53分48秒
+ *   修改日期：2020年03月30日 星期一 11时35分51秒
  *   描    述：
  *
  *================================================================*/
@@ -515,6 +515,19 @@ typedef struct {
 } bms_data_settings_t;
 
 #pragma pack(pop)
+
+typedef struct {
+	uint8_t *bms_data;
+	uint16_t bms_data_multi_fn;
+	uint16_t bms_data_multi_bytes;
+	uint16_t bms_data_multi_packets;
+	uint16_t bms_data_multi_next_index;//1-total
+} multi_packets_des_t;
+
+typedef struct {
+	multi_packets_des_t tx_des;
+	multi_packets_des_t rx_des;
+} multi_packets_info_t;
 
 static inline uint32_t get_pdu_id(uint8_t priority, uint8_t fn, uint8_t dst, uint8_t src)
 {

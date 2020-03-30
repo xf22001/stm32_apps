@@ -6,7 +6,7 @@
  *   文件名称：bms.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分57秒
- *   修改日期：2020年03月27日 星期五 12时21分42秒
+ *   修改日期：2020年03月30日 星期一 11时38分15秒
  *   描    述：
  *
  *================================================================*/
@@ -188,11 +188,7 @@ typedef struct {
 
 	uint16_t gun_on_off_state;
 
-	uint8_t bms_data_multi_sz[1024];
-	uint16_t bms_data_multi_fn;
-	uint16_t bms_data_multi_bytes;
-	uint16_t bms_data_multi_packets;
-	uint16_t bms_data_multi_next_index;//1-total
+	multi_packets_info_t multi_packets_info;
 
 	bms_data_settings_t *settings;
 

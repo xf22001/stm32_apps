@@ -6,7 +6,7 @@
  *   文件名称：charger_handler.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时18分42秒
- *   修改日期：2020年03月13日 星期五 11时23分24秒
+ *   修改日期：2020年03月30日 星期一 13时22分59秒
  *   描    述：
  *
  *================================================================*/
@@ -21,6 +21,7 @@ static int send_bms_multi_request_response(charger_info_t *charger_info)
 	can_tx_msg_t tx_msg;
 	can_info_t *can_info = charger_info->can_info;
 	bms_multi_request_response_t *data;
+	multi_packets_des_t *multi_packets_des = &charger_info->multi_packets_info.rx_des;
 
 	tx_msg.ExtId = get_pdu_id(FN_MULTI_REQUEST_PRIORITY, FN_MULTI_REQUEST, BMS_ADDR, CHARGER_ADDR);
 	tx_msg.IDE = CAN_ID_EXT;
@@ -30,12 +31,12 @@ static int send_bms_multi_request_response(charger_info_t *charger_info)
 	data = (bms_multi_request_response_t *)tx_msg.Data;
 
 	data->head.type = FN_MULTI_REQUEST_RESPONSE_TYPE;
-	data->packets = charger_info->bms_data_multi_packets;
-	data->packet_index = charger_info->bms_data_multi_next_index;
+	data->packets = multi_packets_des->bms_data_multi_packets;
+	data->packet_index = multi_packets_des->bms_data_multi_next_index;
 	data->reserved_0 = 0xff;
 	data->reserved_1 = 0xff;
 	data->reserved_2 = 0x00;
-	data->fn = charger_info->bms_data_multi_fn;
+	data->fn = multi_packets_des->bms_data_multi_fn;
 	data->reserved_3 = 0x00;
 
 	ret = can_tx_data(can_info, &tx_msg, 1000);
@@ -49,6 +50,7 @@ static int send_bms_multi_data_response(charger_info_t *charger_info)
 	can_tx_msg_t tx_msg;
 	can_info_t *can_info = charger_info->can_info;
 	bms_multi_data_response_t *data;
+	multi_packets_des_t *multi_packets_des = &charger_info->multi_packets_info.rx_des;
 
 	tx_msg.ExtId = get_pdu_id(FN_MULTI_REQUEST_PRIORITY, FN_MULTI_REQUEST, BMS_ADDR, CHARGER_ADDR);
 	tx_msg.IDE = CAN_ID_EXT;
@@ -58,16 +60,41 @@ static int send_bms_multi_data_response(charger_info_t *charger_info)
 	data = (bms_multi_data_response_t *)tx_msg.Data;
 
 	data->head.type = FN_MULTI_DATA_RESPONSE_TYPE;
-	data->bytes = charger_info->bms_data_multi_bytes;
-	data->packets = charger_info->bms_data_multi_packets;
+	data->bytes = multi_packets_des->bms_data_multi_bytes;
+	data->packets = multi_packets_des->bms_data_multi_packets;
 	data->reserved_0 = 0xff;
 	data->reserved_1 = 0x00;
-	data->fn = charger_info->bms_data_multi_fn;
+	data->fn = multi_packets_des->bms_data_multi_fn;
 	data->reserved_2 = 0x00;
 
 	ret = can_tx_data(can_info, &tx_msg, 1000);
 
 	return ret;
+}
+
+static uint8_t *get_multi_packet_data_by_fn(charger_info_t *charger_info, uint8_t fn)
+{
+	uint8_t *data = NULL;
+
+	switch(fn) {
+		case FN_BRM: {
+			data = (uint8_t *)&charger_info->settings->brm_data;
+		}
+		break;
+		case FN_BCP: {
+			data = (uint8_t *)&charger_info->settings->bcp_data;
+		}
+		break;
+		case FN_BCS: {
+			data = (uint8_t *)&charger_info->settings->bcs_data;
+		}
+		break;
+
+		default:
+			break;
+	}
+
+	return data;
 }
 
 static int handle_common_response(charger_info_t *charger_info)
@@ -76,6 +103,10 @@ static int handle_common_response(charger_info_t *charger_info)
 	can_rx_msg_t *rx_msg = can_get_msg(charger_info->can_info);
 	u_pdu_head_t head;
 
+	if(rx_msg == NULL) {
+		return ret;
+	}
+
 	head.v = rx_msg->ExtId;
 
 	switch(head.pdu.pf) {
@@ -83,33 +114,40 @@ static int handle_common_response(charger_info_t *charger_info)
 			bms_multi_request_head_t *request_head = (bms_multi_request_head_t *)rx_msg->Data;
 
 			switch(request_head->type) {
-				case FN_MULTI_REQUEST_TYPE: {
+				case FN_MULTI_REQUEST_TYPE: {//处理多包请求
 					bms_multi_request_t *data = (bms_multi_request_t *)rx_msg->Data;
+					multi_packets_des_t *multi_packets_des = &charger_info->multi_packets_info.rx_des;
 
-					charger_info->bms_data_multi_bytes = data->bytes;
-					charger_info->bms_data_multi_packets = data->packets;
-					charger_info->bms_data_multi_next_index = 1;
-					charger_info->bms_data_multi_fn = data->fn;
-					send_bms_multi_request_response(charger_info);
-					ret = 0;
-				}
-				break;
+					multi_packets_des->bms_data_multi_bytes = data->bytes;
+					multi_packets_des->bms_data_multi_packets = data->packets;
+					multi_packets_des->bms_data_multi_next_index = 1;
+					multi_packets_des->bms_data_multi_fn = data->fn;
+					multi_packets_des->bms_data = get_multi_packet_data_by_fn(charger_info, data->fn);
 
-				case FN_MULTI_REQUEST_RESPONSE_TYPE: {
-					bms_multi_request_response_t *data = (bms_multi_request_response_t *)rx_msg->Data;
-
-					if((data->packets == charger_info->bms_data_multi_packets)
-					   && (data->fn == charger_info->bms_data_multi_fn)) {
-						charger_info->bms_data_multi_next_index = data->packet_index;
+					if(multi_packets_des->bms_data) {
+						send_bms_multi_request_response(charger_info);
 						ret = 0;
 					}
 				}
 				break;
 
-				case FN_MULTI_DATA_RESPONSE_TYPE: {
+				case FN_MULTI_REQUEST_RESPONSE_TYPE: {//处理多包请求响应
+					multi_packets_des_t *multi_packets_des = &charger_info->multi_packets_info.tx_des;
+					bms_multi_request_response_t *data = (bms_multi_request_response_t *)rx_msg->Data;
+
+					if((data->packets == multi_packets_des->bms_data_multi_packets)
+					   && (data->fn == multi_packets_des->bms_data_multi_fn)) {
+						multi_packets_des->bms_data_multi_next_index = data->packet_index;
+						ret = 0;
+					}
+				}
+				break;
+
+				case FN_MULTI_DATA_RESPONSE_TYPE: {//处理多包数据响应
+					multi_packets_des_t *multi_packets_des = &charger_info->multi_packets_info.tx_des;
 					bms_multi_data_response_t *data = (bms_multi_data_response_t *)rx_msg->Data;
 
-					if((data->bytes == charger_info->bms_data_multi_bytes) && (data->packets == charger_info->bms_data_multi_packets) && (data->fn == charger_info->bms_data_multi_fn)) {
+					if((data->bytes == multi_packets_des->bms_data_multi_bytes) && (data->packets == multi_packets_des->bms_data_multi_packets) && (data->fn == multi_packets_des->bms_data_multi_fn)) {
 						ret = 0;
 					}
 				}
@@ -121,20 +159,31 @@ static int handle_common_response(charger_info_t *charger_info)
 		}
 		break;
 
-		case FN_MULTI_DATA: {
+		case FN_MULTI_DATA: {//处理多包数据
 			bms_multi_data_t *data = (bms_multi_data_t *)rx_msg->Data;
+			uint16_t received = (7 * (data->index - 1));
+			uint16_t receive = 7;
+			multi_packets_des_t *multi_packets_des = &charger_info->multi_packets_info.rx_des;
 
-			if(data->index == charger_info->bms_data_multi_next_index) {
-				memcpy(charger_info->bms_data_multi_sz + (7 * (data->index - 1)), data->data, 7);
-
-				if(data->index < charger_info->bms_data_multi_packets) {
-					charger_info->bms_data_multi_next_index++;
-				} else if(data->index == charger_info->bms_data_multi_packets) {
-					send_bms_multi_data_response(charger_info);
+			if(received < multi_packets_des->bms_data_multi_bytes) {
+				if(receive > multi_packets_des->bms_data_multi_bytes - received) {
+					receive = multi_packets_des->bms_data_multi_bytes - received;
 				}
-			}
 
-			ret = 0;
+				if(data->index == multi_packets_des->bms_data_multi_next_index) {
+					if(multi_packets_des->bms_data != NULL) {
+						memcpy(multi_packets_des->bms_data + received, data->data, receive);
+					}
+
+					if(data->index < multi_packets_des->bms_data_multi_packets) {
+						multi_packets_des->bms_data_multi_next_index++;
+					} else if(data->index == multi_packets_des->bms_data_multi_packets) {
+						send_bms_multi_data_response(charger_info);
+					}
+				}
+
+				ret = 0;
+			}
 		}
 		break;
 
@@ -161,13 +210,18 @@ static uint8_t is_bms_data_multi_received(charger_info_t *charger_info, bms_fn_t
 	can_rx_msg_t *rx_msg = can_get_msg(charger_info->can_info);
 	u_pdu_head_t head;
 	uint8_t ret = 0;
+	multi_packets_des_t *multi_packets_des = &charger_info->multi_packets_info.rx_des;
+
+	if(rx_msg == NULL) {
+		return ret;
+	}
 
 	head.v = rx_msg->ExtId;
 
 	if(head.pdu.pf == FN_MULTI_DATA) {
 		bms_multi_data_t *data = (bms_multi_data_t *)rx_msg->Data;
 
-		if((data->index == charger_info->bms_data_multi_packets) && (data->index == charger_info->bms_data_multi_next_index) && (charger_info->bms_data_multi_fn == fn)) {
+		if((data->index == multi_packets_des->bms_data_multi_packets) && (data->index == multi_packets_des->bms_data_multi_next_index) && (multi_packets_des->bms_data_multi_fn == fn)) {
 			ret = 1;
 		}
 	}
@@ -267,6 +321,10 @@ static int handle_state_chm_response(charger_info_t *charger_info)
 	can_rx_msg_t *rx_msg = can_get_msg(charger_info->can_info);
 	u_pdu_head_t head;
 
+	if(rx_msg == NULL) {
+		return ret;
+	}
+
 	ret = handle_common_response(charger_info);
 
 	if(ret == 0) {
@@ -304,7 +362,6 @@ static int prepare_state_crm(charger_info_t *charger_info)
 
 	charger_info->settings->crm_data.crm_result = 0x00;
 	charger_info->settings->crm_data.charger_sn = 0x01;
-	charger_info->bms_data_multi_next_index = 0;
 
 	charger_info->brm_received = 0;
 	return ret;
@@ -360,24 +417,20 @@ static int handle_state_crm_response(charger_info_t *charger_info)
 	can_rx_msg_t *rx_msg = can_get_msg(charger_info->can_info);
 	u_pdu_head_t head;
 
+	if(rx_msg == NULL) {
+		return ret;
+	}
+
 	ret = handle_common_response(charger_info);
 
 	if(ret == 0) {
 		if(is_bms_data_multi_received(charger_info, FN_BRM)) {
-			brm_data_multi_t *data = (brm_data_multi_t *)charger_info->bms_data_multi_sz;
-
-			charger_info->settings->brm_data = *data;
-
 			if(charger_info->brm_received == 0) {
 				charger_info->settings->crm_data.crm_result = 0xaa;
 				charger_info->brm_received = 1;
 				charger_info->stamp = osKernelSysTick();
 			}
 		} else if(is_bms_data_multi_received(charger_info, FN_BCP)) {//bcp timeout
-			bcp_data_multi_t *data = (bcp_data_multi_t *)charger_info->bms_data_multi_sz;
-
-			charger_info->settings->bcp_data = *data;
-
 			set_charger_state(charger_info, CHARGER_STATE_CTS_CML);
 		}
 	}
@@ -504,6 +557,10 @@ static int handle_state_cts_cml_response(charger_info_t *charger_info)
 	can_rx_msg_t *rx_msg = can_get_msg(charger_info->can_info);
 	u_pdu_head_t head;
 
+	if(rx_msg == NULL) {
+		return ret;
+	}
+
 	ret = handle_common_response(charger_info);
 
 	if(ret == 0) {
@@ -595,14 +652,14 @@ static int handle_state_cro_response(charger_info_t *charger_info)
 	can_rx_msg_t *rx_msg = can_get_msg(charger_info->can_info);
 	u_pdu_head_t head;
 
+	if(rx_msg == NULL) {
+		return ret;
+	}
+
 	ret = handle_common_response(charger_info);
 
 	if(ret == 0) {
 		if(is_bms_data_multi_received(charger_info, FN_BCS)) {
-			bcs_data_t *data = (bcs_data_t *)charger_info->bms_data_multi_sz;
-
-			charger_info->settings->bcs_data = *data;
-
 			charger_info->stamp_1 = osKernelSysTick();
 
 			charger_info->bcs_received = 1;
@@ -700,14 +757,14 @@ static int handle_state_ccs_response(charger_info_t *charger_info)
 	can_rx_msg_t *rx_msg = can_get_msg(charger_info->can_info);
 	u_pdu_head_t head;
 
+	if(rx_msg == NULL) {
+		return ret;
+	}
+
 	ret = handle_common_response(charger_info);
 
 	if(ret == 0) {
 		if(is_bms_data_multi_received(charger_info, FN_BCS)) {
-			bcs_data_t *data = (bcs_data_t *)charger_info->bms_data_multi_sz;
-
-			charger_info->settings->bcs_data = *data;
-
 			charger_info->stamp_1 = osKernelSysTick();
 		}
 	}
@@ -797,6 +854,10 @@ static int handle_state_cst_response(charger_info_t *charger_info)
 	int ret = -1;
 	can_rx_msg_t *rx_msg = can_get_msg(charger_info->can_info);
 	u_pdu_head_t head;
+
+	if(rx_msg == NULL) {
+		return ret;
+	}
 
 	//ret = handle_common_response(charger_info);
 
@@ -948,6 +1009,10 @@ static int handle_state_csd_cem_response(charger_info_t *charger_info)
 	int ret = -1;
 	can_rx_msg_t *rx_msg = can_get_msg(charger_info->can_info);
 	u_pdu_head_t head;
+
+	if(rx_msg == NULL) {
+		return ret;
+	}
 
 	head.v = rx_msg->ExtId;
 

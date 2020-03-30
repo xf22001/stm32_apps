@@ -6,7 +6,7 @@
  *   文件名称：charger.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分46秒
- *   修改日期：2020年03月23日 星期一 08时47分56秒
+ *   修改日期：2020年03月30日 星期一 11时38分35秒
  *   描    述：
  *
  *================================================================*/
@@ -48,11 +48,7 @@ typedef struct {
 	charger_state_t state;
 	osMutexId handle_mutex;
 
-	uint8_t bms_data_multi_sz[1024];
-	uint16_t bms_data_multi_fn;
-	uint16_t bms_data_multi_bytes;
-	uint16_t bms_data_multi_packets;
-	uint16_t bms_data_multi_next_index;//1-total
+	multi_packets_info_t multi_packets_info;
 
 	bms_data_settings_t *settings;
 
