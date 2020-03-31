@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时07分55秒
- *   修改日期：2020年03月18日 星期三 11时14分53秒
+ *   修改日期：2020年03月31日 星期二 09时55分32秒
  *   描    述：
  *
  *================================================================*/
@@ -195,14 +195,24 @@ void can_rxfifo_pending_callback(CAN_HandleTypeDef *hcan)
 {
 	can_info_t *can_info = get_can_info(hcan);
 	HAL_StatusTypeDef status;
+	CAN_RxHeaderTypeDef rx_header;
+	can_rx_msg_t *rx_msg;
 
 	if(can_info == NULL) {
 		return;
 	}
 
-	status = HAL_CAN_DeactivateNotification(can_info->hcan, can_info->receive_fifo);
+	rx_msg = &can_info->rx_msg;
 
-	if(status == HAL_OK) {
+	status = HAL_CAN_GetRxMessage(can_info->hcan, can_info->filter_fifo, &rx_header, rx_msg->Data);
+
+	if(status != HAL_OK) {
+	} else {
+		rx_msg->StdId = rx_header.StdId;
+		rx_msg->ExtId = rx_header.ExtId;
+		rx_msg->IDE = rx_header.IDE;
+		rx_msg->RTR = rx_header.RTR;
+		rx_msg->DLC = rx_header.DLC;
 	}
 
 	if(can_info->rx_msg_q != NULL) {
@@ -211,7 +221,6 @@ void can_rxfifo_pending_callback(CAN_HandleTypeDef *hcan)
 		if(status != osOK) {
 		}
 	}
-
 }
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
@@ -289,12 +298,6 @@ int can_rx_data(can_info_t *can_info, uint32_t timeout)
 		//}
 	}
 
-	status = HAL_CAN_ActivateNotification(can_info->hcan, can_info->receive_fifo);
-
-	if(status != HAL_OK) {
-		/* Notification Error */
-	}
-
 	if(can_info->hcan_mutex) {
 		//os_status = osMutexRelease(can_info->hcan_mutex);
 
@@ -306,20 +309,7 @@ int can_rx_data(can_info_t *can_info, uint32_t timeout)
 		osEvent event = osMessageGet(can_info->rx_msg_q, timeout);
 
 		if(event.status == osEventMessage) {
-			CAN_RxHeaderTypeDef rx_header;
-			can_rx_msg_t *rx_msg = &can_info->rx_msg;
-
-			status = HAL_CAN_GetRxMessage(can_info->hcan, can_info->filter_fifo, &rx_header, rx_msg->Data);
-
-			if(status != HAL_OK) {
-			} else {
-				rx_msg->StdId = rx_header.StdId;
-				rx_msg->ExtId = rx_header.ExtId;
-				rx_msg->IDE = rx_header.IDE;
-				rx_msg->RTR = rx_header.RTR;
-				rx_msg->DLC = rx_header.DLC;
-				ret = 0;
-			}
+			ret = 0;
 		} else {
 			//can_transmit_dummy(can_info->hcan);
 
