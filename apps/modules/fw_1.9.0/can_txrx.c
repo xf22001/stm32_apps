@@ -13,7 +13,6 @@
 #include "can_txrx.h"
 
 #include "os_utils.h"
-#include "usart_txrx.h"
 
 static LIST_HEAD(can_info_list);
 
@@ -195,24 +194,14 @@ void can_rxfifo_pending_callback(CAN_HandleTypeDef *hcan)
 {
 	can_info_t *can_info = get_can_info(hcan);
 	HAL_StatusTypeDef status;
-	CAN_RxHeaderTypeDef rx_header;
-	can_rx_msg_t *rx_msg;
 
 	if(can_info == NULL) {
 		return;
 	}
 
-	rx_msg = &can_info->rx_msg;
+	status = HAL_CAN_DeactivateNotification(can_info->hcan, can_info->receive_fifo);
 
-	status = HAL_CAN_GetRxMessage(can_info->hcan, can_info->filter_fifo, &rx_header, rx_msg->Data);
-
-	if(status != HAL_OK) {
-	} else {
-		rx_msg->StdId = rx_header.StdId;
-		rx_msg->ExtId = rx_header.ExtId;
-		rx_msg->IDE = rx_header.IDE;
-		rx_msg->RTR = rx_header.RTR;
-		rx_msg->DLC = rx_header.DLC;
+	if(status == HAL_OK) {
 	}
 
 	if(can_info->rx_msg_q != NULL) {
@@ -298,6 +287,12 @@ int can_rx_data(can_info_t *can_info, uint32_t timeout)
 		//}
 	}
 
+	status = HAL_CAN_ActivateNotification(can_info->hcan, can_info->receive_fifo);
+
+	if(status != HAL_OK) {
+		/* Notification Error */
+	}
+
 	if(can_info->hcan_mutex) {
 		//os_status = osMutexRelease(can_info->hcan_mutex);
 
@@ -309,7 +304,20 @@ int can_rx_data(can_info_t *can_info, uint32_t timeout)
 		osEvent event = osMessageGet(can_info->rx_msg_q, timeout);
 
 		if(event.status == osEventMessage) {
-			ret = 0;
+			CAN_RxHeaderTypeDef rx_header;
+			can_rx_msg_t *rx_msg = &can_info->rx_msg;
+
+			status = HAL_CAN_GetRxMessage(can_info->hcan, can_info->filter_fifo, &rx_header, rx_msg->Data);
+
+			if(status != HAL_OK) {
+			} else {
+				rx_msg->StdId = rx_header.StdId;
+				rx_msg->ExtId = rx_header.ExtId;
+				rx_msg->IDE = rx_header.IDE;
+				rx_msg->RTR = rx_header.RTR;
+				rx_msg->DLC = rx_header.DLC;
+				ret = 0;
+			}
 		} else {
 			//can_transmit_dummy(can_info->hcan);
 
