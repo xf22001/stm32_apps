@@ -6,7 +6,7 @@
  *   文件名称：bms_handler.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时18分53秒
- *   修改日期：2020年03月30日 星期一 14时16分59秒
+ *   修改日期：2020年04月01日 星期三 11时16分32秒
  *   描    述：
  *
  *================================================================*/
@@ -260,10 +260,18 @@ static int send_multi_data(bms_info_t *bms_info)
 	return ret;
 }
 
-int send_multi_packets(bms_info_t *bms_info, uint8_t *data, uint16_t fn, uint16_t bytes, uint16_t packets)
+static int send_multi_packets(bms_info_t *bms_info, uint8_t *data, uint16_t fn, uint16_t bytes, uint16_t packets, uint32_t period)
 {
 	int ret = -1;
 	multi_packets_des_t *multi_packets_des = &bms_info->multi_packets_info.tx_des;
+	uint32_t ticks = osKernelSysTick();
+
+	if(multi_packets_des->bms_data_multi_fn != FN_INVALID) {
+		if(ticks - multi_packets_des->start_stamp >= period) {
+			multi_packets_des->bms_data_multi_fn = FN_INVALID;
+			multi_packets_des->bms_data = NULL;
+		}
+	}
 
 	if(multi_packets_des->bms_data_multi_fn == FN_INVALID) {
 		multi_packets_des->bms_data_multi_fn = fn;
@@ -271,6 +279,7 @@ int send_multi_packets(bms_info_t *bms_info, uint8_t *data, uint16_t fn, uint16_
 		multi_packets_des->bms_data_multi_packets = packets;
 		multi_packets_des->bms_data_multi_next_index = 0;
 		multi_packets_des->bms_data = data;
+		multi_packets_des->start_stamp = ticks;
 		send_multi_request(bms_info);
 	} else if(multi_packets_des->bms_data_multi_fn == fn) {
 		if((multi_packets_des->bms_data_multi_next_index >= 1) && (multi_packets_des->bms_data_multi_next_index <= multi_packets_des->bms_data_multi_packets)) {
@@ -484,7 +493,8 @@ static int handle_state_brm_request(bms_info_t *bms_info)
 				                      (uint8_t *)&bms_info->settings->brm_data,
 				                      FN_BRM,
 				                      sizeof(brm_data_multi_t),
-				                      (sizeof(brm_data_multi_t) + (7 - 1)) / 7) == 0) {
+				                      (sizeof(brm_data_multi_t) + (7 - 1)) / 7,
+				                      FN_BRM_SEND_PERIOD) == 0) {
 					bms_info->send_stamp = ticks;
 				}
 			}
@@ -559,7 +569,8 @@ static int handle_state_bcp_request(bms_info_t *bms_info)
 				                      (uint8_t *)&bms_info->settings->bcp_data,
 				                      FN_BCP,
 				                      sizeof(bcp_data_multi_t),
-				                      (sizeof(bcp_data_multi_t) + (7 - 1)) / 7) == 0) {
+				                      (sizeof(bcp_data_multi_t) + (7 - 1)) / 7,
+				                      FN_BCP_SEND_PERIOD) == 0) {
 					bms_info->send_stamp = ticks;
 				}
 			}
@@ -825,7 +836,8 @@ static int handle_state_bcl_bcs_bsm_bmv_bmt_bsp_request(bms_info_t *bms_info)
 				                      (uint8_t *)&bms_info->settings->bcs_data,
 				                      FN_BCS,
 				                      sizeof(bcs_data_t),
-				                      (sizeof(bcs_data_t) + (7 - 1)) / 7) == 0) {
+				                      (sizeof(bcs_data_t) + (7 - 1)) / 7,
+				                      FN_BCS_SEND_PERIOD) == 0) {
 					bms_info->send_stamp_1 = ticks;
 				}
 			}

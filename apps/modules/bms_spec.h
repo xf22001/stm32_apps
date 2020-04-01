@@ -6,7 +6,7 @@
  *   文件名称：bms_spec.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月01日 星期五 09时51分27秒
- *   修改日期：2020年03月30日 星期一 11时35分51秒
+ *   修改日期：2020年04月01日 星期三 11时04分51秒
  *   描    述：
  *
  *================================================================*/
@@ -522,6 +522,7 @@ typedef struct {
 	uint16_t bms_data_multi_bytes;
 	uint16_t bms_data_multi_packets;
 	uint16_t bms_data_multi_next_index;//1-total
+	uint32_t start_stamp;
 } multi_packets_des_t;
 
 typedef struct {
