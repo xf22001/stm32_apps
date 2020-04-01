@@ -6,7 +6,7 @@
  *   文件名称：test_can.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 16时45分27秒
- *   修改日期：2020年03月13日 星期五 11时25分49秒
+ *   修改日期：2020年04月01日 星期三 12时56分42秒
  *   描    述：
  *
  *================================================================*/
@@ -38,7 +38,7 @@ static int can_transmit_test(can_info_t *info)
 	tx_msg.Data[1] = 1;
 	tx_msg.Data[2] = 0;
 
-	ret = can_tx_data(info, &tx_msg, 1000);
+	ret = can_tx_data(info, &tx_msg, 10);
 
 	return ret;
 }
@@ -74,7 +74,7 @@ static void task_can_receive(void const *argument)
 	}
 
 	for(;;) {
-		int ret = can_rx_data(can_info, 1000);
+		int ret = can_rx_data(can_info, 10);
 
 		if(ret == 0) {
 			can_transmit_test(can_info);

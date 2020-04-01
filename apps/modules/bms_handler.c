@@ -6,7 +6,7 @@
  *   文件名称：bms_handler.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时18分53秒
- *   修改日期：2020年04月01日 星期三 11时16分32秒
+ *   修改日期：2020年04月01日 星期三 12时52分43秒
  *   描    述：
  *
  *================================================================*/
@@ -41,7 +41,7 @@ static int send_bms_multi_request_response(bms_info_t *bms_info)
 	data->fn = multi_packets_des->bms_data_multi_fn;
 	data->reserved_3 = 0x00;
 
-	ret = can_tx_data(can_info, &tx_msg, 1000);
+	ret = can_tx_data(can_info, &tx_msg, 10);
 
 	return ret;
 }
@@ -69,7 +69,7 @@ static int send_bms_multi_data_response(bms_info_t *bms_info)
 	data->fn = multi_packets_des->bms_data_multi_fn;
 	data->reserved_2 = 0x00;
 
-	ret = can_tx_data(can_info, &tx_msg, 1000);
+	ret = can_tx_data(can_info, &tx_msg, 10);
 
 	return ret;
 }
@@ -214,7 +214,7 @@ static int send_multi_request(bms_info_t *bms_info)
 	data->fn = multi_packets_des->bms_data_multi_fn;
 	data->reserved_2 = 0x00;
 
-	ret = can_tx_data(can_info, &tx_msg, 1000);
+	ret = can_tx_data(can_info, &tx_msg, 10);
 
 	return ret;
 }
@@ -248,7 +248,7 @@ static int send_multi_data(bms_info_t *bms_info)
 			memcpy(data->data, multi_packets_des->bms_data + sent_bytes, send_bytes);
 		}
 
-		ret = can_tx_data(can_info, &tx_msg, 5);
+		ret = can_tx_data(can_info, &tx_msg, 10);
 
 		if(ret != 0) {
 			break;
@@ -373,7 +373,7 @@ static int send_bhm(bms_info_t *bms_info)
 	data = (bhm_data_t *)tx_msg.Data;
 	*data = bms_info->settings->bhm_data;
 
-	ret = can_tx_data(can_info, &tx_msg, 1000);
+	ret = can_tx_data(can_info, &tx_msg, 10);
 
 	return ret;
 }
@@ -471,7 +471,7 @@ static int prepare_state_brm(bms_info_t *bms_info)
 //	brm_data_t *data = (brm_data_t *)tx_msg.Data;
 //	*data = bms_info->settings->brm_data.brm_data;
 //
-//	ret = can_tx_data(can_info, &tx_msg, 1000);
+//	ret = can_tx_data(can_info, &tx_msg, 10);
 //
 //	return ret;
 //}
@@ -653,7 +653,7 @@ static int send_bro(bms_info_t *bms_info)
 
 	*data = bms_info->settings->bro_data;
 
-	ret = can_tx_data(can_info, &tx_msg, 1000);
+	ret = can_tx_data(can_info, &tx_msg, 10);
 
 	return ret;
 }
@@ -767,7 +767,7 @@ static int send_bcl(bms_info_t *bms_info)
 
 	*data = bms_info->settings->bcl_data;
 
-	ret = can_tx_data(can_info, &tx_msg, 1000);
+	ret = can_tx_data(can_info, &tx_msg, 10);
 
 	return ret;
 }
@@ -788,7 +788,7 @@ static int send_bcl(bms_info_t *bms_info)
 //
 //	*data = bms_info->settings->bcs_data;
 //
-//	ret = can_tx_data(can_info, &tx_msg, 1000);
+//	ret = can_tx_data(can_info, &tx_msg, 10);
 //
 //	return ret;
 //}
@@ -809,7 +809,7 @@ static int send_bsm(bms_info_t *bms_info)
 
 	*data = bms_info->settings->bsm_data;
 
-	ret = can_tx_data(can_info, &tx_msg, 1000);
+	ret = can_tx_data(can_info, &tx_msg, 10);
 
 	return ret;
 }
@@ -922,7 +922,7 @@ static int send_bst(bms_info_t *bms_info)
 
 	*data = bms_info->settings->bst_data;
 
-	ret = can_tx_data(can_info, &tx_msg, 1000);
+	ret = can_tx_data(can_info, &tx_msg, 10);
 
 	return ret;
 }
@@ -1015,7 +1015,7 @@ static int send_bsd(bms_info_t *bms_info)
 
 	*data = bms_info->settings->bsd_data;
 
-	ret = can_tx_data(can_info, &tx_msg, 1000);
+	ret = can_tx_data(can_info, &tx_msg, 10);
 
 	return ret;
 }
@@ -1036,7 +1036,7 @@ static int send_bem(bms_info_t *bms_info)
 
 	*data = bms_info->settings->bem_data;
 
-	ret = can_tx_data(can_info, &tx_msg, 1000);
+	ret = can_tx_data(can_info, &tx_msg, 10);
 
 	return ret;
 }

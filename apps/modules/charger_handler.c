@@ -6,7 +6,7 @@
  *   文件名称：charger_handler.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时18分42秒
- *   修改日期：2020年03月30日 星期一 13时22分59秒
+ *   修改日期：2020年04月01日 星期三 12时53分36秒
  *   描    述：
  *
  *================================================================*/
@@ -39,7 +39,7 @@ static int send_bms_multi_request_response(charger_info_t *charger_info)
 	data->fn = multi_packets_des->bms_data_multi_fn;
 	data->reserved_3 = 0x00;
 
-	ret = can_tx_data(can_info, &tx_msg, 1000);
+	ret = can_tx_data(can_info, &tx_msg, 10);
 
 	return ret;
 }
@@ -67,7 +67,7 @@ static int send_bms_multi_data_response(charger_info_t *charger_info)
 	data->fn = multi_packets_des->bms_data_multi_fn;
 	data->reserved_2 = 0x00;
 
-	ret = can_tx_data(can_info, &tx_msg, 1000);
+	ret = can_tx_data(can_info, &tx_msg, 10);
 
 	return ret;
 }
@@ -287,7 +287,7 @@ static int send_chm(charger_info_t *charger_info)
 	data->version_0 = charger_info->settings->chm_data.version_0;
 	data->version_1 = charger_info->settings->chm_data.version_1;
 
-	ret = can_tx_data(can_info, &tx_msg, 1000);
+	ret = can_tx_data(can_info, &tx_msg, 10);
 
 	return ret;
 }
@@ -383,7 +383,7 @@ static int send_crm(charger_info_t *charger_info)
 	data->crm_result = charger_info->settings->crm_data.crm_result;
 	data->charger_sn = charger_info->settings->crm_data.charger_sn;
 
-	ret = can_tx_data(can_info, &tx_msg, 1000);
+	ret = can_tx_data(can_info, &tx_msg, 10);
 
 	return ret;
 }
@@ -500,7 +500,7 @@ static int send_cts(charger_info_t *charger_info)
 	data = (cts_data_t *)tx_msg.Data;
 	*data = charger_info->settings->cts_data;
 
-	ret = can_tx_data(can_info, &tx_msg, 1000);
+	ret = can_tx_data(can_info, &tx_msg, 10);
 
 	return ret;
 }
@@ -520,7 +520,7 @@ static int send_cml(charger_info_t *charger_info)
 	data = (cml_data_t *)tx_msg.Data;
 	*data = charger_info->settings->cml_data;
 
-	ret = can_tx_data(can_info, &tx_msg, 1000);
+	ret = can_tx_data(can_info, &tx_msg, 10);
 
 	return ret;
 }
@@ -622,7 +622,7 @@ static int send_cro(charger_info_t *charger_info)
 	data = (cro_data_t *)tx_msg.Data;
 	*data = charger_info->settings->cro_data;
 
-	ret = can_tx_data(can_info, &tx_msg, 1000);
+	ret = can_tx_data(can_info, &tx_msg, 10);
 
 	return ret;
 }
@@ -725,7 +725,7 @@ static int send_ccs(charger_info_t *charger_info)
 	data = (ccs_data_t *)tx_msg.Data;
 	*data = charger_info->settings->ccs_data;
 
-	ret = can_tx_data(can_info, &tx_msg, 1000);
+	ret = can_tx_data(can_info, &tx_msg, 10);
 
 	return ret;
 }
@@ -826,7 +826,7 @@ static int send_cst(charger_info_t *charger_info)
 	data = (cst_data_t *)tx_msg.Data;
 	*data = charger_info->settings->cst_data;
 
-	ret = can_tx_data(can_info, &tx_msg, 1000);
+	ret = can_tx_data(can_info, &tx_msg, 10);
 
 	return ret;
 }
@@ -913,7 +913,7 @@ static int send_csd(charger_info_t *charger_info)
 	data = (csd_data_t *)tx_msg.Data;
 	*data = charger_info->settings->csd_data;
 
-	ret = can_tx_data(can_info, &tx_msg, 1000);
+	ret = can_tx_data(can_info, &tx_msg, 10);
 
 	return ret;
 }
@@ -933,7 +933,7 @@ static int send_cem(charger_info_t *charger_info)
 	data = (cem_data_t *)tx_msg.Data;
 	*data = charger_info->settings->cem_data;
 
-	ret = can_tx_data(can_info, &tx_msg, 1000);
+	ret = can_tx_data(can_info, &tx_msg, 10);
 
 	return ret;
 }
