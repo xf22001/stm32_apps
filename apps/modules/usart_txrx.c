@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2020年03月29日 星期日 15时23分39秒
+ *   修改日期：2020年04月03日 星期五 09时44分16秒
  *   描    述：
  *
  *================================================================*/
@@ -17,10 +17,8 @@
 #include <stdarg.h>
 
 #include "os_utils.h"
+//#define UDP_LOG
 #include "task_probe_tool.h"
-
-#define UART_RX_DMA_DATA_SIZE 128
-#define LOG_BUFFER_SIZE 128
 
 static LIST_HEAD(uart_info_list);
 
@@ -249,13 +247,14 @@ static uint16_t wait_for_uart_receive(uart_info_t *uart_info, uint16_t size, uin
 
 		if(received > 0) {
 			if(received == size) {//complete
+				udp_log_printf("%s:%s:%d complete!\n", __FILE__, __func__, __LINE__);
 				break;
 			}
 
 			if(pre_received == received) {
 				//pending for a long time(poll interval)
 				if(cur_ticks - pre_received_ticks >= uart_info->max_pending_duration) {
-					//udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+					udp_log_printf("%s:%s:%d pending duration:%d\n", __FILE__, __func__, __LINE__, cur_ticks - pre_received_ticks);
 					HAL_UART_AbortReceive(uart_info->huart);
 					break;
 				}
@@ -266,6 +265,10 @@ static uint16_t wait_for_uart_receive(uart_info_t *uart_info, uint16_t size, uin
 		}
 
 		duration = cur_ticks - enter_ticks;
+	}
+
+	if(duration >= timeout) {
+		HAL_UART_AbortReceive(uart_info->huart);
 	}
 
 	return received;
