@@ -6,7 +6,7 @@
  *   文件名称：bms.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分57秒
- *   修改日期：2020年03月30日 星期一 11时38分15秒
+ *   修改日期：2020年04月04日 星期六 18时01分10秒
  *   描    述：
  *
  *================================================================*/
@@ -222,9 +222,8 @@ typedef struct {
 	bms_handle_state_t handle_response;
 } bms_state_handler_t;
 
-bms_info_t *get_bms_info(can_info_t *can_info);
 void free_bms_info(bms_info_t *bms_info);
-bms_info_t *alloc_bms_info(can_info_t *can_info);
+bms_info_t *get_or_alloc_bms_info(can_info_t *can_info);
 void bms_set_modbus_info(bms_info_t *bms_info, modbus_info_t *modbus_info);
 void bms_set_eeprom_info(bms_info_t *bms_info, eeprom_info_t *eeprom_info);
 void show_modbus_data_offset(void);

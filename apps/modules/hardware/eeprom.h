@@ -6,7 +6,7 @@
  *   文件名称：eeprom.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月14日 星期四 09时01分48秒
- *   修改日期：2020年01月20日 星期一 11时28分34秒
+ *   修改日期：2020年04月04日 星期六 18时37分17秒
  *   描    述：
  *
  *================================================================*/
@@ -54,9 +54,8 @@ typedef struct {
 
 #define EEPROM_1024_PAGE 256
 
-eeprom_info_t *get_eeprom_info(spi_info_t *spi_info);
 void free_eeprom_info(eeprom_info_t *eeprom_info);
-eeprom_info_t *alloc_eeprom_info(spi_info_t *spi_info);
+eeprom_info_t *get_or_alloc_eeprom_info(spi_info_t *spi_info);
 uint8_t eeprom_id(eeprom_info_t *eeprom_info);
 uint8_t eeprom_read(eeprom_info_t *eeprom_info, uint32_t start, uint8_t *data, uint16_t size);
 uint8_t eeprom_write(eeprom_info_t *eeprom_info, uint32_t start, uint8_t *data, uint16_t size);

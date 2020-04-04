@@ -6,7 +6,7 @@
  *   文件名称：charger.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分46秒
- *   修改日期：2020年03月30日 星期一 11时38分35秒
+ *   修改日期：2020年04月04日 星期六 18时32分47秒
  *   描    述：
  *
  *================================================================*/
@@ -73,9 +73,8 @@ typedef struct {
 	charger_handle_state_t handle_response;
 } charger_state_handler_t;
 
-charger_info_t *get_charger_info(can_info_t *can_info);
 void free_charger_info(charger_info_t *charger_info);
-charger_info_t *alloc_charger_info(can_info_t *can_info);
+charger_info_t *get_or_alloc_charger_info(can_info_t *can_info);
 
 charger_state_t get_charger_state(charger_info_t *charger_info);
 void set_charger_state(charger_info_t *charger_info, charger_state_t state);

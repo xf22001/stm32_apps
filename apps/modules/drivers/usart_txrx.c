@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2020年04月03日 星期五 09时44分16秒
+ *   修改日期：2020年04月04日 星期六 18时26分46秒
  *   描    述：
  *
  *================================================================*/
@@ -21,17 +21,33 @@
 #include "task_probe_tool.h"
 
 static LIST_HEAD(uart_info_list);
+static osMutexId uart_info_list_mutex = NULL;
 
-uart_info_t *get_uart_info(UART_HandleTypeDef *huart)
+static uart_info_t *get_uart_info(UART_HandleTypeDef *huart)
 {
 	uart_info_t *uart_info = NULL;
 	uart_info_t *uart_info_item = NULL;
+	osStatus os_status;
+
+	if(uart_info_list_mutex == NULL) {
+		return uart_info;
+	}
+
+	os_status = osMutexWait(uart_info_list_mutex, osWaitForever);
+
+	if(os_status != osOK) {
+	}
 
 	list_for_each_entry(uart_info_item, &uart_info_list, uart_info_t, list) {
 		if(uart_info_item->huart == huart) {
 			uart_info = uart_info_item;
 			break;
 		}
+	}
+
+	os_status = osMutexRelease(uart_info_list_mutex);
+
+	if(os_status != osOK) {
 	}
 
 	return uart_info;
@@ -45,7 +61,21 @@ void free_uart_info(uart_info_t *uart_info)
 		return;
 	}
 
+	if(uart_info_list_mutex == NULL) {
+		return;
+	}
+
+	os_status = osMutexWait(uart_info_list_mutex, osWaitForever);
+
+	if(os_status != osOK) {
+	}
+
 	list_del(&uart_info->list);
+
+	os_status = osMutexRelease(uart_info_list_mutex);
+
+	if(os_status != osOK) {
+	}
 
 	if(uart_info->tx_msg_q) {
 		os_status = osMessageDelete(uart_info->tx_msg_q);
@@ -71,17 +101,27 @@ void free_uart_info(uart_info_t *uart_info)
 	os_free(uart_info);
 }
 
-uart_info_t *alloc_uart_info(UART_HandleTypeDef *huart)
+uart_info_t *get_or_alloc_uart_info(UART_HandleTypeDef *huart)
 {
 	uart_info_t *uart_info = NULL;
 	osMessageQDef(tx_msg_q, 1, uint16_t);
 	osMessageQDef(rx_msg_q, 1, uint16_t);
 	osMutexDef(huart_mutex);
+	osStatus os_status;
 
 	uart_info = get_uart_info(huart);
 
 	if(uart_info != NULL) {
 		return uart_info;
+	}
+
+	if(uart_info_list_mutex == NULL) {
+		osMutexDef(uart_info_list_mutex);
+		uart_info_list_mutex = osMutexCreate(osMutex(uart_info_list_mutex));
+
+		if(uart_info_list_mutex == NULL) {
+			return uart_info;
+		}
 	}
 
 	uart_info = (uart_info_t *)os_alloc(sizeof(uart_info_t));
@@ -97,7 +137,17 @@ uart_info_t *alloc_uart_info(UART_HandleTypeDef *huart)
 	uart_info->rx_poll_interval = 1;
 	uart_info->max_pending_duration = 5;
 
+	os_status = osMutexWait(uart_info_list_mutex, osWaitForever);
+
+	if(os_status != osOK) {
+	}
+
 	list_add_tail(&uart_info->list, &uart_info_list);
+
+	os_status = osMutexRelease(uart_info_list_mutex);
+
+	if(os_status != osOK) {
+	}
 
 	return uart_info;
 }

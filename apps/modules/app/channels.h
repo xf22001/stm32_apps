@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2020年01月02日 星期四 08时53分41秒
- *   修改日期：2020年01月21日 星期二 10时12分46秒
+ *   修改日期：2020年04月04日 星期六 18时10分22秒
  *   描    述：
  *
  *================================================================*/
@@ -57,9 +57,8 @@ typedef struct {
 	channel_info_t channel_info[CHANNEL_INSTANCES_NUMBER];
 } channels_info_t;
 
-channels_info_t *get_channels_info(event_pool_t *event_pool);
 void free_channels_info(channels_info_t *channels_info);
-channels_info_t *alloc_channels_info(event_pool_t *event_pool);
+channels_info_t *get_or_alloc_channels_info(event_pool_t *event_pool);
 void channels_process_event(channels_info_t *channels_info);
 void task_channels(void const *argument);
 void task_channel_event(void const *argument);

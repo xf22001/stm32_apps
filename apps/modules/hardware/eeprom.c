@@ -6,7 +6,7 @@
  *   文件名称：eeprom.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月14日 星期四 09时01分36秒
- *   修改日期：2020年01月20日 星期一 13时59分05秒
+ *   修改日期：2020年04月04日 星期六 18时36分50秒
  *   描    述：
  *
  *================================================================*/
@@ -19,6 +19,7 @@
 extern SPI_HandleTypeDef hspi3;
 
 static LIST_HEAD(eeprom_info_list);
+static osMutexId eeprom_info_list_mutex = NULL;
 
 typedef struct {
 	SPI_HandleTypeDef *hspi;
@@ -57,16 +58,32 @@ static eeprom_info_config_t *get_eeprom_info_config(spi_info_t *spi_info)
 	return eeprom_info_config;
 }
 
-eeprom_info_t *get_eeprom_info(spi_info_t *spi_info)
+static eeprom_info_t *get_eeprom_info(spi_info_t *spi_info)
 {
 	eeprom_info_t *eeprom_info = NULL;
 	eeprom_info_t *eeprom_info_item = NULL;
+	osStatus os_status;
+
+	if(eeprom_info_list_mutex == NULL) {
+		return eeprom_info;
+	}
+
+	os_status = osMutexWait(eeprom_info_list_mutex, osWaitForever);
+
+	if(os_status != osOK) {
+	}
+
 
 	list_for_each_entry(eeprom_info_item, &eeprom_info_list, eeprom_info_t, list) {
 		if(eeprom_info_item->spi_info == spi_info) {
 			eeprom_info = eeprom_info_item;
 			break;
 		}
+	}
+
+	os_status = osMutexRelease(eeprom_info_list_mutex);
+
+	if(os_status != osOK) {
 	}
 
 	return eeprom_info;
@@ -80,7 +97,21 @@ void free_eeprom_info(eeprom_info_t *eeprom_info)
 		return;
 	}
 
+	if(eeprom_info_list_mutex == NULL) {
+		return;
+	}
+
+	os_status = osMutexWait(eeprom_info_list_mutex, osWaitForever);
+
+	if(os_status != osOK) {
+	}
+
 	list_del(&eeprom_info->list);
+
+	os_status = osMutexRelease(eeprom_info_list_mutex);
+
+	if(os_status != osOK) {
+	}
 
 	os_status = osMutexDelete(eeprom_info->mutex);
 
@@ -90,16 +121,26 @@ void free_eeprom_info(eeprom_info_t *eeprom_info)
 	os_free(eeprom_info);
 }
 
-eeprom_info_t *alloc_eeprom_info(spi_info_t *spi_info)
+eeprom_info_t *get_or_alloc_eeprom_info(spi_info_t *spi_info)
 {
 	eeprom_info_t *eeprom_info = NULL;
 	eeprom_info_config_t *eeprom_info_config = get_eeprom_info_config(spi_info);
 	osMutexDef(eeprom_mutex);
+	osStatus os_status;
 
 	eeprom_info = get_eeprom_info(spi_info);
 
 	if(eeprom_info != NULL) {
 		return eeprom_info;
+	}
+
+	if(eeprom_info_list_mutex == NULL) {
+		osMutexDef(eeprom_info_list_mutex);
+		eeprom_info_list_mutex = osMutexCreate(osMutex(eeprom_info_list_mutex));
+
+		if(eeprom_info_list_mutex == NULL) {
+			return eeprom_info;
+		}
 	}
 
 	if(eeprom_info_config == NULL) {
@@ -121,7 +162,17 @@ eeprom_info_t *alloc_eeprom_info(spi_info_t *spi_info)
 
 	eeprom_info->mutex = osMutexCreate(osMutex(eeprom_mutex));
 
+	os_status = osMutexWait(eeprom_info_list_mutex, osWaitForever);
+
+	if(os_status != osOK) {
+	}
+
 	list_add_tail(&eeprom_info->list, &eeprom_info_list);
+
+	os_status = osMutexRelease(eeprom_info_list_mutex);
+
+	if(os_status != osOK) {
+	}
 
 	return eeprom_info;
 }

@@ -6,7 +6,7 @@
  *   文件名称：modbus_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月26日 星期二 14时24分54秒
- *   修改日期：2020年03月20日 星期五 14时25分42秒
+ *   修改日期：2020年04月04日 星期六 18时41分39秒
  *   描    述：
  *
  *================================================================*/
@@ -16,11 +16,22 @@
 #include "task_probe_tool.h"
 
 static LIST_HEAD(modbus_info_list);
+static osMutexId modbus_info_list_mutex = NULL;
 
-modbus_info_t *get_modbus_info(uart_info_t *uart_info)
+static modbus_info_t *get_modbus_info(uart_info_t *uart_info)
 {
 	modbus_info_t *modbus_info = NULL;
 	modbus_info_t *modbus_info_item = NULL;
+	osStatus os_status;
+
+	if(modbus_info_list_mutex == NULL) {
+		return modbus_info;
+	}
+
+	os_status = osMutexWait(modbus_info_list_mutex, osWaitForever);
+
+	if(os_status != osOK) {
+	}
 
 	list_for_each_entry(modbus_info_item, &modbus_info_list, modbus_info_t, list) {
 		if(modbus_info_item->uart_info == uart_info) {
@@ -29,16 +40,37 @@ modbus_info_t *get_modbus_info(uart_info_t *uart_info)
 		}
 	}
 
+	os_status = osMutexRelease(modbus_info_list_mutex);
+
+	if(os_status != osOK) {
+	}
+
 	return modbus_info;
 }
 
 void free_modbus_info(modbus_info_t *modbus_info)
 {
+	osStatus os_status;
+
 	if(modbus_info == NULL) {
 		return;
 	}
 
+	if(modbus_info_list_mutex == NULL) {
+		return;
+	}
+
+	os_status = osMutexWait(modbus_info_list_mutex, osWaitForever);
+
+	if(os_status != osOK) {
+	}
+
 	list_del(&modbus_info->list);
+
+	os_status = osMutexRelease(modbus_info_list_mutex);
+
+	if(os_status != osOK) {
+	}
 
 	if(modbus_info->uart_info) {
 		modbus_info->uart_info = NULL;
@@ -52,14 +84,24 @@ void free_modbus_info(modbus_info_t *modbus_info)
 	os_free(modbus_info);
 }
 
-modbus_info_t *alloc_modbus_info(uart_info_t *uart_info)
+modbus_info_t *get_or_alloc_modbus_info(uart_info_t *uart_info)
 {
 	modbus_info_t *modbus_info = NULL;
+	osStatus os_status;
 
 	modbus_info = get_modbus_info(uart_info);
 
 	if(modbus_info != NULL) {
 		return modbus_info;
+	}
+
+	if(modbus_info_list_mutex == NULL) {
+		osMutexDef(modbus_info_list_mutex);
+		modbus_info_list_mutex = osMutexCreate(osMutex(modbus_info_list_mutex));
+
+		if(modbus_info_list_mutex == NULL) {
+			return modbus_info;
+		}
 	}
 
 	modbus_info = (modbus_info_t *)os_alloc(sizeof(modbus_info_t));
@@ -81,7 +123,17 @@ modbus_info_t *alloc_modbus_info(uart_info_t *uart_info)
 	modbus_info->rx_timeout = 3000;
 	modbus_info->tx_timeout = 1000;
 
+	os_status = osMutexWait(modbus_info_list_mutex, osWaitForever);
+
+	if(os_status != osOK) {
+	}
+
 	list_add_tail(&modbus_info->list, &modbus_info_list);
+
+	os_status = osMutexRelease(modbus_info_list_mutex);
+
+	if(os_status != osOK) {
+	}
 
 	return modbus_info;
 

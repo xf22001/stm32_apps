@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年03月30日 星期一 15时57分57秒
+ *   修改日期：2020年04月04日 星期六 18时27分03秒
  *   描    述：
  *
  *================================================================*/
@@ -42,6 +42,7 @@ extern CAN_HandleTypeDef hcan1;
 extern CAN_HandleTypeDef hcan2;
 
 static LIST_HEAD(bms_info_list);
+static osMutexId bms_info_list_mutex = NULL;
 
 static bitmap_t *eeprom_modbus_data_bitmap = NULL;
 
@@ -202,10 +203,21 @@ static bms_data_settings_t *bms_data_alloc_settings(void)
 	return settings;
 }
 
-bms_info_t *get_bms_info(can_info_t *can_info)
+static bms_info_t *get_bms_info(can_info_t *can_info)
 {
 	bms_info_t *bms_info = NULL;
 	bms_info_t *bms_info_item = NULL;
+	osStatus os_status;
+
+	if(bms_info_list_mutex == NULL) {
+		return bms_info;
+	}
+
+	os_status = osMutexWait(bms_info_list_mutex, osWaitForever);
+
+	if(os_status != osOK) {
+	}
+
 
 	list_for_each_entry(bms_info_item, &bms_info_list, bms_info_t, list) {
 		if(bms_info_item->can_info == can_info) {
@@ -213,6 +225,12 @@ bms_info_t *get_bms_info(can_info_t *can_info)
 			break;
 		}
 	}
+
+	os_status = osMutexRelease(bms_info_list_mutex);
+
+	if(os_status != osOK) {
+	}
+
 
 	return bms_info;
 }
@@ -225,7 +243,26 @@ void free_bms_info(bms_info_t *bms_info)
 		return;
 	}
 
+	if(bms_info_list_mutex == NULL) {
+		return;
+	}
+
+	os_status = osMutexWait(bms_info_list_mutex, osWaitForever);
+
+	if(os_status != osOK) {
+	}
+
 	list_del(&bms_info->list);
+
+	if(bms_info_list_mutex == NULL) {
+		return;
+	}
+
+	os_status = osMutexWait(bms_info_list_mutex, osWaitForever);
+
+	if(os_status != osOK) {
+	}
+
 	set_modbus_data(bms_info->modbus_info, NULL, 0, 0);
 	remove_modbus_data_changed_cb(bms_info->modbus_info, &modbus_data_changed_cb);
 
@@ -274,11 +311,12 @@ void set_gun_on_off(bms_info_t *bms_info, uint8_t on_off)
 	}
 }
 
-bms_info_t *alloc_bms_info(can_info_t *can_info)
+bms_info_t *get_or_alloc_bms_info(can_info_t *can_info)
 {
 	bms_info_t *bms_info = NULL;
 	int index = -1;
 	bms_info_config_t *bms_info_config = get_bms_info_config(can_info);
+	osStatus os_status;
 
 	osMutexDef(handle_mutex);
 	osMutexDef(bms_data_mutex);
@@ -291,6 +329,15 @@ bms_info_t *alloc_bms_info(can_info_t *can_info)
 
 	if(bms_info != NULL) {
 		return bms_info;
+	}
+
+	if(bms_info_list_mutex == NULL) {
+		osMutexDef(bms_info_list_mutex);
+		bms_info_list_mutex = osMutexCreate(osMutex(bms_info_list_mutex));
+
+		if(bms_info_list_mutex == NULL) {
+			return bms_info;
+		}
 	}
 
 	if(eeprom_modbus_data_bitmap == NULL) {
@@ -344,7 +391,18 @@ bms_info_t *alloc_bms_info(can_info_t *can_info)
 
 	set_gun_on_off(bms_info, 0);
 
+	os_status = osMutexWait(bms_info_list_mutex, osWaitForever);
+
+	if(os_status != osOK) {
+	}
+
 	list_add_tail(&bms_info->list, &bms_info_list);
+
+	os_status = osMutexRelease(bms_info_list_mutex);
+
+	if(os_status != osOK) {
+	}
+
 
 	return bms_info;
 

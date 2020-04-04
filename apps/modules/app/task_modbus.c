@@ -6,7 +6,7 @@
  *   文件名称：task_modbus.c
  *   创 建 者：肖飞
  *   创建日期：2020年03月20日 星期五 10时41分24秒
- *   修改日期：2020年03月20日 星期五 10时41分45秒
+ *   修改日期：2020年04月04日 星期六 18时44分09秒
  *   描    述：
  *
  *================================================================*/
@@ -22,7 +22,7 @@ void task_modbus(void const *argument)
 		app_panic();
 	}
 
-	modbus_info_t *modbus_info = alloc_modbus_info(uart_info);;
+	modbus_info_t *modbus_info = get_or_alloc_modbus_info(uart_info);;
 
 	if(modbus_info == NULL) {
 		app_panic();

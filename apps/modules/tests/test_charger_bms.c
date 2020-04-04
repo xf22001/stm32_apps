@@ -6,7 +6,7 @@
  *   文件名称：test_charger_bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时28分36秒
- *   修改日期：2020年04月01日 星期三 12时56分35秒
+ *   修改日期：2020年04月04日 星期六 18时09分31秒
  *   描    述：
  *
  *================================================================*/
@@ -105,7 +105,7 @@ static void task_bms_response(void const *argument)
 void test_charger_bms(void)
 {
 	{
-		can_info_t *can_info = alloc_can_info(&hcan1);
+		can_info_t *can_info = get_or_alloc_can_info(&hcan1);
 		osThreadDef(charger_request, task_charger_request, osPriorityNormal, 0, 256);
 		osThreadDef(charger_response, task_charger_response, osPriorityNormal, 0, 256);
 		charger_info_t *charger_info;
@@ -116,7 +116,7 @@ void test_charger_bms(void)
 
 		set_can_info_hal_init(can_info, MX_CAN1_Init);
 
-		charger_info = alloc_charger_info(can_info);
+		charger_info = get_or_alloc_charger_info(can_info);
 
 		if(charger_info == NULL) {
 			app_panic();
@@ -127,7 +127,7 @@ void test_charger_bms(void)
 	}
 
 	{
-		uart_info_t *uart_info = alloc_uart_info(&huart1);
+		uart_info_t *uart_info = get_or_alloc_uart_info(&huart1);
 
 		if(uart_info == NULL) {
 			app_panic();
@@ -138,9 +138,9 @@ void test_charger_bms(void)
 	}
 
 	{
-		can_info_t *can_info = alloc_can_info(&hcan2);
-		uart_info_t *uart_info = alloc_uart_info(&huart1);
-		spi_info_t *spi_info = alloc_spi_info(&hspi3);
+		can_info_t *can_info = get_or_alloc_can_info(&hcan2);
+		uart_info_t *uart_info = get_or_alloc_uart_info(&huart1);
+		spi_info_t *spi_info = get_or_alloc_spi_info(&hspi3);
 		bms_info_t *bms_info;
 		eeprom_info_t *eeprom_info;
 		modbus_info_t *modbus_info;
@@ -161,19 +161,19 @@ void test_charger_bms(void)
 
 		set_can_info_hal_init(can_info, MX_CAN2_Init);
 
-		eeprom_info = alloc_eeprom_info(spi_info);
+		eeprom_info = get_or_alloc_eeprom_info(spi_info);
 
 		if(eeprom_info == NULL) {
 			app_panic();
 		}
 
-		modbus_info = alloc_modbus_info(uart_info);
+		modbus_info = get_or_alloc_modbus_info(uart_info);
 
 		if(modbus_info == NULL) {
 			app_panic();
 		}
 
-		bms_info = alloc_bms_info(can_info);
+		bms_info = get_or_alloc_bms_info(can_info);
 
 		if(bms_info == NULL) {
 			app_panic();

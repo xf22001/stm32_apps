@@ -6,7 +6,7 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年01月19日 星期日 16时35分45秒
+ *   修改日期：2020年04月04日 星期六 18时56分34秒
  *   描    述：
  *
  *================================================================*/
@@ -17,6 +17,7 @@
 #include <string.h>
 
 static LIST_HEAD(charger_info_list);
+static osMutexId charger_info_list_mutex = NULL;
 
 static void bms_data_settings_init(bms_data_settings_t *settings)
 {
@@ -40,16 +41,31 @@ static bms_data_settings_t *bms_data_alloc_settings(void)
 	return settings;
 }
 
-charger_info_t *get_charger_info(can_info_t *can_info)
+static charger_info_t *get_charger_info(can_info_t *can_info)
 {
 	charger_info_t *charger_info = NULL;
 	charger_info_t *charger_info_item = NULL;
+	osStatus os_status;
+
+	if(charger_info_list_mutex == NULL) {
+		return charger_info;
+	}
+
+	os_status = osMutexWait(charger_info_list_mutex, osWaitForever);
+
+	if(os_status != osOK) {
+	}
 
 	list_for_each_entry(charger_info_item, &charger_info_list, charger_info_t, list) {
 		if(charger_info_item->can_info == can_info) {
 			charger_info = charger_info_item;
 			break;
 		}
+	}
+
+	os_status = osMutexRelease(charger_info_list_mutex);
+
+	if(os_status != osOK) {
 	}
 
 	return charger_info;
@@ -60,6 +76,10 @@ void free_charger_info(charger_info_t *charger_info)
 	osStatus os_status;
 
 	if(charger_info == NULL) {
+		return;
+	}
+
+	if(charger_info_list_mutex == NULL) {
 		return;
 	}
 
@@ -74,19 +94,39 @@ void free_charger_info(charger_info_t *charger_info)
 		}
 	}
 
+	os_status = osMutexWait(charger_info_list_mutex, osWaitForever);
+
+	if(os_status != osOK) {
+	}
+
 	list_del(&charger_info->list);
+
+	os_status = osMutexRelease(charger_info_list_mutex);
+
+	if(os_status != osOK) {
+	}
 
 	os_free(charger_info);
 }
 
-charger_info_t *alloc_charger_info(can_info_t *can_info)
+charger_info_t *get_or_alloc_charger_info(can_info_t *can_info)
 {
 	charger_info_t *charger_info = NULL;
 	osMutexDef(handle_mutex);
+	osStatus os_status;
 
 	charger_info = get_charger_info(can_info);
 	if(charger_info != NULL) {
 		return charger_info;
+	}
+
+	if(charger_info_list_mutex == NULL) {
+		osMutexDef(charger_info_list_mutex);
+		charger_info_list_mutex = osMutexCreate(osMutex(charger_info_list_mutex));
+
+		if(charger_info_list_mutex == NULL) {
+			return charger_info;
+		}
 	}
 
 	charger_info = (charger_info_t *)os_alloc(sizeof(charger_info_t));
@@ -99,7 +139,17 @@ charger_info_t *alloc_charger_info(can_info_t *can_info)
 	charger_info->handle_mutex = osMutexCreate(osMutex(handle_mutex));
 	charger_info->settings = bms_data_alloc_settings();
 
+	os_status = osMutexWait(charger_info_list_mutex, osWaitForever);
+
+	if(os_status != osOK) {
+	}
+
 	list_add_tail(&charger_info->list, &charger_info_list);
+
+	os_status = osMutexRelease(charger_info_list_mutex);
+
+	if(os_status != osOK) {
+	}
 
 	return charger_info;
 }

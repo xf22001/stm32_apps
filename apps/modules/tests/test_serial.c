@@ -6,7 +6,7 @@
  *   文件名称：test_serial.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 10时54分01秒
- *   修改日期：2020年04月03日 星期五 12时37分28秒
+ *   修改日期：2020年04月04日 星期六 17时59分39秒
  *   描    述：
  *
  *================================================================*/
@@ -64,7 +64,7 @@ static void task_uart_rx(void const *argument)
 
 void serial_self_test(UART_HandleTypeDef *huart)
 {
-	uart_info_t *uart_info = alloc_uart_info(huart);
+	uart_info_t *uart_info = get_or_alloc_uart_info(huart);
 
 	if(uart_info == NULL) {
 		app_panic();
