@@ -6,7 +6,7 @@
  *   文件名称：bms_handler.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时18分53秒
- *   修改日期：2020年04月09日 星期四 14时17分35秒
+ *   修改日期：2020年04月09日 星期四 17时25分46秒
  *   描    述：
  *
  *================================================================*/
@@ -15,7 +15,7 @@
 #include "bms_spec.h"
 #include "bms_multi_data.h"
 #include <string.h>
-#define UDP_LOG
+//#define UDP_LOG
 #include "task_probe_tool.h"
 
 static int handle_common_cst_response(bms_info_t *bms_info)
@@ -597,6 +597,7 @@ static int handle_state_bcl_bcs_bsm_bmv_bmt_bsp_request(bms_info_t *bms_info)
 		if(ticks - bms_info->send_stamp >= FN_BCL_SEND_PERIOD) {
 			if(bms_info->modbus_data->disable_bcl == 0) {
 				send_bcl(bms_info);
+				udp_log_printf("sent bcl\n");
 				bms_info->send_stamp = ticks;
 			}
 		}
@@ -611,6 +612,7 @@ static int handle_state_bcl_bcs_bsm_bmv_bmt_bsp_request(bms_info_t *bms_info)
 				                      sizeof(bcs_data_t),
 				                      (sizeof(bcs_data_t) + (7 - 1)) / 7,
 				                      FN_BCS_SEND_PERIOD) == 0) {
+					udp_log_printf("sent bcs\n");
 					bms_info->send_stamp_1 = ticks;
 				}
 			}
@@ -620,6 +622,7 @@ static int handle_state_bcl_bcs_bsm_bmv_bmt_bsp_request(bms_info_t *bms_info)
 			if(ticks - bms_info->send_stamp_2 >= FN_BSM_SEND_PERIOD) {
 				if(bms_info->modbus_data->disable_bsm == 0) {
 					send_bsm(bms_info);
+					udp_log_printf("sent bsm\n");
 					bms_info->send_stamp_2 = ticks;
 				}
 			}

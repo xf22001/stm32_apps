@@ -6,13 +6,14 @@
  *   文件名称：modbus_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月26日 星期二 14时24分54秒
- *   修改日期：2020年04月04日 星期六 18时41分39秒
+ *   修改日期：2020年04月09日 星期四 17时26分07秒
  *   描    述：
  *
  *================================================================*/
 #include "modbus_txrx.h"
 #include "modbus_spec.h"
 #include "os_utils.h"
+//#define UDP_LOG
 #include "task_probe_tool.h"
 
 static LIST_HEAD(modbus_info_list);
@@ -259,7 +260,7 @@ static int fn_0x03(modbus_info_t *modbus_info)//read some number
 
 	for(i = 0; i < number; i++) {
 		u_uint16_bytes.v = modbus_info->modbus_data[addr + i];
-		//udp_log_printf("request read addr:%d, data:%d(%x)\n", addr + i, u_uint16_bytes.v, u_uint16_bytes.v);
+		udp_log_printf("request read addr:%d, data:%d(%x)\n", addr + i, u_uint16_bytes.v, u_uint16_bytes.v);
 
 		data_item->data_l = u_uint16_bytes.s.byte0;
 		data_item->data_h = u_uint16_bytes.s.byte1;

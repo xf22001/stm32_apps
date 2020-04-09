@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2020年04月04日 星期六 18时26分46秒
+ *   修改日期：2020年04月09日 星期四 17时23分36秒
  *   描    述：
  *
  *================================================================*/
@@ -134,8 +134,8 @@ uart_info_t *get_or_alloc_uart_info(UART_HandleTypeDef *huart)
 	uart_info->tx_msg_q = osMessageCreate(osMessageQ(tx_msg_q), NULL);
 	uart_info->rx_msg_q = osMessageCreate(osMessageQ(rx_msg_q), NULL);
 	uart_info->huart_mutex = osMutexCreate(osMutex(huart_mutex));
-	uart_info->rx_poll_interval = 1;
-	uart_info->max_pending_duration = 5;
+	uart_info->rx_poll_interval = 5;
+	uart_info->max_pending_duration = 50;
 
 	os_status = osMutexWait(uart_info_list_mutex, osWaitForever);
 
@@ -170,6 +170,18 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
+	uart_info_t *uart_info = get_uart_info(huart);
+
+	if(uart_info == NULL) {
+		return;
+	}
+
+	if(uart_info->rx_msg_q != NULL) {
+		osStatus os_status = osMessagePut(uart_info->rx_msg_q, 0, 0);
+
+		if(os_status != osOK) {
+		}
+	}
 }
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 {
