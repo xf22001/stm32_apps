@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年04月04日 星期六 18时27分03秒
+ *   修改日期：2020年04月09日 星期四 13时29分23秒
  *   描    述：
  *
  *================================================================*/
@@ -104,6 +104,9 @@ static void bms_data_settings_default_init(bms_data_settings_t *settings)
 	}
 
 	memset(settings, 0, sizeof(bms_data_settings_t));
+
+	settings->dst = CHARGER_ADDR;
+	settings->src = BMS_ADDR;
 
 	settings->bms_data_common.common_max_charge_voltage = 750 * 10;
 	settings->bms_data_common.common_soc = 60 * 10;

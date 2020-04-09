@@ -6,7 +6,7 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年04月04日 星期六 18时56分34秒
+ *   修改日期：2020年04月09日 星期四 13时30分20秒
  *   描    述：
  *
  *================================================================*/
@@ -26,6 +26,9 @@ static void bms_data_settings_init(bms_data_settings_t *settings)
 	}
 
 	memset(settings, 0, sizeof(bms_data_settings_t));
+
+	settings->dst = BMS_ADDR;
+	settings->src = CHARGER_ADDR;
 }
 
 static bms_data_settings_t *bms_data_alloc_settings(void)

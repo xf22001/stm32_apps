@@ -6,9 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <signal.h>
 #include <sys/socket.h>
-#include <unistd.h>
 #include <netdb.h>
 
 #include "mbedtls/debug.h"
@@ -422,8 +420,6 @@ static int mbedtls_net_connect_timeout( mbedtls_net_context *ctx, const char *ho
 	struct addrinfo hints, *addr_list, *cur;
 
 
-	signal( SIGPIPE, SIG_IGN );
-
 	/* Do name resolution with both IPv6 and IPv4 */
 	memset( &hints, 0, sizeof( hints ) );
 	hints.ai_family = AF_UNSPEC;
@@ -611,9 +607,9 @@ int https_write(HTTP_INFO *hi, char *buffer, int len)
 
 	while(1) {
 		if(hi->url.https == 1) {
-			ret = mbedtls_ssl_write(&hi->tls.ssl, (u_char *)&buffer[slen], (size_t)(len - slen));
+			ret = mbedtls_ssl_write(&hi->tls.ssl, (unsigned char *)&buffer[slen], (size_t)(len - slen));
 		} else {
-			ret = mbedtls_net_send(&hi->tls.ssl_fd, (u_char *)&buffer[slen], (size_t)(len - slen));
+			ret = mbedtls_net_send(&hi->tls.ssl_fd, (unsigned char *)&buffer[slen], (size_t)(len - slen));
 		}
 
 		if(ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
@@ -636,9 +632,9 @@ int https_write(HTTP_INFO *hi, char *buffer, int len)
 int https_read(HTTP_INFO *hi, char *buffer, int len)
 {
 	if(hi->url.https == 1) {
-		return mbedtls_ssl_read(&hi->tls.ssl, (u_char *)buffer, (size_t)len);
+		return mbedtls_ssl_read(&hi->tls.ssl, (unsigned char *)buffer, (size_t)len);
 	} else {
-		return mbedtls_net_recv_timeout(&hi->tls.ssl_fd, (u_char *)buffer, (size_t)len, 5000);
+		return mbedtls_net_recv_timeout(&hi->tls.ssl_fd, (unsigned char *)buffer, (size_t)len, 5000);
 	}
 }
 

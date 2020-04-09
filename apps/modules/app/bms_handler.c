@@ -6,87 +6,19 @@
  *   文件名称：bms_handler.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时18分53秒
- *   修改日期：2020年04月01日 星期三 12时52分43秒
+ *   修改日期：2020年04月09日 星期四 14时17分35秒
  *   描    述：
  *
  *================================================================*/
 #include "bms_handler.h"
 #include "bms.h"
 #include "bms_spec.h"
+#include "bms_multi_data.h"
 #include <string.h>
 #define UDP_LOG
 #include "task_probe_tool.h"
 
-static int send_bms_multi_request_response(bms_info_t *bms_info)
-{
-	int ret = 0;
-	can_tx_msg_t tx_msg;
-	can_info_t *can_info = bms_info->can_info;
-	bms_multi_request_response_t *data;
-	multi_packets_des_t *multi_packets_des = &bms_info->multi_packets_info.rx_des;
-
-	tx_msg.ExtId = get_pdu_id(FN_MULTI_REQUEST_PRIORITY, FN_MULTI_REQUEST, BMS_ADDR, CHARGER_ADDR);
-	tx_msg.IDE = CAN_ID_EXT;
-	tx_msg.RTR = CAN_RTR_DATA;
-	tx_msg.DLC = sizeof(bms_multi_request_response_t);
-
-	data = (bms_multi_request_response_t *)tx_msg.Data;
-
-	data->head.type = FN_MULTI_REQUEST_RESPONSE_TYPE;
-	data->packets = multi_packets_des->bms_data_multi_packets;
-	data->packet_index = multi_packets_des->bms_data_multi_next_index;
-	data->reserved_0 = 0xff;
-	data->reserved_1 = 0xff;
-	data->reserved_2 = 0x00;
-	data->fn = multi_packets_des->bms_data_multi_fn;
-	data->reserved_3 = 0x00;
-
-	ret = can_tx_data(can_info, &tx_msg, 10);
-
-	return ret;
-}
-
-static int send_bms_multi_data_response(bms_info_t *bms_info)
-{
-	int ret = 0;
-	can_tx_msg_t tx_msg;
-	can_info_t *can_info = bms_info->can_info;
-	bms_multi_data_response_t *data;
-	multi_packets_des_t *multi_packets_des = &bms_info->multi_packets_info.rx_des;
-
-	tx_msg.ExtId = get_pdu_id(FN_MULTI_REQUEST_PRIORITY, FN_MULTI_REQUEST, BMS_ADDR, CHARGER_ADDR);
-	tx_msg.IDE = CAN_ID_EXT;
-	tx_msg.RTR = CAN_RTR_DATA;
-	tx_msg.DLC = sizeof(bms_multi_data_response_t);
-
-	data = (bms_multi_data_response_t *)tx_msg.Data;
-
-	data->head.type = FN_MULTI_DATA_RESPONSE_TYPE;
-	data->bytes = multi_packets_des->bms_data_multi_bytes;
-	data->packets = multi_packets_des->bms_data_multi_packets;
-	data->reserved_0 = 0xff;
-	data->reserved_1 = 0x00;
-	data->fn = multi_packets_des->bms_data_multi_fn;
-	data->reserved_2 = 0x00;
-
-	ret = can_tx_data(can_info, &tx_msg, 10);
-
-	return ret;
-}
-
-static uint8_t *get_multi_packet_data_by_fn(bms_info_t *bms_info, uint8_t fn)
-{
-	uint8_t *data = NULL;
-
-	switch(fn) {
-		default:
-			break;
-	}
-
-	return data;
-}
-
-static int handle_common_response(bms_info_t *bms_info)
+static int handle_common_cst_response(bms_info_t *bms_info)
 {
 	int ret = -1;
 	can_rx_msg_t *rx_msg = can_get_msg(bms_info->can_info);
@@ -99,83 +31,6 @@ static int handle_common_response(bms_info_t *bms_info)
 	head.v = rx_msg->ExtId;
 
 	switch(head.pdu.pf) {
-		case FN_MULTI_REQUEST: {
-			bms_multi_request_head_t *request_head = (bms_multi_request_head_t *)rx_msg->Data;
-
-			switch(request_head->type) {
-				case FN_MULTI_REQUEST_TYPE: {//处理多包请求
-					bms_multi_request_t *data = (bms_multi_request_t *)rx_msg->Data;
-					multi_packets_des_t *multi_packets_des = &bms_info->multi_packets_info.rx_des;
-
-					multi_packets_des->bms_data_multi_bytes = data->bytes;
-					multi_packets_des->bms_data_multi_packets = data->packets;
-					multi_packets_des->bms_data_multi_next_index = 1;
-					multi_packets_des->bms_data_multi_fn = data->fn;
-					multi_packets_des->bms_data = get_multi_packet_data_by_fn(bms_info, data->fn);
-
-					if(multi_packets_des->bms_data) {
-						send_bms_multi_request_response(bms_info);
-						ret = 0;
-					}
-				}
-				break;
-
-				case FN_MULTI_REQUEST_RESPONSE_TYPE: {//处理多包请求响应
-					multi_packets_des_t *multi_packets_des = &bms_info->multi_packets_info.tx_des;
-					bms_multi_request_response_t *data = (bms_multi_request_response_t *)rx_msg->Data;
-
-					if((data->packets == multi_packets_des->bms_data_multi_packets)
-					   && (data->fn == multi_packets_des->bms_data_multi_fn)) {
-						multi_packets_des->bms_data_multi_next_index = data->packet_index;
-						ret = 0;
-					}
-				}
-				break;
-
-				case FN_MULTI_DATA_RESPONSE_TYPE: {//处理多包数据响应
-					multi_packets_des_t *multi_packets_des = &bms_info->multi_packets_info.tx_des;
-					bms_multi_data_response_t *data = (bms_multi_data_response_t *)rx_msg->Data;
-
-					if((data->bytes == multi_packets_des->bms_data_multi_bytes) && (data->packets == multi_packets_des->bms_data_multi_packets) && (data->fn == multi_packets_des->bms_data_multi_fn)) {
-						ret = 0;
-					}
-				}
-				break;
-
-				default:
-					break;
-			}
-		}
-		break;
-
-		case FN_MULTI_DATA: {//处理多包数据
-			bms_multi_data_t *data = (bms_multi_data_t *)rx_msg->Data;
-			uint16_t received = (7 * (data->index - 1));
-			uint16_t receive = 7;
-			multi_packets_des_t *multi_packets_des = &bms_info->multi_packets_info.rx_des;
-
-			if(received < multi_packets_des->bms_data_multi_bytes) {
-				if(receive > multi_packets_des->bms_data_multi_bytes - received) {
-					receive = multi_packets_des->bms_data_multi_bytes - received;
-				}
-
-				if(data->index == multi_packets_des->bms_data_multi_next_index) {
-					if(multi_packets_des->bms_data != NULL) {
-						memcpy(multi_packets_des->bms_data + received, data->data, receive);
-					}
-
-					if(data->index < multi_packets_des->bms_data_multi_packets) {
-						multi_packets_des->bms_data_multi_next_index++;
-					} else if(data->index == multi_packets_des->bms_data_multi_packets) {
-						send_bms_multi_data_response(bms_info);
-					}
-				}
-
-				ret = 0;
-			}
-		}
-		break;
-
 		case FN_CST: {
 			cst_data_t *data = (cst_data_t *)rx_msg->Data;
 			bms_info->settings->cst_data = *data;
@@ -193,105 +48,17 @@ static int handle_common_response(bms_info_t *bms_info)
 	return ret;
 }
 
-static int send_multi_request(bms_info_t *bms_info)
-{
-	int ret = 0;
-	can_tx_msg_t tx_msg;
-	can_info_t *can_info = bms_info->can_info;
-	multi_packets_des_t *multi_packets_des = &bms_info->multi_packets_info.tx_des;
-
-	tx_msg.ExtId = get_pdu_id(FN_MULTI_REQUEST_PRIORITY, FN_MULTI_REQUEST, CHARGER_ADDR, BMS_ADDR);
-	tx_msg.IDE = CAN_ID_EXT;
-	tx_msg.RTR = CAN_RTR_DATA;
-	tx_msg.DLC = sizeof(bms_multi_request_t);
-
-	bms_multi_request_t *data = (bms_multi_request_t *)tx_msg.Data;
-	data->head.type = FN_MULTI_REQUEST_TYPE;
-	data->bytes = multi_packets_des->bms_data_multi_bytes;
-	data->packets = multi_packets_des->bms_data_multi_packets;
-	data->reserved_0 = 0xff;
-	data->reserved_1 = 0x00;
-	data->fn = multi_packets_des->bms_data_multi_fn;
-	data->reserved_2 = 0x00;
-
-	ret = can_tx_data(can_info, &tx_msg, 10);
-
-	return ret;
-}
-
-static int send_multi_data(bms_info_t *bms_info)
-{
-	int ret = 0;
-	can_tx_msg_t tx_msg;
-	can_info_t *can_info = bms_info->can_info;
-	multi_packets_des_t *multi_packets_des = &bms_info->multi_packets_info.tx_des;
-	int i;
-
-	tx_msg.ExtId = get_pdu_id(FN_MULTI_DATA_PRIORITY, FN_MULTI_DATA, CHARGER_ADDR, BMS_ADDR);
-	tx_msg.IDE = CAN_ID_EXT;
-	tx_msg.RTR = CAN_RTR_DATA;
-	tx_msg.DLC = sizeof(bms_multi_data_t);
-
-	for(i = multi_packets_des->bms_data_multi_next_index; i <= multi_packets_des->bms_data_multi_packets; i = multi_packets_des->bms_data_multi_next_index) {
-		bms_multi_data_t *data = (bms_multi_data_t *)tx_msg.Data;
-		uint8_t sent_bytes = (7 * (i - 1));
-		uint8_t send_bytes = 7;
-		data->index = i;
-
-		if(send_bytes > (multi_packets_des->bms_data_multi_bytes - sent_bytes)) {
-			send_bytes = multi_packets_des->bms_data_multi_bytes - sent_bytes;
-		}
-
-		memset(data->data, 0, sizeof(bms_multi_data_t));
-
-		if(multi_packets_des->bms_data != NULL) {
-			memcpy(data->data, multi_packets_des->bms_data + sent_bytes, send_bytes);
-		}
-
-		ret = can_tx_data(can_info, &tx_msg, 10);
-
-		if(ret != 0) {
-			break;
-		}
-
-		multi_packets_des->bms_data_multi_next_index++;
-	}
-
-	return ret;
-}
-
-static int send_multi_packets(bms_info_t *bms_info, uint8_t *data, uint16_t fn, uint16_t bytes, uint16_t packets, uint32_t period)
+static int handle_common_response(bms_info_t *bms_info)
 {
 	int ret = -1;
-	multi_packets_des_t *multi_packets_des = &bms_info->multi_packets_info.tx_des;
-	uint32_t ticks = osKernelSysTick();
 
-	if(multi_packets_des->bms_data_multi_fn != FN_INVALID) {
-		if(ticks - multi_packets_des->start_stamp >= period) {
-			multi_packets_des->bms_data_multi_fn = FN_INVALID;
-			multi_packets_des->bms_data = NULL;
-		}
+	ret = handle_multi_data_response(bms_info->can_info, &bms_info->multi_packets_info, bms_info->settings);
+
+	if(ret == 0) {
+		return ret;
 	}
 
-	if(multi_packets_des->bms_data_multi_fn == FN_INVALID) {
-		multi_packets_des->bms_data_multi_fn = fn;
-		multi_packets_des->bms_data_multi_bytes = bytes;
-		multi_packets_des->bms_data_multi_packets = packets;
-		multi_packets_des->bms_data_multi_next_index = 0;
-		multi_packets_des->bms_data = data;
-		multi_packets_des->start_stamp = ticks;
-		send_multi_request(bms_info);
-	} else if(multi_packets_des->bms_data_multi_fn == fn) {
-		if((multi_packets_des->bms_data_multi_next_index >= 1) && (multi_packets_des->bms_data_multi_next_index <= multi_packets_des->bms_data_multi_packets)) {
-			send_multi_data(bms_info);
-
-			if(multi_packets_des->bms_data_multi_next_index > multi_packets_des->bms_data_multi_packets) {
-				multi_packets_des->bms_data_multi_fn = FN_INVALID;
-				multi_packets_des->bms_data = NULL;
-				ret = 0;
-			}
-		}
-	}
+	ret = handle_common_cst_response(bms_info);
 
 	return ret;
 }
@@ -489,7 +256,9 @@ static int handle_state_brm_request(bms_info_t *bms_info)
 		if(ticks - bms_info->send_stamp >= FN_BRM_SEND_PERIOD) {
 			if(bms_info->modbus_data->disable_brm == 0) {
 				//send_brm(bms_info);
-				if(send_multi_packets(bms_info,
+				if(send_multi_packets(bms_info->can_info,
+				                      &bms_info->multi_packets_info,
+				                      bms_info->settings,
 				                      (uint8_t *)&bms_info->settings->brm_data,
 				                      FN_BRM,
 				                      sizeof(brm_data_multi_t),
@@ -565,7 +334,9 @@ static int handle_state_bcp_request(bms_info_t *bms_info)
 	} else {
 		if(ticks - bms_info->send_stamp >= FN_BCP_SEND_PERIOD) {
 			if(bms_info->modbus_data->disable_bcp == 0) {
-				if(send_multi_packets(bms_info,
+				if(send_multi_packets(bms_info->can_info,
+				                      &bms_info->multi_packets_info,
+				                      bms_info->settings,
 				                      (uint8_t *)&bms_info->settings->bcp_data,
 				                      FN_BCP,
 				                      sizeof(bcp_data_multi_t),
@@ -832,7 +603,9 @@ static int handle_state_bcl_bcs_bsm_bmv_bmt_bsp_request(bms_info_t *bms_info)
 
 		if(ticks - bms_info->send_stamp_1 >= FN_BCS_SEND_PERIOD) {
 			if(bms_info->modbus_data->disable_bcs == 0) {
-				if(send_multi_packets(bms_info,
+				if(send_multi_packets(bms_info->can_info,
+				                      &bms_info->multi_packets_info,
+				                      bms_info->settings,
 				                      (uint8_t *)&bms_info->settings->bcs_data,
 				                      FN_BCS,
 				                      sizeof(bcs_data_t),

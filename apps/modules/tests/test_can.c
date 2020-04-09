@@ -6,7 +6,7 @@
  *   文件名称：test_can.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 16时45分27秒
- *   修改日期：2020年04月01日 星期三 12时56分42秒
+ *   修改日期：2020年04月09日 星期四 14时23分30秒
  *   描    述：
  *
  *================================================================*/
@@ -87,7 +87,7 @@ void test_can(void)
 {
 
 	{
-		can_info_t *can_info = alloc_can_info(&hcan1);
+		can_info_t *can_info = get_or_alloc_can_info(&hcan1);
 		osThreadDef(test_can, task_can_send, osPriorityNormal, 0, 128 * 4);
 
 		if(can_info == NULL) {
@@ -99,7 +99,7 @@ void test_can(void)
 	}
 
 	{
-		can_info_t *can_info = alloc_can_info(&hcan2);
+		can_info_t *can_info = get_or_alloc_can_info(&hcan2);
 		osThreadDef(test_can, task_can_receive, osPriorityNormal, 0, 128 * 4);
 
 		if(can_info == NULL) {
