@@ -6,7 +6,7 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年04月09日 星期四 13时30分20秒
+ *   修改日期：2020年04月10日 星期五 15时33分07秒
  *   描    述：
  *
  *================================================================*/
@@ -15,6 +15,8 @@
 
 #include "os_utils.h"
 #include <string.h>
+#define UDP_LOG
+#include "task_probe_tool.h"
 
 static LIST_HEAD(charger_info_list);
 static osMutexId charger_info_list_mutex = NULL;
@@ -112,6 +114,60 @@ void free_charger_info(charger_info_t *charger_info)
 	os_free(charger_info);
 }
 
+char *get_charger_state_des(charger_state_t state)
+{
+	char *des = NULL;
+
+	switch(state) {
+		case CHARGER_STATE_IDLE: {
+			des = "CHARGER_STATE_IDLE";
+		}
+		break;
+
+		case CHARGER_STATE_CHM: {
+			des = "CHARGER_STATE_CHM";
+		}
+		break;
+
+		case CHARGER_STATE_CRM: {
+			des = "CHARGER_STATE_CRM";
+		}
+		break;
+
+		case CHARGER_STATE_CTS_CML: {
+			des = "CHARGER_STATE_CTS_CML";
+		}
+		break;
+
+		case CHARGER_STATE_CRO: {
+			des = "CHARGER_STATE_CRO";
+		}
+		break;
+
+		case CHARGER_STATE_CCS: {
+			des = "CHARGER_STATE_CCS";
+		}
+		break;
+
+		case CHARGER_STATE_CST: {
+			des = "CHARGER_STATE_CST";
+		}
+		break;
+
+		case CHARGER_STATE_CSD_CEM: {
+			des = "CHARGER_STATE_CSD_CEM";
+		}
+		break;
+
+		default: {
+			des = "unknow state";
+		}
+		break;
+	}
+
+	return des;
+}
+
 charger_info_t *get_or_alloc_charger_info(can_info_t *can_info)
 {
 	charger_info_t *charger_info = NULL;
@@ -119,6 +175,7 @@ charger_info_t *get_or_alloc_charger_info(can_info_t *can_info)
 	osStatus os_status;
 
 	charger_info = get_charger_info(can_info);
+
 	if(charger_info != NULL) {
 		return charger_info;
 	}
@@ -133,6 +190,7 @@ charger_info_t *get_or_alloc_charger_info(can_info_t *can_info)
 	}
 
 	charger_info = (charger_info_t *)os_alloc(sizeof(charger_info_t));
+
 	if(charger_info == NULL) {
 		return charger_info;
 	}
@@ -169,6 +227,8 @@ void set_charger_state(charger_info_t *charger_info, charger_state_t state)
 	if((handler != NULL) && (handler->prepare != NULL)) {
 		handler->prepare(charger_info);
 	}
+
+	udp_log_printf("change to state:%s!\n", get_charger_state_des(state));
 
 	charger_info->state = state;
 }

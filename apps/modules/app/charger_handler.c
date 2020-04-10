@@ -6,7 +6,7 @@
  *   文件名称：charger_handler.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时18分42秒
- *   修改日期：2020年04月09日 星期四 14时21分31秒
+ *   修改日期：2020年04月10日 星期五 15时06分47秒
  *   描    述：
  *
  *================================================================*/
@@ -569,10 +569,10 @@ static int handle_state_ccs_request(charger_info_t *charger_info)
 	int ret = 0;
 	uint32_t ticks = osKernelSysTick();
 
-	if(ticks - charger_info->stamp >= FN_BCL_TIMEOUT) {//定时发送
+	if(ticks - charger_info->stamp >= FN_BCL_TIMEOUT) {//bcl timeout
 		charger_info->settings->cem_data.u3.s.bcl_timeout = 0x01;
 		set_charger_state(charger_info, CHARGER_STATE_CST);
-	} else if(ticks - charger_info->stamp_1 >= BMS_GENERIC_TIMEOUT) {//定时发送
+	} else if(ticks - charger_info->stamp_1 >= BMS_GENERIC_TIMEOUT) {//bcs timeout
 		charger_info->settings->cem_data.u3.s.bcs_timeout = 0x01;
 		set_charger_state(charger_info, CHARGER_STATE_CST);
 	} else {
@@ -620,8 +620,6 @@ static int handle_state_ccs_response(charger_info_t *charger_info)
 			bsm_data_t *data = (bsm_data_t *)rx_msg->Data;
 
 			charger_info->settings->bsm_data = *data;
-
-			charger_info->stamp = osKernelSysTick();
 
 			ret = 0;
 		}
