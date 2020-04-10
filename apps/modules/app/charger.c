@@ -6,7 +6,7 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年04月10日 星期五 15时33分07秒
+ *   修改日期：2020年04月10日 星期五 16时48分58秒
  *   描    述：
  *
  *================================================================*/
@@ -15,7 +15,7 @@
 
 #include "os_utils.h"
 #include <string.h>
-#define UDP_LOG
+//#define UDP_LOG
 #include "task_probe_tool.h"
 
 static LIST_HEAD(charger_info_list);

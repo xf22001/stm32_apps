@@ -6,7 +6,7 @@
  *   文件名称：bms_handler.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时18分53秒
- *   修改日期：2020年04月09日 星期四 17时25分46秒
+ *   修改日期：2020年04月10日 星期五 16时49分16秒
  *   描    述：
  *
  *================================================================*/
@@ -15,7 +15,7 @@
 #include "bms_spec.h"
 #include "bms_multi_data.h"
 #include <string.h>
-//#define UDP_LOG
+#define UDP_LOG
 #include "task_probe_tool.h"
 
 static int handle_common_cst_response(bms_info_t *bms_info)

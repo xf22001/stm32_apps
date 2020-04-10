@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时07分55秒
- *   修改日期：2020年04月04日 星期六 18时49分56秒
+ *   修改日期：2020年04月10日 星期五 16时50分05秒
  *   描    述：
  *
  *================================================================*/
@@ -312,20 +312,20 @@ int can_rx_data(can_info_t *can_info, uint32_t timeout)
 	status = HAL_CAN_Receive_IT(can_info->hcan, can_info->receive_fifo);
 
 	if(status != HAL_OK) {//重新初始化
-		HAL_CAN_DeInit(can_info->hcan);
+		//HAL_CAN_DeInit(can_info->hcan);
 
-		if(can_info->can_hal_init) {
-			can_info->can_hal_init();
-		}
+		//if(can_info->can_hal_init) {
+		//	can_info->can_hal_init();
+		//}
 
-		if(can_info->receive_init) {
-			can_info->receive_init(can_info->hcan);
-		}
+		//if(can_info->receive_init) {
+		//	can_info->receive_init(can_info->hcan);
+		//}
 
-		status = HAL_CAN_Receive_IT(can_info->hcan, can_info->receive_fifo);
+		//status = HAL_CAN_Receive_IT(can_info->hcan, can_info->receive_fifo);
 
-		if(status != HAL_OK) {
-		}
+		//if(status != HAL_OK) {
+		//}
 	}
 
 	if(can_info->hcan_mutex) {
