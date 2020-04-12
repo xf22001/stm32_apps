@@ -6,7 +6,7 @@
  *   文件名称：modbus_txrx.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月26日 星期二 14时25分28秒
- *   修改日期：2020年04月12日 星期日 13时12分06秒
+ *   修改日期：2020年04月12日 星期日 13时57分28秒
  *   描    述：
  *
  *================================================================*/
@@ -28,14 +28,14 @@ extern "C"
 #define MODBUS_SLAVE_ID  1
 
 typedef uint8_t (*modbus_addr_valid_t)(void *ctx, uint16_t start, uint16_t number);
-typedef uint16_t (*modbus_addr_get_t)(void *ctx, uint16_t addr);
-typedef void (*modbus_addr_set_t)(void *ctx, uint16_t addr, uint16_t value);
+typedef uint16_t (*modbus_data_get_t)(void *ctx, uint16_t addr);
+typedef void (*modbus_data_set_t)(void *ctx, uint16_t addr, uint16_t value);
 
 typedef struct {
 	void *ctx;
 	modbus_addr_valid_t valid;
-	modbus_addr_get_t get;
-	modbus_addr_set_t set;
+	modbus_data_get_t get;
+	modbus_data_set_t set;
 } modbus_data_info_t;
 
 typedef struct {

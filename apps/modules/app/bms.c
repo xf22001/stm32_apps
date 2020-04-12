@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年04月12日 星期日 13时11分23秒
+ *   修改日期：2020年04月12日 星期日 13时57分02秒
  *   描    述：
  *
  *================================================================*/
@@ -457,7 +457,7 @@ static uint8_t modbus_addr_valid(void *ctx, uint16_t start, uint16_t number)
 	return valid;
 }
 
-static uint16_t modbus_addr_get(void *ctx, uint16_t addr)
+static uint16_t modbus_data_get(void *ctx, uint16_t addr)
 {
 	bms_info_t *bms_info = (bms_info_t *)ctx;
 	uint16_t *modbus_data = (uint16_t *)bms_info->modbus_data;
@@ -465,7 +465,7 @@ static uint16_t modbus_addr_get(void *ctx, uint16_t addr)
 	return modbus_data[addr];
 }
 
-static void modbus_addr_set(void *ctx, uint16_t addr, uint16_t value)
+static void modbus_data_set(void *ctx, uint16_t addr, uint16_t value)
 {
 	bms_info_t *bms_info = (bms_info_t *)ctx;
 	uint16_t *modbus_data = (uint16_t *)bms_info->modbus_data;
@@ -479,8 +479,8 @@ void bms_set_modbus_info(bms_info_t *bms_info, modbus_info_t *modbus_info)
 
 	bms_info->modbus_data_info.ctx = bms_info;
 	bms_info->modbus_data_info.valid = modbus_addr_valid;
-	bms_info->modbus_data_info.get = modbus_addr_get;
-	bms_info->modbus_data_info.set = modbus_addr_set;
+	bms_info->modbus_data_info.get = modbus_data_get;
+	bms_info->modbus_data_info.set = modbus_data_set;
 	set_modbus_data_info(bms_info->modbus_info, &bms_info->modbus_data_info);
 
 	bms_info->modbus_data_changed_cb.fn = modbus_data_changed;
@@ -1109,7 +1109,6 @@ void set_bms_state(bms_info_t *bms_info, bms_state_t state)
 	bms_info->state = state;
 
 	bms_data_to_modbus_data(bms_info, 0);
-	save_eeprom_modbus_data(bms_info);
 	bms_info->modbus_data->bms_state = bms_info->state;
 }
 
