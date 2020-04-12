@@ -6,7 +6,7 @@
  *   文件名称：modbus_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月26日 星期二 14时24分54秒
- *   修改日期：2020年04月09日 星期四 17时26分07秒
+ *   修改日期：2020年04月12日 星期日 13时15分06秒
  *   描    述：
  *
  *================================================================*/
@@ -118,11 +118,9 @@ modbus_info_t *get_or_alloc_modbus_info(uart_info_t *uart_info)
 	}
 
 	modbus_info->uart_info = uart_info;
-	modbus_info->modbus_data = NULL;
-	modbus_info->start_addr = 0;
-	modbus_info->end_addr = 0;
 	modbus_info->rx_timeout = 3000;
 	modbus_info->tx_timeout = 1000;
+	modbus_info->modbus_data_info = NULL;
 
 	os_status = osMutexWait(modbus_info_list_mutex, osWaitForever);
 
@@ -172,37 +170,6 @@ static void modbus_read(modbus_info_t *modbus_info)
 	modbus_info->rx_size = uart_rx_data(modbus_info->uart_info, modbus_info->rx_buffer, MODBUS_BUFFER_SIZE, modbus_info->rx_timeout);
 }
 
-static uint8_t is_valid_modbus_addr(modbus_info_t *modbus_info, uint16_t start, uint16_t number)
-{
-	uint8_t valid = 0;
-	uint16_t start_addr = start * sizeof(uint16_t);
-	uint16_t end_addr = start_addr + number * sizeof(uint16_t);
-
-	if(end_addr <= start_addr) {
-		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
-		return valid;
-	}
-
-	if(modbus_info->modbus_data == NULL) {
-		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
-		return valid;
-	}
-
-	if(start_addr < modbus_info->start_addr) {
-		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
-		return valid;
-	}
-
-	if(end_addr > modbus_info->end_addr) {
-		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
-		return valid;
-	}
-
-	valid = 1;
-
-	return valid;
-}
-
 typedef struct {
 	modbus_head_t head;
 	modbus_addr_t addr;
@@ -249,7 +216,7 @@ static int fn_0x03(modbus_info_t *modbus_info)//read some number
 	u_uint16_bytes.s.byte1 = request_0x03->number.number_h;
 	number = u_uint16_bytes.v;
 
-	if(is_valid_modbus_addr(modbus_info, addr, number) == 0) {
+	if(modbus_info->modbus_data_info->valid(modbus_info->modbus_data_info->ctx, addr, number) == 0) {
 		return ret;
 	}
 
@@ -259,7 +226,7 @@ static int fn_0x03(modbus_info_t *modbus_info)//read some number
 	data_item = (modbus_data_item_t *)(modbus_response_0x03_head + 1);
 
 	for(i = 0; i < number; i++) {
-		u_uint16_bytes.v = modbus_info->modbus_data[addr + i];
+		u_uint16_bytes.v = modbus_info->modbus_data_info->get(modbus_info->modbus_data_info->ctx, addr + i);
 		udp_log_printf("request read addr:%d, data:%d(%x)\n", addr + i, u_uint16_bytes.v, u_uint16_bytes.v);
 
 		data_item->data_l = u_uint16_bytes.s.byte0;
@@ -328,7 +295,7 @@ static int fn_0x06(modbus_info_t *modbus_info)//write one number
 
 	data_item = &request_0x06->data;
 
-	if(is_valid_modbus_addr(modbus_info, addr, 1) == 0) {
+	if(modbus_info->modbus_data_info->valid(modbus_info->modbus_data_info->ctx, addr, 1) == 0) {
 		return ret;
 	}
 
@@ -337,7 +304,7 @@ static int fn_0x06(modbus_info_t *modbus_info)//write one number
 		u_uint16_bytes.s.byte0 = data_item->data_l;
 		u_uint16_bytes.s.byte1 = data_item->data_h;
 		udp_log_printf("request write addr:%d, data:%d(%x)\n", addr + i, u_uint16_bytes.v, u_uint16_bytes.v);
-		modbus_info->modbus_data[addr + i] = u_uint16_bytes.v;
+		modbus_info->modbus_data_info->set(modbus_info->modbus_data_info->ctx, addr + i, u_uint16_bytes.v);
 		data_item++;
 	}
 
@@ -351,7 +318,7 @@ static int fn_0x06(modbus_info_t *modbus_info)//write one number
 	data_item = &modbus_response_0x06->data;
 
 	for(i = 0; i < 1; i++) {
-		u_uint16_bytes.v = modbus_info->modbus_data[addr + i];
+		u_uint16_bytes.v = modbus_info->modbus_data_info->get(modbus_info->modbus_data_info->ctx, addr + i);
 		data_item->data_l = u_uint16_bytes.s.byte0;
 		data_item->data_h = u_uint16_bytes.s.byte1;
 		data_item++;
@@ -412,7 +379,7 @@ static int fn_0x10(modbus_info_t *modbus_info)//write more number
 	u_uint16_bytes.s.byte1 = modbus_request_0x10_head->number.number_h;
 	number = u_uint16_bytes.v;
 
-	if(is_valid_modbus_addr(modbus_info, addr, number) == 0) {
+	if(modbus_info->modbus_data_info->valid(modbus_info->modbus_data_info->ctx, addr, number) == 0) {
 		return ret;
 	}
 
@@ -433,7 +400,7 @@ static int fn_0x10(modbus_info_t *modbus_info)//write more number
 		u_uint16_bytes.s.byte0 = data_item->data_l;
 		u_uint16_bytes.s.byte1 = data_item->data_h;
 		udp_log_printf("request multi-write addr:%d, data:%d(%x)\n", addr + i, u_uint16_bytes.v, u_uint16_bytes.v);
-		modbus_info->modbus_data[addr + i] = u_uint16_bytes.v;
+		modbus_info->modbus_data_info->set(modbus_info->modbus_data_info->ctx, addr + i, u_uint16_bytes.v);
 		data_item++;
 	}
 
@@ -505,7 +472,7 @@ static int modubs_decode_request(modbus_info_t *modbus_info)
 	//udp_log_printf("head->station:%02x\n", head->station);
 	//udp_log_printf("head->fn:%02x\n", head->fn);
 
-	if(modbus_info->modbus_data == NULL) {
+	if(modbus_info->modbus_data_info == NULL) {
 		return ret;
 	}
 
@@ -527,12 +494,11 @@ int modbus_process_request(modbus_info_t *modbus_info)
 	return modubs_decode_request(modbus_info);
 }
 
-int set_modbus_data(modbus_info_t *modbus_info, uint16_t *modbus_data, uint16_t start_addr, uint16_t end_addr)
+int set_modbus_data_info(modbus_info_t *modbus_info, modbus_data_info_t *modbus_data_info)
 {
 	int ret = 0;
-	modbus_info->modbus_data = modbus_data;
-	modbus_info->start_addr = start_addr;
-	modbus_info->end_addr = end_addr;
+
+	modbus_info->modbus_data_info = modbus_data_info;
 
 	return ret;
 }

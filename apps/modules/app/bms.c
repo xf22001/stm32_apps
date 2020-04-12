@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年04月10日 星期五 17时45分51秒
+ *   修改日期：2020年04月12日 星期日 13时11分23秒
  *   描    述：
  *
  *================================================================*/
@@ -45,8 +45,6 @@ static LIST_HEAD(bms_info_list);
 static osMutexId bms_info_list_mutex = NULL;
 
 static bitmap_t *eeprom_modbus_data_bitmap = NULL;
-
-static callback_item_t modbus_data_changed_cb;
 
 typedef struct {
 	CAN_HandleTypeDef *hcan;
@@ -266,8 +264,10 @@ void free_bms_info(bms_info_t *bms_info)
 	if(os_status != osOK) {
 	}
 
-	set_modbus_data(bms_info->modbus_info, NULL, 0, 0);
-	remove_modbus_data_changed_cb(bms_info->modbus_info, &modbus_data_changed_cb);
+	if(bms_info->modbus_info != NULL) {
+		set_modbus_data_info(bms_info->modbus_info, NULL);
+		remove_modbus_data_changed_cb(bms_info->modbus_info, &bms_info->modbus_data_changed_cb);
+	}
 
 	set_bitmap_value(eeprom_modbus_data_bitmap, bms_info->eeprom_modbus_data_index, 0);
 
@@ -430,17 +430,62 @@ static void modbus_data_changed(void *fn_ctx, void *chain_ctx)
 	save_eeprom_modbus_data((bms_info_t *)fn_ctx);
 }
 
+static uint8_t modbus_addr_valid(void *ctx, uint16_t start, uint16_t number)
+{
+	uint8_t valid = 0;
+	uint16_t start_addr = start * sizeof(uint16_t);
+	uint16_t end_addr = start_addr + number * sizeof(uint16_t);
+	//bms_info_t *bms_info = (bms_info_t *)ctx;
+
+	if(end_addr <= start_addr) {
+		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		return valid;
+	}
+
+	if(start_addr < 0) {
+		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		return valid;
+	}
+
+	if(end_addr > sizeof(modbus_data_t)) {
+		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		return valid;
+	}
+
+	valid = 1;
+
+	return valid;
+}
+
+static uint16_t modbus_addr_get(void *ctx, uint16_t addr)
+{
+	bms_info_t *bms_info = (bms_info_t *)ctx;
+	uint16_t *modbus_data = (uint16_t *)bms_info->modbus_data;
+
+	return modbus_data[addr];
+}
+
+static void modbus_addr_set(void *ctx, uint16_t addr, uint16_t value)
+{
+	bms_info_t *bms_info = (bms_info_t *)ctx;
+	uint16_t *modbus_data = (uint16_t *)bms_info->modbus_data;
+
+	modbus_data[addr] = value;
+}
 
 void bms_set_modbus_info(bms_info_t *bms_info, modbus_info_t *modbus_info)
 {
 	bms_info->modbus_info = modbus_info;
 
-	set_modbus_data(bms_info->modbus_info, (uint16_t *)bms_info->modbus_data, 0, sizeof(modbus_data_t));
+	bms_info->modbus_data_info.ctx = bms_info;
+	bms_info->modbus_data_info.valid = modbus_addr_valid;
+	bms_info->modbus_data_info.get = modbus_addr_get;
+	bms_info->modbus_data_info.set = modbus_addr_set;
+	set_modbus_data_info(bms_info->modbus_info, &bms_info->modbus_data_info);
 
-	modbus_data_changed_cb.fn = modbus_data_changed;
-	modbus_data_changed_cb.fn_ctx = bms_info;
-
-	add_modbus_data_changed_cb(bms_info->modbus_info, &modbus_data_changed_cb);
+	bms_info->modbus_data_changed_cb.fn = modbus_data_changed;
+	bms_info->modbus_data_changed_cb.fn_ctx = bms_info;
+	add_modbus_data_changed_cb(bms_info->modbus_info, &bms_info->modbus_data_changed_cb);
 }
 
 void bms_set_eeprom_info(bms_info_t *bms_info, eeprom_info_t *eeprom_info)

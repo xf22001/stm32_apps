@@ -6,7 +6,7 @@
  *   文件名称：bitmap_ops.h
  *   创 建 者：肖飞
  *   创建日期：2020年01月19日 星期日 13时16分54秒
- *   修改日期：2020年01月20日 星期一 13时15分39秒
+ *   修改日期：2020年04月12日 星期日 13时34分37秒
  *   描    述：
  *
  *================================================================*/
@@ -17,12 +17,13 @@ extern "C"
 {
 #endif
 
+#include <stddef.h>
+#include <stdint.h>
+#include "cmsis_os.h"
+
 #ifdef __cplusplus
 }
 #endif
-
-#include <stddef.h>
-#include <stdint.h>
 
 typedef uint32_t cell_type_t;
 #define BIT_PER_CELL 32
@@ -31,6 +32,7 @@ typedef uint32_t cell_type_t;
 typedef struct {
 	int size;
 	cell_type_t *data;
+	osMutexId bitmap_mutex;
 } bitmap_t;
 
 bitmap_t *alloc_bitmap(int size);

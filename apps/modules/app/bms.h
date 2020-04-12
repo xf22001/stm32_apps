@@ -6,7 +6,7 @@
  *   文件名称：bms.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分57秒
- *   修改日期：2020年04月04日 星期六 18时01分10秒
+ *   修改日期：2020年04月12日 星期日 13时16分03秒
  *   描    述：
  *
  *================================================================*/
@@ -173,7 +173,7 @@ typedef struct {
 
 typedef struct {
 	struct list_head list;
-	
+
 	can_info_t *can_info;
 	bms_state_t state;
 	osMutexId handle_mutex;
@@ -194,6 +194,9 @@ typedef struct {
 
 	modbus_info_t *modbus_info;
 	modbus_data_t *modbus_data;
+	modbus_data_info_t modbus_data_info;
+	callback_item_t modbus_data_changed_cb;
+
 	uint8_t eeprom_modbus_data_index;
 	eeprom_modbus_data_t *eeprom_modbus_data;
 	eeprom_info_t *eeprom_info;

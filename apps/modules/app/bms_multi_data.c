@@ -6,7 +6,7 @@
  *   文件名称：bms_multi_data.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月09日 星期四 13时04分55秒
- *   修改日期：2020年04月10日 星期五 16时48分27秒
+ *   修改日期：2020年04月12日 星期日 13时20分31秒
  *   描    述：
  *
  *================================================================*/
@@ -147,8 +147,8 @@ int handle_multi_data_response(can_info_t *can_info, multi_packets_info_t *multi
 					               (can_info->filter_fifo == 0x00) ? "hcan1" : "hcan2",
 					               data->fn);
 					//状态已经复位，下面代码无意义
-					//if((data->bytes == multi_packets_des->bms_data_multi_bytes) && (data->packets == multi_packets_des->bms_data_multi_packets) && (data->fn == multi_packets_des->bms_data_multi_fn)) {
-					//}
+					if((data->bytes == multi_packets_des->bms_data_multi_bytes) && (data->packets == multi_packets_des->bms_data_multi_packets) && (data->fn == multi_packets_des->bms_data_multi_fn)) {
+					}
 				}
 				break;
 
@@ -263,7 +263,7 @@ static int send_multi_data(can_info_t *can_info, multi_packets_des_t *multi_pack
 	tx_msg.RTR = CAN_RTR_DATA;
 	tx_msg.DLC = sizeof(bms_multi_data_t);
 
-	for(i; i <= multi_packets_des->bms_data_multi_packets; i = multi_packets_des->bms_data_multi_next_index) {
+	for(; i <= multi_packets_des->bms_data_multi_packets; i = multi_packets_des->bms_data_multi_next_index) {
 		uint8_t sent_bytes = (7 * (i - 1));
 		uint8_t send_bytes = 7;
 
