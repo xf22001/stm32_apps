@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年04月12日 星期日 13时57分02秒
+ *   修改日期：2020年04月12日 星期日 15时25分59秒
  *   描    述：
  *
  *================================================================*/
@@ -255,11 +255,7 @@ void free_bms_info(bms_info_t *bms_info)
 
 	list_del(&bms_info->list);
 
-	if(bms_info_list_mutex == NULL) {
-		return;
-	}
-
-	os_status = osMutexWait(bms_info_list_mutex, osWaitForever);
+	os_status = osMutexRelease(bms_info_list_mutex);
 
 	if(os_status != osOK) {
 	}
@@ -269,7 +265,9 @@ void free_bms_info(bms_info_t *bms_info)
 		remove_modbus_data_changed_cb(bms_info->modbus_info, &bms_info->modbus_data_changed_cb);
 	}
 
-	set_bitmap_value(eeprom_modbus_data_bitmap, bms_info->eeprom_modbus_data_index, 0);
+	if(eeprom_modbus_data_bitmap != NULL) {
+		set_bitmap_value(eeprom_modbus_data_bitmap, bms_info->eeprom_modbus_data_index, 0);
+	}
 
 	os_free(bms_info->eeprom_modbus_data);
 

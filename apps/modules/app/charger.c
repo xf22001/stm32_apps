@@ -6,7 +6,7 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年04月10日 星期五 16时48分58秒
+ *   修改日期：2020年04月12日 星期日 15时23分09秒
  *   描    述：
  *
  *================================================================*/
@@ -88,17 +88,6 @@ void free_charger_info(charger_info_t *charger_info)
 		return;
 	}
 
-	if(charger_info->settings) {
-		os_free(charger_info->settings);
-	}
-
-	if(charger_info->handle_mutex) {
-		os_status = osMutexDelete(charger_info->handle_mutex);
-
-		if(osOK != os_status) {
-		}
-	}
-
 	os_status = osMutexWait(charger_info_list_mutex, osWaitForever);
 
 	if(os_status != osOK) {
@@ -109,6 +98,17 @@ void free_charger_info(charger_info_t *charger_info)
 	os_status = osMutexRelease(charger_info_list_mutex);
 
 	if(os_status != osOK) {
+	}
+
+	if(charger_info->settings) {
+		os_free(charger_info->settings);
+	}
+
+	if(charger_info->handle_mutex) {
+		os_status = osMutexDelete(charger_info->handle_mutex);
+
+		if(osOK != os_status) {
+		}
 	}
 
 	os_free(charger_info);
