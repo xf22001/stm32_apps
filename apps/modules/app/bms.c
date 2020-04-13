@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年04月13日 星期一 16时52分48秒
+ *   修改日期：2020年04月13日 星期一 16时53分38秒
  *   描    述：
  *
  *================================================================*/
@@ -1423,10 +1423,10 @@ static void modbus_data_get_set(bms_info_t *bms_info, uint16_t addr, uint16_t *v
 
 		default:
 			udp_log_printf("error! op:%s, addr:%d\n",
-					(op == MODBUS_DATA_GET) ? "get" :
-					(op == MODBUS_DATA_SET) ? "set" :
-					"unknow",
-					addr);
+			               (op == MODBUS_DATA_GET) ? "get" :
+			               (op == MODBUS_DATA_SET) ? "set" :
+			               "unknow",
+			               addr);
 			break;
 	}
 }
