@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年04月13日 星期一 17时07分13秒
+ *   修改日期：2020年04月13日 星期一 17时19分04秒
  *   描    述：
  *
  *================================================================*/
@@ -1772,12 +1772,6 @@ void bms_handle_response(bms_info_t *bms_info)
 uint8_t is_gun_connected(bms_info_t *bms_info)
 {
 	GPIO_PinState state = HAL_GPIO_ReadPin(bms_info->gun_connect_gpio, bms_info->gun_connect_pin);
-	static GPIO_PinState state_pre = GPIO_PIN_RESET;
-
-	if(state_pre != state) {
-		udp_log_printf("%s %d -> %d\n", __func__, state_pre, state);
-		state_pre = state;
-	}
 
 	if(state == GPIO_PIN_RESET) {
 		//return 0;
@@ -1790,12 +1784,6 @@ uint8_t is_gun_connected(bms_info_t *bms_info)
 uint8_t is_bms_poweron_enable(bms_info_t *bms_info)
 {
 	GPIO_PinState state = HAL_GPIO_ReadPin(bms_info->bms_poweron_enable_gpio, bms_info->bms_poweron_enable_pin);
-	static GPIO_PinState state_pre = GPIO_PIN_RESET;
-
-	if(state_pre != state) {
-		udp_log_printf("%s %d -> %d\n", __func__, state_pre, state);
-		state_pre = state;
-	}
 
 	if(state == GPIO_PIN_RESET) {
 		return 0;
