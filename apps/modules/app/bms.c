@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年04月13日 星期一 16时53分38秒
+ *   修改日期：2020年04月13日 星期一 17时04分46秒
  *   描    述：
  *
  *================================================================*/
@@ -1588,19 +1588,16 @@ void bms_restore_data(bms_info_t *bms_info)
 	ret = load_eeprom_modbus_data(bms_info);
 	udp_log_printf("load_eeprom_modbus_data %s!\n", (ret == 0) ? "successfully" : "failed");
 
-	if(ret == 0) {
-		bms_info->bms_gun_connect = is_gun_connected(bms_info);
-		bms_info->bms_poweron_enable = is_bms_poweron_enable(bms_info);
-	} else {
-		bms_data_settings_default_init(bms_info->settings);
-		memset(&bms_info->configs, 0, sizeof(bms_data_configs_t));
-	}
-
 	reset_bms_data_settings_charger_data(bms_info);
 
 	if(ret != 0) {
+		bms_data_settings_default_init(bms_info->settings);
+		memset(&bms_info->configs, 0, sizeof(bms_data_configs_t));
 		save_eeprom_modbus_data(bms_info);
 	}
+
+	bms_info->bms_gun_connect = is_gun_connected(bms_info);
+	bms_info->bms_poweron_enable = is_bms_poweron_enable(bms_info);
 }
 
 bms_state_t get_bms_state(bms_info_t *bms_info)
@@ -1801,8 +1798,8 @@ uint8_t is_bms_poweron_enable(bms_info_t *bms_info)
 	}
 
 	if(state == GPIO_PIN_RESET) {
-		return 0;
-		//return 1;
+		//return 0;
+		return 1;
 	} else {
 		return 1;
 	}
