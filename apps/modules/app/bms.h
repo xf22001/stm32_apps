@@ -6,7 +6,7 @@
  *   文件名称：bms.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分57秒
- *   修改日期：2020年04月12日 星期日 13时16分03秒
+ *   修改日期：2020年04月13日 星期一 16时16分49秒
  *   描    述：
  *
  *================================================================*/
@@ -39,137 +39,161 @@ typedef enum {
 	BMS_STATE_BSD_BEM,
 } bms_state_t;
 
-typedef struct {
-	//uint16_t bhm_max_charge_voltage;//0.1v
+typedef enum {
+	MODBUS_ADDR_BRM_VERSION_1 = 0,
+	MODBUS_ADDR_BRM_VERSION_0 = 1,
+	MODBUS_ADDR_BRM_BATTERY_TYPE = 2,
+	MODBUS_ADDR_BRM_TOTAL_BATTERY_RATE_CAPICITY = 3,
+	MODBUS_ADDR_BRM_TOTAL_BATTERY_RATE_VOLTAGE = 4,
+	MODBUS_ADDR_BRM_BATTERY_VENDOR_0 = 5,
+	MODBUS_ADDR_BRM_BATTERY_VENDOR_1 = 6,
+	MODBUS_ADDR_BRM_BATTERY_VENDOR_SN_0 = 7,
+	MODBUS_ADDR_BRM_BATTERY_VENDOR_SN_1 = 8,
+	MODBUS_ADDR_BRM_BATTERY_YEAR = 9,
+	MODBUS_ADDR_BRM_BATTERY_MONTH = 10,
+	MODBUS_ADDR_BRM_BATTERY_DAY = 11,
+	MODBUS_ADDR_BRM_BATTERY_CHARGE_TIMES_0 = 12,
+	MODBUS_ADDR_BRM_BATTERY_CHARGE_TIMES_1 = 13,
+	MODBUS_ADDR_BRM_BATTERY_PROPERTY = 14,
+	MODBUS_ADDR_BRM_VIN_0 = 15,
+	MODBUS_ADDR_BRM_VIN_1 = 16,
+	MODBUS_ADDR_BRM_VIN_2 = 17,
+	MODBUS_ADDR_BRM_VIN_3 = 18,
+	MODBUS_ADDR_BRM_VIN_4 = 19,
+	MODBUS_ADDR_BRM_VIN_5 = 20,
+	MODBUS_ADDR_BRM_VIN_6 = 21,
+	MODBUS_ADDR_BRM_VIN_7 = 22,
+	MODBUS_ADDR_BRM_VIN_8 = 23,
+	MODBUS_ADDR_BRM_VERSION_SERIAL = 24,
+	MODBUS_ADDR_BRM_VERSION_DAY = 25,
+	MODBUS_ADDR_BRM_VERSION_MONTH = 26,
+	MODBUS_ADDR_BRM_VERSION_YEAR = 27,
+	MODBUS_ADDR_BCP_MAX_CHARGE_VOLTAGE_SINGLE_BATTERY = 28,
+	MODBUS_ADDR_BCP_MAX_CHARGE_CURRENT = 29,
+	MODBUS_ADDR_BCP_RATE_TOTAL_POWER = 30,
+	MODBUS_ADDR_BCP_MAX_TEMPERATURE = 31,
+	MODBUS_ADDR_BCP_TOTAL_VOLTAGE = 32,
+	MODBUS_ADDR_BCP_TRANSFER_TYPE = 33,
+	MODBUS_ADDR_BRO_BRO_RESULT = 34,
+	MODBUS_ADDR_BCL_REQUIRE_VOLTAGE = 35,
+	MODBUS_ADDR_BCL_REQUIRE_CURRENT = 36,
+	MODBUS_ADDR_BCL_CHARGE_MODE = 37,
+	MODBUS_ADDR_BCS_CHARGE_VOLTAGE = 38,
+	MODBUS_ADDR_BCS_CHARGE_CURRENT = 39,
+	MODBUS_ADDR_BCS_SINGLE_BATTERY_MAX_VOLTAGE = 40,
+	MODBUS_ADDR_BCS_SINGLE_BATTERY_MAX_GROUP = 41,
+	MODBUS_ADDR_BCS_REMAIN_MIN = 42,
+	MODBUS_ADDR_BSM_SINGLE_MAX_VOLTAGE_GROUP = 43,
+	MODBUS_ADDR_BSM_BATTERY_MAX_TEMPERATURE = 44,
+	MODBUS_ADDR_BSM_BATTERY_MAX_TEMPERATURE_SN = 45,
+	MODBUS_ADDR_BSM_BATTERY_MIN_TEMPERATURE = 46,
+	MODBUS_ADDR_BSM_BATTERY_MIN_TEMPERATURE_SN = 47,
+	MODBUS_ADDR_BSM_SINGLE_VOLTAGE_STATE = 48,
+	MODBUS_ADDR_BSM_TOTAL_SOC_STATE = 49,
+	MODBUS_ADDR_BSM_BATTERY_CURRENT_STATE = 50,
+	MODBUS_ADDR_BSM_BATTERY_TEMPERATURE_STATE = 51,
+	MODBUS_ADDR_BSM_BATTERY_INSULATION_STATE = 52,
+	MODBUS_ADDR_BSM_BATTERY_CONNECTOR_STATE = 53,
+	MODBUS_ADDR_BSM_BATTERY_CHARGE_ENABLE = 54,
+	MODBUS_ADDR_BST_STOP_REASON_SOC = 55,
+	MODBUS_ADDR_BST_STOP_REASON_VOLTAGE = 56,
+	MODBUS_ADDR_BST_STOP_REASON_SINGLE_VOLTAGE = 57,
+	MODBUS_ADDR_BST_STOP_REASON_CHARGER_STOP = 58,
+	MODBUS_ADDR_BST_STOP_FAULT_REASON_INSULATION = 59,
+	MODBUS_ADDR_BST_STOP_FAULT_REASON_CONNECTOR_TEMPERATURE = 60,
+	MODBUS_ADDR_BST_STOP_FAULT_REASON_BMS_CONNECTOR_TEMPERATURE = 61,
+	MODBUS_ADDR_BST_STOP_FAULT_REASON_CHARGER_CONNECTOR = 62,
+	MODBUS_ADDR_BST_STOP_FAULT_REASON_BATTERY_TEMPERATURE = 63,
+	MODBUS_ADDR_BST_STOP_FAULT_REASON_RELAY = 64,
+	MODBUS_ADDR_BST_STOP_FAULT_REASON_VOLTAGE_CHECK = 65,
+	MODBUS_ADDR_BST_STOP_FAULT_REASON_OTHER = 66,
+	MODBUS_ADDR_BST_STOP_ERROR_REASON_CURRENT = 67,
+	MODBUS_ADDR_BST_STOP_ERROR_REASON_VOLTAGE = 68,
+	MODBUS_ADDR_BSD_SINGLE_MIN_VOLTAGE = 69,
+	MODBUS_ADDR_BSD_SINGLE_MAX_VOLTAGE = 70,
+	MODBUS_ADDR_BSD_BATTERY_MIN_TEMPERATURE = 71,
+	MODBUS_ADDR_BSD_BATTERY_MAX_TEMPERATURE = 72,
+	MODBUS_ADDR_BEM_CRM_00_TIMEOUT = 73,
+	MODBUS_ADDR_BEM_CRM_AA_TIMEOUT = 74,
+	MODBUS_ADDR_BEM_CTS_CML_TIMEOUT = 75,
+	MODBUS_ADDR_BEM_CRO_TIMEOUT = 76,
+	MODBUS_ADDR_BEM_CCS_TIMEOUT = 77,
+	MODBUS_ADDR_BEM_CST_TIMEOUT = 78,
+	MODBUS_ADDR_BEM_CSD_TIMEOUT = 79,
+	MODBUS_ADDR_BEM_OTHER = 80,
+	MODBUS_ADDR_BMS_COMMON_MAX_CHARGE_VOLTAGE = 81,
+	MODBUS_ADDR_BMS_COMMON_SOC = 82,
+	MODBUS_ADDR_CCS_OUTPUT_VOLTAGE = 83,
+	MODBUS_ADDR_CCS_OUTPUT_CURRENT = 84,
+	MODBUS_ADDR_CCS_TOTAL_CHARGE_TIME = 85,
+	MODBUS_ADDR_CCS_CHARGE_ENABLE = 86,
+	MODBUS_ADDR_CML_MAX_OUTPUT_VOLTAGE = 87,
+	MODBUS_ADDR_CML_MIN_OUTPUT_VOLTAGE = 88,
+	MODBUS_ADDR_CML_MAX_OUTPUT_CURRENT = 89,
+	MODBUS_ADDR_CML_MIN_OUTPUT_CURRENT = 90,
+	MODBUS_ADDR_DISABLE_BHM = 91,
+	MODBUS_ADDR_DISABLE_BRM = 92,
+	MODBUS_ADDR_DISABLE_BCP = 93,
+	MODBUS_ADDR_DISABLE_BRO = 94,
+	MODBUS_ADDR_DISABLE_BCL = 95,
+	MODBUS_ADDR_DISABLE_BCS = 96,
+	MODBUS_ADDR_DISABLE_BSM = 97,
+	MODBUS_ADDR_DISABLE_BMV = 98,
+	MODBUS_ADDR_DISABLE_BMT = 99,
+	MODBUS_ADDR_DISABLE_BSP = 100,
+	MODBUS_ADDR_DISABLE_BST = 101,
+	MODBUS_ADDR_DISABLE_BSD = 102,
+	MODBUS_ADDR_DISABLE_BEM = 103,
+	MODBUS_ADDR_STOP_BMS = 104,
+	MODBUS_ADDR_RESET_BMS_CONFIGURE = 105,
+	MODBUS_ADDR_TOGGLE_GUN_ON_OFF = 106,
+	MODBUS_ADDR_BMS_STATE = 107,
+	MODBUS_ADDR_BMS_GUN_CONNECT = 108,
+	MODBUS_ADDR_BMS_POWERON_ENABLE = 109,
+	MODBUS_ADDR_GUN_ON_OFF_STATE = 110,
+	MODBUS_ADDR_VERSION_MAJOR = 111,
+	MODBUS_ADDR_VERSION_MINOR = 112,
+	MODBUS_ADDR_VERSION_REV = 113,
+} modbus_addr_t;
+typedef enum {
+	MODBUS_DATA_GET = 0,
+	MODBUS_DATA_SET,
+} modbus_data_op_t;
 
-	uint16_t brm_version_1;
-	uint16_t brm_version_0;
-	uint16_t brm_battery_type;//0x01 : '铅酸电池', 0x02 : '镍氢电池', 0x03 : '磷酸电池', 0x04 : '锰酸锂电池', 0x05 : '钴酸锂电池', 0x06 : '三元材料电池', 0x07 : '聚合物电池', 0x08 : '钛酸锂电池', 0xff : '其他电池'
-	uint16_t brm_total_battery_rate_capicity;//0.1ah
-	uint16_t brm_total_battery_rate_voltage;//0.1v
-	uint16_t brm_battery_vendor[(4 + 1) / sizeof(uint16_t)];
-	uint16_t brm_battery_vendor_sn[(sizeof(uint32_t) + 1) / sizeof(uint16_t)];
-	uint16_t brm_battery_year;//1985+
-	uint16_t brm_battery_month;//1-12
-	uint16_t brm_battery_day;//1-31
-	uint16_t brm_battery_charge_times[(3 + 1) / sizeof(uint16_t)];
-	uint16_t brm_battery_property;//0-租赁，1-自有
-	uint16_t brm_vin[(17 + 1) / sizeof(uint16_t)];
-	uint16_t brm_version_serial;
-	uint16_t brm_version_day;
-	uint16_t brm_version_month;
-	uint16_t brm_version_year;
-
-	uint16_t bcp_max_charge_voltage_single_battery;//0.01v
-	uint16_t bcp_max_charge_current;//0.1a -4000
-	uint16_t bcp_rate_total_power;//0.1kwh
-	//uint16_t bcp_max_charge_voltage;//0.1v
-	uint16_t bcp_max_temperature;// -50
-	//uint16_t bcp_total_soc;//0.1%
-	uint16_t bcp_total_voltage;//0.1v
-	uint16_t bcp_transfer_type;//0xff
-
-	uint16_t bro_bro_result;//0x00-未准备好, 0xaa-准备好, 0xff-无效
-
-	uint16_t bcl_require_voltage;//0.1v
-	uint16_t bcl_require_current;//0.1a
-	uint16_t bcl_charge_mode;//0x01-恒压, 0x02-恒流
-
-	uint16_t bcs_charge_voltage;//0.1v
-	uint16_t bcs_charge_current;//0.1a -400
-	uint16_t bcs_single_battery_max_voltage;//0.01v 0-24v
-	uint16_t bcs_single_battery_max_group;//0-15
-	//uint16_t bcs_soc;//0-100%
-	uint16_t bcs_remain_min;//0-600min
-
-	uint16_t bsm_single_max_voltage_group;//1-256
-	uint16_t bsm_battery_max_temperature;//1 -50
-	uint16_t bsm_battery_max_temperature_sn;//1-128
-	uint16_t bsm_battery_min_temperature;//1 -50
-	uint16_t bsm_battery_min_temperature_sn;//1-128
-	uint16_t bsm_single_voltage_state;//0x00-正常, 0x01-过高, 0x10-过低
-	uint16_t bsm_total_soc_state;//0x00-正常, 0x01-过高, 0x10-过低
-	uint16_t bsm_battery_current_state;//0x00-正常, 0x01-过流, 0x10-不可信状态
-	uint16_t bsm_battery_temperature_state;//0x00-正常, 0x01-过高, 0x10-不可信状态
-	uint16_t bsm_battery_insulation_state;//0x00-正常, 0x01-不正常, 0x10-不可信状态
-	uint16_t bsm_battery_connector_state;//0x00-正常, 0x01-不正常, 0x10-不可信状态
-	uint16_t bsm_battery_charge_enable;//0x00-禁止, 0x01-允许, 0x10-不可信状态
-
-	uint16_t bst_stop_reason_soc;//0x00-未达soc目标值, 0x01-达到soc目标值, 0x10-不可信状态
-	uint16_t bst_stop_reason_voltage;//0x00-未达总电压目标值, 0x01-达到总电压目标值, 0x10-不可信状态
-	uint16_t bst_stop_reason_single_voltage;//0x00-未达单体电压目标值, 0x01-达到单体电压目标值, 0x10-不可信状态
-	uint16_t bst_stop_reason_charger_stop;//0x00-正常, 0x01-充电机终止, 0x10-不可信状态
-	uint16_t bst_stop_fault_reason_insulation;//0x00-正常, 0x01-故障, 0x10-不可信状态
-	uint16_t bst_stop_fault_reason_connector_temperature;//0x00-正常, 0x01-故障, 0x10-不可信状态
-	uint16_t bst_stop_fault_reason_bms_connector_temperature;//0x00-正常, 0x01-故障, 0x10-不可信状态
-	uint16_t bst_stop_fault_reason_charger_connector;//0x00-正常, 0x01-故障, 0x10-不可信状态
-	uint16_t bst_stop_fault_reason_battery_temperature;//0x00-正常, 0x01-温度过高, 0x10-不可信状态
-	uint16_t bst_stop_fault_reason_relay;//0x00-正常, 0x01-故障, 0x10-不可信状态
-	uint16_t bst_stop_fault_reason_voltage_check;//0x00-正常, 0x01-故障, 0x10-不可信状态
-	uint16_t bst_stop_fault_reason_other;//0x00-正常, 0x01-故障, 0x10-不可信状态
-	uint16_t bst_stop_error_reason_current;//0x00-正常, 0x01-超过需求值, 0x10-不可信状态
-	uint16_t bst_stop_error_reason_voltage;//0x00-正常, 0x01-电压异常, 0x10-不可信状态
-
-	//uint16_t bsd_soc;//0-100%
-	uint16_t bsd_single_min_voltage;//0.01v 0-24v
-	uint16_t bsd_single_max_voltage;//0.01v 0-24v
-	uint16_t bsd_battery_min_temperature;// -50
-	uint16_t bsd_battery_max_temperature;// -50
-
-	uint16_t bem_crm_00_timeout;//0x00-正常, 0x01-超时, 0x10-不可信状态
-	uint16_t bem_crm_aa_timeout;//0x00-正常, 0x01-超时, 0x10-不可信状态
-	uint16_t bem_cts_cml_timeout;//0x00-正常, 0x01-超时, 0x10-不可信状态
-	uint16_t bem_cro_timeout;//0x00-正常, 0x01-超时, 0x10-不可信状态
-	uint16_t bem_ccs_timeout;//0x00-正常, 0x01-超时, 0x10-不可信状态
-	uint16_t bem_cst_timeout;//0x00-正常, 0x01-超时, 0x10-不可信状态
-	uint16_t bem_csd_timeout;//0x00-正常, 0x01-超时, 0x10-不可信状态
-	uint16_t bem_other;
-
-	uint16_t bms_common_max_charge_voltage;//0.1v
-	uint16_t bms_common_soc;//0-100.0%
-
-	uint16_t ccs_output_voltage;//0.1v
-	uint16_t ccs_output_current;//0.1a
-	uint16_t ccs_total_charge_time;//1min 0-600
-	uint16_t ccs_charge_enable;//0x00-暂停, 0x01-允许
-
-	uint16_t cml_max_output_voltage;//0.1v
-	uint16_t cml_min_output_voltage;//0.1v
-	uint16_t cml_max_output_current;//0.1a
-	uint16_t cml_min_output_current;//0.1a
-
-	uint16_t disable_bhm;
-	uint16_t disable_brm;
-	uint16_t disable_bcp;
-	uint16_t disable_bro;
-	uint16_t disable_bcl;
-	uint16_t disable_bcs;
-	uint16_t disable_bsm;
-	uint16_t disable_bmv;
-	uint16_t disable_bmt;
-	uint16_t disable_bsp;
-	uint16_t disable_bst;
-	uint16_t disable_bsd;
-	uint16_t disable_bem;
-	uint16_t stop_bms;
-	uint16_t reset_bms_configure;
-	uint16_t toggle_gun_on_off;
-
-	uint16_t bms_state;
-	uint16_t bms_gun_connect;
-	uint16_t bms_poweron_enable;
-	uint16_t gun_on_off_state;
-
-	uint16_t version_major;
-	uint16_t version_minor;
-	uint16_t version_rev;
-} modbus_data_t;
+#pragma pack(push, 1)
 
 typedef struct {
 	uint32_t crc;
 	uint16_t payload_size;
-	modbus_data_t modbus_data;
+} eeprom_modbus_head_t;
+
+typedef struct {
+	uint8_t disable_bhm;
+	uint8_t disable_brm;
+	uint8_t disable_bcp;
+	uint8_t disable_bro;
+	uint8_t disable_bcl;
+	uint8_t disable_bcs;
+	uint8_t disable_bsm;
+	uint8_t disable_bmv;
+	uint8_t disable_bmt;
+	uint8_t disable_bsp;
+	uint8_t disable_bst;
+	uint8_t disable_bsd;
+	uint8_t disable_bem;
+
+	uint8_t stop_bms;
+	uint8_t reset_bms_configure;
+	uint8_t toggle_gun_on_off;
+} bms_data_configs_t;
+
+typedef struct {
+	eeprom_modbus_head_t head;
+	bms_data_settings_t bms_data_settings;
+	bms_data_configs_t bms_data_config;
 } eeprom_modbus_data_t;
+
+#pragma pack(pop)
 
 typedef struct {
 	struct list_head list;
@@ -177,7 +201,6 @@ typedef struct {
 	can_info_t *can_info;
 	bms_state_t state;
 	osMutexId handle_mutex;
-	osMutexId bms_data_mutex;
 
 	GPIO_TypeDef *gun_connect_gpio;
 	uint16_t gun_connect_pin;
@@ -186,19 +209,21 @@ typedef struct {
 	GPIO_TypeDef *gun_on_off_gpio;
 	uint16_t gun_on_off_pin;
 
-	uint16_t gun_on_off_state;
-
 	multi_packets_info_t multi_packets_info;
 
 	bms_data_settings_t *settings;
+	bms_data_configs_t configs;
+
+	uint16_t gun_on_off_state;
+
+	uint8_t bms_gun_connect;
+	uint8_t bms_poweron_enable;
 
 	modbus_info_t *modbus_info;
-	modbus_data_t *modbus_data;
 	modbus_data_info_t modbus_data_info;
 	callback_item_t modbus_data_changed_cb;
 
 	uint8_t eeprom_modbus_data_index;
-	eeprom_modbus_data_t *eeprom_modbus_data;
 	eeprom_info_t *eeprom_info;
 
 	uint32_t stamp;

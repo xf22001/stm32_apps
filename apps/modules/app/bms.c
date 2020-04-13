@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年04月12日 星期日 15时25分59秒
+ *   修改日期：2020年04月13日 星期一 16时18分31秒
  *   描    述：
  *
  *================================================================*/
@@ -269,21 +269,8 @@ void free_bms_info(bms_info_t *bms_info)
 		set_bitmap_value(eeprom_modbus_data_bitmap, bms_info->eeprom_modbus_data_index, 0);
 	}
 
-	os_free(bms_info->eeprom_modbus_data);
-
-	if(bms_info->settings != NULL) {
-		os_free(bms_info->settings);
-	}
-
 	if(bms_info->handle_mutex) {
 		os_status = osMutexDelete(bms_info->handle_mutex);
-
-		if(osOK != os_status) {
-		}
-	}
-
-	if(bms_info->bms_data_mutex) {
-		os_status = osMutexDelete(bms_info->bms_data_mutex);
 
 		if(osOK != os_status) {
 		}
@@ -320,7 +307,6 @@ bms_info_t *get_or_alloc_bms_info(can_info_t *can_info)
 	osStatus os_status;
 
 	osMutexDef(handle_mutex);
-	osMutexDef(bms_data_mutex);
 
 	if(bms_info_config == NULL) {
 		return bms_info;
@@ -360,26 +346,22 @@ bms_info_t *get_or_alloc_bms_info(can_info_t *can_info)
 	index = get_first_value_index(eeprom_modbus_data_bitmap, 0);
 
 	if(index == -1) {
-		goto failed;
+		return bms_info;
 	}
 
 	set_bitmap_value(eeprom_modbus_data_bitmap, index, 1);
 
 	bms_info->eeprom_modbus_data_index = index;
 
-	bms_info->eeprom_modbus_data = (eeprom_modbus_data_t *)os_alloc(sizeof(eeprom_modbus_data_t));
+	bms_info->settings = bms_data_alloc_settings();
 
-	if(bms_info->eeprom_modbus_data == NULL) {
+	if(bms_info->settings == NULL) {
 		goto failed;
 	}
-
-	memset(bms_info->eeprom_modbus_data, 0, sizeof(eeprom_modbus_data_t));
 
 	bms_info->can_info = can_info;
 	bms_info->state = BMS_STATE_IDLE;
 	bms_info->handle_mutex = osMutexCreate(osMutex(handle_mutex));
-	bms_info->bms_data_mutex = osMutexCreate(osMutex(bms_data_mutex));
-	bms_info->settings = bms_data_alloc_settings();
 	bms_info->gun_connect_gpio = bms_info_config->gun_connect_gpio;
 	bms_info->gun_connect_pin = bms_info_config->gun_connect_pin;
 	bms_info->bms_poweron_enable_gpio = bms_info_config->bms_poweron_enable_gpio;
@@ -388,7 +370,6 @@ bms_info_t *get_or_alloc_bms_info(can_info_t *can_info)
 	bms_info->gun_on_off_pin = bms_info_config->gun_on_off_pin;
 
 	bms_info->modbus_info = NULL;
-	bms_info->modbus_data = &bms_info->eeprom_modbus_data->modbus_data;
 
 	set_gun_on_off(bms_info, 0);
 
@@ -410,10 +391,6 @@ bms_info_t *get_or_alloc_bms_info(can_info_t *can_info)
 failed:
 
 	if(bms_info != NULL) {
-		if(bms_info->eeprom_modbus_data != NULL) {
-			os_free(bms_info->eeprom_modbus_data);
-		}
-
 		os_free(bms_info);
 		bms_info = NULL;
 	}
@@ -424,28 +401,25 @@ failed:
 static void modbus_data_changed(void *fn_ctx, void *chain_ctx)
 {
 	//udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
-	modbus_data_to_bms_data((bms_info_t *)fn_ctx);
 	save_eeprom_modbus_data((bms_info_t *)fn_ctx);
 }
 
 static uint8_t modbus_addr_valid(void *ctx, uint16_t start, uint16_t number)
 {
 	uint8_t valid = 0;
-	uint16_t start_addr = start * sizeof(uint16_t);
-	uint16_t end_addr = start_addr + number * sizeof(uint16_t);
-	//bms_info_t *bms_info = (bms_info_t *)ctx;
+	uint16_t end = start + number;
 
-	if(end_addr <= start_addr) {
+	if(end <= start) {
 		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return valid;
 	}
 
-	if(start_addr < 0) {
+	if(start < 0) {
 		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return valid;
 	}
 
-	if(end_addr > sizeof(modbus_data_t)) {
+	if(end > MODBUS_ADDR_VERSION_REV) {
 		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return valid;
 	}
@@ -455,20 +429,1012 @@ static uint8_t modbus_addr_valid(void *ctx, uint16_t start, uint16_t number)
 	return valid;
 }
 
+static void modbus_data_value_copy(uint16_t *value, uint16_t *store, uint16_t size, uint16_t offset, modbus_data_op_t op)
+{
+	uint16_t copy_size = size - sizeof(uint16_t) * offset;
+	uint16_t *from = NULL;
+	uint16_t *to = NULL;
+
+	if(offset * sizeof(uint16_t) >= size) {
+		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		return;
+	}
+
+	if(copy_size > sizeof(uint16_t)) {
+		copy_size = sizeof(uint16_t);
+	}
+
+	if(op == MODBUS_DATA_GET) {
+		from = store + offset;
+		to = value;
+	} else if(op == MODBUS_DATA_SET) {
+		from = value;
+		to = store + offset;
+	}
+
+	if(from == NULL) {
+		return;
+	}
+
+	if(to == NULL) {
+		return;
+	}
+
+	memcpy(to, from, copy_size);
+}
+
+static void modbus_data_get_set(bms_info_t *bms_info, uint16_t addr, uint16_t *value, modbus_data_op_t op)
+{
+	switch(addr) {
+		case MODBUS_ADDR_BRM_VERSION_1: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->brm_data.brm_data.version_1;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->brm_data.brm_data.version_1 = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BRM_VERSION_0: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->brm_data.brm_data.version_0;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->brm_data.brm_data.version_0 = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BRM_BATTERY_TYPE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->brm_data.brm_data.battery_type;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->brm_data.brm_data.battery_type = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BRM_TOTAL_BATTERY_RATE_CAPICITY: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->brm_data.brm_data.total_battery_rate_capicity;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->brm_data.brm_data.total_battery_rate_capicity = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BRM_TOTAL_BATTERY_RATE_VOLTAGE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->brm_data.brm_data.total_battery_rate_voltage;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->brm_data.brm_data.total_battery_rate_voltage = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BRM_BATTERY_VENDOR_0:
+		case MODBUS_ADDR_BRM_BATTERY_VENDOR_1: {
+			modbus_data_value_copy(value, (uint16_t *)bms_info->settings->brm_data.battery_vendor, 4, addr - MODBUS_ADDR_BRM_BATTERY_VENDOR_0, op);
+		}
+		break;
+
+		case MODBUS_ADDR_BRM_BATTERY_VENDOR_SN_0:
+		case MODBUS_ADDR_BRM_BATTERY_VENDOR_SN_1: {
+			modbus_data_value_copy(value, (uint16_t *)&bms_info->settings->brm_data.battery_vendor_sn, 4, addr - MODBUS_ADDR_BRM_BATTERY_VENDOR_SN_0, op);
+		}
+		break;
+
+		case MODBUS_ADDR_BRM_BATTERY_YEAR: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->brm_data.battery_year + 1985;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->brm_data.battery_year = *value - 1985;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BRM_BATTERY_MONTH: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->brm_data.battery_month;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->brm_data.battery_month = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BRM_BATTERY_DAY: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->brm_data.battery_day;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->brm_data.battery_day = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BRM_BATTERY_CHARGE_TIMES_0:
+		case MODBUS_ADDR_BRM_BATTERY_CHARGE_TIMES_1: {
+			modbus_data_value_copy(value, (uint16_t *)bms_info->settings->brm_data.battery_charge_times, 3, addr - MODBUS_ADDR_BRM_BATTERY_CHARGE_TIMES_0, op);
+		}
+		break;
+
+		case MODBUS_ADDR_BRM_BATTERY_PROPERTY: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->brm_data.battery_property;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->brm_data.battery_property = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BRM_VIN_0:
+		case MODBUS_ADDR_BRM_VIN_1:
+		case MODBUS_ADDR_BRM_VIN_2:
+		case MODBUS_ADDR_BRM_VIN_3:
+		case MODBUS_ADDR_BRM_VIN_4:
+		case MODBUS_ADDR_BRM_VIN_5:
+		case MODBUS_ADDR_BRM_VIN_6:
+		case MODBUS_ADDR_BRM_VIN_7:
+		case MODBUS_ADDR_BRM_VIN_8: {
+			modbus_data_value_copy(value, (uint16_t *)bms_info->settings->brm_data.vin, 17, addr - MODBUS_ADDR_BRM_VIN_0, op);
+		}
+		break;
+
+		case MODBUS_ADDR_BRM_VERSION_SERIAL: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->brm_data.version.serial;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->brm_data.version.serial = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BRM_VERSION_DAY: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->brm_data.version.day;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->brm_data.version.day = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BRM_VERSION_MONTH: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->brm_data.version.month;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->brm_data.version.month = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BRM_VERSION_YEAR: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->brm_data.version.year;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->brm_data.version.year = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BCP_MAX_CHARGE_VOLTAGE_SINGLE_BATTERY: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bcp_data.max_charge_voltage_single_battery;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bcp_data.max_charge_voltage_single_battery = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BCP_MAX_CHARGE_CURRENT: {
+			if(op == MODBUS_DATA_GET) {
+				*value = 4000 - bms_info->settings->bcp_data.max_charge_current;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bcp_data.max_charge_current = 4000 - *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BCP_RATE_TOTAL_POWER: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bcp_data.rate_total_power;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bcp_data.rate_total_power = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BCP_MAX_TEMPERATURE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bcp_data.max_temperature - 50;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bcp_data.max_temperature = *value + 50;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BCP_TOTAL_VOLTAGE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bcp_data.total_voltage;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bcp_data.total_voltage = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BCP_TRANSFER_TYPE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bcp_data.transfer_type;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bcp_data.transfer_type = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BRO_BRO_RESULT: {
+			if(op == MODBUS_DATA_GET) {
+				*value = (bms_info->settings->bro_data.bro_result == 0x00) ? 0x00 : (bms_info->settings->bro_data.bro_result == 0xaa) ? 0x01 : 0x02;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bro_data.bro_result = (*value == 0x00) ? 0x00 : (*value == 0x01) ? 0xaa : 0xff;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BCL_REQUIRE_VOLTAGE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bcl_data.require_voltage;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bcl_data.require_voltage = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BCL_REQUIRE_CURRENT: {
+			if(op == MODBUS_DATA_GET) {
+				*value = 4000 - bms_info->settings->bcl_data.require_current;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bcl_data.require_current = 4000 - *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BCL_CHARGE_MODE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bcl_data.charge_mode - 1;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bcl_data.charge_mode = *value + 1;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BCS_CHARGE_VOLTAGE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bcs_data.charge_voltage;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bcs_data.charge_voltage = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BCS_CHARGE_CURRENT: {
+			if(op == MODBUS_DATA_GET) {
+				*value = 4000 - bms_info->settings->bcs_data.charge_current;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bcs_data.charge_current = 4000 - *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BCS_SINGLE_BATTERY_MAX_VOLTAGE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bcs_data.u1.s.single_battery_max_voltage;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bcs_data.u1.s.single_battery_max_voltage = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BCS_SINGLE_BATTERY_MAX_GROUP: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bcs_data.u1.s.single_battery_max_group;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bcs_data.u1.s.single_battery_max_group = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BCS_REMAIN_MIN: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bcs_data.remain_min;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bcs_data.remain_min = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BSM_SINGLE_MAX_VOLTAGE_GROUP: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bsm_data.single_max_voltage_group;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bsm_data.single_max_voltage_group = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BSM_BATTERY_MAX_TEMPERATURE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bsm_data.battery_max_temperature - 50;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bsm_data.battery_max_temperature = *value + 50;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BSM_BATTERY_MAX_TEMPERATURE_SN: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bsm_data.battery_max_temperature_sn;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bsm_data.battery_max_temperature_sn = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BSM_BATTERY_MIN_TEMPERATURE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bsm_data.battery_min_temperature - 50;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bsm_data.battery_min_temperature = *value + 50;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BSM_BATTERY_MIN_TEMPERATURE_SN: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bsm_data.battery_min_temperature_sn;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bsm_data.battery_min_temperature_sn = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BSM_SINGLE_VOLTAGE_STATE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bsm_data.u1.s.single_voltage_state;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bsm_data.u1.s.single_voltage_state = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BSM_TOTAL_SOC_STATE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bsm_data.u1.s.total_soc_state;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bsm_data.u1.s.total_soc_state = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BSM_BATTERY_CURRENT_STATE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bsm_data.u1.s.battery_current_state;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bsm_data.u1.s.battery_current_state = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BSM_BATTERY_TEMPERATURE_STATE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bsm_data.u1.s.battery_temperature_state;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bsm_data.u1.s.battery_temperature_state = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BSM_BATTERY_INSULATION_STATE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bsm_data.u2.s.battery_insulation_state;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bsm_data.u2.s.battery_insulation_state = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BSM_BATTERY_CONNECTOR_STATE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bsm_data.u2.s.battery_connector_state;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bsm_data.u2.s.battery_connector_state = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BSM_BATTERY_CHARGE_ENABLE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bsm_data.u2.s.battery_charge_enable;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bsm_data.u2.s.battery_charge_enable = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BST_STOP_REASON_SOC: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bst_data.u1.s.stop_reason_soc;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bst_data.u1.s.stop_reason_soc = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BST_STOP_REASON_VOLTAGE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bst_data.u1.s.stop_reason_voltage;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bst_data.u1.s.stop_reason_voltage = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BST_STOP_REASON_SINGLE_VOLTAGE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bst_data.u1.s.stop_reason_single_voltage;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bst_data.u1.s.stop_reason_single_voltage = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BST_STOP_REASON_CHARGER_STOP: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bst_data.u1.s.stop_reason_charger_stop;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bst_data.u1.s.stop_reason_charger_stop = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BST_STOP_FAULT_REASON_INSULATION: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bst_data.u2.s.stop_fault_reason_insulation;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bst_data.u2.s.stop_fault_reason_insulation = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BST_STOP_FAULT_REASON_CONNECTOR_TEMPERATURE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bst_data.u2.s.stop_fault_reason_connector_temperature;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bst_data.u2.s.stop_fault_reason_connector_temperature = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BST_STOP_FAULT_REASON_BMS_CONNECTOR_TEMPERATURE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bst_data.u2.s.stop_fault_reason_bms_connector_temperature;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bst_data.u2.s.stop_fault_reason_bms_connector_temperature = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BST_STOP_FAULT_REASON_CHARGER_CONNECTOR: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bst_data.u2.s.stop_fault_reason_bms_connector_temperature;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bst_data.u2.s.stop_fault_reason_bms_connector_temperature = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BST_STOP_FAULT_REASON_BATTERY_TEMPERATURE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bst_data.u2.s.stop_fault_reason_battery_temperature;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bst_data.u2.s.stop_fault_reason_battery_temperature = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BST_STOP_FAULT_REASON_RELAY: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bst_data.u2.s.stop_fault_reason_relay;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bst_data.u2.s.stop_fault_reason_relay = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BST_STOP_FAULT_REASON_VOLTAGE_CHECK: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bst_data.u2.s.stop_fault_reason_voltage_check;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bst_data.u2.s.stop_fault_reason_voltage_check = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BST_STOP_FAULT_REASON_OTHER: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bst_data.u2.s.stop_fault_reason_other;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bst_data.u2.s.stop_fault_reason_other = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BST_STOP_ERROR_REASON_CURRENT: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bst_data.u3.s.stop_error_reason_current;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bst_data.u3.s.stop_error_reason_current = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BST_STOP_ERROR_REASON_VOLTAGE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bst_data.u3.s.stop_error_reason_voltage;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bst_data.u3.s.stop_error_reason_voltage = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BSD_SINGLE_MIN_VOLTAGE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bsd_data.single_min_voltage;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bsd_data.single_min_voltage = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BSD_SINGLE_MAX_VOLTAGE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bsd_data.single_max_voltage;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bsd_data.single_max_voltage = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BSD_BATTERY_MIN_TEMPERATURE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bsd_data.battery_min_temperature - 50;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bsd_data.battery_min_temperature = *value + 50;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BSD_BATTERY_MAX_TEMPERATURE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bsd_data.battery_max_temperature - 50;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bsd_data.battery_max_temperature = *value + 50;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BEM_CRM_00_TIMEOUT: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bem_data.u1.s.crm_00_timeout;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bem_data.u1.s.crm_00_timeout = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BEM_CRM_AA_TIMEOUT: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bem_data.u1.s.crm_aa_timeout;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bem_data.u1.s.crm_aa_timeout = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BEM_CTS_CML_TIMEOUT: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bem_data.u2.s.cts_cml_timeout;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bem_data.u2.s.cts_cml_timeout = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BEM_CRO_TIMEOUT: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bem_data.u2.s.cro_timeout;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bem_data.u2.s.cro_timeout = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BEM_CCS_TIMEOUT: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bem_data.u3.s.ccs_timeout;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bem_data.u3.s.ccs_timeout = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BEM_CST_TIMEOUT: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bem_data.u3.s.cst_timeout;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bem_data.u3.s.cst_timeout = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BEM_CSD_TIMEOUT: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bem_data.u4.s.csd_timeout;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bem_data.u4.s.csd_timeout = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BEM_OTHER: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bem_data.u4.s.other;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bem_data.u4.s.other = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BMS_COMMON_MAX_CHARGE_VOLTAGE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bms_data_common.common_max_charge_voltage;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bms_data_common.common_max_charge_voltage = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BMS_COMMON_SOC: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bms_data_common.common_soc;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bms_data_common.common_soc = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_CCS_OUTPUT_VOLTAGE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->ccs_data.output_voltage;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->ccs_data.output_voltage = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_CCS_OUTPUT_CURRENT: {
+			if(op == MODBUS_DATA_GET) {
+				*value = 4000 - bms_info->settings->ccs_data.output_current;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->ccs_data.output_current = 4000 - *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_CCS_TOTAL_CHARGE_TIME: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->bst_data.u3.s.stop_error_reason_voltage;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->bst_data.u3.s.stop_error_reason_voltage = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_CCS_CHARGE_ENABLE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->ccs_data.total_charge_time;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->ccs_data.total_charge_time = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_CML_MAX_OUTPUT_VOLTAGE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->cml_data.max_output_voltage;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->cml_data.max_output_voltage = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_CML_MIN_OUTPUT_VOLTAGE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->settings->cml_data.min_output_voltage;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->cml_data.min_output_voltage = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_CML_MAX_OUTPUT_CURRENT: {
+			if(op == MODBUS_DATA_GET) {
+				*value = 4000 - bms_info->settings->cml_data.max_output_current;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->cml_data.max_output_current = 4000 - *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_CML_MIN_OUTPUT_CURRENT: {
+			if(op == MODBUS_DATA_GET) {
+				*value = 4000 - bms_info->settings->cml_data.min_output_current;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->settings->cml_data.min_output_current = 4000 - *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_DISABLE_BHM: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->configs.disable_bhm;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->configs.disable_bhm = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_DISABLE_BRM: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->configs.disable_brm;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->configs.disable_brm = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_DISABLE_BCP: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->configs.disable_bcp;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->configs.disable_bcp = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_DISABLE_BRO: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->configs.disable_bro;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->configs.disable_bro = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_DISABLE_BCL: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->configs.disable_bcl;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->configs.disable_bcl = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_DISABLE_BCS: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->configs.disable_bcs;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->configs.disable_bcs = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_DISABLE_BSM: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->configs.disable_bsm;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->configs.disable_bsm = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_DISABLE_BMV: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->configs.disable_bmv;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->configs.disable_bmv = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_DISABLE_BMT: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->configs.disable_bmt;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->configs.disable_bmt = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_DISABLE_BSP: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->configs.disable_bsp;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->configs.disable_bsp = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_DISABLE_BST: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->configs.disable_bst;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->configs.disable_bst = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_DISABLE_BSD: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->configs.disable_bsd;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->configs.disable_bsd = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_DISABLE_BEM: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->configs.disable_bem;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->configs.disable_bem = *value;
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_STOP_BMS: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->configs.stop_bms;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->configs.stop_bms = *value;
+
+				if(bms_info->configs.stop_bms != 0) {
+					bms_info->configs.stop_bms = 0;
+
+					if(bms_info->state != BMS_STATE_BCL_BCS_BSM_BMV_BMT_BSP) {
+						return;
+					}
+
+					bms_info->settings->bst_data.u1.s.stop_reason_soc = 1;
+					set_bms_state_locked(bms_info, BMS_STATE_BST);
+				}
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_RESET_BMS_CONFIGURE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->configs.reset_bms_configure;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->configs.reset_bms_configure = *value;
+
+				if(bms_info->configs.reset_bms_configure != 0) {
+					bms_data_settings_default_init(bms_info->settings);
+					memset(&bms_info->configs, 0, sizeof(bms_data_configs_t));
+				}
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_TOGGLE_GUN_ON_OFF: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->configs.toggle_gun_on_off;
+			} else if(op == MODBUS_DATA_SET) {
+				bms_info->configs.toggle_gun_on_off = *value;
+
+				if(bms_info->configs.toggle_gun_on_off != 0) {
+					uint8_t on_off = get_gun_on_off(bms_info);
+
+					bms_info->configs.toggle_gun_on_off = 0;
+
+					if(bms_info->state != BMS_STATE_IDLE) {
+						return;
+					}
+
+					if(on_off == 0) {
+						on_off = 1;
+					} else {
+						on_off = 0;
+					}
+
+					set_gun_on_off(bms_info, on_off);
+				}
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BMS_STATE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->state;
+			} else if(op == MODBUS_DATA_SET) {
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BMS_GUN_CONNECT: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->bms_gun_connect;
+			} else if(op == MODBUS_DATA_SET) {
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_BMS_POWERON_ENABLE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = bms_info->bms_poweron_enable;
+			} else if(op == MODBUS_DATA_SET) {
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_GUN_ON_OFF_STATE: {
+			if(op == MODBUS_DATA_GET) {
+				*value = get_gun_on_off(bms_info);
+			} else if(op == MODBUS_DATA_SET) {
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_VERSION_MAJOR: {
+			if(op == MODBUS_DATA_GET) {
+				*value = VER_MAJOR;
+			} else if(op == MODBUS_DATA_SET) {
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_VERSION_MINOR: {
+			if(op == MODBUS_DATA_GET) {
+				*value = VER_MINOR;
+			} else if(op == MODBUS_DATA_SET) {
+			}
+		}
+		break;
+
+		case MODBUS_ADDR_VERSION_REV: {
+			if(op == MODBUS_DATA_GET) {
+				*value = VER_REV;
+			} else if(op == MODBUS_DATA_SET) {
+			}
+		}
+		break;
+
+		default:
+			break;
+	}
+}
+
 static uint16_t modbus_data_get(void *ctx, uint16_t addr)
 {
+	uint16_t value = 0;
 	bms_info_t *bms_info = (bms_info_t *)ctx;
-	uint16_t *modbus_data = (uint16_t *)bms_info->modbus_data;
 
-	return modbus_data[addr];
+	modbus_data_get_set(bms_info, addr, &value, MODBUS_DATA_GET);
+
+	return value;
 }
 
 static void modbus_data_set(void *ctx, uint16_t addr, uint16_t value)
 {
 	bms_info_t *bms_info = (bms_info_t *)ctx;
-	uint16_t *modbus_data = (uint16_t *)bms_info->modbus_data;
 
-	modbus_data[addr] = value;
+	modbus_data_get_set(bms_info, addr, &value, MODBUS_DATA_SET);
 }
 
 void bms_set_modbus_info(bms_info_t *bms_info, modbus_info_t *modbus_info)
@@ -491,418 +1457,14 @@ void bms_set_eeprom_info(bms_info_t *bms_info, eeprom_info_t *eeprom_info)
 	bms_info->eeprom_info = eeprom_info;
 }
 
-#define p_offset(member) do { \
-	udp_log_printf("%-50s:%d\n", #member, (uint16_t *)&data->member - (uint16_t *)data); \
-} while(0)
-
-void show_modbus_data_offset(void)
+static int detect_eeprom(eeprom_info_t *eeprom_info)
 {
-	modbus_data_t *data = 0;
-
-	//p_offset(bhm_max_charge_voltage);
-
-	p_offset(brm_version_1);
-	p_offset(brm_version_0);
-	p_offset(brm_battery_type);
-	p_offset(brm_total_battery_rate_capicity);
-	p_offset(brm_total_battery_rate_voltage);
-	p_offset(brm_battery_vendor[0]);
-	p_offset(brm_battery_vendor_sn[0]);
-	p_offset(brm_battery_year);
-	p_offset(brm_battery_month);
-	p_offset(brm_battery_day);
-	p_offset(brm_battery_charge_times[0]);
-	p_offset(brm_battery_property);
-	p_offset(brm_vin[0]);
-	p_offset(brm_version_serial);
-	p_offset(brm_version_day);
-	p_offset(brm_version_month);
-	p_offset(brm_version_year);
-
-	p_offset(bcp_max_charge_voltage_single_battery);
-	p_offset(bcp_max_charge_current);
-	p_offset(bcp_rate_total_power);
-	//p_offset(bcp_max_charge_voltage);
-	p_offset(bcp_max_temperature);
-	//p_offset(bcp_soc);
-	p_offset(bcp_total_voltage);
-	p_offset(bcp_transfer_type);
-
-	p_offset(bro_bro_result);
-
-	p_offset(bcl_require_voltage);
-	p_offset(bcl_require_current);
-	p_offset(bcl_charge_mode);
-
-	p_offset(bcs_charge_voltage);
-	p_offset(bcs_charge_current);
-	p_offset(bcs_single_battery_max_voltage);
-	p_offset(bcs_single_battery_max_group);
-	//p_offset(bcs_soc);
-	p_offset(bcs_remain_min);
-
-	p_offset(bsm_single_max_voltage_group);
-	p_offset(bsm_battery_max_temperature);
-	p_offset(bsm_battery_max_temperature_sn);
-	p_offset(bsm_battery_min_temperature);
-	p_offset(bsm_battery_min_temperature_sn);
-	p_offset(bsm_single_voltage_state);
-	p_offset(bsm_total_soc_state);
-	p_offset(bsm_battery_current_state);
-	p_offset(bsm_battery_temperature_state);
-	p_offset(bsm_battery_insulation_state);
-	p_offset(bsm_battery_connector_state);
-	p_offset(bsm_battery_charge_enable);
-
-	p_offset(bst_stop_reason_soc);
-	p_offset(bst_stop_reason_voltage);
-	p_offset(bst_stop_reason_single_voltage);
-	p_offset(bst_stop_reason_charger_stop);
-	p_offset(bst_stop_fault_reason_insulation);
-	p_offset(bst_stop_fault_reason_connector_temperature);
-	p_offset(bst_stop_fault_reason_bms_connector_temperature);
-	p_offset(bst_stop_fault_reason_charger_connector);
-	p_offset(bst_stop_fault_reason_battery_temperature);
-	p_offset(bst_stop_fault_reason_relay);
-	p_offset(bst_stop_fault_reason_voltage_check);
-	p_offset(bst_stop_fault_reason_other);
-	p_offset(bst_stop_error_reason_current);
-	p_offset(bst_stop_error_reason_voltage);
-
-	//p_offset(bsd_soc);
-	p_offset(bsd_single_min_voltage);
-	p_offset(bsd_single_max_voltage);
-	p_offset(bsd_battery_min_temperature);
-	p_offset(bsd_battery_max_temperature);
-
-	p_offset(bem_crm_00_timeout);
-	p_offset(bem_crm_aa_timeout);
-	p_offset(bem_cts_cml_timeout);
-	p_offset(bem_cro_timeout);
-	p_offset(bem_ccs_timeout);
-	p_offset(bem_cst_timeout);
-	p_offset(bem_csd_timeout);
-	p_offset(bem_other);
-
-	p_offset(bms_common_max_charge_voltage);
-	p_offset(bms_common_soc);
-
-	p_offset(ccs_output_voltage);
-	p_offset(ccs_output_current);
-	p_offset(ccs_total_charge_time);
-	p_offset(ccs_charge_enable);
-
-	p_offset(cml_max_output_voltage);
-	p_offset(cml_min_output_voltage);
-	p_offset(cml_max_output_current);
-	p_offset(cml_min_output_current);
-
-	p_offset(disable_bhm);
-	p_offset(disable_brm);
-	p_offset(disable_bcp);
-	p_offset(disable_bro);
-	p_offset(disable_bcl);
-	p_offset(disable_bcs);
-	p_offset(disable_bsm);
-	p_offset(disable_bmv);
-	p_offset(disable_bmt);
-	p_offset(disable_bsp);
-	p_offset(disable_bst);
-	p_offset(disable_bsd);
-	p_offset(disable_bem);
-	p_offset(stop_bms);
-	p_offset(reset_bms_configure);
-	p_offset(toggle_gun_on_off);
-
-	p_offset(bms_state);
-	p_offset(bms_gun_connect);
-	p_offset(bms_poweron_enable);
-	p_offset(gun_on_off_state);
-
-	p_offset(version_major);
-	p_offset(version_minor);
-	p_offset(version_rev);
-}
-
-void bms_data_to_modbus_data(bms_info_t *bms_info, uint8_t do_init)
-{
-	osStatus os_status;
-
-	if(bms_info->bms_data_mutex) {
-		os_status = osMutexWait(bms_info->bms_data_mutex, osWaitForever);
-
-		if(os_status != osOK) {
-		}
-	}
-
-	//bms_info->modbus_data->bhm_max_charge_voltage = bms_info->settings->bhm_data.max_charge_voltage;
-
-	bms_info->modbus_data->brm_version_1 = bms_info->settings->brm_data.brm_data.version_1;
-	bms_info->modbus_data->brm_version_0 = bms_info->settings->brm_data.brm_data.version_0;
-	bms_info->modbus_data->brm_battery_type = bms_info->settings->brm_data.brm_data.battery_type;
-	bms_info->modbus_data->brm_total_battery_rate_capicity = bms_info->settings->brm_data.brm_data.total_battery_rate_capicity;
-	bms_info->modbus_data->brm_total_battery_rate_voltage = bms_info->settings->brm_data.brm_data.total_battery_rate_voltage;
-	memcpy(bms_info->modbus_data->brm_battery_vendor, bms_info->settings->brm_data.battery_vendor, 4);
-	memcpy((void *)bms_info->modbus_data->brm_battery_vendor_sn, (void *)&bms_info->settings->brm_data.battery_vendor_sn, 4);
-	bms_info->modbus_data->brm_battery_year = bms_info->settings->brm_data.battery_year + 1985;
-	bms_info->modbus_data->brm_battery_month = bms_info->settings->brm_data.battery_month;
-	bms_info->modbus_data->brm_battery_day = bms_info->settings->brm_data.battery_day;
-	memcpy(bms_info->modbus_data->brm_battery_charge_times, bms_info->settings->brm_data.battery_charge_times, 3);
-	bms_info->modbus_data->brm_battery_property = bms_info->settings->brm_data.battery_property;
-	memcpy(bms_info->modbus_data->brm_vin, bms_info->settings->brm_data.vin, 17);
-	bms_info->modbus_data->brm_version_serial = bms_info->settings->brm_data.version.serial;
-	bms_info->modbus_data->brm_version_day = bms_info->settings->brm_data.version.day;
-	bms_info->modbus_data->brm_version_month = bms_info->settings->brm_data.version.month;
-	bms_info->modbus_data->brm_version_year = bms_info->settings->brm_data.version.year;
-
-	bms_info->modbus_data->bcp_max_charge_voltage_single_battery = bms_info->settings->bcp_data.max_charge_voltage_single_battery;
-	bms_info->modbus_data->bcp_max_charge_current = 4000 - bms_info->settings->bcp_data.max_charge_current;
-	bms_info->modbus_data->bcp_rate_total_power = bms_info->settings->bcp_data.rate_total_power;
-	//bms_info->modbus_data->bcp_max_charge_voltage = bms_info->settings->bcp_data.max_charge_voltage;
-	bms_info->modbus_data->bcp_max_temperature = bms_info->settings->bcp_data.max_temperature - 50;
-	//bms_info->modbus_data->bcp_soc = bms_info->settings->bcp_data.soc;
-	bms_info->modbus_data->bcp_total_voltage = bms_info->settings->bcp_data.total_voltage;
-	bms_info->modbus_data->bcp_transfer_type = bms_info->settings->bcp_data.transfer_type;
-
-	bms_info->modbus_data->bro_bro_result = (bms_info->settings->bro_data.bro_result == 0x00) ? 0x00 : (bms_info->settings->bro_data.bro_result == 0xaa) ? 0x01 : 0x02;
-
-	bms_info->modbus_data->bcl_require_voltage = bms_info->settings->bcl_data.require_voltage;
-	bms_info->modbus_data->bcl_require_current = 4000 - bms_info->settings->bcl_data.require_current;
-	bms_info->modbus_data->bcl_charge_mode = bms_info->settings->bcl_data.charge_mode - 1;
-
-	bms_info->modbus_data->bcs_charge_voltage = bms_info->settings->bcs_data.charge_voltage;
-	bms_info->modbus_data->bcs_charge_current = 4000 - bms_info->settings->bcs_data.charge_current;
-	bms_info->modbus_data->bcs_single_battery_max_voltage = bms_info->settings->bcs_data.u1.s.single_battery_max_voltage;
-	bms_info->modbus_data->bcs_single_battery_max_group = bms_info->settings->bcs_data.u1.s.single_battery_max_group;
-	//bms_info->modbus_data->bcs_soc = bms_info->settings->bcs_data.soc;
-	bms_info->modbus_data->bcs_remain_min = bms_info->settings->bcs_data.remain_min;
-
-	bms_info->modbus_data->bsm_single_max_voltage_group = bms_info->settings->bsm_data.single_max_voltage_group;
-	bms_info->modbus_data->bsm_battery_max_temperature = bms_info->settings->bsm_data.battery_max_temperature - 50;
-	bms_info->modbus_data->bsm_battery_max_temperature_sn = bms_info->settings->bsm_data.battery_max_temperature_sn;
-	bms_info->modbus_data->bsm_battery_min_temperature = bms_info->settings->bsm_data.battery_min_temperature - 50;
-	bms_info->modbus_data->bsm_battery_min_temperature_sn = bms_info->settings->bsm_data.battery_min_temperature_sn;
-	bms_info->modbus_data->bsm_single_voltage_state = bms_info->settings->bsm_data.u1.s.single_voltage_state;
-	bms_info->modbus_data->bsm_total_soc_state = bms_info->settings->bsm_data.u1.s.total_soc_state;
-	bms_info->modbus_data->bsm_battery_current_state = bms_info->settings->bsm_data.u1.s.battery_current_state;
-	bms_info->modbus_data->bsm_battery_temperature_state = bms_info->settings->bsm_data.u1.s.battery_temperature_state;
-	bms_info->modbus_data->bsm_battery_insulation_state = bms_info->settings->bsm_data.u2.s.battery_insulation_state;
-	bms_info->modbus_data->bsm_battery_connector_state = bms_info->settings->bsm_data.u2.s.battery_connector_state;
-	bms_info->modbus_data->bsm_battery_charge_enable = bms_info->settings->bsm_data.u2.s.battery_charge_enable;
-
-	bms_info->modbus_data->bst_stop_reason_soc = bms_info->settings->bst_data.u1.s.stop_reason_soc;
-	bms_info->modbus_data->bst_stop_reason_voltage = bms_info->settings->bst_data.u1.s.stop_reason_voltage;
-	bms_info->modbus_data->bst_stop_reason_single_voltage = bms_info->settings->bst_data.u1.s.stop_reason_single_voltage;
-	bms_info->modbus_data->bst_stop_reason_charger_stop = bms_info->settings->bst_data.u1.s.stop_reason_charger_stop;
-	bms_info->modbus_data->bst_stop_fault_reason_insulation = bms_info->settings->bst_data.u2.s.stop_fault_reason_insulation;
-	bms_info->modbus_data->bst_stop_fault_reason_connector_temperature = bms_info->settings->bst_data.u2.s.stop_fault_reason_connector_temperature;
-	bms_info->modbus_data->bst_stop_fault_reason_bms_connector_temperature = bms_info->settings->bst_data.u2.s.stop_fault_reason_bms_connector_temperature;
-	bms_info->modbus_data->bst_stop_fault_reason_charger_connector = bms_info->settings->bst_data.u2.s.stop_fault_reason_charger_connector;
-	bms_info->modbus_data->bst_stop_fault_reason_battery_temperature = bms_info->settings->bst_data.u2.s.stop_fault_reason_battery_temperature;
-	bms_info->modbus_data->bst_stop_fault_reason_relay = bms_info->settings->bst_data.u2.s.stop_fault_reason_relay;
-	bms_info->modbus_data->bst_stop_fault_reason_voltage_check = bms_info->settings->bst_data.u2.s.stop_fault_reason_voltage_check;
-	bms_info->modbus_data->bst_stop_fault_reason_other = bms_info->settings->bst_data.u2.s.stop_fault_reason_other;
-	bms_info->modbus_data->bst_stop_error_reason_current = bms_info->settings->bst_data.u3.s.stop_error_reason_current;
-	bms_info->modbus_data->bst_stop_error_reason_voltage = bms_info->settings->bst_data.u3.s.stop_error_reason_voltage;
-
-	//bms_info->modbus_data->bsd_soc = bms_info->settings->bsd_data.soc;
-	bms_info->modbus_data->bsd_single_min_voltage = bms_info->settings->bsd_data.single_min_voltage;
-	bms_info->modbus_data->bsd_single_max_voltage = bms_info->settings->bsd_data.single_max_voltage;
-	bms_info->modbus_data->bsd_battery_min_temperature = bms_info->settings->bsd_data.battery_min_temperature - 50;
-	bms_info->modbus_data->bsd_battery_max_temperature = bms_info->settings->bsd_data.battery_max_temperature - 50;
-
-	bms_info->modbus_data->bem_crm_00_timeout = bms_info->settings->bem_data.u1.s.crm_00_timeout;
-	bms_info->modbus_data->bem_crm_aa_timeout = bms_info->settings->bem_data.u1.s.crm_aa_timeout;
-	bms_info->modbus_data->bem_cts_cml_timeout = bms_info->settings->bem_data.u2.s.cts_cml_timeout;
-	bms_info->modbus_data->bem_cro_timeout = bms_info->settings->bem_data.u2.s.cro_timeout;
-	bms_info->modbus_data->bem_ccs_timeout = bms_info->settings->bem_data.u3.s.ccs_timeout;
-	bms_info->modbus_data->bem_cst_timeout = bms_info->settings->bem_data.u3.s.cst_timeout;
-	bms_info->modbus_data->bem_csd_timeout = bms_info->settings->bem_data.u4.s.csd_timeout;
-	bms_info->modbus_data->bem_other = bms_info->settings->bem_data.u4.s.other;
-
-	bms_info->modbus_data->bms_common_max_charge_voltage = bms_info->settings->bms_data_common.common_max_charge_voltage;
-	bms_info->modbus_data->bms_common_soc = bms_info->settings->bms_data_common.common_soc;
-
-	bms_info->modbus_data->ccs_output_voltage = bms_info->settings->ccs_data.output_voltage;
-	bms_info->modbus_data->ccs_output_current = 4000 - bms_info->settings->ccs_data.output_current;
-	bms_info->modbus_data->ccs_total_charge_time = bms_info->settings->ccs_data.total_charge_time;
-	bms_info->modbus_data->ccs_charge_enable = bms_info->settings->ccs_data.u1.s.charge_enable;
-
-	bms_info->modbus_data->cml_max_output_voltage = bms_info->settings->cml_data.max_output_voltage;
-	bms_info->modbus_data->cml_min_output_voltage = bms_info->settings->cml_data.min_output_voltage;
-	bms_info->modbus_data->cml_max_output_current = 4000 - bms_info->settings->cml_data.max_output_current;
-	bms_info->modbus_data->cml_min_output_current = 4000 - bms_info->settings->cml_data.min_output_current;
-
-	if(do_init != 0) {
-		bms_info->modbus_data->disable_bhm = 0;
-		bms_info->modbus_data->disable_brm = 0;
-		bms_info->modbus_data->disable_bcp = 0;
-		bms_info->modbus_data->disable_bro = 0;
-		bms_info->modbus_data->disable_bcl = 0;
-		bms_info->modbus_data->disable_bcs = 0;
-		bms_info->modbus_data->disable_bsm = 0;
-		bms_info->modbus_data->disable_bmv = 0;
-		bms_info->modbus_data->disable_bmt = 0;
-		bms_info->modbus_data->disable_bsp = 0;
-		bms_info->modbus_data->disable_bst = 0;
-		bms_info->modbus_data->disable_bsd = 0;
-		bms_info->modbus_data->disable_bem = 0;
-		bms_info->modbus_data->stop_bms = 0;
-		bms_info->modbus_data->reset_bms_configure = 0;
-		bms_info->modbus_data->toggle_gun_on_off = 0;
-	}
-
-	bms_info->modbus_data->bms_state = bms_info->state;
-	bms_info->modbus_data->bms_gun_connect = is_gun_connected(bms_info);
-	bms_info->modbus_data->bms_poweron_enable = is_bms_poweron_enable(bms_info);
-	bms_info->modbus_data->gun_on_off_state = get_gun_on_off(bms_info);
-
-	bms_info->modbus_data->version_major = VER_MAJOR;
-	bms_info->modbus_data->version_minor = VER_MINOR;
-	bms_info->modbus_data->version_rev = VER_REV;
-
-	if(bms_info->bms_data_mutex) {
-		os_status = osMutexRelease(bms_info->bms_data_mutex);
-
-		if(os_status != osOK) {
-		}
-	}
-}
-
-void modbus_data_to_bms_data(bms_info_t *bms_info)
-{
-	osStatus os_status;
-
-	if(bms_info->bms_data_mutex) {
-		os_status = osMutexWait(bms_info->bms_data_mutex, osWaitForever);
-
-		if(os_status != osOK) {
-		}
-	}
-
-	bms_info->settings->bms_data_common.common_max_charge_voltage = bms_info->modbus_data->bms_common_max_charge_voltage;
-	bms_info->settings->bms_data_common.common_soc = bms_info->modbus_data->bms_common_soc;
-
-	//bms_info->settings->bhm_data.max_charge_voltage = bms_info->modbus_data->bhm_max_charge_voltage;
-	bms_info->settings->bhm_data.max_charge_voltage = bms_info->settings->bms_data_common.common_max_charge_voltage;
-
-
-	bms_info->settings->brm_data.brm_data.version_1 = bms_info->modbus_data->brm_version_1;
-	bms_info->settings->brm_data.brm_data.version_0 = bms_info->modbus_data->brm_version_0;
-	bms_info->settings->brm_data.brm_data.battery_type = bms_info->modbus_data->brm_battery_type;
-	bms_info->settings->brm_data.brm_data.total_battery_rate_capicity = bms_info->modbus_data->brm_total_battery_rate_capicity;
-	bms_info->settings->brm_data.brm_data.total_battery_rate_voltage = bms_info->modbus_data->brm_total_battery_rate_voltage;
-	memcpy(bms_info->settings->brm_data.battery_vendor, bms_info->modbus_data->brm_battery_vendor, 4);
-	memcpy((void *)&bms_info->settings->brm_data.battery_vendor_sn, (void *)bms_info->modbus_data->brm_battery_vendor_sn, 4);
-	bms_info->settings->brm_data.battery_year = bms_info->modbus_data->brm_battery_year - 1985;
-	bms_info->settings->brm_data.battery_month = bms_info->modbus_data->brm_battery_month;
-	bms_info->settings->brm_data.battery_day = bms_info->modbus_data->brm_battery_day;
-	memcpy(bms_info->settings->brm_data.battery_charge_times, bms_info->modbus_data->brm_battery_charge_times, 3);
-	bms_info->settings->brm_data.battery_property = bms_info->modbus_data->brm_battery_property;
-	memcpy(bms_info->settings->brm_data.vin, bms_info->modbus_data->brm_vin, 17);
-	bms_info->settings->brm_data.version.serial = bms_info->modbus_data->brm_version_serial;
-	bms_info->settings->brm_data.version.day = bms_info->modbus_data->brm_version_day;
-	bms_info->settings->brm_data.version.month = bms_info->modbus_data->brm_version_month;
-	bms_info->settings->brm_data.version.year = bms_info->modbus_data->brm_version_year;
-
-	bms_info->settings->bcp_data.max_charge_voltage_single_battery = bms_info->modbus_data->bcp_max_charge_voltage_single_battery;
-	bms_info->settings->bcp_data.max_charge_current = 4000 - bms_info->modbus_data->bcp_max_charge_current;
-	bms_info->settings->bcp_data.rate_total_power = bms_info->modbus_data->bcp_rate_total_power;
-	//bms_info->settings->bcp_data.max_charge_voltage = bms_info->modbus_data->bcp_max_charge_voltage;
-	bms_info->settings->bcp_data.max_charge_voltage = bms_info->settings->bms_data_common.common_max_charge_voltage;
-	bms_info->settings->bcp_data.max_temperature = bms_info->modbus_data->bcp_max_temperature + 50;
-	//bms_info->settings->bcp_data.soc = bms_info->modbus_data->bcp_soc;
-	bms_info->settings->bcp_data.soc = bms_info->settings->bms_data_common.common_soc;
-	bms_info->settings->bcp_data.total_voltage = bms_info->modbus_data->bcp_total_voltage;
-	bms_info->settings->bcp_data.transfer_type = bms_info->modbus_data->bcp_transfer_type;
-
-	bms_info->settings->bro_data.bro_result = (bms_info->modbus_data->bro_bro_result == 0x00) ? 0x00 : (bms_info->modbus_data->bro_bro_result == 0x01) ? 0xaa : 0xff;
-
-	bms_info->settings->bcl_data.require_voltage = bms_info->modbus_data->bcl_require_voltage;
-	bms_info->settings->bcl_data.require_current = 4000 - bms_info->modbus_data->bcl_require_current;
-	bms_info->settings->bcl_data.charge_mode = bms_info->modbus_data->bcl_charge_mode + 1;
-
-	bms_info->settings->bcs_data.charge_voltage = bms_info->modbus_data->bcs_charge_voltage;
-	bms_info->settings->bcs_data.charge_current = 4000 - bms_info->modbus_data->bcs_charge_current;
-	bms_info->settings->bcs_data.u1.s.single_battery_max_voltage = bms_info->modbus_data->bcs_single_battery_max_voltage;
-	bms_info->settings->bcs_data.u1.s.single_battery_max_group = bms_info->modbus_data->bcs_single_battery_max_group;
-	//bms_info->settings->bcs_data.soc = bms_info->modbus_data->bcs_soc / 10;
-	bms_info->settings->bcs_data.soc = bms_info->settings->bms_data_common.common_soc / 10;
-	bms_info->settings->bcs_data.remain_min = bms_info->modbus_data->bcs_remain_min;
-
-	bms_info->settings->bsm_data.single_max_voltage_group = bms_info->modbus_data->bsm_single_max_voltage_group;
-	bms_info->settings->bsm_data.battery_max_temperature = bms_info->modbus_data->bsm_battery_max_temperature + 50;
-	bms_info->settings->bsm_data.battery_max_temperature_sn = bms_info->modbus_data->bsm_battery_max_temperature_sn;
-	bms_info->settings->bsm_data.battery_min_temperature = bms_info->modbus_data->bsm_battery_min_temperature + 50;
-	bms_info->settings->bsm_data.battery_min_temperature_sn = bms_info->modbus_data->bsm_battery_min_temperature_sn;
-	bms_info->settings->bsm_data.u1.s.single_voltage_state = bms_info->modbus_data->bsm_single_voltage_state;
-	bms_info->settings->bsm_data.u1.s.total_soc_state = bms_info->modbus_data->bsm_total_soc_state;
-	bms_info->settings->bsm_data.u1.s.battery_current_state = bms_info->modbus_data->bsm_battery_current_state;
-	bms_info->settings->bsm_data.u1.s.battery_temperature_state = bms_info->modbus_data->bsm_battery_temperature_state;
-	bms_info->settings->bsm_data.u2.s.battery_insulation_state = bms_info->modbus_data->bsm_battery_insulation_state;
-	bms_info->settings->bsm_data.u2.s.battery_connector_state = bms_info->modbus_data->bsm_battery_connector_state;
-	bms_info->settings->bsm_data.u2.s.battery_charge_enable = bms_info->modbus_data->bsm_battery_charge_enable;
-
-	bms_info->settings->bst_data.u1.s.stop_reason_soc = bms_info->modbus_data->bst_stop_reason_soc;
-	bms_info->settings->bst_data.u1.s.stop_reason_voltage = bms_info->modbus_data->bst_stop_reason_voltage;
-	bms_info->settings->bst_data.u1.s.stop_reason_single_voltage = bms_info->modbus_data->bst_stop_reason_single_voltage;
-	bms_info->settings->bst_data.u1.s.stop_reason_charger_stop = bms_info->modbus_data->bst_stop_reason_charger_stop;
-	bms_info->settings->bst_data.u2.s.stop_fault_reason_insulation = bms_info->modbus_data->bst_stop_fault_reason_insulation;
-	bms_info->settings->bst_data.u2.s.stop_fault_reason_connector_temperature = bms_info->modbus_data->bst_stop_fault_reason_connector_temperature;
-	bms_info->settings->bst_data.u2.s.stop_fault_reason_bms_connector_temperature = bms_info->modbus_data->bst_stop_fault_reason_bms_connector_temperature;
-	bms_info->settings->bst_data.u2.s.stop_fault_reason_charger_connector = bms_info->modbus_data->bst_stop_fault_reason_charger_connector;
-	bms_info->settings->bst_data.u2.s.stop_fault_reason_battery_temperature = bms_info->modbus_data->bst_stop_fault_reason_battery_temperature;
-	bms_info->settings->bst_data.u2.s.stop_fault_reason_relay = bms_info->modbus_data->bst_stop_fault_reason_relay;
-	bms_info->settings->bst_data.u2.s.stop_fault_reason_voltage_check = bms_info->modbus_data->bst_stop_fault_reason_voltage_check;
-	bms_info->settings->bst_data.u2.s.stop_fault_reason_other = bms_info->modbus_data->bst_stop_fault_reason_other;
-	bms_info->settings->bst_data.u3.s.stop_error_reason_current = bms_info->modbus_data->bst_stop_error_reason_current;
-	bms_info->settings->bst_data.u3.s.stop_error_reason_voltage = bms_info->modbus_data->bst_stop_error_reason_voltage;
-
-	//bms_info->settings->bsd_data.soc = bms_info->modbus_data->bsd_soc / 10;
-	bms_info->settings->bsd_data.soc = bms_info->settings->bms_data_common.common_soc / 10;
-	bms_info->settings->bsd_data.single_min_voltage = bms_info->modbus_data->bsd_single_min_voltage;
-	bms_info->settings->bsd_data.single_max_voltage = bms_info->modbus_data->bsd_single_max_voltage;
-	bms_info->settings->bsd_data.battery_min_temperature = bms_info->modbus_data->bsd_battery_min_temperature + 50;
-	bms_info->settings->bsd_data.battery_max_temperature = bms_info->modbus_data->bsd_battery_max_temperature + 50;
-
-	bms_info->settings->bem_data.u1.s.crm_00_timeout = bms_info->modbus_data->bem_crm_00_timeout;
-	bms_info->settings->bem_data.u1.s.crm_aa_timeout = bms_info->modbus_data->bem_crm_aa_timeout;
-	bms_info->settings->bem_data.u2.s.cts_cml_timeout = bms_info->modbus_data->bem_cts_cml_timeout;
-	bms_info->settings->bem_data.u2.s.cro_timeout = bms_info->modbus_data->bem_cro_timeout;
-	bms_info->settings->bem_data.u3.s.ccs_timeout = bms_info->modbus_data->bem_ccs_timeout;
-	bms_info->settings->bem_data.u3.s.cst_timeout = bms_info->modbus_data->bem_cst_timeout;
-	bms_info->settings->bem_data.u4.s.csd_timeout = bms_info->modbus_data->bem_csd_timeout;
-	bms_info->settings->bem_data.u4.s.other = bms_info->modbus_data->bem_other;
-
-	if(bms_info->bms_data_mutex) {
-		os_status = osMutexRelease(bms_info->bms_data_mutex);
-
-		if(os_status != osOK) {
-		}
-	}
-}
-
-int load_eeprom_modbus_data(bms_info_t *bms_info)
-{
+	int i;
 	int ret = -1;
 	uint8_t id;
-	uint32_t offset;
-	uint32_t crc = 0;
-	int i;
-	eeprom_modbus_data_t *eeprom_modbus_data = NULL;
-	uint8_t *data = NULL;
-
-	if(bms_info == NULL) {
-		return ret;
-	}
-
-	offset = sizeof(eeprom_modbus_data_t) * bms_info->eeprom_modbus_data_index;
-	eeprom_modbus_data = bms_info->eeprom_modbus_data;
 
 	for(i = 0; i < 10; i++) {
-		id = eeprom_id(bms_info->eeprom_info);
-
-		//udp_log_printf("eeprom id:0x%x\n", id);
+		id = eeprom_id(eeprom_info);
 
 		if(id == 0x29) {
 			break;
@@ -911,82 +1473,95 @@ int load_eeprom_modbus_data(bms_info_t *bms_info)
 		osDelay(200);
 	}
 
-	if(id != 0x29) {
+	if(id == 0x29) {
+		ret = 0;
+	}
+
+	return ret;
+}
+
+int load_eeprom_modbus_data(bms_info_t *bms_info)
+{
+	int ret = -1;
+	uint32_t offset;
+	uint32_t crc = 0;
+	eeprom_modbus_head_t eeprom_modbus_head;
+
+	if(bms_info == NULL) {
+		return ret;
+	}
+
+	offset = sizeof(eeprom_modbus_data_t) * bms_info->eeprom_modbus_data_index;
+
+	if(detect_eeprom(bms_info->eeprom_info) != 0) {
 		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return ret;
 	}
 
-	eeprom_read(bms_info->eeprom_info, offset, (uint8_t *)eeprom_modbus_data, sizeof(eeprom_modbus_data_t));
+	eeprom_read(bms_info->eeprom_info, offset, (uint8_t *)&eeprom_modbus_head, sizeof(eeprom_modbus_head_t));
+	offset += sizeof(eeprom_modbus_head_t);
 
-	if(eeprom_modbus_data->payload_size != sizeof(modbus_data_t)) {
+	if(eeprom_modbus_head.payload_size != sizeof(eeprom_modbus_data_t)) {
 		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return ret;
 	}
 
-	crc += eeprom_modbus_data->payload_size;
+	crc += eeprom_modbus_head.payload_size;
+	crc += (uint32_t)'b';
+	crc += (uint32_t)'m';
+	crc += (uint32_t)'s';
 
-	data = (uint8_t *)(&eeprom_modbus_data->modbus_data);
-
-	for(i = 0; i < eeprom_modbus_data->payload_size; i++) {
-		crc += data[i];
-	}
-
-	if(crc != eeprom_modbus_data->crc) {
+	if(crc != eeprom_modbus_head.crc) {
 		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return ret;
 	}
 
 	ret = 0;
+
+	eeprom_read(bms_info->eeprom_info, offset, (uint8_t *)bms_info->settings, sizeof(bms_data_settings_t));
+	offset += sizeof(bms_data_settings_t);
+
+	eeprom_read(bms_info->eeprom_info, offset, (uint8_t *)&bms_info->configs, sizeof(bms_data_configs_t));
+	offset += sizeof(bms_data_configs_t);
+
 	return ret;
 }
 
 int save_eeprom_modbus_data(bms_info_t *bms_info)
 {
 	int ret = -1;
-	uint8_t id;
 	uint32_t offset;
 	uint32_t crc = 0;
-	int i;
-	eeprom_modbus_data_t *eeprom_modbus_data = NULL;
-	uint8_t *data = NULL;
+	eeprom_modbus_head_t eeprom_modbus_head;
 
 	offset = sizeof(eeprom_modbus_data_t) * bms_info->eeprom_modbus_data_index;
-	eeprom_modbus_data = bms_info->eeprom_modbus_data;
 
 	if(bms_info == NULL) {
 		return ret;
 	}
 
-	for(i = 0; i < 10; i++) {
-		id = eeprom_id(bms_info->eeprom_info);
-
-		//udp_log_printf("eeprom id:0x%x\n", id);
-
-		if(id == 0x29) {
-			break;
-		}
-
-		osDelay(200);
-	}
-
-	if(id != 0x29) {
+	if(detect_eeprom(bms_info->eeprom_info) != 0) {
 		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return ret;
 	}
 
-	eeprom_modbus_data->payload_size = sizeof(modbus_data_t);
+	eeprom_modbus_head.payload_size = sizeof(eeprom_modbus_data_t);
 
-	crc += eeprom_modbus_data->payload_size;
+	crc += eeprom_modbus_head.payload_size;
+	crc += (uint32_t)'b';
+	crc += (uint32_t)'m';
+	crc += (uint32_t)'s';
 
-	data = (uint8_t *)(&eeprom_modbus_data->modbus_data);
+	eeprom_modbus_head.crc = crc;
 
-	for(i = 0; i < eeprom_modbus_data->payload_size; i++) {
-		crc += data[i];
-	}
+	eeprom_write(bms_info->eeprom_info, offset, (uint8_t *)&eeprom_modbus_head, sizeof(eeprom_modbus_head_t));
+	offset += sizeof(eeprom_modbus_head_t);
 
-	eeprom_modbus_data->crc = crc;
+	eeprom_write(bms_info->eeprom_info, offset, (uint8_t *)bms_info->settings, sizeof(bms_data_settings_t));
+	offset += sizeof(bms_data_settings_t);
 
-	eeprom_write(bms_info->eeprom_info, offset, (uint8_t *)eeprom_modbus_data, sizeof(eeprom_modbus_data_t));
+	eeprom_write(bms_info->eeprom_info, offset, (uint8_t *)&bms_info->configs, sizeof(bms_data_configs_t));
+	offset += sizeof(bms_data_configs_t);
 
 	return 0;
 }
@@ -1003,16 +1578,14 @@ void bms_restore_data(bms_info_t *bms_info)
 	udp_log_printf("load_eeprom_modbus_data %s!\n", (ret == 0) ? "successfully" : "failed");
 
 	if(ret == 0) {
-		modbus_data_to_bms_data(bms_info);
-		bms_info->modbus_data->bms_state = bms_info->state;//初始化bms状态
-		bms_info->modbus_data->bms_gun_connect = is_gun_connected(bms_info);
-		bms_info->modbus_data->bms_poweron_enable = is_bms_poweron_enable(bms_info);
+		bms_info->bms_gun_connect = is_gun_connected(bms_info);
+		bms_info->bms_poweron_enable = is_bms_poweron_enable(bms_info);
 	} else {
-		bms_data_to_modbus_data(bms_info, 1);
+		bms_data_settings_default_init(bms_info->settings);
+		memset(&bms_info->configs, 0, sizeof(bms_data_configs_t));
 	}
 
 	reset_bms_data_settings_charger_data(bms_info);
-	bms_data_to_modbus_data(bms_info, 0);
 
 	if(ret != 0) {
 		save_eeprom_modbus_data(bms_info);
@@ -1105,9 +1678,6 @@ void set_bms_state(bms_info_t *bms_info, bms_state_t state)
 	udp_log_printf("change to state:%s!\n", get_bms_state_des(state));
 
 	bms_info->state = state;
-
-	bms_data_to_modbus_data(bms_info, 0);
-	bms_info->modbus_data->bms_state = bms_info->state;
 }
 
 void set_bms_state_locked(bms_info_t *bms_info, bms_state_t state)
@@ -1181,7 +1751,6 @@ void bms_handle_response(bms_info_t *bms_info)
 	ret = handler->handle_response(bms_info);
 
 	if(ret == 0) {
-		bms_data_to_modbus_data(bms_info, 0);
 	}
 
 	if(bms_info->handle_mutex) {
@@ -1228,73 +1797,13 @@ uint8_t is_bms_poweron_enable(bms_info_t *bms_info)
 	}
 }
 
-static void try_to_reset_bms_configure(bms_info_t *bms_info)
-{
-	if(bms_info->modbus_data->reset_bms_configure != 0) {
-		bms_info->modbus_data->reset_bms_configure = 0;
-		bms_data_settings_default_init(bms_info->settings);
-		bms_data_to_modbus_data(bms_info, 1);
-
-		save_eeprom_modbus_data(bms_info);
-	}
-}
-
-static void try_to_stop_bms(bms_info_t *bms_info)
-{
-	if(bms_info->modbus_data->stop_bms != 0) {
-		bms_info->modbus_data->stop_bms = 0;
-
-		save_eeprom_modbus_data(bms_info);
-
-		if(bms_info->state != BMS_STATE_BCL_BCS_BSM_BMV_BMT_BSP) {
-			return;
-		}
-
-		bms_info->modbus_data->bst_stop_reason_soc = 1;
-		bms_info->settings->bst_data.u1.s.stop_reason_soc = 1;
-		set_bms_state_locked(bms_info, BMS_STATE_BST);
-	}
-}
-
-static void try_to_toggle_gun_on_off(bms_info_t *bms_info)
-{
-	if(bms_info->modbus_data->toggle_gun_on_off != 0) {
-		uint8_t on_off = get_gun_on_off(bms_info);
-
-		bms_info->modbus_data->toggle_gun_on_off = 0;
-
-		save_eeprom_modbus_data(bms_info);
-
-		if(bms_info->state != BMS_STATE_IDLE) {
-			return;
-		}
-
-		if(on_off == 0) {
-			on_off = 1;
-		} else {
-			on_off = 0;
-		}
-
-		set_gun_on_off(bms_info, on_off);
-	}
-}
-
 static void update_ui_data(bms_info_t *bms_info)
 {
-	bms_info->modbus_data->bms_gun_connect = is_gun_connected(bms_info);
-	bms_info->modbus_data->bms_poweron_enable = is_bms_poweron_enable(bms_info);
-	bms_info->modbus_data->gun_on_off_state = get_gun_on_off(bms_info);
-}
-
-static void process_ui_request(bms_info_t *bms_info)
-{
-	try_to_reset_bms_configure(bms_info);
-	try_to_stop_bms(bms_info);
-	try_to_toggle_gun_on_off(bms_info);
+	bms_info->bms_gun_connect = is_gun_connected(bms_info);
+	bms_info->bms_poweron_enable = is_bms_poweron_enable(bms_info);
 }
 
 void bms_periodic(bms_info_t *bms_info)
 {
-	process_ui_request(bms_info);
 	update_ui_data(bms_info);
 }

@@ -6,7 +6,7 @@
  *   文件名称：bms_handler.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时18分53秒
- *   修改日期：2020年04月10日 星期五 17时28分42秒
+ *   修改日期：2020年04月13日 星期一 15时12分48秒
  *   描    述：
  *
  *================================================================*/
@@ -155,7 +155,7 @@ static int handle_state_bhm_request(bms_info_t *bms_info)
 		set_bms_state(bms_info, BMS_STATE_BSD_BEM);
 	} else {
 		if(ticks - bms_info->send_stamp >= FN_BHM_SEND_PERIOD) {
-			if(bms_info->modbus_data->disable_bhm == 0) {
+			if(bms_info->configs.disable_bhm == 0) {
 				send_bhm(bms_info);
 				bms_info->send_stamp = ticks;
 			}
@@ -254,7 +254,7 @@ static int handle_state_brm_request(bms_info_t *bms_info)
 		set_bms_state(bms_info, BMS_STATE_BSD_BEM);
 	} else {
 		if(ticks - bms_info->send_stamp >= FN_BRM_SEND_PERIOD) {
-			if(bms_info->modbus_data->disable_brm == 0) {
+			if(bms_info->configs.disable_brm == 0) {
 				//send_brm(bms_info);
 				if(send_multi_packets(bms_info->can_info,
 				                      &bms_info->multi_packets_info,
@@ -333,7 +333,7 @@ static int handle_state_bcp_request(bms_info_t *bms_info)
 		set_bms_state(bms_info, BMS_STATE_BSD_BEM);
 	} else {
 		if(ticks - bms_info->send_stamp >= FN_BCP_SEND_PERIOD) {
-			if(bms_info->modbus_data->disable_bcp == 0) {
+			if(bms_info->configs.disable_bcp == 0) {
 				if(send_multi_packets(bms_info->can_info,
 				                      &bms_info->multi_packets_info,
 				                      bms_info->settings,
@@ -457,7 +457,7 @@ static int handle_state_bro_request(bms_info_t *bms_info)
 				set_gun_on_off(bms_info, 1);
 			}
 
-			if(bms_info->modbus_data->disable_bro == 0) {
+			if(bms_info->configs.disable_bro == 0) {
 				send_bro(bms_info);
 				bms_info->send_stamp = ticks;
 			}
@@ -595,14 +595,14 @@ static int handle_state_bcl_bcs_bsm_bmv_bmt_bsp_request(bms_info_t *bms_info)
 		set_bms_state(bms_info, BMS_STATE_BSD_BEM);
 	} else {
 		if(ticks - bms_info->send_stamp >= FN_BCL_SEND_PERIOD) {
-			if(bms_info->modbus_data->disable_bcl == 0) {
+			if(bms_info->configs.disable_bcl == 0) {
 				send_bcl(bms_info);
 				bms_info->send_stamp = ticks;
 			}
 		}
 
 		if(ticks - bms_info->send_stamp_1 >= FN_BCS_SEND_PERIOD) {
-			if(bms_info->modbus_data->disable_bcs == 0) {
+			if(bms_info->configs.disable_bcs == 0) {
 				if(send_multi_packets(bms_info->can_info,
 				                      &bms_info->multi_packets_info,
 				                      bms_info->settings,
@@ -618,7 +618,7 @@ static int handle_state_bcl_bcs_bsm_bmv_bmt_bsp_request(bms_info_t *bms_info)
 
 		if(bms_info->received_ccs == 1) {
 			if(ticks - bms_info->send_stamp_2 >= FN_BSM_SEND_PERIOD) {
-				if(bms_info->modbus_data->disable_bsm == 0) {
+				if(bms_info->configs.disable_bsm == 0) {
 					send_bsm(bms_info);
 					bms_info->send_stamp_2 = ticks;
 				}
@@ -710,7 +710,7 @@ static int handle_state_bst_request(bms_info_t *bms_info)
 		set_bms_state(bms_info, BMS_STATE_BSD_BEM);
 	} else {
 		if(ticks - bms_info->send_stamp >= FN_BST_SEND_PERIOD) {
-			if(bms_info->modbus_data->disable_bst == 0) {
+			if(bms_info->configs.disable_bst == 0) {
 				send_bst(bms_info);
 				bms_info->send_stamp = ticks;
 			}
@@ -873,7 +873,7 @@ static int handle_state_bsd_bem_request(bms_info_t *bms_info)
 	if(is_bem_valid(bms_info) == 1) {
 		if((bms_info->sent_bem == 0) || (is_no_current(bms_info) == 0)) {
 			if(ticks - bms_info->send_stamp >= FN_BEM_SEND_PERIOD) {
-				if(bms_info->modbus_data->disable_bem == 0) {
+				if(bms_info->configs.disable_bem == 0) {
 					send_bem(bms_info);
 					bms_info->send_stamp = ticks;
 					bms_info->sent_bem = 1;
@@ -883,7 +883,7 @@ static int handle_state_bsd_bem_request(bms_info_t *bms_info)
 	} else {
 		if(bms_info->received_csd == 0) {
 			if(ticks - bms_info->send_stamp_1 >= FN_BSD_SEND_PERIOD) {
-				if(bms_info->modbus_data->disable_bsd == 0) {
+				if(bms_info->configs.disable_bsd == 0) {
 					send_bsd(bms_info);
 					bms_info->send_stamp_1 = ticks;
 				}
