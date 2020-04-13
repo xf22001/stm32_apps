@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年04月13日 星期一 16时36分35秒
+ *   修改日期：2020年04月13日 星期一 16时49分44秒
  *   描    述：
  *
  *================================================================*/
@@ -413,7 +413,7 @@ static void modbus_data_changed(void *fn_ctx, void *chain_ctx)
 static uint8_t modbus_addr_valid(void *ctx, uint16_t start, uint16_t number)
 {
 	uint8_t valid = 0;
-	uint16_t end = start + number;
+	uint16_t end = start + number;//无效边界
 
 	if(end <= start) {
 		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
@@ -425,7 +425,7 @@ static uint8_t modbus_addr_valid(void *ctx, uint16_t start, uint16_t number)
 		return valid;
 	}
 
-	if(end > MODBUS_ADDR_VERSION_REV) {
+	if(end > MODBUS_ADDR_INVALID) {
 		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return valid;
 	}
@@ -1422,6 +1422,11 @@ static void modbus_data_get_set(bms_info_t *bms_info, uint16_t addr, uint16_t *v
 		break;
 
 		default:
+			udp_log_printf("op:%s, addr:%d\n",
+					(op == MODBUS_DATA_GET) ? "get" :
+					(op == MODBUS_DATA_SET) ? "set" :
+					"unknow",
+					addr);
 			break;
 	}
 }

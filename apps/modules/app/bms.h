@@ -6,7 +6,7 @@
  *   文件名称：bms.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分57秒
- *   修改日期：2020年04月13日 星期一 16时32分53秒
+ *   修改日期：2020年04月13日 星期一 16时47分51秒
  *   描    述：
  *
  *================================================================*/
@@ -154,6 +154,7 @@ typedef enum {
 	MODBUS_ADDR_VERSION_MAJOR = 111,
 	MODBUS_ADDR_VERSION_MINOR = 112,
 	MODBUS_ADDR_VERSION_REV = 113,
+	MODBUS_ADDR_INVALID,
 } modbus_addr_t;
 typedef enum {
 	MODBUS_DATA_GET = 0,
