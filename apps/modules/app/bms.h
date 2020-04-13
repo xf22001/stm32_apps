@@ -6,7 +6,7 @@
  *   文件名称：bms.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分57秒
- *   修改日期：2020年04月13日 星期一 16时16分49秒
+ *   修改日期：2020年04月13日 星期一 16时32分53秒
  *   描    述：
  *
  *================================================================*/
@@ -214,7 +214,7 @@ typedef struct {
 	bms_data_settings_t *settings;
 	bms_data_configs_t configs;
 
-	uint16_t gun_on_off_state;
+	uint8_t gun_on_off_state;
 
 	uint8_t bms_gun_connect;
 	uint8_t bms_poweron_enable;

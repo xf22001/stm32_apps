@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年04月13日 星期一 16时18分31秒
+ *   修改日期：2020年04月13日 星期一 16时36分35秒
  *   描    述：
  *
  *================================================================*/
@@ -368,6 +368,12 @@ bms_info_t *get_or_alloc_bms_info(can_info_t *can_info)
 	bms_info->bms_poweron_enable_pin = bms_info_config->bms_poweron_enable_pin;
 	bms_info->gun_on_off_gpio = bms_info_config->gun_on_off_gpio;
 	bms_info->gun_on_off_pin = bms_info_config->gun_on_off_pin;
+
+	bms_info->gun_on_off_state = 0;
+	bms_info->bms_gun_connect = 0;
+	bms_info->bms_poweron_enable = 0;
+
+	memset(&bms_info->configs, 0, sizeof(bms_data_configs_t));
 
 	bms_info->modbus_info = NULL;
 
