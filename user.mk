@@ -6,68 +6,25 @@
 #   文件名称：user.mk
 #   创 建 者：肖飞
 #   创建日期：2019年10月25日 星期五 13时04分38秒
-#   修改日期：2020年03月19日 星期四 14时41分43秒
+#   修改日期：2020年04月14日 星期二 10时05分44秒
 #   描    述：
 #
 #================================================================
 
-C_INCLUDES += -Iapps
-C_INCLUDES += -Iapps/modules
-C_INCLUDES += -Iapps/modules/fw_1.7.0
-C_INCLUDES += -Iapps/tasks
-C_SOURCES += apps/app.c
-C_SOURCES += apps/modules/os_utils.c
-C_SOURCES += apps/modules/usart_txrx.c
-C_SOURCES += apps/modules/fw_1.7.0/can_txrx.c
-C_SOURCES += apps/modules/spi_txrx.c
-C_SOURCES += apps/modules/modbus_txrx.c
-C_SOURCES += apps/modules/charger.c
-C_SOURCES += apps/modules/charger_handler.c
-C_SOURCES += apps/modules/bms.c
-C_SOURCES += apps/modules/bms_handler.c
-C_SOURCES += apps/modules/test_serial.c
-C_SOURCES += apps/modules/test_can.c
-C_SOURCES += apps/modules/test_gpio.c
-C_SOURCES += apps/modules/test_charger_bms.c
-C_SOURCES += apps/modules/test_modbus.c
-C_SOURCES += apps/modules/request.c
-C_SOURCES += apps/tasks/task_probe_tool.c
-C_SOURCES += apps/modules/net_protocol_tcp.c
-C_SOURCES += apps/modules/net_protocol_udp.c
-C_SOURCES += apps/modules/net_protocol_ws.c
-C_SOURCES += apps/modules/net_client.c
-C_SOURCES += apps/modules/request_default.c
-C_SOURCES += apps/modules/request_ws.c
-C_SOURCES += apps/modules/net_callback.c
-C_SOURCES += apps/modules/eeprom.c
-C_SOURCES += apps/modules/flash.c
-C_SOURCES += apps/modules/iap.c
-C_SOURCES += apps/modules/channels.c
-C_SOURCES += apps/modules/event_helper.c
-C_SOURCES += apps/modules/bitmap_ops.c
-C_SOURCES += apps/modules/https.c
-C_SOURCES += apps/modules/test_https.c
+USER_C_INCLUDES += -Iapps
+USER_C_INCLUDES += -Iapps/modules
+USER_C_INCLUDES += -Iapps/modules/app
+USER_C_INCLUDES += -Iapps/modules/os
 
-BMS_VERSION_YEAR := $(shell date '+%-Y')
-BMS_VERSION_MONTH := $(shell date '+%-m')
-BMS_VERSION_DAY := $(shell date '+%-d')
-BMS_VERSION_SERIAL := $(shell date '+%-H%M')
+C_INCLUDES += $(USER_C_INCLUDES)
 
-CFLAGS += -DBMS_VERSION_YEAR=$(BMS_VERSION_YEAR)
-CFLAGS += -DBMS_VERSION_MONTH=$(BMS_VERSION_MONTH)
-CFLAGS += -DBMS_VERSION_DAY=$(BMS_VERSION_DAY)
-CFLAGS += -DBMS_VERSION_SERIAL=$(BMS_VERSION_SERIAL)
+USER_C_SOURCES += apps/app.c
 
-ifeq ("$(origin APP)", "command line")
-CFLAGS += -DUSER_APP
-LDSCRIPT = STM32F207VETx_FLASH_APP.ld
-$(shell touch apps/iap.h)
-$(info "build app!")
-else
-LDSCRIPT = STM32F207VETx_FLASH.ld
-$(shell touch apps/iap.h)
-$(info "build bootloader!")
-endif
+USER_C_SOURCES += apps/modules/os/os_utils.c
+
+C_SOURCES += $(USER_C_SOURCES)
+
+CFLAGS += $(USER_CFLAGS)
 
 default: all
 
