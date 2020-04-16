@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时07分55秒
- *   修改日期：2020年04月16日 星期四 17时36分18秒
+ *   修改日期：2020年04月16日 星期四 17时40分45秒
  *   描    述：
  *
  *================================================================*/
@@ -138,9 +138,6 @@ static void receive_init(CAN_HandleTypeDef *hcan)
 
 	id.v = can_info->filter_id;
 	id_mask.v = can_info->filter_maskid;
-
-	can_info->hcan->pRxMsg = &can_info->rx_msg;
-	can_info->hcan->pRx1Msg = &can_info->rx_msg1;
 
 	filter.FilterBank = can_info->filter_number;
 	filter.FilterMode = CAN_FILTERMODE_IDMASK;

@@ -6,7 +6,7 @@
  *   文件名称：bms.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分57秒
- *   修改日期：2020年04月14日 星期二 10时22分32秒
+ *   修改日期：2020年04月16日 星期四 17时41分22秒
  *   描    述：
  *
  *================================================================*/
@@ -256,7 +256,6 @@ void free_bms_info(bms_info_t *bms_info);
 bms_info_t *get_or_alloc_bms_info(can_info_t *can_info);
 void bms_set_modbus_info(bms_info_t *bms_info, modbus_info_t *modbus_info);
 void bms_set_eeprom_info(bms_info_t *bms_info, eeprom_info_t *eeprom_info);
-void show_modbus_data_offset(void);
 void bms_data_to_modbus_data(bms_info_t *bms_info, uint8_t do_init);
 void modbus_data_to_bms_data(bms_info_t *bms_info);
 int load_eeprom_modbus_data(bms_info_t *bms_info);
