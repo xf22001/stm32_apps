@@ -6,7 +6,7 @@
  *   文件名称：bms_handler.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时18分53秒
- *   修改日期：2020年04月13日 星期一 15时12分48秒
+ *   修改日期：2020年04月14日 星期二 10时22分14秒
  *   描    述：
  *
  *================================================================*/
@@ -675,6 +675,7 @@ static int prepare_state_bst(bms_info_t *bms_info)
 	bms_info->send_stamp = ticks - FN_BST_SEND_PERIOD;//bcl
 	bms_info->stamp = ticks;
 	bms_info->stamp_1 = ticks;//保存首次发cst的时间
+	bms_info->sent_bst = 0;
 
 	return ret;
 }
@@ -696,6 +697,10 @@ static int send_bst(bms_info_t *bms_info)
 	*data = bms_info->settings->bst_data;
 
 	ret = can_tx_data(can_info, &tx_msg, 10);
+
+	if(ret == 0) {
+		bms_info->sent_bst = 1;
+	}
 
 	return ret;
 }
@@ -741,7 +746,9 @@ static int handle_state_bst_response(bms_info_t *bms_info)
 			cst_data_t *data = (cst_data_t *)rx_msg->Data;
 			bms_info->settings->cst_data = *data;
 
-			set_bms_state(bms_info, BMS_STATE_BSD_BEM);
+			if(bms_info->sent_bst == 1) {
+				set_bms_state(bms_info, BMS_STATE_BSD_BEM);
+			}
 
 			ret = 0;
 		}

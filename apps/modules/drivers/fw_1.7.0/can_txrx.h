@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时29分22秒
- *   修改日期：2020年04月04日 星期六 18时22分06秒
+ *   修改日期：2020年04月16日 星期四 17时34分53秒
  *   描    述：
  *
  *================================================================*/
@@ -22,7 +22,6 @@ extern "C"
 #endif
 
 #include "app_platform.h"
-#include "stm32f2xx_hal_can.h"
 #include "cmsis_os.h"
 
 #include "list_utils.h"
@@ -46,7 +45,9 @@ typedef struct {
 
 	uint32_t filter_number;
 	uint32_t filter_fifo;
-	uint8_t receive_fifo;
+	uint32_t receive_fifo;
+	uint32_t filter_id;
+	uint32_t filter_maskid;
 
 	can_hal_init_t can_hal_init;
 	receive_init_t receive_init;
