@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2020年04月09日 星期四 17时23分36秒
+ *   修改日期：2020年04月17日 星期五 08时36分02秒
  *   描    述：
  *
  *================================================================*/
@@ -245,25 +245,25 @@ int uart_tx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t 
 {
 	int ret = 0;
 	HAL_StatusTypeDef status;
-	//osStatus os_status;
+	osStatus os_status;
 
 	if(uart_info->huart_mutex) {
-		//os_status = osMutexWait(uart_info->huart_mutex, osWaitForever);
+		os_status = osMutexWait(uart_info->huart_mutex, osWaitForever);
 
-		//if(os_status != osOK) {
-		//}
+		if(os_status != osOK) {
+		}
 	}
 
-	HAL_UART_Transmit_DMA(uart_info->huart, data, size);
+	status = HAL_UART_Transmit_DMA(uart_info->huart, data, size);
 
 	if(status != HAL_OK) {
 	}
 
 	if(uart_info->huart_mutex) {
-		//os_status = osMutexRelease(uart_info->huart_mutex);
+		os_status = osMutexRelease(uart_info->huart_mutex);
 
-		//if(os_status != osOK) {
-		//}
+		if(os_status != osOK) {
+		}
 	}
 
 	if(uart_info->tx_msg_q != NULL) {
@@ -340,13 +340,13 @@ int uart_rx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t 
 {
 	int ret = 0;
 	HAL_StatusTypeDef status;
-	//osStatus os_status;
+	osStatus os_status;
 
 	if(uart_info->huart_mutex) {
-		//os_status = osMutexWait(uart_info->huart_mutex, osWaitForever);
+		os_status = osMutexWait(uart_info->huart_mutex, osWaitForever);
 
-		//if(os_status != osOK) {
-		//}
+		if(os_status != osOK) {
+		}
 	}
 
 	status = HAL_UART_Receive_DMA(uart_info->huart, data, size);
@@ -355,13 +355,56 @@ int uart_rx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t 
 	}
 
 	if(uart_info->huart_mutex) {
-		//os_status = osMutexRelease(uart_info->huart_mutex);
+		os_status = osMutexRelease(uart_info->huart_mutex);
 
-		//if(os_status != osOK) {
-		//}
+		if(os_status != osOK) {
+		}
 	}
 
 	ret = wait_for_uart_receive(uart_info, size, timeout);
+
+	return ret;
+}
+
+int uart_tx_rx_data(uart_info_t *uart_info, uint8_t *tx_data, uint16_t tx_size, uint8_t *rx_data, uint16_t rx_size, uint32_t timeout)
+{
+	int ret = 0;
+	HAL_StatusTypeDef status;
+	osStatus os_status;
+
+	if(uart_info->huart_mutex) {
+		os_status = osMutexWait(uart_info->huart_mutex, osWaitForever);
+
+		if(os_status != osOK) {
+		}
+	}
+
+	status = HAL_UART_Receive_DMA(uart_info->huart, rx_data, rx_size);
+
+	if(status != HAL_OK) {
+	}
+
+	status = HAL_UART_Transmit_DMA(uart_info->huart, tx_data, tx_size);
+
+	if(status != HAL_OK) {
+	}
+
+	if(uart_info->huart_mutex) {
+		os_status = osMutexRelease(uart_info->huart_mutex);
+
+		if(os_status != osOK) {
+		}
+	}
+
+	ret = wait_for_uart_receive(uart_info, rx_size, timeout);
+
+	if(uart_info->tx_msg_q != NULL) {
+		osEvent event = osMessageGet(uart_info->tx_msg_q, 0);
+
+		if(event.status != osEventMessage) {
+			HAL_UART_AbortTransmit(uart_info->huart);
+		}
+	}
 
 	return ret;
 }

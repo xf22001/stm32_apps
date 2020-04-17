@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时07分55秒
- *   修改日期：2020年04月16日 星期四 17时36分43秒
+ *   修改日期：2020年04月17日 星期五 08时39分23秒
  *   描    述：
  *
  *================================================================*/
@@ -311,15 +311,15 @@ int can_tx_data(can_info_t *can_info, can_tx_msg_t *msg, uint32_t timeout)
 {
 	int ret = -1;
 	HAL_StatusTypeDef status;
-	//osStatus os_status;
+	osStatus os_status;
 
 	can_info->hcan->pTxMsg = msg;
 
 	if(can_info->hcan_mutex) {
-		//os_status = osMutexWait(can_info->hcan_mutex, osWaitForever);
+		os_status = osMutexWait(can_info->hcan_mutex, osWaitForever);
 
-		//if(os_status != osOK) {
-		//}
+		if(os_status != osOK) {
+		}
 	}
 
 	status = HAL_CAN_Transmit_IT(can_info->hcan);
@@ -328,10 +328,10 @@ int can_tx_data(can_info_t *can_info, can_tx_msg_t *msg, uint32_t timeout)
 	}
 
 	if(can_info->hcan_mutex) {
-		//os_status = osMutexRelease(can_info->hcan_mutex);
+		os_status = osMutexRelease(can_info->hcan_mutex);
 
-		//if(os_status != osOK) {
-		//}
+		if(os_status != osOK) {
+		}
 	}
 
 	if(can_info->tx_msg_q != NULL) {
@@ -349,7 +349,7 @@ int can_tx_data(can_info_t *can_info, can_tx_msg_t *msg, uint32_t timeout)
 int can_rx_data(can_info_t *can_info, uint32_t timeout)
 {
 	int ret = -1;
-	//osStatus os_status;
+	osStatus os_status;
 	HAL_StatusTypeDef status;
 
 	if(can_info == NULL) {
@@ -357,10 +357,10 @@ int can_rx_data(can_info_t *can_info, uint32_t timeout)
 	}
 
 	if(can_info->hcan_mutex) {
-		//os_status = osMutexWait(can_info->hcan_mutex, osWaitForever);
+		os_status = osMutexWait(can_info->hcan_mutex, osWaitForever);
 
-		//if(os_status != osOK) {
-		//}
+		if(os_status != osOK) {
+		}
 	}
 
 	status = HAL_CAN_Receive_IT(can_info->hcan, can_info->receive_fifo);
@@ -383,10 +383,10 @@ int can_rx_data(can_info_t *can_info, uint32_t timeout)
 	}
 
 	if(can_info->hcan_mutex) {
-		//os_status = osMutexRelease(can_info->hcan_mutex);
+		os_status = osMutexRelease(can_info->hcan_mutex);
 
-		//if(os_status != osOK) {
-		//}
+		if(os_status != osOK) {
+		}
 	}
 
 	if(can_info->rx_msg_q != NULL) {
