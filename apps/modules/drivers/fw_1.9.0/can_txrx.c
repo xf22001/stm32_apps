@@ -6,92 +6,17 @@
  *   文件名称：can_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时07分55秒
- *   修改日期：2020年04月17日 星期五 08时38分20秒
+ *   修改日期：2020年04月17日 星期五 09时44分14秒
  *   描    述：
  *
  *================================================================*/
 #include "can_txrx.h"
+#include "can_config.h"
 
 #include "os_utils.h"
 
 static LIST_HEAD(can_info_list);
 static osMutexId can_info_list_mutex = NULL;
-
-extern CAN_HandleTypeDef hcan1;
-extern CAN_HandleTypeDef hcan2;
-
-typedef struct {
-	CAN_HandleTypeDef *hcan;
-	CAN_HandleTypeDef *config_can;
-	uint32_t filter_number;
-	uint32_t filter_fifo;
-	uint32_t receive_fifo;
-	uint32_t filter_id;
-	uint32_t filter_maskid;
-	uint8_t filter_rtr;
-	uint8_t filter_ext;
-} can_config_t;
-
-typedef struct {
-	uint32_t unused : 1;
-	uint32_t rtr : 1;
-	uint32_t ext : 1;
-	uint32_t id : 29;
-} can_filter_id_t;
-
-typedef struct {
-	uint16_t l;
-	uint16_t h;
-} can_filter_id_lh_t;
-
-typedef union {
-	can_filter_id_t s;
-	can_filter_id_lh_t s_lh;
-	uint32_t v;
-} u_can_filter_id_t;
-
-static can_config_t can_config_sz[] = {
-	{
-		.hcan = &hcan1,
-		.filter_number = 0,
-		.filter_fifo = CAN_FILTER_FIFO0,
-		.receive_fifo = CAN_IT_RX_FIFO0_MSG_PENDING,
-		.config_can = &hcan1,
-		.filter_id = 0,
-		.filter_maskid = 0,
-		.filter_rtr = 0,
-		.filter_ext = 0,
-	},
-	{
-		.hcan = &hcan2,
-		.filter_number = 14,
-		.filter_fifo = CAN_FILTER_FIFO1,
-		.receive_fifo = CAN_IT_RX_FIFO1_MSG_PENDING,
-		.config_can = &hcan1,
-		.filter_id = 0,
-		.filter_maskid = 0,
-		.filter_rtr = 0,
-		.filter_ext = 0,
-	}
-};
-
-static can_config_t *get_can_config(CAN_HandleTypeDef *hcan)
-{
-	uint8_t i;
-	can_config_t *can_config = NULL;
-	can_config_t *can_config_item = NULL;
-
-	for(i = 0; i < (sizeof(can_config_sz) / sizeof(can_config_t)); i++) {
-		can_config_item = can_config_sz + i;
-
-		if(hcan == can_config_item->hcan) {
-			can_config = can_config_item;
-			break;
-		}
-	}
-
-	return can_config;
-}
 
 static can_info_t *get_can_info(CAN_HandleTypeDef *hcan)
 {
@@ -257,7 +182,14 @@ can_info_t *get_or_alloc_can_info(CAN_HandleTypeDef *hcan)
 	can_info->config_can = can_config->config_can;
 	can_info->filter_number = can_config->filter_number;
 	can_info->filter_fifo = can_config->filter_fifo;
-	can_info->receive_fifo = can_config->receive_fifo;
+
+	if(can_config->filter_fifo == CAN_FILTER_FIFO0) {
+		can_info->receive_fifo = CAN_IT_RX_FIFO0_MSG_PENDING;
+	} else if(can_config->filter_fifo == CAN_FILTER_FIFO1) {
+		can_info->receive_fifo = CAN_IT_RX_FIFO1_MSG_PENDING;
+	} else {
+		app_panic();
+	}
 
 	id.s.id = can_config->filter_id;
 	id_mask.s.id = can_config->filter_maskid;
