@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年04月13日 星期一 17时19分04秒
+ *   修改日期：2020年04月17日 星期五 14时47分15秒
  *   描    述：
  *
  *================================================================*/
@@ -106,10 +106,7 @@ static void bms_data_settings_default_init(bms_data_settings_t *settings)
 	settings->dst = CHARGER_ADDR;
 	settings->src = BMS_ADDR;
 
-	settings->bms_data_common.common_max_charge_voltage = 750 * 10;
-	settings->bms_data_common.common_soc = 60 * 10;
-
-	settings->bhm_data.max_charge_voltage = settings->bms_data_common.common_max_charge_voltage;
+	settings->bhm_data.max_charge_voltage = 750 * 10;
 
 	settings->brm_data.brm_data.version_0 = 0x01;
 	settings->brm_data.brm_data.version_1 = 0x01;
@@ -135,9 +132,9 @@ static void bms_data_settings_default_init(bms_data_settings_t *settings)
 	settings->bcp_data.max_charge_voltage_single_battery = 420;
 	settings->bcp_data.max_charge_current = (4000 - (250 * 10));
 	settings->bcp_data.rate_total_power = 75 * 10;
-	settings->bcp_data.max_charge_voltage = settings->bms_data_common.common_max_charge_voltage;
+	settings->bcp_data.max_charge_voltage = 750 * 10;
 	settings->bcp_data.max_temperature = (85) + 50;
-	settings->bcp_data.soc = settings->bms_data_common.common_soc;
+	settings->bcp_data.soc = 60 * 10;
 	settings->bcp_data.total_voltage = 500 * 10;
 	settings->bcp_data.transfer_type = 0xff;
 
@@ -148,7 +145,7 @@ static void bms_data_settings_default_init(bms_data_settings_t *settings)
 	settings->bcs_data.charge_current = 4000 - 30 * 10;
 	settings->bcs_data.u1.s.single_battery_max_voltage = 400;
 	settings->bcs_data.u1.s.single_battery_max_group = 4;
-	settings->bcs_data.soc = settings->bms_data_common.common_soc / 10;
+	settings->bcs_data.soc = 60 * 10 / 10;
 	settings->bcs_data.remain_min = 120;
 
 	settings->bsm_data.single_max_voltage_group = 28;
@@ -164,7 +161,7 @@ static void bms_data_settings_default_init(bms_data_settings_t *settings)
 	settings->bsm_data.u2.s.battery_connector_state = 0x00;
 	settings->bsm_data.u2.s.battery_charge_enable = 0x01;
 
-	settings->bsd_data.soc = settings->bms_data_common.common_soc / 10;
+	settings->bsd_data.soc = 60 * 10 / 10;
 	settings->bsd_data.single_min_voltage = 400;
 	settings->bsd_data.single_max_voltage = 400;
 	settings->bsd_data.battery_min_temperature = 45 + 50;
@@ -1099,18 +1096,21 @@ static void modbus_data_get_set(bms_info_t *bms_info, uint16_t addr, uint16_t *v
 
 		case MODBUS_ADDR_BMS_COMMON_MAX_CHARGE_VOLTAGE: {
 			if(op == MODBUS_DATA_GET) {
-				*value = bms_info->settings->bms_data_common.common_max_charge_voltage;
+				*value = bms_info->settings->bhm_data.max_charge_voltage;
 			} else if(op == MODBUS_DATA_SET) {
-				bms_info->settings->bms_data_common.common_max_charge_voltage = *value;
+				bms_info->settings->bhm_data.max_charge_voltage = *value;
+				bms_info->settings->bcp_data.max_charge_voltage = *value;
 			}
 		}
 		break;
 
 		case MODBUS_ADDR_BMS_COMMON_SOC: {
 			if(op == MODBUS_DATA_GET) {
-				*value = bms_info->settings->bms_data_common.common_soc;
+				*value = bms_info->settings->bcp_data.soc;
 			} else if(op == MODBUS_DATA_SET) {
-				bms_info->settings->bms_data_common.common_soc = *value;
+				bms_info->settings->bcp_data.soc = *value;
+				bms_info->settings->bcs_data.soc = *value / 10;
+				bms_info->settings->bsd_data.soc = *value / 10;
 			}
 		}
 		break;
@@ -1135,18 +1135,18 @@ static void modbus_data_get_set(bms_info_t *bms_info, uint16_t addr, uint16_t *v
 
 		case MODBUS_ADDR_CCS_TOTAL_CHARGE_TIME: {
 			if(op == MODBUS_DATA_GET) {
-				*value = bms_info->settings->bst_data.u3.s.stop_error_reason_voltage;
+				*value = bms_info->settings->ccs_data.total_charge_time;
 			} else if(op == MODBUS_DATA_SET) {
-				bms_info->settings->bst_data.u3.s.stop_error_reason_voltage = *value;
+				bms_info->settings->ccs_data.total_charge_time = *value;
 			}
 		}
 		break;
 
 		case MODBUS_ADDR_CCS_CHARGE_ENABLE: {
 			if(op == MODBUS_DATA_GET) {
-				*value = bms_info->settings->ccs_data.total_charge_time;
+				*value = bms_info->settings->ccs_data.u1.s.charge_enable;
 			} else if(op == MODBUS_DATA_SET) {
-				bms_info->settings->ccs_data.total_charge_time = *value;
+				bms_info->settings->ccs_data.u1.s.charge_enable = *value;
 			}
 		}
 		break;
@@ -1669,7 +1669,7 @@ void set_bms_state(bms_info_t *bms_info, bms_state_t state)
 		state = BMS_STATE_IDLE;
 	}
 
-	if(state == get_bms_state(bms_info)) {
+	if(state == bms_info->state) {
 		return;
 	}
 

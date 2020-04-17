@@ -6,7 +6,7 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年04月12日 星期日 15时23分09秒
+ *   修改日期：2020年04月17日 星期五 16时56分57秒
  *   描    述：
  *
  *================================================================*/
@@ -31,6 +31,29 @@ static void bms_data_settings_init(bms_data_settings_t *settings)
 
 	settings->dst = BMS_ADDR;
 	settings->src = CHARGER_ADDR;
+
+	settings->chm_data.version_0 = 0x0001;
+	settings->chm_data.version_1 = 0x01;
+
+	settings->crm_data.crm_result = 0x00;
+	settings->crm_data.charger_sn = 0x01;
+
+	settings->cts_data.S = 0xff;
+	settings->cts_data.M = 0xff;
+	settings->cts_data.H = 0xff;
+	settings->cts_data.d = 0xff;
+	settings->cts_data.m = 0xff;
+	settings->cts_data.Y = 0xffff;
+
+	settings->cml_data.max_output_voltage = 7500;
+	settings->cml_data.min_output_voltage = 2000;
+	settings->cml_data.max_output_current = 4000 - (100 * 10);
+	settings->cml_data.min_output_current = 4000 - (2.5 * 10);
+
+	settings->ccs_data.output_voltage = 6640;
+	settings->ccs_data.output_current = 4000 - 192;
+	settings->ccs_data.total_charge_time = 13;
+	settings->ccs_data.u1.s.charge_enable = 0x01;
 }
 
 static bms_data_settings_t *bms_data_alloc_settings(void)
@@ -224,6 +247,14 @@ void set_charger_state(charger_info_t *charger_info, charger_state_t state)
 {
 	charger_state_handler_t *handler = charger_get_state_handler(state);
 
+	if(charger_info->state == state) {
+		return;
+	}
+
+	if(charger_info->state == CHARGER_STATE_IDLE) {
+		charger_info->charger_bms_error = RETURN_SUCCESS;
+	}
+
 	if((handler != NULL) && (handler->prepare != NULL)) {
 		handler->prepare(charger_info);
 	}
@@ -313,3 +344,26 @@ void charger_handle_response(charger_info_t *charger_info)
 		}
 	}
 }
+
+void charger_set_auxiliary_power_state(charger_info_t *charger_info, uint8_t on_off)
+{
+	charger_info->auxiliary_power_on_off_state = on_off;
+
+	if(on_off == 0) {
+		HAL_GPIO_WritePin(charger_info->auxiliary_power_on_off_gpio, charger_info->auxiliary_power_on_off_pin, GPIO_PIN_RESET);
+	} else {
+		HAL_GPIO_WritePin(charger_info->auxiliary_power_on_off_gpio, charger_info->auxiliary_power_on_off_pin, GPIO_PIN_SET);
+	}
+}
+
+void charger_set_gun_lock_state(charger_info_t *charger_info, uint8_t on_off)
+{
+	charger_info->gun_lock_on_off_state = on_off;
+
+	if(on_off == 0) {
+		HAL_GPIO_WritePin(charger_info->gun_lock_on_off_gpio, charger_info->gun_lock_on_off_pin, GPIO_PIN_RESET);
+	} else {
+		HAL_GPIO_WritePin(charger_info->gun_lock_on_off_gpio, charger_info->gun_lock_on_off_pin, GPIO_PIN_SET);
+	}
+}
+

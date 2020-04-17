@@ -6,7 +6,7 @@
  *   文件名称：bms_spec.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月01日 星期五 09时51分27秒
- *   修改日期：2020年04月09日 星期四 13时28分14秒
+ *   修改日期：2020年04月17日 星期五 12时48分45秒
  *   描    述：
  *
  *================================================================*/
@@ -158,7 +158,7 @@ typedef struct {
 } chm_data_t;
 
 typedef struct {
-	uint16_t max_charge_voltage;//0.1v
+	uint16_t max_charge_voltage;//0.1v 最高允许充电电压
 } bhm_data_t;
 
 typedef struct {
@@ -200,7 +200,7 @@ typedef struct {
 	uint16_t max_charge_voltage_single_battery;//0.01v
 	uint16_t max_charge_current;//0.1a -4000
 	uint16_t rate_total_power;//0.1kwh
-	uint16_t max_charge_voltage;//0.1v
+	uint16_t max_charge_voltage;//0.1v 最高允许充电总电压
 	uint8_t max_temperature;// -50
 	uint16_t soc;//0.1%
 	uint16_t total_voltage;//0.1v
@@ -480,11 +480,6 @@ typedef struct {
 } bms_multi_data_t;
 
 typedef struct {
-	uint16_t common_max_charge_voltage;
-	uint16_t common_soc;
-} bms_data_common_t;
-
-typedef struct {
 	uint8_t dst;
 	uint8_t src;
 
@@ -513,8 +508,6 @@ typedef struct {
 	csd_data_t csd_data;
 	bem_data_t bem_data;
 	cem_data_t cem_data;
-
-	bms_data_common_t bms_data_common;
 } bms_data_settings_t;
 
 #pragma pack(pop)
