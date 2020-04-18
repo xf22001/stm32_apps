@@ -6,7 +6,7 @@
  *   文件名称：charger.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分46秒
- *   修改日期：2020年04月17日 星期五 17时35分23秒
+ *   修改日期：2020年04月18日 星期六 13时01分30秒
  *   描    述：
  *
  *================================================================*/
@@ -101,13 +101,23 @@ typedef struct {
 	charger_state_t state;
 	osMutexId handle_mutex;
 
+	GPIO_TypeDef *auxiliary_power_on_off_gpio;
+	uint16_t auxiliary_power_on_off_pin;
+	GPIO_TypeDef *gun_lock_on_off_gpio;
+	uint16_t gun_lock_on_off_pin;
+
 	multi_packets_info_t multi_packets_info;
 
 	bms_data_settings_t *settings;
+
+	uint8_t auxiliary_power_on_off_state;
+	uint8_t gun_lock_on_off_state;
+
 	charger_bms_error_t charger_bms_error;
 
 	uint32_t stamp;
 	uint32_t stamp_1;
+	uint32_t stamp_2;
 	uint32_t send_stamp;
 	uint32_t send_stamp_1;
 
@@ -141,4 +151,7 @@ void set_charger_state(charger_info_t *charger_info, charger_state_t state);
 void set_charger_state_locked(charger_info_t *charger_info, charger_state_t state);
 void charger_handle_request(charger_info_t *charger_info);
 void charger_handle_response(charger_info_t *charger_info);
+
+void charger_set_auxiliary_power_state(charger_info_t *charger_info, uint8_t on_off);
+void charger_set_gun_lock_state(charger_info_t *charger_info, uint8_t on_off);
 #endif //_CHARGER_H

@@ -6,12 +6,13 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年04月17日 星期五 16时56分57秒
+ *   修改日期：2020年04月18日 星期六 12时57分47秒
  *   描    述：
  *
  *================================================================*/
 #include "charger.h"
 #include "charger_handler.h"
+#include "charger_config.h"
 
 #include "os_utils.h"
 #include <string.h>
@@ -194,8 +195,13 @@ char *get_charger_state_des(charger_state_t state)
 charger_info_t *get_or_alloc_charger_info(can_info_t *can_info)
 {
 	charger_info_t *charger_info = NULL;
+	charger_info_config_t *charger_info_config = get_charger_info_config(can_info);
 	osMutexDef(handle_mutex);
 	osStatus os_status;
+
+	if(charger_info_config == NULL) {
+		return charger_info;
+	}
 
 	charger_info = get_charger_info(can_info);
 
@@ -218,10 +224,19 @@ charger_info_t *get_or_alloc_charger_info(can_info_t *can_info)
 		return charger_info;
 	}
 
+	charger_info->settings = bms_data_alloc_settings();
+
+	if(charger_info->settings == NULL) {
+		goto failed;
+	}
+
 	charger_info->can_info = can_info;
 	charger_info->state = CHARGER_STATE_IDLE;
 	charger_info->handle_mutex = osMutexCreate(osMutex(handle_mutex));
-	charger_info->settings = bms_data_alloc_settings();
+	charger_info->auxiliary_power_on_off_gpio = charger_info_config->auxiliary_power_on_off_gpio;
+	charger_info->auxiliary_power_on_off_pin = charger_info_config->auxiliary_power_on_off_pin;
+	charger_info->gun_lock_on_off_gpio = charger_info_config->gun_lock_on_off_gpio;
+	charger_info->gun_lock_on_off_pin = charger_info_config->gun_lock_on_off_pin;
 
 	os_status = osMutexWait(charger_info_list_mutex, osWaitForever);
 
@@ -233,6 +248,15 @@ charger_info_t *get_or_alloc_charger_info(can_info_t *can_info)
 	os_status = osMutexRelease(charger_info_list_mutex);
 
 	if(os_status != osOK) {
+	}
+
+	return charger_info;
+
+failed:
+
+	if(charger_info != NULL) {
+		os_free(charger_info);
+		charger_info = NULL;
 	}
 
 	return charger_info;
