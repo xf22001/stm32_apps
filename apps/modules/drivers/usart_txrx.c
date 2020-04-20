@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2020年04月17日 星期五 08时36分02秒
+ *   修改日期：2020年04月20日 星期一 15时23分34秒
  *   描    述：
  *
  *================================================================*/
@@ -194,31 +194,6 @@ void HAL_UART_AbortTransmitCpltCallback (UART_HandleTypeDef *huart)
 }
 void HAL_UART_AbortReceiveCpltCallback (UART_HandleTypeDef *huart)
 {
-}
-
-uint16_t crc_check_for_dcph(uint8_t *data, uint16_t size)
-{
-	uint16_t crc = 0xFFFF;
-	uint16_t i;
-
-	//udp_log_printf("crc_check_for_dcph size:%d\n", size);
-
-	for(i = 0; i < size; i++) {
-		uint16_t loop;
-
-		crc = crc ^ data[i];
-
-		for(loop = 0; loop < 8; loop++) {
-			if(crc & 1) {
-				crc >>= 1;
-				crc ^= 0xa001;
-			} else {
-				crc >>= 1;
-			}
-		}
-	}
-
-	return (crc);
 }
 
 static uint16_t get_uart_sent(uart_info_t *uart_info)
