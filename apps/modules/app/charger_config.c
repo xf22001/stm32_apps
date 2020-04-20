@@ -6,7 +6,7 @@
  *   文件名称：charger_config.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月18日 星期六 12时33分30秒
- *   修改日期：2020年04月18日 星期六 14时06分33秒
+ *   修改日期：2020年04月20日 星期一 08时48分21秒
  *   描    述：
  *
  *================================================================*/
@@ -19,17 +19,17 @@ extern CAN_HandleTypeDef hcan2;
 charger_info_config_t charger_info_config_sz[] = {
 	{
 		.hcan = &hcan1,
-		.auxiliary_power_on_off_gpio = relay_7_GPIO_Port,
-		.auxiliary_power_on_off_pin = relay_7_Pin,
-		.gun_lock_on_off_gpio = relay_8_GPIO_Port,
-		.gun_lock_on_off_pin = relay_8_Pin,
+		.auxiliary_power_on_off_gpio = relay_5_GPIO_Port,
+		.auxiliary_power_on_off_pin = relay_5_Pin,
+		.gun_lock_on_off_gpio = relay_6_GPIO_Port,
+		.gun_lock_on_off_pin = relay_6_Pin,
 	},
 	{
 		.hcan = &hcan2,
-		.auxiliary_power_on_off_gpio = relay_7_GPIO_Port,
-		.auxiliary_power_on_off_pin = relay_7_Pin,
-		.gun_lock_on_off_gpio = relay_8_GPIO_Port,
-		.gun_lock_on_off_pin = relay_8_Pin,
+		.auxiliary_power_on_off_gpio = relay_5_GPIO_Port,
+		.auxiliary_power_on_off_pin = relay_5_Pin,
+		.gun_lock_on_off_gpio = relay_6_GPIO_Port,
+		.gun_lock_on_off_pin = relay_6_Pin,
 	},
 };
 

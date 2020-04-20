@@ -6,7 +6,7 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年04月18日 星期六 12时57分47秒
+ *   修改日期：2020年04月20日 星期一 09时31分03秒
  *   描    述：
  *
  *================================================================*/
@@ -16,7 +16,7 @@
 
 #include "os_utils.h"
 #include <string.h>
-//#define UDP_LOG
+#define UDP_LOG
 #include "task_probe_tool.h"
 
 static LIST_HEAD(charger_info_list);
@@ -373,6 +373,8 @@ void charger_set_auxiliary_power_state(charger_info_t *charger_info, uint8_t on_
 {
 	charger_info->auxiliary_power_on_off_state = on_off;
 
+	udp_log_printf("charger_set_auxiliary_power_state:%s!\n", (on_off == 1) ? "on" : "off");
+
 	if(on_off == 0) {
 		HAL_GPIO_WritePin(charger_info->auxiliary_power_on_off_gpio, charger_info->auxiliary_power_on_off_pin, GPIO_PIN_RESET);
 	} else {
@@ -383,6 +385,8 @@ void charger_set_auxiliary_power_state(charger_info_t *charger_info, uint8_t on_
 void charger_set_gun_lock_state(charger_info_t *charger_info, uint8_t on_off)
 {
 	charger_info->gun_lock_on_off_state = on_off;
+
+	udp_log_printf("charger_set_gun_lock_state:%s!\n", (on_off == 1) ? "on" : "off");
 
 	if(on_off == 0) {
 		HAL_GPIO_WritePin(charger_info->gun_lock_on_off_gpio, charger_info->gun_lock_on_off_pin, GPIO_PIN_RESET);

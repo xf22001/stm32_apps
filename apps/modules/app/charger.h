@@ -6,7 +6,7 @@
  *   文件名称：charger.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分46秒
- *   修改日期：2020年04月18日 星期六 13时01分30秒
+ *   修改日期：2020年04月20日 星期一 14时28分40秒
  *   描    述：
  *
  *================================================================*/
@@ -82,17 +82,27 @@ typedef enum {
 	CHM_OP_STATE_INSULATION_CHECK_DELAY,
 	CHM_OP_STATE_INSULATION_CHECK_START,
 	CHM_OP_STATE_INSULATION_CHECK_TEST,
-	CHM_OP_STATE_INSULATION_CHECK_FINISH_DISCHARGE,
 	CHM_OP_STATE_INSULATION_CHECK_FINISH,
 	CHM_OP_STATE_NEXT_STATE,
 } chm_op_state_t;
 
 typedef enum {
 	CRO_OP_STATE_NONE = 0,
+	CRO_OP_STATE_START_PRECHARGE,
 	CRO_OP_STATE_PREPARE_PRECHARGE,
 	CRO_OP_STATE_PRECHARGE,
-	CRO_OP_STATE_DELAY,
+	CRO_OP_STATE_PRECHARGE_DELAY_1,
+	CRO_OP_STATE_PRECHARGE_DELAY_2,
 } cro_op_state_t;
+
+typedef enum {
+	CSD_CEM_OP_STATE_NONE = 0,
+	CSD_CEM_OP_STATE_WAIT_NO_CURRENT,
+	CSD_CEM_OP_STATE_DISABLE_OUTPUT_DELAY,
+	CSD_CEM_OP_STATE_DISCHARGE,
+	CSD_CEM_OP_STATE_DISCHARGE_CHECK,
+	CSD_CEM_OP_STATE_FINISH,
+} csd_cem_op_state_t;
 
 typedef struct {
 	struct list_head list;
@@ -127,6 +137,10 @@ typedef struct {
 	uint16_t precharge_voltage;
 
 	cro_op_state_t cro_op_state;
+
+	uint32_t start_send_cst_stamp;
+
+	csd_cem_op_state_t csd_cem_op_state;
 
 	uint8_t bcl_received;
 	uint8_t bcs_received;

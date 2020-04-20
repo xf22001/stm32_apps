@@ -6,7 +6,7 @@
  *   文件名称：charger_handler.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时18分42秒
- *   修改日期：2020年04月17日 星期五 17时41分03秒
+ *   修改日期：2020年04月20日 星期一 14时31分13秒
  *   描    述：
  *
  *================================================================*/
@@ -74,8 +74,6 @@ static int prepare_state_idle(charger_info_t *charger_info)
 
 	charger_info->stamp = ticks;
 
-	charger_set_auxiliary_power_state(charger_info, 0);
-	charger_set_gun_lock_state(charger_info, 0);
 	return ret;
 }
 
@@ -85,7 +83,7 @@ static int handle_state_idle_request(charger_info_t *charger_info)
 	uint32_t ticks = osKernelSysTick();
 
 	if(ticks - charger_info->stamp >= BMS_GENERIC_TIMEOUT) {
-		set_charger_state(charger_info, CHARGER_STATE_CHM);//to be remove
+		set_charger_state(charger_info, CHARGER_STATE_CHM);//?to be remove
 	}
 
 	return ret;
@@ -102,7 +100,7 @@ static int prepare_state_chm(charger_info_t *charger_info)
 	int ret = 0;
 	uint32_t ticks = osKernelSysTick();
 
-	charger_info->send_stamp = ticks;
+	charger_info->send_stamp = ticks - FN_CHM_SEND_PERIOD;
 	charger_info->stamp = ticks;
 	charger_info->stamp_1 = ticks;
 
@@ -144,182 +142,185 @@ static int handle_state_chm_request(charger_info_t *charger_info)
 	int ret = 0;
 	uint32_t ticks = osKernelSysTick();
 
-	if(ticks - charger_info->stamp >= BMS_GENERIC_TIMEOUT) {//定时发送
-		charger_info->settings->cem_data.u1.s.brm_timeout = 0x01;//收不到bhm, 报brm_timeout
+	if(ticks - charger_info->stamp >= BMS_GENERIC_TIMEOUT) {
+		charger_info->settings->cem_data.u1.s.brm_timeout = 0x01;
 		charger_info->charger_bms_error = BRM_TIMEOUT;
 		set_charger_state(charger_info, CHARGER_STATE_CST);
-	} else {
-		if(ticks - charger_info->send_stamp >= FN_CHM_SEND_PERIOD) {
-			send_chm(charger_info);
-			charger_info->send_stamp = ticks;
-		}
+	}
 
-		switch(charger_info->chm_op_state) {
-			case CHM_OP_STATE_DISCHARGE: {//放电启动
-				if(ticks - charger_info->stamp_1 >= CHARGER_OP_TIMEOUT_DISCHARGE) {
+	if(ticks - charger_info->send_stamp >= FN_CHM_SEND_PERIOD) {
+		send_chm(charger_info);
+		charger_info->send_stamp = ticks;
+	}
+
+	switch(charger_info->chm_op_state) {
+		case CHM_OP_STATE_DISCHARGE: {//放电启动
+			if(ticks - charger_info->stamp_1 >= CHARGER_OP_TIMEOUT_DISCHARGE) {
+				start_discharge(0);
+
+				charger_info->charger_bms_error = RETURN_DISCHARGE_TIMEOUT;
+				set_charger_state(charger_info, CHARGER_STATE_CST);
+				udp_log_printf("CHM_OP_STATE_DISCHARGE timeout\n");
+			} else {
+				if(get_discharge_state() == 0) {//放电启动完毕
 					start_discharge(0);
+					start_discharge_check(1);
 
-					charger_info->charger_bms_error = RETURN_DISCHARGE_TIMEOUT;
-					set_charger_state(charger_info, CHARGER_STATE_IDLE);
-					udp_log_printf("discharge start timeout\n");
-				} else {
-					if(get_discharge_state() == 0) {//放电启动完毕
-						start_discharge(0);
-						start_discharge_check(1);
-
-						charger_info->stamp_1 = ticks;
-						charger_info->chm_op_state = CHM_OP_STATE_DISCHARGE_CHECK;
-						udp_log_printf("discharge started!\n");
-					}
-				}
-
-			}
-			break;
-
-			case CHM_OP_STATE_DISCHARGE_CHECK: {//放电检测
-				if(ticks - charger_info->stamp_1 >= CHARGER_OP_TIMEOUT_DISCHARGE_CHECK) {
-					charger_info->charger_bms_error = RETURN_DISCHARGE_TIMEOUT;
-					set_charger_state(charger_info, CHARGER_STATE_IDLE);
-					udp_log_printf("discharge check start timeout!\n");
-				} else {
-					if(get_discharge_check_state() == 0) {//放电完毕
-						charger_info->stamp_1 = ticks;
-						charger_info->chm_op_state = charger_info->chm_op_state_for_discharge;
-						udp_log_printf("discharge check successful!\n");
-					}
+					charger_info->stamp_1 = ticks;
+					charger_info->chm_op_state = CHM_OP_STATE_DISCHARGE_CHECK;
+					udp_log_printf("CHM_OP_STATE_DISCHARGE done!\n");
 				}
 			}
-			break;
 
-			case CHM_OP_STATE_RELAY_ENDPOINT_OVERVOLTAGE_CHECK: {
-				if(relay_endpoint_overvoltage() != 0) {//继电器外侧带电
-					charger_info->charger_bms_error = RETURN_INC_BMS_ERROR;
-					set_charger_state(charger_info, CHARGER_STATE_IDLE);
-					udp_log_printf("relay endpoint overvoltage check timeout!\n");
-				} else {
-					if(charger_info->settings->cml_data.max_output_voltage > charger_info->settings->bhm_data.max_charge_voltage) {
-						if(charger_info->settings->bhm_data.max_charge_voltage != 0) {
-							charger_info->precharge_voltage = charger_info->settings->bhm_data.max_charge_voltage;
-						} else {
-							charger_info->precharge_voltage = charger_info->settings->cml_data.max_output_voltage;
-						}
+		}
+		break;
+
+		case CHM_OP_STATE_DISCHARGE_CHECK: {//放电检测
+			if(ticks - charger_info->stamp_1 >= CHARGER_OP_TIMEOUT_DISCHARGE_CHECK) {
+				charger_info->charger_bms_error = RETURN_DISCHARGE_TIMEOUT;
+				set_charger_state(charger_info, CHARGER_STATE_CST);
+				udp_log_printf("CHM_OP_STATE_DISCHARGE_CHECK timeout!\n");
+			} else {
+				if(get_discharge_check_state() == 0) {//放电完毕
+					charger_info->stamp_1 = ticks;
+					charger_info->chm_op_state = charger_info->chm_op_state_for_discharge;
+					udp_log_printf("CHM_OP_STATE_DISCHARGE_CHECK done!\n");
+				}
+			}
+		}
+		break;
+
+		case CHM_OP_STATE_RELAY_ENDPOINT_OVERVOLTAGE_CHECK: {
+			if(relay_endpoint_overvoltage() != 0) {//接触器外侧电压低于10v
+				charger_info->charger_bms_error = RETURN_INC_BMS_ERROR;
+				set_charger_state(charger_info, CHARGER_STATE_CST);
+				udp_log_printf("CHM_OP_STATE_RELAY_ENDPOINT_OVERVOLTAGE_CHECK timeout!\n");
+			} else {
+				if(charger_info->settings->cml_data.max_output_voltage > charger_info->settings->bhm_data.max_charge_voltage) {
+					if(charger_info->settings->bhm_data.max_charge_voltage != 0) {
+						charger_info->precharge_voltage = charger_info->settings->bhm_data.max_charge_voltage;
 					} else {
 						charger_info->precharge_voltage = charger_info->settings->cml_data.max_output_voltage;
 					}
-
-					start_precharge(charger_info->precharge_voltage);//开始预充
-					charger_info->stamp_1 = ticks;
-					charger_info->chm_op_state = CHM_OP_STATE_INSULATION_CHECK_PRECHARGE;
-					udp_log_printf("irelay endpoint overvoltage check successful!\n");
-				}
-			}
-			break;
-
-			case CHM_OP_STATE_INSULATION_CHECK_PRECHARGE: {//绝缘检查预充
-				if(ticks - charger_info->stamp_1 >= CHARGER_OP_TIMEOUT_PRECHARGE) {
-					start_precharge(0);//停止充电
-
-					charger_info->charger_bms_error = PRECHARGE_ERROR;
-					charger_info->chm_op_state = CHM_OP_STATE_INSULATION_CHECK_FINISH;
-					udp_log_printf("insulation check precharge check start timeout!\n");
 				} else {
-					if(charger_output_voltage_diff(charger_info->precharge_voltage) == 0) {//输出与需求电压差符合要求
-						charger_output_power_enable(1);
-						charger_info->stamp_1 = ticks;
-						charger_info->chm_op_state = CHM_OP_STATE_INSULATION_CHECK_CHARGE;
-						udp_log_printf("insulation check precharge started!\n");
-					}
+					charger_info->precharge_voltage = charger_info->settings->cml_data.max_output_voltage;
 				}
+
+				start_precharge(charger_info->precharge_voltage);//开始预充
+				charger_info->stamp_1 = ticks;
+				charger_info->chm_op_state = CHM_OP_STATE_INSULATION_CHECK_PRECHARGE;
+				udp_log_printf("CHM_OP_STATE_RELAY_ENDPOINT_OVERVOLTAGE_CHECK done!\n");
 			}
-			break;
+		}
+		break;
 
-			case CHM_OP_STATE_INSULATION_CHECK_CHARGE: {//绝缘检查充电
-				if(ticks - charger_info->stamp_1 >= CHARGER_OP_TIMEOUT_INSULATION_CHECK_CHARGE) {
-					start_precharge(0);//停止充电
+		case CHM_OP_STATE_INSULATION_CHECK_PRECHARGE: {//绝缘检查预充
+			if(ticks - charger_info->stamp_1 >= CHARGER_OP_TIMEOUT_PRECHARGE) {
+				start_precharge(0);//停止充电
 
+				charger_info->charger_bms_error = PRECHARGE_ERROR;
+				charger_info->chm_op_state = CHM_OP_STATE_INSULATION_CHECK_FINISH;
+				udp_log_printf("CHM_OP_STATE_INSULATION_CHECK_PRECHARGE timeout!\n");
+			} else {
+				if(charger_output_voltage_diff(charger_info->precharge_voltage) == 0) {//输出与需求电压差符合要求
+					charger_output_power_enable(1);
 					charger_info->stamp_1 = ticks;
-					charger_info->chm_op_state = CHM_OP_STATE_INSULATION_CHECK_DELAY;
-					udp_log_printf("insulation check charged!\n");
+					charger_info->chm_op_state = CHM_OP_STATE_INSULATION_CHECK_CHARGE;
+					udp_log_printf("CHM_OP_STATE_INSULATION_CHECK_PRECHARGE done!\n");
 				}
 			}
-			break;
+		}
+		break;
 
-			case CHM_OP_STATE_INSULATION_CHECK_DELAY: {//绝缘检查停止充电后延时
-				if(ticks - charger_info->stamp_1 >= CHARGER_OP_TIMEOUT_INSULATION_CHECK_CHARGE_DELAY) {
-					start_discharge(1);//放电启动
+		case CHM_OP_STATE_INSULATION_CHECK_CHARGE: {//绝缘检查充电
+			if(ticks - charger_info->stamp_1 >= CHARGER_OP_TIMEOUT_INSULATION_CHECK_CHARGE) {
+				start_precharge(0);//停止充电
 
-					charger_info->stamp_1 = ticks;
-					charger_info->chm_op_state = CHM_OP_STATE_DISCHARGE;
-					charger_info->chm_op_state_for_discharge = CHM_OP_STATE_INSULATION_CHECK_START;
-					udp_log_printf("insulation check charged after delay!\n");
-				}
+				charger_info->stamp_1 = ticks;
+				charger_info->chm_op_state = CHM_OP_STATE_INSULATION_CHECK_DELAY;
+				udp_log_printf("CHM_OP_STATE_INSULATION_CHECK_CHARGE done!\n");
 			}
-			break;
+		}
+		break;
 
-			case CHM_OP_STATE_INSULATION_CHECK_START: {//绝缘检查启动
-				if(ticks - charger_info->stamp_1 >= CHARGER_OP_TIMEOUT_INSULATION_CHECK_START) {
-					insulation_check_start(0);
-
-					charger_info->charger_bms_error = RETURN_INC_TIMEOUT;
-					charger_info->chm_op_state = CHM_OP_STATE_INSULATION_CHECK_FINISH;
-					udp_log_printf("insulation check start timeout!\n");
-				} else {
-					if(get_insulation_check_state() == 0) {//绝缘检查启动成功
-						insulation_check_start(0);
-
-						insulation_check_test_start(1);
-
-						charger_info->stamp_1 = ticks;
-						charger_info->chm_op_state = CHM_OP_STATE_INSULATION_CHECK_TEST;
-						udp_log_printf("insulation check started!\n");
-					}
-				}
-			}
-			break;
-
-			case CHM_OP_STATE_INSULATION_CHECK_TEST: {//绝缘检查测试
-				if(ticks - charger_info->stamp_1 >= CHARGER_OP_TIMEOUT_INSULATION_CHECK_TEST) {
-					charger_info->charger_bms_error = RETURN_INC_TIMEOUT;
-					charger_info->chm_op_state = CHM_OP_STATE_INSULATION_CHECK_FINISH;
-					udp_log_printf("insulation check test timeout!\n");
-				} else {
-					if(get_insulation_check_test_state() == 0) {//绝缘检查测试完毕
-						if(get_insulation_check_resistor_check_state() == 0) {//阻值判断是否合格
-							charger_info->chm_op_state = CHM_OP_STATE_INSULATION_CHECK_FINISH;
-							udp_log_printf("insulation check passed!\n");
-						} else {
-							charger_info->charger_bms_error = RETURN_INC_ERROR;
-							charger_info->chm_op_state = CHM_OP_STATE_INSULATION_CHECK_FINISH;
-							udp_log_printf("insulation check test invalid resistor!\n");
-						}
-					}
-				}
-			}
-			break;
-
-			case CHM_OP_STATE_INSULATION_CHECK_FINISH: {
-				charger_output_power_enable(0);//关闭输出
+		case CHM_OP_STATE_INSULATION_CHECK_DELAY: {//绝缘检查停止充电后延时
+			if(ticks - charger_info->stamp_1 >= CHARGER_OP_TIMEOUT_INSULATION_CHECK_CHARGE_DELAY) {
 				start_discharge(1);//放电启动
 
 				charger_info->stamp_1 = ticks;
 				charger_info->chm_op_state = CHM_OP_STATE_DISCHARGE;
-				charger_info->chm_op_state_for_discharge = CHM_OP_STATE_NEXT_STATE;
+				charger_info->chm_op_state_for_discharge = CHM_OP_STATE_INSULATION_CHECK_START;
+				udp_log_printf("CHM_OP_STATE_INSULATION_CHECK_DELAY done!\n");
 			}
-			break;
+		}
+		break;
 
-			case CHM_OP_STATE_NEXT_STATE: {
-				if(charger_info->charger_bms_error != RETURN_SUCCESS) {
-					set_charger_state(charger_info, CHARGER_STATE_IDLE);
-				} else {
-					set_charger_state(charger_info, CHARGER_STATE_CRM);
+		case CHM_OP_STATE_INSULATION_CHECK_START: {//绝缘检查启动
+			if(ticks - charger_info->stamp_1 >= CHARGER_OP_TIMEOUT_INSULATION_CHECK_START) {
+				insulation_check_start(0);
+
+				charger_info->charger_bms_error = RETURN_INC_TIMEOUT;
+				charger_info->chm_op_state = CHM_OP_STATE_INSULATION_CHECK_FINISH;
+				udp_log_printf("CHM_OP_STATE_INSULATION_CHECK_START timeout!\n");
+			} else {
+				if(get_insulation_check_state() == 0) {//绝缘检查启动成功
+					insulation_check_start(0);
+
+					insulation_check_test_start(1);
+
+					charger_info->stamp_1 = ticks;
+					charger_info->chm_op_state = CHM_OP_STATE_INSULATION_CHECK_TEST;
+					udp_log_printf("CHM_OP_STATE_INSULATION_CHECK_START done!\n");
 				}
 			}
-			break;
-
-
-			default:
-				break;
 		}
+		break;
+
+		case CHM_OP_STATE_INSULATION_CHECK_TEST: {//绝缘检查测试
+			if(ticks - charger_info->stamp_1 >= CHARGER_OP_TIMEOUT_INSULATION_CHECK_TEST) {
+				charger_info->charger_bms_error = RETURN_INC_TIMEOUT;
+				charger_info->chm_op_state = CHM_OP_STATE_INSULATION_CHECK_FINISH;
+				udp_log_printf("CHM_OP_STATE_INSULATION_CHECK_TEST timeout!\n");
+			} else {
+				if(get_insulation_check_test_state() == 0) {//绝缘检查测试完毕
+					if(get_insulation_check_resistor_check_state() == 0) {//阻值判断合格
+						charger_info->chm_op_state = CHM_OP_STATE_INSULATION_CHECK_FINISH;
+						udp_log_printf("CHM_OP_STATE_INSULATION_CHECK_TEST done!\n");
+					} else {
+						charger_info->charger_bms_error = RETURN_INC_ERROR;
+						charger_info->chm_op_state = CHM_OP_STATE_INSULATION_CHECK_FINISH;
+						udp_log_printf("CHM_OP_STATE_INSULATION_CHECK_TEST failed!\n");
+					}
+				}
+			}
+		}
+		break;
+
+		case CHM_OP_STATE_INSULATION_CHECK_FINISH: {
+			charger_output_power_enable(0);//关闭输出
+			start_discharge(1);//放电启动
+
+			charger_info->stamp_1 = ticks;
+			charger_info->chm_op_state = CHM_OP_STATE_DISCHARGE;//放电
+			charger_info->chm_op_state_for_discharge = CHM_OP_STATE_NEXT_STATE;
+			udp_log_printf("CHM_OP_STATE_INSULATION_CHECK_FINISH done!\n");
+		}
+		break;
+
+		case CHM_OP_STATE_NEXT_STATE: {//切换状态
+			udp_log_printf("CHM_OP_STATE_NEXT_STATE done!\n");
+
+			if(charger_info->charger_bms_error != RETURN_SUCCESS) {
+				set_charger_state(charger_info, CHARGER_STATE_CST);
+			} else {
+				set_charger_state(charger_info, CHARGER_STATE_CRM);
+			}
+		}
+		break;
+
+
+		default:
+			break;
 	}
 
 	return ret;
@@ -353,7 +354,7 @@ static int handle_state_chm_response(charger_info_t *charger_info)
 
 			if(charger_info->settings->cml_data.min_output_voltage > charger_info->settings->bhm_data.max_charge_voltage) {//超过充电机输出能力
 				charger_info->charger_bms_error = BMS_U_UNMATCH;
-				set_charger_state(charger_info, CHARGER_STATE_IDLE);
+				set_charger_state(charger_info, CHARGER_STATE_CST);
 			} else {
 				if(charger_info->bhm_received == 0) {
 					charger_info->bhm_received = 1;
@@ -362,8 +363,6 @@ static int handle_state_chm_response(charger_info_t *charger_info)
 					charger_info->stamp_1 = ticks;
 					charger_info->chm_op_state = CHM_OP_STATE_DISCHARGE;
 					charger_info->chm_op_state_for_discharge = CHM_OP_STATE_RELAY_ENDPOINT_OVERVOLTAGE_CHECK;
-
-					udp_log_printf("discharge start\n");
 				}
 			}
 
@@ -384,7 +383,7 @@ static int prepare_state_crm(charger_info_t *charger_info)
 	int ret = 0;
 	uint32_t ticks = osKernelSysTick();
 
-	charger_info->send_stamp = ticks;
+	charger_info->send_stamp = ticks - FN_CRM_SEND_PERIOD;
 	charger_info->stamp = ticks;
 
 	charger_info->brm_received = 0;
@@ -417,7 +416,7 @@ static int handle_state_crm_request(charger_info_t *charger_info)
 	int ret = 0;
 	uint32_t ticks = osKernelSysTick();
 
-	if(ticks - charger_info->stamp >= BMS_GENERIC_TIMEOUT) {//定时发送
+	if(ticks - charger_info->stamp >= BMS_GENERIC_TIMEOUT) {
 		if(charger_info->brm_received == 0) {
 			charger_info->settings->cem_data.u1.s.brm_timeout = 0x01;
 			charger_info->charger_bms_error = BRM_TIMEOUT;
@@ -427,11 +426,11 @@ static int handle_state_crm_request(charger_info_t *charger_info)
 		}
 
 		set_charger_state(charger_info, CHARGER_STATE_CST);
-	} else {
-		if(ticks - charger_info->send_stamp >= FN_CRM_SEND_PERIOD) {
-			send_crm(charger_info);
-			charger_info->send_stamp = ticks;
-		}
+	}
+
+	if(ticks - charger_info->send_stamp >= FN_CRM_SEND_PERIOD) {
+		send_crm(charger_info);
+		charger_info->send_stamp = ticks;
 	}
 
 	return ret;
@@ -494,8 +493,8 @@ static int prepare_state_cts_cml(charger_info_t *charger_info)
 	int ret = 0;
 	uint32_t ticks = osKernelSysTick();
 
-	charger_info->send_stamp = ticks;
-	charger_info->send_stamp_1 = ticks;
+	charger_info->send_stamp = ticks - FN_CTS_SEND_PERIOD;
+	charger_info->send_stamp_1 = ticks - FN_CML_SEND_PERIOD;
 	charger_info->stamp = ticks;
 	charger_info->stamp_1 = ticks;
 
@@ -555,16 +554,16 @@ static int handle_state_cts_cml_request(charger_info_t *charger_info)
 		charger_info->settings->cem_data.u2.s.bro_timeout = 0x01;
 		charger_info->charger_bms_error = BRO_TIMEOUT;
 		set_charger_state(charger_info, CHARGER_STATE_CST);
-	} else {
-		if(ticks - charger_info->send_stamp >= FN_CTS_SEND_PERIOD) {
-			send_cts(charger_info);
-			charger_info->send_stamp = ticks;
-		}
+	}
 
-		if(ticks - charger_info->send_stamp_1 >= FN_CML_SEND_PERIOD) {
-			send_cml(charger_info);
-			charger_info->send_stamp_1 = ticks;
-		}
+	if(ticks - charger_info->send_stamp >= FN_CTS_SEND_PERIOD) {
+		send_cts(charger_info);
+		charger_info->send_stamp = ticks;
+	}
+
+	if(ticks - charger_info->send_stamp_1 >= FN_CML_SEND_PERIOD) {
+		send_cml(charger_info);
+		charger_info->send_stamp_1 = ticks;
 	}
 
 	return ret;
@@ -615,7 +614,7 @@ static int prepare_state_cro(charger_info_t *charger_info)
 	int ret = 0;
 	uint32_t ticks = osKernelSysTick();
 
-	charger_info->send_stamp = ticks;
+	charger_info->send_stamp = ticks - FN_CRO_SEND_PERIOD;
 	charger_info->stamp = ticks;
 	charger_info->stamp_1 = ticks;
 
@@ -625,7 +624,7 @@ static int prepare_state_cro(charger_info_t *charger_info)
 	charger_info->bcl_received = 0;
 	charger_info->bcs_received = 0;
 
-	charger_info->cro_op_state = CRO_OP_STATE_PREPARE_PRECHARGE;
+	charger_info->cro_op_state = CRO_OP_STATE_START_PRECHARGE;
 
 	return ret;
 }
@@ -655,12 +654,14 @@ static int handle_state_cro_request(charger_info_t *charger_info)
 	int ret = 0;
 	uint32_t ticks = osKernelSysTick();
 
-	if(ticks - charger_info->stamp >= FN_BCL_TIMEOUT) {//定时发送
-		charger_info->settings->cem_data.u3.s.bcl_timeout = 0x01;
-		set_charger_state(charger_info, CHARGER_STATE_CST);
-	} else if(ticks - charger_info->stamp_1 >= BMS_GENERIC_TIMEOUT) {//定时发送
-		charger_info->settings->cem_data.u3.s.bcs_timeout = 0x01;
-		set_charger_state(charger_info, CHARGER_STATE_CST);
+	if(charger_info->settings->cro_data.cro_result == 0xaa) {
+		if(ticks - charger_info->stamp >= FN_BCL_TIMEOUT) {//定时发送
+			charger_info->settings->cem_data.u3.s.bcl_timeout = 0x01;
+			set_charger_state(charger_info, CHARGER_STATE_CST);
+		} else if(ticks - charger_info->stamp_1 >= BMS_GENERIC_TIMEOUT) {//定时发送
+			charger_info->settings->cem_data.u3.s.bcs_timeout = 0x01;
+			set_charger_state(charger_info, CHARGER_STATE_CST);
+		}
 	}
 
 	if(ticks - charger_info->send_stamp >= FN_CRO_SEND_PERIOD) {
@@ -669,62 +670,80 @@ static int handle_state_cro_request(charger_info_t *charger_info)
 	}
 
 	switch(charger_info->cro_op_state) {
-		case CRO_OP_STATE_PREPARE_PRECHARGE: {
+		case CRO_OP_STATE_START_PRECHARGE: {//预充前充电机输出能力判断
 			if(charger_info->settings->cml_data.min_output_voltage > charger_info->settings->bcp_data.total_voltage) {
 				charger_info->charger_bms_error = BMS_U_UNMATCH;
-				set_charger_state(charger_info, CHARGER_STATE_IDLE);
+				set_charger_state(charger_info, CHARGER_STATE_CST);
 			} else if(charger_info->settings->cml_data.max_output_voltage < charger_info->settings->bcp_data.total_voltage) {
 				charger_info->charger_bms_error = BMS_U_UNMATCH;
-				set_charger_state(charger_info, CHARGER_STATE_IDLE);
+				set_charger_state(charger_info, CHARGER_STATE_CST);
 			} else {
-				if(ticks - charger_info->stamp_2 >= CHARGER_OP_TIMEOUT_PRECHARGE) {
-					charger_info->charger_bms_error = CRO_TIMEOUT;
-					set_charger_state(charger_info, CHARGER_STATE_IDLE);
+				charger_info->stamp_2 = ticks;
+				charger_info->cro_op_state = CRO_OP_STATE_PREPARE_PRECHARGE;
+			}
 
-					udp_log_printf("check battery voltage timeout!\n");
-				} else {
-					if(battery_voltage_valid() == 1) {
-						charger_info->precharge_voltage = charger_info->settings->bcp_data.total_voltage - 50;
-						start_precharge(charger_info->precharge_voltage);//开始预充
+			udp_log_printf("CRO_OP_STATE_START_PRECHARGE done!\n");
+		}
+		break;
 
-						charger_info->stamp_2 = ticks;
-						charger_info->cro_op_state = CRO_OP_STATE_PRECHARGE;
-						//cmd 4
-					}
+		case CRO_OP_STATE_PREPARE_PRECHARGE: {//准备预充
+			if(ticks - charger_info->stamp_2 >= CHARGER_OP_TIMEOUT_BATTERY_VOLTAGE_CHECK) {
+				charger_info->charger_bms_error = CRO_TIMEOUT;
+				set_charger_state(charger_info, CHARGER_STATE_CST);
+
+				udp_log_printf("CRO_OP_STATE_PREPARE_PRECHARGE timeout!\n");
+			} else {
+				if(battery_voltage_valid() == 1) {//获取预充电压
+					charger_info->precharge_voltage = charger_info->settings->bcp_data.total_voltage - 50;
+					start_precharge(charger_info->precharge_voltage);//开始预充
+
+					charger_info->stamp_2 = ticks;
+					charger_info->cro_op_state = CRO_OP_STATE_PRECHARGE;
+					udp_log_printf("CRO_OP_STATE_PREPARE_PRECHARGE done!\n");
+					//cmd 4
 				}
 			}
 		}
 		break;
 
 		case CRO_OP_STATE_PRECHARGE: {//预充
-			if(ticks - charger_info->stamp_2 >= CHARGER_OP_TIMEOUT_PRECHARGE) {
+			if(ticks - charger_info->stamp_2 >= CHARGER_OP_TIMEOUT_PRECHARGE) {//预充超时
 				start_precharge(0);//停止充电
 				//cmd 4
 
 				charger_info->charger_bms_error = PRECHARGE_ERROR;
-				set_charger_state(charger_info, CHARGER_STATE_IDLE);
+				set_charger_state(charger_info, CHARGER_STATE_CST);
 
-				udp_log_printf("precharge start timeout!\n");
+				udp_log_printf("CRO_OP_STATE_PRECHARGE timeout!\n");
 			} else {
 				if(charger_output_voltage_diff(charger_info->precharge_voltage) == 0) {//输出与需求电压差符合要求
-					charger_output_power_enable(1);
 					charger_info->stamp_2 = ticks;
-					charger_info->chm_op_state = CRO_OP_STATE_DELAY;
-					udp_log_printf("precharge started!\n");
+					charger_info->cro_op_state = CRO_OP_STATE_PRECHARGE_DELAY_1;
+					udp_log_printf("CRO_OP_STATE_PRECHARGE done!\n");
 				}
 			}
 		}
 		break;
 
-		case CRO_OP_STATE_DELAY: {//预充
-			if(ticks - charger_info->stamp_2 >= CHARGER_OP_TIMEOUT_PRECHARGE) {
-				start_precharge(0);//停止充电
-				//cmd 4
+		case CRO_OP_STATE_PRECHARGE_DELAY_1: {//延时2s
+			if(ticks - charger_info->stamp_2 >= CHARGER_OP_TIMEOUT_CRO_PRECHARGE_DELAY_1) {
+				charger_output_power_enable(1);//打开输出
+				charger_info->stamp_2 = ticks;
+				charger_info->cro_op_state = CRO_OP_STATE_PRECHARGE_DELAY_2;
+				udp_log_printf("CRO_OP_STATE_PRECHARGE_DELAY_1 done!\n");
+			}
+		}
+		break;
 
-				charger_info->charger_bms_error = PRECHARGE_ERROR;
-				set_charger_state(charger_info, CHARGER_STATE_IDLE);
+		case CRO_OP_STATE_PRECHARGE_DELAY_2: {//延时1s
+			if(ticks - charger_info->stamp_2 >= CHARGER_OP_TIMEOUT_CRO_PRECHARGE_DELAY_2) {
+				charger_info->stamp = ticks;
+				charger_info->stamp_1 = ticks;
+				charger_info->settings->cro_data.cro_result = 0xaa;
 
-				udp_log_printf("precharge start timeout!\n");
+				charger_info->stamp_2 = ticks;
+				charger_info->cro_op_state = CRO_OP_STATE_NONE;
+				udp_log_printf("CRO_OP_STATE_PRECHARGE_DELAY_2 done!\n");
 			}
 		}
 		break;
@@ -788,7 +807,7 @@ static int prepare_state_ccs(charger_info_t *charger_info)
 	int ret = 0;
 	uint32_t ticks = osKernelSysTick();
 
-	charger_info->send_stamp = ticks;
+	charger_info->send_stamp = ticks - FN_CCS_SEND_PERIOD;
 	charger_info->stamp = ticks;
 	charger_info->stamp_1 = ticks;
 
@@ -826,11 +845,11 @@ static int handle_state_ccs_request(charger_info_t *charger_info)
 	} else if(ticks - charger_info->stamp_1 >= BMS_GENERIC_TIMEOUT) {//bcs timeout
 		charger_info->settings->cem_data.u3.s.bcs_timeout = 0x01;
 		set_charger_state(charger_info, CHARGER_STATE_CST);
-	} else {
-		if(ticks - charger_info->send_stamp >= FN_CCS_SEND_PERIOD) {
-			send_ccs(charger_info);
-			charger_info->send_stamp = ticks;
-		}
+	}
+
+	if(ticks - charger_info->send_stamp >= FN_CCS_SEND_PERIOD) {
+		send_ccs(charger_info);
+		charger_info->send_stamp = ticks;
 	}
 
 	return ret;
@@ -888,8 +907,11 @@ static int prepare_state_cst(charger_info_t *charger_info)
 	int ret = 0;
 	uint32_t ticks = osKernelSysTick();
 
-	charger_info->send_stamp = ticks;
+	charger_info->send_stamp = ticks - FN_CST_SEND_PERIOD;
 	charger_info->stamp = ticks;
+	charger_info->stamp_1 = ticks;
+
+	charger_info->start_send_cst_stamp = ticks;
 
 	return ret;
 }
@@ -922,11 +944,11 @@ static int handle_state_cst_request(charger_info_t *charger_info)
 	if(ticks - charger_info->stamp >= BMS_GENERIC_TIMEOUT) {//定时发送
 		charger_info->settings->cem_data.u3.s.bst_timeout = 0x01;
 		set_charger_state(charger_info, CHARGER_STATE_CSD_CEM);
-	} else {
-		if(ticks - charger_info->send_stamp >= FN_CST_SEND_PERIOD) {
-			send_cst(charger_info);
-			charger_info->send_stamp = ticks;
-		}
+	}
+
+	if(ticks - charger_info->send_stamp >= FN_CST_SEND_PERIOD) {
+		send_cst(charger_info);
+		charger_info->send_stamp = ticks;
 	}
 
 	return ret;
@@ -937,6 +959,7 @@ static int handle_state_cst_response(charger_info_t *charger_info)
 	int ret = -1;
 	can_rx_msg_t *rx_msg = can_get_msg(charger_info->can_info);
 	u_pdu_head_t head;
+	uint32_t ticks = osKernelSysTick();
 
 	if(rx_msg == NULL) {
 		return ret;
@@ -954,6 +977,19 @@ static int handle_state_cst_response(charger_info_t *charger_info)
 			bst_data_t *data = (bst_data_t *)rx_msg->Data;
 
 			charger_info->settings->bst_data = *data;
+
+			charger_info->stamp = ticks;
+
+			ret = 0;
+		}
+		break;
+
+		case FN_BSD: {
+			bsd_data_t *data = (bsd_data_t *)rx_msg->Data;
+
+			charger_info->settings->bsd_data = *data;
+
+			charger_info->stamp_1 = ticks;
 
 			set_charger_state(charger_info, CHARGER_STATE_CSD_CEM);
 
@@ -973,10 +1009,13 @@ static int prepare_state_csd_cem(charger_info_t *charger_info)
 	int ret = 0;
 	uint32_t ticks = osKernelSysTick();
 
-	charger_info->send_stamp = ticks;
-	charger_info->send_stamp_1 = ticks;
+	charger_info->send_stamp = ticks - FN_CSD_SEND_PERIOD;
+	charger_info->send_stamp_1 = ticks - FN_CEM_SEND_PERIOD;
+
 	charger_info->stamp = ticks;
 	charger_info->stamp_1 = ticks;
+
+	charger_info->csd_cem_op_state = CSD_CEM_OP_STATE_NONE;
 
 	return ret;
 }
@@ -1066,13 +1105,16 @@ static int handle_state_csd_cem_request(charger_info_t *charger_info)
 	int ret = 0;
 	uint32_t ticks = osKernelSysTick();
 
-	if(ticks - charger_info->stamp >= FN_BSD_TIMEOUT + (1 * 1000)) {//关掉辅助电源/重新进入crm 停止发送
-		set_charger_state(charger_info, CHARGER_STATE_IDLE);
-	} else if(ticks - charger_info->stamp_1 >= FN_BSD_TIMEOUT) {//10秒结束
+	if(ticks - charger_info->start_send_cst_stamp >= FN_BSD_TIMEOUT) {//累计10s没收到bsd,充电时序结束
 		charger_info->settings->cem_data.u4.s.bsd_timeout = 0x01;
+
+		if(charger_info->csd_cem_op_state == CSD_CEM_OP_STATE_NONE) {
+			charger_info->stamp_1 = ticks;
+			charger_info->csd_cem_op_state = CSD_CEM_OP_STATE_WAIT_NO_CURRENT;
+		}
 	}
 
-	if(ticks - charger_info->send_stamp >= FN_CST_SEND_PERIOD) {
+	if(ticks - charger_info->send_stamp >= FN_CSD_SEND_PERIOD) {
 		send_csd(charger_info);
 		charger_info->send_stamp = ticks;
 	}
@@ -1084,6 +1126,84 @@ static int handle_state_csd_cem_request(charger_info_t *charger_info)
 		}
 	}
 
+	switch(charger_info->csd_cem_op_state) {
+		//等待电流小于5A
+		case CSD_CEM_OP_STATE_WAIT_NO_CURRENT: {
+			if(ticks - charger_info->start_send_cst_stamp >= CHARGER_OP_TIMEOUT_CSD_CEM_WAIT_FOR_NO_CURRENT) {
+				charger_output_power_enable(0);
+
+				charger_info->stamp_1 = ticks;
+				charger_info->csd_cem_op_state = CSD_CEM_OP_STATE_DISABLE_OUTPUT_DELAY;
+				udp_log_printf("CSD_CEM_OP_STATE_WAIT_NO_CURRENT timeout\n");
+			} else {
+				if(with_current_output() == 0) {
+					charger_output_power_enable(0);
+
+					charger_info->stamp_1 = ticks;
+					charger_info->csd_cem_op_state = CSD_CEM_OP_STATE_DISABLE_OUTPUT_DELAY;
+					udp_log_printf("CSD_CEM_OP_STATE_WAIT_NO_CURRENT done!\n");
+				}
+			}
+		}
+		break;
+
+		case CSD_CEM_OP_STATE_DISABLE_OUTPUT_DELAY: {
+			if(ticks - charger_info->stamp_1 >= CHARGER_OP_TIMEOUT_CSD_CEM_DISABLE_OUTPUT) {
+
+				charger_info->stamp_1 = ticks;
+				charger_info->csd_cem_op_state = CSD_CEM_OP_STATE_DISCHARGE;
+				udp_log_printf("CSD_CEM_OP_STATE_DISABLE_OUTPUT_DELAY done!\n");
+			}
+		}
+		break;
+
+		case CSD_CEM_OP_STATE_DISCHARGE: {//放电启动
+			if(ticks - charger_info->stamp_1 >= CHARGER_OP_TIMEOUT_DISCHARGE) {
+				start_discharge(0);
+
+				charger_info->charger_bms_error = RETURN_DISCHARGE_TIMEOUT;
+				charger_info->csd_cem_op_state = CSD_CEM_OP_STATE_DISCHARGE_CHECK;
+				udp_log_printf("CSD_CEM_OP_STATE_DISCHARGE timeout\n");
+			} else {
+				if(get_discharge_state() == 0) {//放电启动完毕
+					start_discharge(0);
+					start_discharge_check(1);
+
+					charger_info->stamp_1 = ticks;
+					charger_info->csd_cem_op_state = CSD_CEM_OP_STATE_DISCHARGE_CHECK;
+					udp_log_printf("CSD_CEM_OP_STATE_DISCHARGE done!\n");
+				}
+			}
+
+		}
+		break;
+
+		case CSD_CEM_OP_STATE_DISCHARGE_CHECK: {//放电检测
+			if(ticks - charger_info->stamp_1 >= CHARGER_OP_TIMEOUT_DISCHARGE_CHECK) {
+				charger_info->charger_bms_error = RETURN_DISCHARGE_TIMEOUT;
+
+				charger_set_auxiliary_power_state(charger_info, 0);
+				charger_set_gun_lock_state(charger_info, 0);
+
+				udp_log_printf("CSD_CEM_OP_STATE_DISCHARGE_CHECK timeout!\n");
+				charger_info->csd_cem_op_state = CSD_CEM_OP_STATE_FINISH;
+				set_charger_state(charger_info, CHARGER_STATE_IDLE);
+			} else {
+				if(get_discharge_check_state() == 0) {//放电完毕
+					charger_set_auxiliary_power_state(charger_info, 0);
+					charger_set_gun_lock_state(charger_info, 0);
+					udp_log_printf("CSD_CEM_OP_STATE_DISCHARGE_CHECK done!\n");
+					charger_info->csd_cem_op_state = CSD_CEM_OP_STATE_FINISH;
+					set_charger_state(charger_info, CHARGER_STATE_IDLE);
+				}
+			}
+		}
+		break;
+
+		default:
+			break;
+	}
+
 	return ret;
 }
 
@@ -1091,6 +1211,7 @@ static int handle_state_csd_cem_response(charger_info_t *charger_info)
 {
 	int ret = -1;
 	can_rx_msg_t *rx_msg = can_get_msg(charger_info->can_info);
+	uint32_t ticks = osKernelSysTick();
 	u_pdu_head_t head;
 
 	if(rx_msg == NULL) {
@@ -1105,7 +1226,7 @@ static int handle_state_csd_cem_response(charger_info_t *charger_info)
 
 			charger_info->settings->bsd_data = *data;
 
-			charger_info->stamp = osKernelSysTick();
+			charger_info->stamp = ticks;
 
 			ret = 0;
 		}
