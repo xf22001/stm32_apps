@@ -46,4 +46,6 @@ typedef struct {
 	uint8_t crc_h;
 } modbus_crc_t;
 
+#define MODBUS_BUFFER_SIZE 192
+
 #endif //_MODBUS_SPEC_H

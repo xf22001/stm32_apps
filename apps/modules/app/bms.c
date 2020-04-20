@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年04月20日 星期一 15时24分08秒
+ *   修改日期：2020年04月20日 星期一 15时46分20秒
  *   描    述：
  *
  *================================================================*/
@@ -1396,7 +1396,7 @@ static void modbus_data_set(void *ctx, uint16_t addr, uint16_t value)
 	modbus_data_get_set(bms_info, addr, &value, MODBUS_DATA_SET);
 }
 
-static uint16_t modbus_data_crc(uint8_t *data, uint16_t size)
+static uint16_t modbus_data_crc(void *ctx, uint8_t *data, uint16_t size)
 {
 	uint16_t crc = 0xFFFF;
 	uint16_t i;

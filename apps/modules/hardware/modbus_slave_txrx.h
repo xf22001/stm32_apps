@@ -6,7 +6,7 @@
  *   文件名称：modbus_slave_txrx.h
  *   创 建 者：肖飞
  *   创建日期：2020年04月20日 星期一 14时54分35秒
- *   修改日期：2020年04月20日 星期一 15时25分00秒
+ *   修改日期：2020年04月20日 星期一 15时46分37秒
  *   描    述：
  *
  *================================================================*/
@@ -18,6 +18,7 @@ extern "C"
 #endif
 
 #include "usart_txrx.h"
+#include "modbus_spec.h"
 #include "callback_chain.h"
 
 #ifdef __cplusplus
@@ -30,7 +31,7 @@ extern "C"
 typedef uint8_t (*modbus_slave_addr_valid_t)(void *ctx, uint16_t start, uint16_t number);
 typedef uint16_t (*modbus_slave_data_get_t)(void *ctx, uint16_t addr);
 typedef void (*modbus_slave_data_set_t)(void *ctx, uint16_t addr, uint16_t value);
-typedef uint16_t (*modbus_slave_data_crc_t)(uint8_t *buffer, uint16_t size);
+typedef uint16_t (*modbus_slave_data_crc_t)(void *ctx, uint8_t *buffer, uint16_t size);
 
 typedef struct {
 	void *ctx;

@@ -202,7 +202,7 @@ static int fn_0x03(modbus_slave_info_t *modbus_slave_info)//read some number
 	modbus_crc = &request_0x03->crc;
 	u_uint16_bytes.s.byte0 = modbus_crc->crc_l;
 	u_uint16_bytes.s.byte1 = modbus_crc->crc_h;
-	crc = modbus_slave_info->modbus_slave_data_info->crc((uint8_t *)request_0x03, (uint8_t *)modbus_crc - (uint8_t *)request_0x03);
+	crc = modbus_slave_info->modbus_slave_data_info->crc(modbus_slave_info->modbus_slave_data_info->ctx, (uint8_t *)request_0x03, (uint8_t *)modbus_crc - (uint8_t *)request_0x03);
 
 	if(crc != u_uint16_bytes.v) {
 		return ret;
@@ -238,7 +238,7 @@ static int fn_0x03(modbus_slave_info_t *modbus_slave_info)//read some number
 
 	modbus_crc = (modbus_crc_t *)data_item;
 
-	u_uint16_bytes.v = modbus_slave_info->modbus_slave_data_info->crc((uint8_t *)modbus_slave_response_0x03_head, (uint8_t *)modbus_crc - (uint8_t *)modbus_slave_response_0x03_head);
+	u_uint16_bytes.v = modbus_slave_info->modbus_slave_data_info->crc(modbus_slave_info->modbus_slave_data_info->ctx, (uint8_t *)modbus_slave_response_0x03_head, (uint8_t *)modbus_crc - (uint8_t *)modbus_slave_response_0x03_head);
 	modbus_crc->crc_l = u_uint16_bytes.s.byte0;
 	modbus_crc->crc_h = u_uint16_bytes.s.byte1;
 	modbus_slave_info->tx_size = (uint8_t *)(modbus_crc + 1) - (uint8_t *)modbus_slave_response_0x03_head;
@@ -283,7 +283,7 @@ static int fn_0x06(modbus_slave_info_t *modbus_slave_info)//write one number
 	modbus_crc = &request_0x06->crc;
 	u_uint16_bytes.s.byte0 = modbus_crc->crc_l;
 	u_uint16_bytes.s.byte1 = modbus_crc->crc_h;
-	crc = modbus_slave_info->modbus_slave_data_info->crc((uint8_t *)request_0x06, (uint8_t *)&request_0x06->crc - (uint8_t *)request_0x06);
+	crc = modbus_slave_info->modbus_slave_data_info->crc(modbus_slave_info->modbus_slave_data_info->ctx, (uint8_t *)request_0x06, (uint8_t *)&request_0x06->crc - (uint8_t *)request_0x06);
 
 	if(crc != u_uint16_bytes.v) {
 		return ret;
@@ -326,7 +326,7 @@ static int fn_0x06(modbus_slave_info_t *modbus_slave_info)//write one number
 
 	modbus_crc = &modbus_slave_response_0x06->crc;
 
-	u_uint16_bytes.v = modbus_slave_info->modbus_slave_data_info->crc((uint8_t *)modbus_slave_response_0x06, (uint8_t *)modbus_crc - (uint8_t *)modbus_slave_response_0x06);
+	u_uint16_bytes.v = modbus_slave_info->modbus_slave_data_info->crc(modbus_slave_info->modbus_slave_data_info->ctx, (uint8_t *)modbus_slave_response_0x06, (uint8_t *)modbus_crc - (uint8_t *)modbus_slave_response_0x06);
 	modbus_crc->crc_l = u_uint16_bytes.s.byte0;
 	modbus_crc->crc_h = u_uint16_bytes.s.byte1;
 	modbus_slave_info->tx_size = (uint8_t *)(modbus_crc + 1) - (uint8_t *)modbus_slave_response_0x06;
@@ -389,7 +389,7 @@ static int fn_0x10(modbus_slave_info_t *modbus_slave_info)//write more number
 
 	u_uint16_bytes.s.byte0 = modbus_crc->crc_l;
 	u_uint16_bytes.s.byte1 = modbus_crc->crc_h;
-	crc = modbus_slave_info->modbus_slave_data_info->crc((uint8_t *)modbus_slave_request_0x10_head, (uint8_t *)modbus_crc - (uint8_t *)modbus_slave_request_0x10_head);
+	crc = modbus_slave_info->modbus_slave_data_info->crc(modbus_slave_info->modbus_slave_data_info->ctx, (uint8_t *)modbus_slave_request_0x10_head, (uint8_t *)modbus_crc - (uint8_t *)modbus_slave_request_0x10_head);
 
 	if(crc != u_uint16_bytes.v) {
 		return ret;
@@ -417,7 +417,7 @@ static int fn_0x10(modbus_slave_info_t *modbus_slave_info)//write more number
 
 	modbus_crc = &modbus_slave_response_0x10->crc;
 
-	u_uint16_bytes.v = modbus_slave_info->modbus_slave_data_info->crc((uint8_t *)modbus_slave_response_0x10, (uint8_t *)modbus_crc - (uint8_t *)modbus_slave_response_0x10);
+	u_uint16_bytes.v = modbus_slave_info->modbus_slave_data_info->crc(modbus_slave_info->modbus_slave_data_info->ctx, (uint8_t *)modbus_slave_response_0x10, (uint8_t *)modbus_crc - (uint8_t *)modbus_slave_response_0x10);
 	modbus_crc->crc_l = u_uint16_bytes.s.byte0;
 	modbus_crc->crc_h = u_uint16_bytes.s.byte1;
 	modbus_slave_info->tx_size = (uint8_t *)(modbus_crc + 1) - (uint8_t *)modbus_slave_response_0x10;
