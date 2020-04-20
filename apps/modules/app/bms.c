@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年04月18日 星期六 14时01分23秒
+ *   修改日期：2020年04月20日 星期一 15时11分29秒
  *   描    述：
  *
  *================================================================*/
@@ -205,9 +205,9 @@ void free_bms_info(bms_info_t *bms_info)
 	if(os_status != osOK) {
 	}
 
-	if(bms_info->modbus_info != NULL) {
-		set_modbus_data_info(bms_info->modbus_info, NULL);
-		remove_modbus_data_changed_cb(bms_info->modbus_info, &bms_info->modbus_data_changed_cb);
+	if(bms_info->modbus_slave_info != NULL) {
+		set_modbus_slave_data_info(bms_info->modbus_slave_info, NULL);
+		remove_modbus_slave_data_changed_cb(bms_info->modbus_slave_info, &bms_info->modbus_slave_data_changed_cb);
 	}
 
 	if(eeprom_modbus_data_bitmap != NULL) {
@@ -320,7 +320,7 @@ bms_info_t *get_or_alloc_bms_info(can_info_t *can_info)
 
 	memset(&bms_info->configs, 0, sizeof(bms_data_configs_t));
 
-	bms_info->modbus_info = NULL;
+	bms_info->modbus_slave_info = NULL;
 
 	set_gun_on_off(bms_info, 0);
 
@@ -349,7 +349,7 @@ failed:
 	return bms_info;
 }
 
-static void modbus_data_changed(void *fn_ctx, void *chain_ctx)
+static void modbus_slave_data_changed(void *fn_ctx, void *chain_ctx)
 {
 	//udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 	save_eeprom_modbus_data((bms_info_t *)fn_ctx);
@@ -1396,19 +1396,19 @@ static void modbus_data_set(void *ctx, uint16_t addr, uint16_t value)
 	modbus_data_get_set(bms_info, addr, &value, MODBUS_DATA_SET);
 }
 
-void bms_set_modbus_info(bms_info_t *bms_info, modbus_info_t *modbus_info)
+void bms_set_modbus_slave_info(bms_info_t *bms_info, modbus_slave_info_t *modbus_slave_info)
 {
-	bms_info->modbus_info = modbus_info;
+	bms_info->modbus_slave_info = modbus_slave_info;
 
-	bms_info->modbus_data_info.ctx = bms_info;
-	bms_info->modbus_data_info.valid = modbus_addr_valid;
-	bms_info->modbus_data_info.get = modbus_data_get;
-	bms_info->modbus_data_info.set = modbus_data_set;
-	set_modbus_data_info(bms_info->modbus_info, &bms_info->modbus_data_info);
+	bms_info->modbus_slave_data_info.ctx = bms_info;
+	bms_info->modbus_slave_data_info.valid = modbus_addr_valid;
+	bms_info->modbus_slave_data_info.get = modbus_data_get;
+	bms_info->modbus_slave_data_info.set = modbus_data_set;
+	set_modbus_slave_data_info(bms_info->modbus_slave_info, &bms_info->modbus_slave_data_info);
 
-	bms_info->modbus_data_changed_cb.fn = modbus_data_changed;
-	bms_info->modbus_data_changed_cb.fn_ctx = bms_info;
-	add_modbus_data_changed_cb(bms_info->modbus_info, &bms_info->modbus_data_changed_cb);
+	bms_info->modbus_slave_data_changed_cb.fn = modbus_slave_data_changed;
+	bms_info->modbus_slave_data_changed_cb.fn_ctx = bms_info;
+	add_modbus_slave_data_changed_cb(bms_info->modbus_slave_info, &bms_info->modbus_slave_data_changed_cb);
 }
 
 void bms_set_eeprom_info(bms_info_t *bms_info, eeprom_info_t *eeprom_info)

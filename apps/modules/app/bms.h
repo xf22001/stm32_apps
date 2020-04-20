@@ -6,7 +6,7 @@
  *   文件名称：bms.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分57秒
- *   修改日期：2020年04月18日 星期六 13时01分05秒
+ *   修改日期：2020年04月20日 星期一 15时12分00秒
  *   描    述：
  *
  *================================================================*/
@@ -21,7 +21,7 @@ extern "C"
 #include "cmsis_os.h"
 
 #include "can_txrx.h"
-#include "modbus_txrx.h"
+#include "modbus_slave_txrx.h"
 #include "bms_spec.h"
 #include "eeprom.h"
 
@@ -220,9 +220,9 @@ typedef struct {
 	uint8_t bms_gun_connect;
 	uint8_t bms_poweron_enable;
 
-	modbus_info_t *modbus_info;
-	modbus_data_info_t modbus_data_info;
-	callback_item_t modbus_data_changed_cb;
+	modbus_slave_info_t *modbus_slave_info;
+	modbus_slave_data_info_t modbus_slave_data_info;
+	callback_item_t modbus_slave_data_changed_cb;
 
 	uint8_t eeprom_modbus_data_index;
 	eeprom_info_t *eeprom_info;
@@ -254,10 +254,8 @@ typedef struct {
 
 void free_bms_info(bms_info_t *bms_info);
 bms_info_t *get_or_alloc_bms_info(can_info_t *can_info);
-void bms_set_modbus_info(bms_info_t *bms_info, modbus_info_t *modbus_info);
+void bms_set_modbus_slave_info(bms_info_t *bms_info, modbus_slave_info_t *modbus_slave_info);
 void bms_set_eeprom_info(bms_info_t *bms_info, eeprom_info_t *eeprom_info);
-void bms_data_to_modbus_data(bms_info_t *bms_info, uint8_t do_init);
-void modbus_data_to_bms_data(bms_info_t *bms_info);
 int load_eeprom_modbus_data(bms_info_t *bms_info);
 int save_eeprom_modbus_data(bms_info_t *bms_info);
 void bms_restore_data(bms_info_t *bms_info);

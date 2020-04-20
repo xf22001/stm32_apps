@@ -6,7 +6,7 @@
  *   文件名称：test_charger_bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时28分36秒
- *   修改日期：2020年04月04日 星期六 18时09分31秒
+ *   修改日期：2020年04月20日 星期一 15时15分28秒
  *   描    述：
  *
  *================================================================*/
@@ -20,7 +20,7 @@
 
 #include "bms.h"
 #include "charger.h"
-#include "task_modbus.h"
+#include "task_modbus_slave.h"
 
 extern CAN_HandleTypeDef hcan1;
 extern CAN_HandleTypeDef hcan2;
@@ -133,8 +133,8 @@ void test_charger_bms(void)
 			app_panic();
 		}
 
-		osThreadDef(task_modbus, task_modbus, osPriorityNormal, 0, 128 * 3);
-		osThreadCreate(osThread(task_modbus), uart_info);
+		osThreadDef(task_modbus_slave, task_modbus_slave, osPriorityNormal, 0, 128 * 3);
+		osThreadCreate(osThread(task_modbus_slave), uart_info);
 	}
 
 	{
@@ -143,7 +143,7 @@ void test_charger_bms(void)
 		spi_info_t *spi_info = get_or_alloc_spi_info(&hspi3);
 		bms_info_t *bms_info;
 		eeprom_info_t *eeprom_info;
-		modbus_info_t *modbus_info;
+		modbus_slave_info_t *modbus_slave_info;
 		osThreadDef(bms_request, task_bms_request, osPriorityNormal, 0, 256);
 		osThreadDef(bms_response, task_bms_response, osPriorityNormal, 0, 256);
 
@@ -167,9 +167,9 @@ void test_charger_bms(void)
 			app_panic();
 		}
 
-		modbus_info = get_or_alloc_modbus_info(uart_info);
+		modbus_slave_info = get_or_alloc_modbus_slave_info(uart_info);
 
-		if(modbus_info == NULL) {
+		if(modbus_slave_info == NULL) {
 			app_panic();
 		}
 
@@ -179,7 +179,7 @@ void test_charger_bms(void)
 			app_panic();
 		}
 
-		bms_set_modbus_info(bms_info, modbus_info);
+		bms_set_modbus_slave_info(bms_info, modbus_slave_info);
 		bms_set_eeprom_info(bms_info, eeprom_info);
 
 		bms_restore_data(bms_info);
