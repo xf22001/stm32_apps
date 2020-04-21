@@ -1,12 +1,12 @@
 
 
 /*================================================================
- *   
- *   
+ *
+ *
  *   文件名称：modbus_slave_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月20日 星期一 14时54分12秒
- *   修改日期：2020年04月20日 星期一 15时21分29秒
+ *   修改日期：2020年04月21日 星期二 12时26分59秒
  *   描    述：
  *
  *================================================================*/
@@ -118,8 +118,8 @@ modbus_slave_info_t *get_or_alloc_modbus_slave_info(uart_info_t *uart_info)
 	}
 
 	modbus_slave_info->uart_info = uart_info;
-	modbus_slave_info->rx_timeout = 3000;
-	modbus_slave_info->tx_timeout = 1000;
+	modbus_slave_info->rx_timeout = 100;
+	modbus_slave_info->tx_timeout = 100;
 	modbus_slave_info->modbus_slave_data_info = NULL;
 
 	os_status = osMutexWait(modbus_slave_info_list_mutex, osWaitForever);
@@ -190,33 +190,30 @@ static int fn_0x03(modbus_slave_info_t *modbus_slave_info)//read some number
 	modbus_slave_response_0x03_head_t *modbus_slave_response_0x03_head = (modbus_slave_response_0x03_head_t *)modbus_slave_info->tx_buffer;
 	modbus_data_item_t *data_item = NULL;
 	modbus_crc_t *modbus_crc = NULL;
-	u_uint16_bytes_t u_uint16_bytes;
 	uint16_t addr;
 	uint16_t number;
 	int i;
 
 	if(modbus_slave_info->rx_size < sizeof(modbus_slave_request_0x03_t)) {
+		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return ret;
 	}
 
 	modbus_crc = &request_0x03->crc;
-	u_uint16_bytes.s.byte0 = modbus_crc->crc_l;
-	u_uint16_bytes.s.byte1 = modbus_crc->crc_h;
-	crc = modbus_slave_info->modbus_slave_data_info->crc(modbus_slave_info->modbus_slave_data_info->ctx, (uint8_t *)request_0x03, (uint8_t *)modbus_crc - (uint8_t *)request_0x03);
+	crc = modbus_slave_info->modbus_slave_data_info->crc(modbus_slave_info->modbus_slave_data_info->ctx,
+	        (uint8_t *)request_0x03,
+	        (uint8_t *)modbus_crc - (uint8_t *)request_0x03);
 
-	if(crc != u_uint16_bytes.v) {
+	if(crc != get_modbus_crc(modbus_crc)) {
+		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return ret;
 	}
 
-	u_uint16_bytes.s.byte0 = request_0x03->addr.addr_l;
-	u_uint16_bytes.s.byte1 = request_0x03->addr.addr_h;
-	addr = u_uint16_bytes.v;
-
-	u_uint16_bytes.s.byte0 = request_0x03->number.number_l;
-	u_uint16_bytes.s.byte1 = request_0x03->number.number_h;
-	number = u_uint16_bytes.v;
+	addr = get_modbus_addr(&request_0x03->addr);
+	number = get_modbus_number(&request_0x03->number);
 
 	if(modbus_slave_info->modbus_slave_data_info->valid(modbus_slave_info->modbus_slave_data_info->ctx, addr, number) == 0) {
+		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return ret;
 	}
 
@@ -226,25 +223,24 @@ static int fn_0x03(modbus_slave_info_t *modbus_slave_info)//read some number
 	data_item = (modbus_data_item_t *)(modbus_slave_response_0x03_head + 1);
 
 	for(i = 0; i < number; i++) {
-		u_uint16_bytes.v = modbus_slave_info->modbus_slave_data_info->get(modbus_slave_info->modbus_slave_data_info->ctx, addr + i);
-		udp_log_printf("request read addr:%d, data:%d(%x)\n", addr + i, u_uint16_bytes.v, u_uint16_bytes.v);
+		uint16_t value;
+		value = modbus_slave_info->modbus_slave_data_info->get(modbus_slave_info->modbus_slave_data_info->ctx, addr + i);
+		udp_log_printf("request read addr:%d, data:%d(%x)\n", addr + i, value, value);
 
-		data_item->data_l = u_uint16_bytes.s.byte0;
-		data_item->data_h = u_uint16_bytes.s.byte1;
-		data_item++;
+		set_modbus_data_item(data_item + i, value);
 	}
 
-	modbus_slave_response_0x03_head->bytes_size = (uint8_t *)data_item - (uint8_t *)(modbus_slave_response_0x03_head + 1);
+	modbus_slave_response_0x03_head->bytes_size = number * sizeof(modbus_data_item_t);
 
-	modbus_crc = (modbus_crc_t *)data_item;
+	modbus_crc = (modbus_crc_t *)(data_item + number);
 
-	u_uint16_bytes.v = modbus_slave_info->modbus_slave_data_info->crc(modbus_slave_info->modbus_slave_data_info->ctx, (uint8_t *)modbus_slave_response_0x03_head, (uint8_t *)modbus_crc - (uint8_t *)modbus_slave_response_0x03_head);
-	modbus_crc->crc_l = u_uint16_bytes.s.byte0;
-	modbus_crc->crc_h = u_uint16_bytes.s.byte1;
+	crc = modbus_slave_info->modbus_slave_data_info->crc(modbus_slave_info->modbus_slave_data_info->ctx, (uint8_t *)modbus_slave_response_0x03_head, (uint8_t *)modbus_crc - (uint8_t *)modbus_slave_response_0x03_head);
+	set_modbus_crc(modbus_crc, crc);
+
 	modbus_slave_info->tx_size = (uint8_t *)(modbus_crc + 1) - (uint8_t *)modbus_slave_response_0x03_head;
 
-	uart_tx_data(modbus_slave_info->uart_info, modbus_slave_info->tx_buffer, modbus_slave_info->tx_size, modbus_slave_info->tx_timeout);
 	//udp_log_hexdump("modbus_slave_info->tx_buffer", (const char *)modbus_slave_info->tx_buffer, modbus_slave_info->tx_size);
+	uart_tx_data(modbus_slave_info->uart_info, modbus_slave_info->tx_buffer, modbus_slave_info->tx_size, modbus_slave_info->tx_timeout);
 
 	ret = 0;
 	return ret;
@@ -272,67 +268,64 @@ static int fn_0x06(modbus_slave_info_t *modbus_slave_info)//write one number
 	modbus_slave_response_0x06_t *modbus_slave_response_0x06 = (modbus_slave_response_0x06_t *)modbus_slave_info->tx_buffer;
 	modbus_data_item_t *data_item = NULL;
 	modbus_crc_t *modbus_crc = NULL;
-	u_uint16_bytes_t u_uint16_bytes;
 	uint16_t addr;
 	int i;
 
 	if(modbus_slave_info->rx_size < sizeof(modbus_slave_request_0x06_t)) {
+		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return ret;
 	}
 
 	modbus_crc = &request_0x06->crc;
-	u_uint16_bytes.s.byte0 = modbus_crc->crc_l;
-	u_uint16_bytes.s.byte1 = modbus_crc->crc_h;
-	crc = modbus_slave_info->modbus_slave_data_info->crc(modbus_slave_info->modbus_slave_data_info->ctx, (uint8_t *)request_0x06, (uint8_t *)&request_0x06->crc - (uint8_t *)request_0x06);
+	crc = modbus_slave_info->modbus_slave_data_info->crc(modbus_slave_info->modbus_slave_data_info->ctx,
+	        (uint8_t *)request_0x06,
+	        (uint8_t *)modbus_crc - (uint8_t *)request_0x06);
 
-	if(crc != u_uint16_bytes.v) {
+	if(crc != get_modbus_crc(modbus_crc)) {
+		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return ret;
 	}
 
-	u_uint16_bytes.s.byte0 = request_0x06->addr.addr_l;
-	u_uint16_bytes.s.byte1 = request_0x06->addr.addr_h;
-	addr = u_uint16_bytes.v;
+	addr = get_modbus_addr(&request_0x06->addr);
 
 	data_item = &request_0x06->data;
 
 	if(modbus_slave_info->modbus_slave_data_info->valid(modbus_slave_info->modbus_slave_data_info->ctx, addr, 1) == 0) {
+		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return ret;
 	}
 
 	//wite one number
 	for(i = 0; i < 1; i++) {
-		u_uint16_bytes.s.byte0 = data_item->data_l;
-		u_uint16_bytes.s.byte1 = data_item->data_h;
-		udp_log_printf("request write addr:%d, data:%d(%x)\n", addr + i, u_uint16_bytes.v, u_uint16_bytes.v);
-		modbus_slave_info->modbus_slave_data_info->set(modbus_slave_info->modbus_slave_data_info->ctx, addr + i, u_uint16_bytes.v);
-		data_item++;
+		uint16_t value = get_modbus_data_item(data_item + i);
+		udp_log_printf("request write addr:%d, data:%d(%x)\n", addr + i, value, value);
+		modbus_slave_info->modbus_slave_data_info->set(modbus_slave_info->modbus_slave_data_info->ctx,
+		        addr + i,
+		        value);
 	}
 
 	modbus_slave_response_0x06->head.station = MODBUS_SLAVE_ID;
 	modbus_slave_response_0x06->head.fn = 0x06;
 
-	u_uint16_bytes.v = addr;
-	modbus_slave_response_0x06->addr.addr_l = u_uint16_bytes.s.byte0;
-	modbus_slave_response_0x06->addr.addr_h = u_uint16_bytes.s.byte1;
+	set_modbus_addr(&modbus_slave_response_0x06->addr, addr);
 
 	data_item = &modbus_slave_response_0x06->data;
 
 	for(i = 0; i < 1; i++) {
-		u_uint16_bytes.v = modbus_slave_info->modbus_slave_data_info->get(modbus_slave_info->modbus_slave_data_info->ctx, addr + i);
-		data_item->data_l = u_uint16_bytes.s.byte0;
-		data_item->data_h = u_uint16_bytes.s.byte1;
-		data_item++;
+		uint16_t value = modbus_slave_info->modbus_slave_data_info->get(modbus_slave_info->modbus_slave_data_info->ctx, addr + i);
+		set_modbus_data_item(data_item + i, value);
 	}
 
 	modbus_crc = &modbus_slave_response_0x06->crc;
+	crc = modbus_slave_info->modbus_slave_data_info->crc(modbus_slave_info->modbus_slave_data_info->ctx,
+	        (uint8_t *)modbus_slave_response_0x06,
+	        (uint8_t *)modbus_crc - (uint8_t *)modbus_slave_response_0x06);
 
-	u_uint16_bytes.v = modbus_slave_info->modbus_slave_data_info->crc(modbus_slave_info->modbus_slave_data_info->ctx, (uint8_t *)modbus_slave_response_0x06, (uint8_t *)modbus_crc - (uint8_t *)modbus_slave_response_0x06);
-	modbus_crc->crc_l = u_uint16_bytes.s.byte0;
-	modbus_crc->crc_h = u_uint16_bytes.s.byte1;
+	set_modbus_crc(modbus_crc, crc);
 	modbus_slave_info->tx_size = (uint8_t *)(modbus_crc + 1) - (uint8_t *)modbus_slave_response_0x06;
 
-	uart_tx_data(modbus_slave_info->uart_info, modbus_slave_info->tx_buffer, modbus_slave_info->tx_size, modbus_slave_info->tx_timeout);
 	//udp_log_hexdump("modbus_slave_info->tx_buffer", (const char *)modbus_slave_info->tx_buffer, modbus_slave_info->tx_size);
+	uart_tx_data(modbus_slave_info->uart_info, modbus_slave_info->tx_buffer, modbus_slave_info->tx_size, modbus_slave_info->tx_timeout);
 
 	modbus_slave_data_changed(modbus_slave_info);
 
@@ -362,24 +355,20 @@ static int fn_0x10(modbus_slave_info_t *modbus_slave_info)//write more number
 	modbus_slave_response_0x10_t *modbus_slave_response_0x10 = (modbus_slave_response_0x10_t *)modbus_slave_info->tx_buffer;
 	modbus_data_item_t *data_item = NULL;
 	modbus_crc_t *modbus_crc = NULL;
-	u_uint16_bytes_t u_uint16_bytes;
 	uint16_t addr;
 	uint16_t number;
 	int i;
 
 	if(modbus_slave_info->rx_size < sizeof(modbus_slave_request_0x10_head_t)) {
+		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return ret;
 	}
 
-	u_uint16_bytes.s.byte0 = modbus_slave_request_0x10_head->addr.addr_l;
-	u_uint16_bytes.s.byte1 = modbus_slave_request_0x10_head->addr.addr_h;
-	addr = u_uint16_bytes.v;
-
-	u_uint16_bytes.s.byte0 = modbus_slave_request_0x10_head->number.number_l;
-	u_uint16_bytes.s.byte1 = modbus_slave_request_0x10_head->number.number_h;
-	number = u_uint16_bytes.v;
+	addr = get_modbus_addr(&modbus_slave_request_0x10_head->addr);
+	number = get_modbus_number(&modbus_slave_request_0x10_head->number);
 
 	if(modbus_slave_info->modbus_slave_data_info->valid(modbus_slave_info->modbus_slave_data_info->ctx, addr, number) == 0) {
+		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return ret;
 	}
 
@@ -387,43 +376,39 @@ static int fn_0x10(modbus_slave_info_t *modbus_slave_info)//write more number
 
 	modbus_crc = (modbus_crc_t *)(data_item + number);
 
-	u_uint16_bytes.s.byte0 = modbus_crc->crc_l;
-	u_uint16_bytes.s.byte1 = modbus_crc->crc_h;
-	crc = modbus_slave_info->modbus_slave_data_info->crc(modbus_slave_info->modbus_slave_data_info->ctx, (uint8_t *)modbus_slave_request_0x10_head, (uint8_t *)modbus_crc - (uint8_t *)modbus_slave_request_0x10_head);
+	crc = modbus_slave_info->modbus_slave_data_info->crc(modbus_slave_info->modbus_slave_data_info->ctx,
+	        (uint8_t *)modbus_slave_request_0x10_head,
+	        (uint8_t *)modbus_crc - (uint8_t *)modbus_slave_request_0x10_head);
 
-	if(crc != u_uint16_bytes.v) {
+	if(crc != get_modbus_crc(modbus_crc)) {
+		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return ret;
 	}
 
 	//wite more number
 	for(i = 0; i < number; i++) {
-		u_uint16_bytes.s.byte0 = data_item->data_l;
-		u_uint16_bytes.s.byte1 = data_item->data_h;
-		udp_log_printf("request multi-write addr:%d, data:%d(%x)\n", addr + i, u_uint16_bytes.v, u_uint16_bytes.v);
-		modbus_slave_info->modbus_slave_data_info->set(modbus_slave_info->modbus_slave_data_info->ctx, addr + i, u_uint16_bytes.v);
-		data_item++;
+		uint16_t value = get_modbus_data_item(data_item + i);
+
+		udp_log_printf("request multi-write addr:%d, data:%d(%x)\n", addr + i, value, value);
+		modbus_slave_info->modbus_slave_data_info->set(modbus_slave_info->modbus_slave_data_info->ctx, addr + i, value);
 	}
 
 	modbus_slave_response_0x10->head.station = MODBUS_SLAVE_ID;
 	modbus_slave_response_0x10->head.fn = 0x10;
 
-	u_uint16_bytes.v = addr;
-	modbus_slave_response_0x10->addr.addr_l = u_uint16_bytes.s.byte0;
-	modbus_slave_response_0x10->addr.addr_h = u_uint16_bytes.s.byte1;
-
-	u_uint16_bytes.v = number;
-	modbus_slave_response_0x10->number.number_l = u_uint16_bytes.s.byte0;
-	modbus_slave_response_0x10->number.number_h = u_uint16_bytes.s.byte1;
+	set_modbus_addr(&modbus_slave_response_0x10->addr, addr);
+	set_modbus_number(&modbus_slave_response_0x10->number, number);
 
 	modbus_crc = &modbus_slave_response_0x10->crc;
 
-	u_uint16_bytes.v = modbus_slave_info->modbus_slave_data_info->crc(modbus_slave_info->modbus_slave_data_info->ctx, (uint8_t *)modbus_slave_response_0x10, (uint8_t *)modbus_crc - (uint8_t *)modbus_slave_response_0x10);
-	modbus_crc->crc_l = u_uint16_bytes.s.byte0;
-	modbus_crc->crc_h = u_uint16_bytes.s.byte1;
+	crc = modbus_slave_info->modbus_slave_data_info->crc(modbus_slave_info->modbus_slave_data_info->ctx,
+	        (uint8_t *)modbus_slave_response_0x10,
+	        (uint8_t *)modbus_crc - (uint8_t *)modbus_slave_response_0x10);
+	set_modbus_crc(modbus_crc, crc);
 	modbus_slave_info->tx_size = (uint8_t *)(modbus_crc + 1) - (uint8_t *)modbus_slave_response_0x10;
 
-	uart_tx_data(modbus_slave_info->uart_info, modbus_slave_info->tx_buffer, modbus_slave_info->tx_size, modbus_slave_info->tx_timeout);
 	//udp_log_hexdump("modbus_slave_info->tx_buffer", (const char *)modbus_slave_info->tx_buffer, modbus_slave_info->tx_size);
+	uart_tx_data(modbus_slave_info->uart_info, modbus_slave_info->tx_buffer, modbus_slave_info->tx_size, modbus_slave_info->tx_timeout);
 
 	modbus_slave_data_changed(modbus_slave_info);
 
