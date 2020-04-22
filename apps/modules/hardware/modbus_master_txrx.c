@@ -6,7 +6,7 @@
  *   文件名称：modbus_master_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月20日 星期一 15时28分52秒
- *   修改日期：2020年04月21日 星期二 12时31分35秒
+ *   修改日期：2020年04月22日 星期三 11时59分32秒
  *   描    述：
  *
  *================================================================*/
@@ -110,7 +110,6 @@ modbus_master_info_t *get_or_alloc_modbus_master_info(uart_info_t *uart_info)
 	modbus_master_info->uart_info = uart_info;
 	modbus_master_info->rx_timeout = 100;
 	modbus_master_info->tx_timeout = 100;
-	modbus_master_info->modbus_master_data_info = NULL;
 
 	os_status = osMutexWait(modbus_master_info_list_mutex, osWaitForever);
 
@@ -149,11 +148,6 @@ int modbus_master_read_items(modbus_master_info_t *modbus_master_info, uint16_t 
 	uint16_t crc;
 	int i;
 
-	if(modbus_master_info->modbus_master_data_info == NULL) {
-		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
-		return ret;
-	}
-
 	if(number == 0) {
 		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return ret;
@@ -164,9 +158,8 @@ int modbus_master_read_items(modbus_master_info_t *modbus_master_info, uint16_t 
 	set_modbus_addr(&request_0x03->addr, addr);
 	set_modbus_number(&request_0x03->number, number);
 	modbus_crc = &request_0x03->crc;
-	crc = modbus_master_info->modbus_master_data_info->crc(modbus_master_info->modbus_master_data_info->ctx,
-	        (uint8_t *)request_0x03,
-	        (uint8_t *)modbus_crc - (uint8_t *)request_0x03);
+	crc = modbus_calc_crc((uint8_t *)request_0x03,
+	                 (uint8_t *)modbus_crc - (uint8_t *)request_0x03);
 	set_modbus_crc(modbus_crc, crc);
 
 	modbus_master_info->tx_size = sizeof(modbus_master_request_0x03_t);
@@ -205,9 +198,8 @@ int modbus_master_read_items(modbus_master_info_t *modbus_master_info, uint16_t 
 		return ret;
 	}
 
-	crc = modbus_master_info->modbus_master_data_info->crc(modbus_master_info->modbus_master_data_info->ctx,
-	        (uint8_t *)modbus_master_response_0x03_head,
-	        modbus_master_info->rx_size - sizeof(modbus_crc_t));
+	crc = modbus_calc_crc((uint8_t *)modbus_master_response_0x03_head,
+	                 modbus_master_info->rx_size - sizeof(modbus_crc_t));
 
 	data_item = (modbus_data_item_t *)(modbus_master_response_0x03_head + 1);
 
@@ -251,20 +243,14 @@ int modbus_master_write_one_item(modbus_master_info_t *modbus_master_info, uint1
 	modbus_crc_t *modbus_crc = NULL;
 	uint16_t crc;
 
-	if(modbus_master_info->modbus_master_data_info == NULL) {
-		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
-		return ret;
-	}
-
 	request_0x06->head.station = MODBUS_SLAVE_ID;
 	request_0x06->head.fn = 0x06;
 	set_modbus_addr(&request_0x06->addr, addr);
 	set_modbus_data_item(&request_0x06->data, value);
 	udp_log_printf("write addr:%d, data:%d(%x)\n", addr, value, value);
 	modbus_crc = &request_0x06->crc;
-	crc = modbus_master_info->modbus_master_data_info->crc(modbus_master_info->modbus_master_data_info->ctx,
-	        (uint8_t *)request_0x06,
-	        (uint8_t *)modbus_crc - (uint8_t *)request_0x06);
+	crc = modbus_calc_crc((uint8_t *)request_0x06,
+	                 (uint8_t *)modbus_crc - (uint8_t *)request_0x06);
 	set_modbus_crc(modbus_crc, crc);
 
 	modbus_master_info->tx_size = sizeof(modbus_master_request_0x06_t);
@@ -307,9 +293,8 @@ int modbus_master_write_one_item(modbus_master_info_t *modbus_master_info, uint1
 		return ret;
 	}
 
-	crc = modbus_master_info->modbus_master_data_info->crc(modbus_master_info->modbus_master_data_info->ctx,
-	        (uint8_t *)modbus_master_response_0x06,
-	        modbus_master_info->rx_size - sizeof(modbus_crc_t));
+	crc = modbus_calc_crc((uint8_t *)modbus_master_response_0x06,
+	                 modbus_master_info->rx_size - sizeof(modbus_crc_t));
 
 	modbus_crc = (modbus_crc_t *)&modbus_master_response_0x06->crc;
 
@@ -346,11 +331,6 @@ int modbus_master_write_items(modbus_master_info_t *modbus_master_info, uint16_t
 	uint16_t crc;
 	int i;
 
-	if(modbus_master_info->modbus_master_data_info == NULL) {
-		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
-		return ret;
-	}
-
 	if(number == 0) {
 		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return ret;
@@ -370,9 +350,8 @@ int modbus_master_write_items(modbus_master_info_t *modbus_master_info, uint16_t
 	}
 
 	modbus_crc = (modbus_crc_t *)(data_item + number);
-	crc = modbus_master_info->modbus_master_data_info->crc(modbus_master_info->modbus_master_data_info->ctx,
-	        (uint8_t *)modbus_master_request_0x10_head,
-	        (uint8_t *)modbus_crc - (uint8_t *)modbus_master_request_0x10_head);
+	crc = modbus_calc_crc((uint8_t *)modbus_master_request_0x10_head,
+	                 (uint8_t *)modbus_crc - (uint8_t *)modbus_master_request_0x10_head);
 
 	set_modbus_crc(modbus_crc, crc);
 
@@ -416,9 +395,8 @@ int modbus_master_write_items(modbus_master_info_t *modbus_master_info, uint16_t
 		return ret;
 	}
 
-	crc = modbus_master_info->modbus_master_data_info->crc(modbus_master_info->modbus_master_data_info->ctx,
-	        (uint8_t *)modbus_master_response_0x10,
-	        modbus_master_info->rx_size - sizeof(modbus_crc_t));
+	crc = modbus_calc_crc((uint8_t *)modbus_master_response_0x10,
+	                 modbus_master_info->rx_size - sizeof(modbus_crc_t));
 
 	modbus_crc = &modbus_master_response_0x10->crc;
 
@@ -428,14 +406,5 @@ int modbus_master_write_items(modbus_master_info_t *modbus_master_info, uint16_t
 	}
 
 	ret = 0;
-	return ret;
-}
-
-int set_modbus_master_data_info(modbus_master_info_t *modbus_master_info, modbus_master_data_info_t *modbus_master_data_info)
-{
-	int ret = 0;
-
-	modbus_master_info->modbus_master_data_info = modbus_master_data_info;
-
 	return ret;
 }

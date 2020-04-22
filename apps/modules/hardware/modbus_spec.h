@@ -6,7 +6,7 @@
  *   文件名称：modbus_spec.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月25日 星期一 17时21分29秒
- *   修改日期：2020年04月21日 星期二 10时12分30秒
+ *   修改日期：2020年04月22日 星期三 11时56分52秒
  *   描    述：
  *
  *================================================================*/
@@ -126,5 +126,7 @@ static inline uint16_t get_modbus_crc(modbus_crc_t *modbus_crc)
 }
 
 #define MODBUS_BUFFER_SIZE 192
+
+uint16_t modbus_calc_crc(uint8_t *data, uint16_t size);
 
 #endif //_MODBUS_SPEC_H

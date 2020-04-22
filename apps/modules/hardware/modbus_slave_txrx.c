@@ -6,7 +6,7 @@
  *   文件名称：modbus_slave_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月20日 星期一 14时54分12秒
- *   修改日期：2020年04月21日 星期二 12时26分59秒
+ *   修改日期：2020年04月22日 星期三 11时58分34秒
  *   描    述：
  *
  *================================================================*/
@@ -200,8 +200,7 @@ static int fn_0x03(modbus_slave_info_t *modbus_slave_info)//read some number
 	}
 
 	modbus_crc = &request_0x03->crc;
-	crc = modbus_slave_info->modbus_slave_data_info->crc(modbus_slave_info->modbus_slave_data_info->ctx,
-	        (uint8_t *)request_0x03,
+	crc = modbus_calc_crc((uint8_t *)request_0x03,
 	        (uint8_t *)modbus_crc - (uint8_t *)request_0x03);
 
 	if(crc != get_modbus_crc(modbus_crc)) {
@@ -234,7 +233,8 @@ static int fn_0x03(modbus_slave_info_t *modbus_slave_info)//read some number
 
 	modbus_crc = (modbus_crc_t *)(data_item + number);
 
-	crc = modbus_slave_info->modbus_slave_data_info->crc(modbus_slave_info->modbus_slave_data_info->ctx, (uint8_t *)modbus_slave_response_0x03_head, (uint8_t *)modbus_crc - (uint8_t *)modbus_slave_response_0x03_head);
+	crc = modbus_calc_crc((uint8_t *)modbus_slave_response_0x03_head,
+			(uint8_t *)modbus_crc - (uint8_t *)modbus_slave_response_0x03_head);
 	set_modbus_crc(modbus_crc, crc);
 
 	modbus_slave_info->tx_size = (uint8_t *)(modbus_crc + 1) - (uint8_t *)modbus_slave_response_0x03_head;
@@ -277,8 +277,7 @@ static int fn_0x06(modbus_slave_info_t *modbus_slave_info)//write one number
 	}
 
 	modbus_crc = &request_0x06->crc;
-	crc = modbus_slave_info->modbus_slave_data_info->crc(modbus_slave_info->modbus_slave_data_info->ctx,
-	        (uint8_t *)request_0x06,
+	crc = modbus_calc_crc((uint8_t *)request_0x06,
 	        (uint8_t *)modbus_crc - (uint8_t *)request_0x06);
 
 	if(crc != get_modbus_crc(modbus_crc)) {
@@ -317,8 +316,7 @@ static int fn_0x06(modbus_slave_info_t *modbus_slave_info)//write one number
 	}
 
 	modbus_crc = &modbus_slave_response_0x06->crc;
-	crc = modbus_slave_info->modbus_slave_data_info->crc(modbus_slave_info->modbus_slave_data_info->ctx,
-	        (uint8_t *)modbus_slave_response_0x06,
+	crc = modbus_calc_crc((uint8_t *)modbus_slave_response_0x06,
 	        (uint8_t *)modbus_crc - (uint8_t *)modbus_slave_response_0x06);
 
 	set_modbus_crc(modbus_crc, crc);
@@ -376,8 +374,7 @@ static int fn_0x10(modbus_slave_info_t *modbus_slave_info)//write more number
 
 	modbus_crc = (modbus_crc_t *)(data_item + number);
 
-	crc = modbus_slave_info->modbus_slave_data_info->crc(modbus_slave_info->modbus_slave_data_info->ctx,
-	        (uint8_t *)modbus_slave_request_0x10_head,
+	crc = modbus_calc_crc((uint8_t *)modbus_slave_request_0x10_head,
 	        (uint8_t *)modbus_crc - (uint8_t *)modbus_slave_request_0x10_head);
 
 	if(crc != get_modbus_crc(modbus_crc)) {
@@ -401,8 +398,7 @@ static int fn_0x10(modbus_slave_info_t *modbus_slave_info)//write more number
 
 	modbus_crc = &modbus_slave_response_0x10->crc;
 
-	crc = modbus_slave_info->modbus_slave_data_info->crc(modbus_slave_info->modbus_slave_data_info->ctx,
-	        (uint8_t *)modbus_slave_response_0x10,
+	crc = modbus_calc_crc((uint8_t *)modbus_slave_response_0x10,
 	        (uint8_t *)modbus_crc - (uint8_t *)modbus_slave_response_0x10);
 	set_modbus_crc(modbus_crc, crc);
 	modbus_slave_info->tx_size = (uint8_t *)(modbus_crc + 1) - (uint8_t *)modbus_slave_response_0x10;

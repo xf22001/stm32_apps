@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年04月20日 星期一 15时46分20秒
+ *   修改日期：2020年04月22日 星期三 12时00分51秒
  *   描    述：
  *
  *================================================================*/
@@ -1396,32 +1396,6 @@ static void modbus_data_set(void *ctx, uint16_t addr, uint16_t value)
 	modbus_data_get_set(bms_info, addr, &value, MODBUS_DATA_SET);
 }
 
-static uint16_t modbus_data_crc(void *ctx, uint8_t *data, uint16_t size)
-{
-	uint16_t crc = 0xFFFF;
-	uint16_t i;
-
-	//udp_log_printf("modbus_data_crc size:%d\n", size);
-
-	for(i = 0; i < size; i++) {
-		uint16_t loop;
-
-		crc = crc ^ data[i];
-
-		for(loop = 0; loop < 8; loop++) {
-			if(crc & 1) {
-				crc >>= 1;
-				crc ^= 0xa001;
-			} else {
-				crc >>= 1;
-			}
-		}
-	}
-
-	return (crc);
-}
-
-
 void bms_set_modbus_slave_info(bms_info_t *bms_info, modbus_slave_info_t *modbus_slave_info)
 {
 	bms_info->modbus_slave_info = modbus_slave_info;
@@ -1430,7 +1404,6 @@ void bms_set_modbus_slave_info(bms_info_t *bms_info, modbus_slave_info_t *modbus
 	bms_info->modbus_slave_data_info.valid = modbus_addr_valid;
 	bms_info->modbus_slave_data_info.get = modbus_data_get;
 	bms_info->modbus_slave_data_info.set = modbus_data_set;
-	bms_info->modbus_slave_data_info.crc = modbus_data_crc;
 	set_modbus_slave_data_info(bms_info->modbus_slave_info, &bms_info->modbus_slave_data_info);
 
 	bms_info->modbus_slave_data_changed_cb.fn = modbus_slave_data_changed;
