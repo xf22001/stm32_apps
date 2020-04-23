@@ -6,7 +6,7 @@
  *   文件名称：charger_handler.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时18分42秒
- *   修改日期：2020年04月20日 星期一 14时31分13秒
+ *   修改日期：2020年04月23日 星期四 17时15分51秒
  *   描    述：
  *
  *================================================================*/
@@ -143,9 +143,7 @@ static int handle_state_chm_request(charger_info_t *charger_info)
 	uint32_t ticks = osKernelSysTick();
 
 	if(ticks - charger_info->stamp >= BMS_GENERIC_TIMEOUT) {
-		charger_info->settings->cem_data.u1.s.brm_timeout = 0x01;
-		charger_info->charger_bms_error = BRM_TIMEOUT;
-		set_charger_state(charger_info, CHARGER_STATE_CST);
+		//
 	}
 
 	if(ticks - charger_info->send_stamp >= FN_CHM_SEND_PERIOD) {
@@ -159,7 +157,7 @@ static int handle_state_chm_request(charger_info_t *charger_info)
 				start_discharge(0);
 
 				charger_info->charger_bms_error = RETURN_DISCHARGE_TIMEOUT;
-				set_charger_state(charger_info, CHARGER_STATE_CST);
+				set_charger_state(charger_info, CHARGER_STATE_IDLE);
 				udp_log_printf("CHM_OP_STATE_DISCHARGE timeout\n");
 			} else {
 				if(get_discharge_state() == 0) {//放电启动完毕
@@ -178,7 +176,7 @@ static int handle_state_chm_request(charger_info_t *charger_info)
 		case CHM_OP_STATE_DISCHARGE_CHECK: {//放电检测
 			if(ticks - charger_info->stamp_1 >= CHARGER_OP_TIMEOUT_DISCHARGE_CHECK) {
 				charger_info->charger_bms_error = RETURN_DISCHARGE_TIMEOUT;
-				set_charger_state(charger_info, CHARGER_STATE_CST);
+				set_charger_state(charger_info, CHARGER_STATE_IDLE);
 				udp_log_printf("CHM_OP_STATE_DISCHARGE_CHECK timeout!\n");
 			} else {
 				if(get_discharge_check_state() == 0) {//放电完毕
@@ -193,7 +191,7 @@ static int handle_state_chm_request(charger_info_t *charger_info)
 		case CHM_OP_STATE_RELAY_ENDPOINT_OVERVOLTAGE_CHECK: {
 			if(relay_endpoint_overvoltage() != 0) {//接触器外侧电压低于10v
 				charger_info->charger_bms_error = RETURN_INC_BMS_ERROR;
-				set_charger_state(charger_info, CHARGER_STATE_CST);
+				set_charger_state(charger_info, CHARGER_STATE_IDLE);
 				udp_log_printf("CHM_OP_STATE_RELAY_ENDPOINT_OVERVOLTAGE_CHECK timeout!\n");
 			} else {
 				if(charger_info->settings->cml_data.max_output_voltage > charger_info->settings->bhm_data.max_charge_voltage) {
@@ -311,11 +309,12 @@ static int handle_state_chm_request(charger_info_t *charger_info)
 			udp_log_printf("CHM_OP_STATE_NEXT_STATE done!\n");
 
 			if(charger_info->charger_bms_error != RETURN_SUCCESS) {
-				set_charger_state(charger_info, CHARGER_STATE_CST);
+				set_charger_state(charger_info, CHARGER_STATE_IDLE);
 			} else {
 				set_charger_state(charger_info, CHARGER_STATE_CRM);
 			}
 		}
+
 		break;
 
 
@@ -354,7 +353,7 @@ static int handle_state_chm_response(charger_info_t *charger_info)
 
 			if(charger_info->settings->cml_data.min_output_voltage > charger_info->settings->bhm_data.max_charge_voltage) {//超过充电机输出能力
 				charger_info->charger_bms_error = BMS_U_UNMATCH;
-				set_charger_state(charger_info, CHARGER_STATE_CST);
+				set_charger_state(charger_info, CHARGER_STATE_IDLE);
 			} else {
 				if(charger_info->bhm_received == 0) {
 					charger_info->bhm_received = 1;
@@ -941,7 +940,7 @@ static int handle_state_cst_request(charger_info_t *charger_info)
 	int ret = 0;
 	uint32_t ticks = osKernelSysTick();
 
-	if(ticks - charger_info->stamp >= BMS_GENERIC_TIMEOUT) {//定时发送
+	if(ticks - charger_info->stamp >= BMS_GENERIC_TIMEOUT) {//超时
 		charger_info->settings->cem_data.u3.s.bst_timeout = 0x01;
 		set_charger_state(charger_info, CHARGER_STATE_CSD_CEM);
 	}

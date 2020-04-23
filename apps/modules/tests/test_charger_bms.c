@@ -6,7 +6,7 @@
  *   文件名称：test_charger_bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时28分36秒
- *   修改日期：2020年04月20日 星期一 15时15分28秒
+ *   修改日期：2020年04月23日 星期四 13时19分08秒
  *   描    述：
  *
  *================================================================*/
@@ -122,8 +122,8 @@ void test_charger_bms(void)
 			app_panic();
 		}
 
-		osThreadCreate(osThread(charger_request), charger_info);
-		osThreadCreate(osThread(charger_response), charger_info);
+		//osThreadCreate(osThread(charger_request), charger_info);
+		//osThreadCreate(osThread(charger_response), charger_info);
 	}
 
 	{
