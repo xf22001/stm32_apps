@@ -6,7 +6,7 @@
  *   文件名称：modbus_slave_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月20日 星期一 14时54分12秒
- *   修改日期：2020年04月22日 星期三 11时58分34秒
+ *   修改日期：2020年04月23日 星期四 10时57分38秒
  *   描    述：
  *
  *================================================================*/
@@ -477,8 +477,25 @@ int modbus_slave_process_request(modbus_slave_info_t *modbus_slave_info)
 
 int set_modbus_slave_data_info(modbus_slave_info_t *modbus_slave_info, modbus_slave_data_info_t *modbus_slave_data_info)
 {
-	int ret = 0;
+	int ret = -1;
 
+	if(modbus_slave_data_info == NULL) {
+		return ret;
+	}
+
+	if(modbus_slave_data_info->valid == NULL) {
+		return ret;
+	}
+
+	if(modbus_slave_data_info->get == NULL) {
+		return ret;
+	}
+
+	if(modbus_slave_data_info->set == NULL) {
+		return ret;
+	}
+
+	ret = 0;
 	modbus_slave_info->modbus_slave_data_info = modbus_slave_data_info;
 
 	return ret;
