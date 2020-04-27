@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年04月22日 星期三 12时00分51秒
+ *   修改日期：2020年04月27日 星期一 14时26分43秒
  *   描    述：
  *
  *================================================================*/
@@ -1734,8 +1734,8 @@ uint8_t is_bms_poweron_enable(bms_info_t *bms_info)
 	GPIO_PinState state = HAL_GPIO_ReadPin(bms_info->bms_poweron_enable_gpio, bms_info->bms_poweron_enable_pin);
 
 	if(state == GPIO_PIN_RESET) {
-		return 0;
-		//return 1;
+		//return 0;
+		return 1;
 	} else {
 		return 1;
 	}

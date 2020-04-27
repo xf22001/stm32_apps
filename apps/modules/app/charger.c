@@ -6,7 +6,7 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年04月20日 星期一 09时31分03秒
+ *   修改日期：2020年04月27日 星期一 14时00分45秒
  *   描    述：
  *
  *================================================================*/
@@ -233,10 +233,7 @@ charger_info_t *get_or_alloc_charger_info(can_info_t *can_info)
 	charger_info->can_info = can_info;
 	charger_info->state = CHARGER_STATE_IDLE;
 	charger_info->handle_mutex = osMutexCreate(osMutex(handle_mutex));
-	charger_info->auxiliary_power_on_off_gpio = charger_info_config->auxiliary_power_on_off_gpio;
-	charger_info->auxiliary_power_on_off_pin = charger_info_config->auxiliary_power_on_off_pin;
-	charger_info->gun_lock_on_off_gpio = charger_info_config->gun_lock_on_off_gpio;
-	charger_info->gun_lock_on_off_pin = charger_info_config->gun_lock_on_off_pin;
+	charger_info->charger_info_config = charger_info_config;
 
 	os_status = osMutexWait(charger_info_list_mutex, osWaitForever);
 
@@ -273,10 +270,6 @@ void set_charger_state(charger_info_t *charger_info, charger_state_t state)
 
 	if(charger_info->state == state) {
 		return;
-	}
-
-	if(charger_info->state == CHARGER_STATE_IDLE) {
-		charger_info->charger_bms_error = RETURN_SUCCESS;
 	}
 
 	if((handler != NULL) && (handler->prepare != NULL)) {
@@ -368,30 +361,3 @@ void charger_handle_response(charger_info_t *charger_info)
 		}
 	}
 }
-
-void charger_set_auxiliary_power_state(charger_info_t *charger_info, uint8_t on_off)
-{
-	charger_info->auxiliary_power_on_off_state = on_off;
-
-	udp_log_printf("charger_set_auxiliary_power_state:%s!\n", (on_off == 1) ? "on" : "off");
-
-	if(on_off == 0) {
-		HAL_GPIO_WritePin(charger_info->auxiliary_power_on_off_gpio, charger_info->auxiliary_power_on_off_pin, GPIO_PIN_RESET);
-	} else {
-		HAL_GPIO_WritePin(charger_info->auxiliary_power_on_off_gpio, charger_info->auxiliary_power_on_off_pin, GPIO_PIN_SET);
-	}
-}
-
-void charger_set_gun_lock_state(charger_info_t *charger_info, uint8_t on_off)
-{
-	charger_info->gun_lock_on_off_state = on_off;
-
-	udp_log_printf("charger_set_gun_lock_state:%s!\n", (on_off == 1) ? "on" : "off");
-
-	if(on_off == 0) {
-		HAL_GPIO_WritePin(charger_info->gun_lock_on_off_gpio, charger_info->gun_lock_on_off_pin, GPIO_PIN_RESET);
-	} else {
-		HAL_GPIO_WritePin(charger_info->gun_lock_on_off_gpio, charger_info->gun_lock_on_off_pin, GPIO_PIN_SET);
-	}
-}
-
