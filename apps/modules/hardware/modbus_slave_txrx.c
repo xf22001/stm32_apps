@@ -6,14 +6,14 @@
  *   文件名称：modbus_slave_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月20日 星期一 14时54分12秒
- *   修改日期：2020年04月23日 星期四 10时57分38秒
+ *   修改日期：2020年04月28日 星期二 11时05分38秒
  *   描    述：
  *
  *================================================================*/
 #include "modbus_slave_txrx.h"
 #include "modbus_spec.h"
 #include "os_utils.h"
-//#define UDP_LOG
+#define UDP_LOG
 #include "task_probe_tool.h"
 
 static LIST_HEAD(modbus_slave_info_list);
@@ -224,7 +224,7 @@ static int fn_0x03(modbus_slave_info_t *modbus_slave_info)//read some number
 	for(i = 0; i < number; i++) {
 		uint16_t value;
 		value = modbus_slave_info->modbus_slave_data_info->get(modbus_slave_info->modbus_slave_data_info->ctx, addr + i);
-		udp_log_printf("request read addr:%d, data:%d(%x)\n", addr + i, value, value);
+		//udp_log_printf("request read addr:%d, data:%d(%x)\n", addr + i, value, value);
 
 		set_modbus_data_item(data_item + i, value);
 	}
@@ -297,7 +297,7 @@ static int fn_0x06(modbus_slave_info_t *modbus_slave_info)//write one number
 	//wite one number
 	for(i = 0; i < 1; i++) {
 		uint16_t value = get_modbus_data_item(data_item + i);
-		udp_log_printf("request write addr:%d, data:%d(%x)\n", addr + i, value, value);
+		//udp_log_printf("request write addr:%d, data:%d(%x)\n", addr + i, value, value);
 		modbus_slave_info->modbus_slave_data_info->set(modbus_slave_info->modbus_slave_data_info->ctx,
 		        addr + i,
 		        value);
@@ -386,7 +386,7 @@ static int fn_0x10(modbus_slave_info_t *modbus_slave_info)//write more number
 	for(i = 0; i < number; i++) {
 		uint16_t value = get_modbus_data_item(data_item + i);
 
-		udp_log_printf("request multi-write addr:%d, data:%d(%x)\n", addr + i, value, value);
+		//udp_log_printf("request multi-write addr:%d, data:%d(%x)\n", addr + i, value, value);
 		modbus_slave_info->modbus_slave_data_info->set(modbus_slave_info->modbus_slave_data_info->ctx, addr + i, value);
 	}
 
@@ -438,6 +438,7 @@ static int modubs_decode_request(modbus_slave_info_t *modbus_slave_info)
 {
 	int ret = -1;
 	int i;
+	//uint32_t ticks = osKernelSysTick();
 
 	modbus_head_t *head = NULL;
 
@@ -465,6 +466,8 @@ static int modubs_decode_request(modbus_slave_info_t *modbus_slave_info)
 			break;
 		}
 	}
+
+	//udp_log_printf("modbus decode duration:%0d\n", osKernelSysTick() - ticks);
 
 	return ret;
 }
