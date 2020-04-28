@@ -1,12 +1,12 @@
 
 
 /*================================================================
- *   
- *   
+ *
+ *
  *   文件名称：charger_config.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月18日 星期六 12时33分30秒
- *   修改日期：2020年04月28日 星期二 08时34分30秒
+ *   修改日期：2020年04月28日 星期二 17时22分57秒
  *   描    述：
  *
  *================================================================*/
@@ -15,19 +15,7 @@
 #define UDP_LOG
 #include "task_probe_tool.h"
 #include "main.h"
-
-typedef enum {
-	CHARGER_OP_TIMEOUT_BATTERY_VOLTAGE_CHECK = (10 * 1000),
-	CHARGER_OP_TIMEOUT_PRECHARGE = (20 * 1000),
-	CHARGER_OP_TIMEOUT_INSULATION_CHECK_CHARGE = (500),
-	CHARGER_OP_TIMEOUT_INSULATION_CHECK_CHARGE_DELAY = (500),
-	CHARGER_OP_TIMEOUT_INSULATION_CHECK_START = (15 * 1000),
-	CHARGER_OP_TIMEOUT_INSULATION_CHECK_TEST = (15 * 1000),
-	CHARGER_OP_TIMEOUT_CRO_PRECHARGE_DELAY_1 = (2 * 1000),
-	CHARGER_OP_TIMEOUT_CRO_PRECHARGE_DELAY_2 = (1 * 1000),
-	CHARGER_OP_TIMEOUT_CSD_CEM_WAIT_FOR_NO_CURRENT = (100),
-	CHARGER_OP_TIMEOUT_CSD_CEM_DISABLE_OUTPUT = (500),
-} charger_op_timeout_t;
+#include "auxiliary_function_board.h"
 
 static void report_charger_status(charger_status_t charger_status)
 {
@@ -67,47 +55,37 @@ static void set_power_output_enable(uint8_t state)
 	udp_log_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
 }
 
-typedef enum {
-	DISCHARGE_STATE_0 = 0,
-	DISCHARGE_STATE_1,
-	DISCHARGE_STATE_2,
-} discharge_state_t;
-
-static uint8_t v1;
-static uint8_t v2;
 static int discharge(charger_op_ctx_t *charger_op_ctx)
 {
 	uint32_t ticks = osKernelSysTick();
 	int ret = 1;
 
 	switch(charger_op_ctx->state) {
-		case DISCHARGE_STATE_0: {
-			v1 = 1;
-
+		case 0: {
+			request_discharge();
 			charger_op_ctx->stamp = ticks;
-			charger_op_ctx->state = DISCHARGE_STATE_1;
+			charger_op_ctx->state = 1;
 		}
 		break;
 
-		case DISCHARGE_STATE_1: {
+		case 1: {
 			if(ticks - charger_op_ctx->stamp >= (15 * 1000)) {
-				v1 = 0;
 				ret = -1;
 			} else {
-				if(v1 == 0) {
-					v2 = 1;
+				if(response_discharge() == 0) {
+					request_a_f_b_status_data();
 					charger_op_ctx->stamp = ticks;
-					charger_op_ctx->state = DISCHARGE_STATE_2;
+					charger_op_ctx->state = 2;
 				}
 			}
 		}
 		break;
 
-		case DISCHARGE_STATE_2: {
+		case 2: {
 			if(ticks - charger_op_ctx->stamp >= (10 * 1000)) {
 				ret = -1;
 			} else {
-				if(v2 == 0) {
+				if(response_discharge_running_status() == 0) {
 					ret = 0;
 				}
 			}
@@ -123,7 +101,7 @@ static int discharge(charger_op_ctx_t *charger_op_ctx)
 	return ret;
 }
 
-static int precharge(uint16_t voltage, charger_op_ctx_t *charger_op_ctx)
+static int precharge(uint16_t voltage, charger_op_ctx_t *charger_op_ctx)//20 * 1000
 {
 	int ret = 1;
 	ret = 0;
@@ -133,7 +111,34 @@ static int precharge(uint16_t voltage, charger_op_ctx_t *charger_op_ctx)
 
 static int relay_endpoint_overvoltage_status(charger_op_ctx_t *charger_op_ctx)
 {
+	uint32_t ticks = osKernelSysTick();
 	int ret = 1;
+
+	switch(charger_op_ctx->state) {
+		case 0: {
+			request_a_f_b_status_data();
+			charger_op_ctx->stamp = ticks;
+			charger_op_ctx->state = 1;
+		}
+		break;
+
+		case 1: {
+			if(ticks - charger_op_ctx->stamp >= (10 * 1000)) {
+				ret = -1;
+			} else {
+				int voltage = response_battery_voltage();
+
+				if((voltage >= 0) && (voltage < 20)) {
+					ret = 0;
+				}
+			}
+		}
+		break;
+
+		default:
+			break;
+	}
+
 	ret = 0;
 	udp_log_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
 	return ret;
@@ -141,7 +146,52 @@ static int relay_endpoint_overvoltage_status(charger_op_ctx_t *charger_op_ctx)
 
 static int insulation_check(charger_op_ctx_t *charger_op_ctx)
 {
+	uint32_t ticks = osKernelSysTick();
 	int ret = 1;
+
+	switch(charger_op_ctx->state) {
+		case 0: {
+			request_insulation_check();
+			charger_op_ctx->stamp = ticks;
+			charger_op_ctx->state = 1;
+		}
+		break;
+
+		case 1: {
+			if(ticks - charger_op_ctx->stamp >= (15 * 1000)) {
+				ret = -1;
+			} else {
+				if(response_insulation_check() == 0) {
+					request_a_f_b_status_data();
+					charger_op_ctx->stamp = ticks;
+					charger_op_ctx->state = 2;
+				}
+			}
+		}
+		break;
+
+		case 2: {
+			if(ticks - charger_op_ctx->stamp >= (15 * 1000)) {
+				ret = -1;
+			} else {
+				//>1 warning
+				//>5 ok
+				int resistor = response_insulation_check_running_status();
+				if(resistor > 5) {
+					ret = 0;
+				}
+
+				if(resistor > 1) {//warning
+					ret = 0;
+				}
+			}
+		}
+		break;
+
+		default:
+			break;
+	}
+
 	ret = 0;
 	udp_log_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
 	return ret;
@@ -149,13 +199,40 @@ static int insulation_check(charger_op_ctx_t *charger_op_ctx)
 
 static int battery_voltage_status(charger_op_ctx_t *charger_op_ctx)
 {
+	uint32_t ticks = osKernelSysTick();
 	int ret = 1;
+
+	switch(charger_op_ctx->state) {
+		case 0: {
+			request_a_f_b_status_data();
+			charger_op_ctx->stamp = ticks;
+			charger_op_ctx->state = 1;
+		}
+		break;
+
+		case 1: {
+			if(ticks - charger_op_ctx->stamp >= (15 * 1000)) {
+				ret = -1;
+			} else {
+				int voltage = response_battery_voltage();
+
+				if((voltage >= 0) && (voltage < 20)) {
+					ret = 0;
+				}
+			}
+		}
+		break;
+
+		default:
+			break;
+	}
+
 	ret = 0;
 	udp_log_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
 	return ret;
 }
 
-static int wait_no_current(charger_op_ctx_t *charger_op_ctx)
+static int wait_no_current(charger_op_ctx_t *charger_op_ctx)//模块输出电流//100
 {
 	int ret = 1;
 	ret = 0;
@@ -167,29 +244,29 @@ extern CAN_HandleTypeDef hcan1;
 extern CAN_HandleTypeDef hcan2;
 
 charger_info_config_t charger_info_config_can1 = {
-		.hcan = &hcan1,
-		.report_charger_status = report_charger_status,
-		.set_auxiliary_power_state = set_auxiliary_power_state,
-		.set_gun_lock_state = set_gun_lock_state,
-		.set_power_output_enable = set_power_output_enable,
-		.discharge = discharge,
-		.precharge = precharge,
-		.relay_endpoint_overvoltage_status = relay_endpoint_overvoltage_status,
-		.insulation_check = insulation_check,
-		.battery_voltage_status = battery_voltage_status,
-		.wait_no_current = wait_no_current,
+	.hcan = &hcan1,
+	.report_charger_status = report_charger_status,
+	.set_auxiliary_power_state = set_auxiliary_power_state,
+	.set_gun_lock_state = set_gun_lock_state,
+	.set_power_output_enable = set_power_output_enable,
+	.discharge = discharge,
+	.precharge = precharge,
+	.relay_endpoint_overvoltage_status = relay_endpoint_overvoltage_status,
+	.insulation_check = insulation_check,
+	.battery_voltage_status = battery_voltage_status,
+	.wait_no_current = wait_no_current,
 };
 
 charger_info_config_t charger_info_config_can2 = {
-		.hcan = &hcan2,
-		.report_charger_status = report_charger_status,
-		.set_auxiliary_power_state = set_auxiliary_power_state,
-		.set_gun_lock_state = set_gun_lock_state,
-		.set_power_output_enable = set_power_output_enable,
-		.discharge = discharge,
-		.precharge = precharge,
-		.relay_endpoint_overvoltage_status = relay_endpoint_overvoltage_status,
-		.insulation_check = insulation_check,
-		.battery_voltage_status = battery_voltage_status,
-		.wait_no_current = wait_no_current,
+	.hcan = &hcan2,
+	.report_charger_status = report_charger_status,
+	.set_auxiliary_power_state = set_auxiliary_power_state,
+	.set_gun_lock_state = set_gun_lock_state,
+	.set_power_output_enable = set_power_output_enable,
+	.discharge = discharge,
+	.precharge = precharge,
+	.relay_endpoint_overvoltage_status = relay_endpoint_overvoltage_status,
+	.insulation_check = insulation_check,
+	.battery_voltage_status = battery_voltage_status,
+	.wait_no_current = wait_no_current,
 };

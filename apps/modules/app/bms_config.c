@@ -6,7 +6,7 @@
  *   文件名称：bms_config.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月18日 星期六 12时29分29秒
- *   修改日期：2020年04月28日 星期二 08时53分06秒
+ *   修改日期：2020年04月28日 星期二 17时27分25秒
  *   描    述：
  *
  *================================================================*/
@@ -30,8 +30,8 @@ static uint8_t get_bms_power_enable_state(void)
 	GPIO_PinState state = HAL_GPIO_ReadPin(in_7_GPIO_Port, in_7_Pin);
 
 	if(state == GPIO_PIN_RESET) {
-		//return 0;
-		return 1;
+		return 0;
+		//return 1;
 	} else {
 		return 1;
 	}
