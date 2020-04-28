@@ -6,12 +6,11 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年04月27日 星期一 14时26分43秒
+ *   修改日期：2020年04月28日 星期二 09时04分42秒
  *   描    述：
  *
  *================================================================*/
 #include "bms.h"
-#include "bms_config.h"
 #include "bms_handler.h"
 
 #include "os_utils.h"
@@ -42,6 +41,41 @@ static LIST_HEAD(bms_info_list);
 static osMutexId bms_info_list_mutex = NULL;
 
 static bitmap_t *eeprom_modbus_data_bitmap = NULL;
+
+static bms_info_config_t *bms_info_config_sz[] = {
+	&bms_info_config_can1,
+	&bms_info_config_can2,
+};
+
+static bms_info_config_t *get_bms_info_config(can_info_t *can_info)
+{
+	int i;
+	bms_info_config_t *bms_info_config = NULL;
+	bms_info_config_t *bms_info_config_item = NULL;
+
+	for(i = 0; i < sizeof(bms_info_config_sz) / sizeof(bms_info_config_t *); i++) {
+		bms_info_config_item = bms_info_config_sz[i];
+
+		if(can_info->hcan == bms_info_config_item->hcan) {
+			bms_info_config = bms_info_config_item;
+			break;
+		}
+	}
+
+	if(bms_info_config->get_gun_connect_state == NULL) {
+		app_panic();
+	}
+
+	if(bms_info_config->get_bms_power_enable_state == NULL) {
+		app_panic();
+	}
+
+	if(bms_info_config->set_gun_on_off_state == NULL) {
+		app_panic();
+	}
+
+	return bms_info_config;
+}
 
 static void bms_data_settings_default_init(bms_data_settings_t *settings)
 {
@@ -237,11 +271,7 @@ void set_gun_on_off(bms_info_t *bms_info, uint8_t on_off)
 {
 	bms_info->gun_on_off_state = on_off;
 
-	if(on_off == 0) {
-		HAL_GPIO_WritePin(bms_info->gun_on_off_gpio, bms_info->gun_on_off_pin, GPIO_PIN_RESET);
-	} else {
-		HAL_GPIO_WritePin(bms_info->gun_on_off_gpio, bms_info->gun_on_off_pin, GPIO_PIN_SET);
-	}
+	bms_info->bms_info_config->set_gun_on_off_state(on_off);
 }
 
 bms_info_t *get_or_alloc_bms_info(can_info_t *can_info)
@@ -307,12 +337,7 @@ bms_info_t *get_or_alloc_bms_info(can_info_t *can_info)
 	bms_info->can_info = can_info;
 	bms_info->state = BMS_STATE_IDLE;
 	bms_info->handle_mutex = osMutexCreate(osMutex(handle_mutex));
-	bms_info->gun_connect_gpio = bms_info_config->gun_connect_gpio;
-	bms_info->gun_connect_pin = bms_info_config->gun_connect_pin;
-	bms_info->bms_poweron_enable_gpio = bms_info_config->bms_poweron_enable_gpio;
-	bms_info->bms_poweron_enable_pin = bms_info_config->bms_poweron_enable_pin;
-	bms_info->gun_on_off_gpio = bms_info_config->gun_on_off_gpio;
-	bms_info->gun_on_off_pin = bms_info_config->gun_on_off_pin;
+	bms_info->bms_info_config = bms_info_config;
 
 	bms_info->gun_on_off_state = 0;
 	bms_info->bms_gun_connect = 0;
@@ -1719,26 +1744,12 @@ void bms_handle_response(bms_info_t *bms_info)
 
 uint8_t is_gun_connected(bms_info_t *bms_info)
 {
-	GPIO_PinState state = HAL_GPIO_ReadPin(bms_info->gun_connect_gpio, bms_info->gun_connect_pin);
-
-	if(state == GPIO_PIN_RESET) {
-		//return 0;
-		return 1;
-	} else {
-		return 1;
-	}
+	return bms_info->bms_info_config->get_gun_connect_state();
 }
 
 uint8_t is_bms_poweron_enable(bms_info_t *bms_info)
 {
-	GPIO_PinState state = HAL_GPIO_ReadPin(bms_info->bms_poweron_enable_gpio, bms_info->bms_poweron_enable_pin);
-
-	if(state == GPIO_PIN_RESET) {
-		//return 0;
-		return 1;
-	} else {
-		return 1;
-	}
+	return bms_info->bms_info_config->get_bms_power_enable_state();
 }
 
 static void update_ui_data(bms_info_t *bms_info)

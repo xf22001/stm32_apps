@@ -6,7 +6,7 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年04月27日 星期一 14时00分45秒
+ *   修改日期：2020年04月28日 星期二 08时34分25秒
  *   描    述：
  *
  *================================================================*/
@@ -21,6 +21,71 @@
 
 static LIST_HEAD(charger_info_list);
 static osMutexId charger_info_list_mutex = NULL;
+
+static charger_info_config_t *charger_info_config_sz[] = {
+	&charger_info_config_can1,
+	&charger_info_config_can2,
+};
+
+static charger_info_config_t *get_charger_info_config(can_info_t *can_info)
+{
+	int i;
+	charger_info_config_t *charger_info_config = NULL;
+	charger_info_config_t *charger_info_config_item = NULL;
+
+	for(i = 0; i < sizeof(charger_info_config_sz) / sizeof(charger_info_config_t *); i++) {
+		charger_info_config_item = charger_info_config_sz[i];
+
+		if(can_info->hcan == charger_info_config_item->hcan) {
+			charger_info_config = charger_info_config_item;
+			break;
+		}
+	}
+
+	if(charger_info_config != NULL) {
+		if(charger_info_config->report_charger_status == NULL) {
+			app_panic();
+		}
+
+		if(charger_info_config->set_auxiliary_power_state == NULL) {
+			app_panic();
+		}
+
+		if(charger_info_config->set_gun_lock_state == NULL) {
+			app_panic();
+		}
+
+		if(charger_info_config->set_power_output_enable == NULL) {
+			app_panic();
+		}
+
+		if(charger_info_config->discharge == NULL) {
+			app_panic();
+		}
+
+		if(charger_info_config->precharge == NULL) {
+			app_panic();
+		}
+
+		if(charger_info_config->relay_endpoint_overvoltage_status == NULL) {
+			app_panic();
+		}
+
+		if(charger_info_config->insulation_check == NULL) {
+			app_panic();
+		}
+
+		if(charger_info_config->battery_voltage_status == NULL) {
+			app_panic();
+		}
+
+		if(charger_info_config->wait_no_current == NULL) {
+			app_panic();
+		}
+	}
+
+	return charger_info_config;
+}
 
 static void bms_data_settings_init(bms_data_settings_t *settings)
 {

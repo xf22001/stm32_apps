@@ -6,7 +6,7 @@
  *   文件名称：bms.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分57秒
- *   修改日期：2020年04月20日 星期一 15时35分18秒
+ *   修改日期：2020年04月28日 星期二 08时55分17秒
  *   描    述：
  *
  *================================================================*/
@@ -24,6 +24,7 @@ extern "C"
 #include "modbus_slave_txrx.h"
 #include "bms_spec.h"
 #include "eeprom.h"
+#include "bms_config.h"
 
 #ifdef __cplusplus
 }
@@ -204,12 +205,7 @@ typedef struct {
 	bms_state_t state;
 	osMutexId handle_mutex;
 
-	GPIO_TypeDef *gun_connect_gpio;
-	uint16_t gun_connect_pin;
-	GPIO_TypeDef *bms_poweron_enable_gpio;
-	uint16_t bms_poweron_enable_pin;
-	GPIO_TypeDef *gun_on_off_gpio;
-	uint16_t gun_on_off_pin;
+	bms_info_config_t *bms_info_config;
 
 	multi_packets_info_t multi_packets_info;
 

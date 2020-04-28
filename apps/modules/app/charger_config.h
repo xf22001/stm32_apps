@@ -6,7 +6,7 @@
  *   文件名称：charger_config.h
  *   创 建 者：肖飞
  *   创建日期：2020年04月18日 星期六 12时33分39秒
- *   修改日期：2020年04月27日 星期一 16时08分09秒
+ *   修改日期：2020年04月28日 星期二 08时35分15秒
  *   描    述：
  *
  *================================================================*/
@@ -104,5 +104,6 @@ typedef struct {
 	wait_no_current_t wait_no_current;
 } charger_info_config_t;
 
-charger_info_config_t *get_charger_info_config(can_info_t *can_info);
+extern charger_info_config_t charger_info_config_can1;
+extern charger_info_config_t charger_info_config_can2;
 #endif //_CHARGER_CONFIG_H
