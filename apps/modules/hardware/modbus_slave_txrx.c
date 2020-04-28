@@ -6,14 +6,14 @@
  *   文件名称：modbus_slave_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月20日 星期一 14时54分12秒
- *   修改日期：2020年04月28日 星期二 11时05分38秒
+ *   修改日期：2020年04月28日 星期二 11时26分31秒
  *   描    述：
  *
  *================================================================*/
 #include "modbus_slave_txrx.h"
 #include "modbus_spec.h"
 #include "os_utils.h"
-#define UDP_LOG
+//#define UDP_LOG
 #include "task_probe_tool.h"
 
 static LIST_HEAD(modbus_slave_info_list);
