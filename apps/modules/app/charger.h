@@ -6,7 +6,7 @@
  *   文件名称：charger.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分46秒
- *   修改日期：2020年04月27日 星期一 16时05分25秒
+ *   修改日期：2020年04月29日 星期三 13时51分36秒
  *   描    述：
  *
  *================================================================*/
@@ -109,6 +109,10 @@ typedef struct {
 	uint8_t bcs_received;
 
 	uint8_t brm_received;
+
+	uint8_t auxiliary_power_state;
+	uint8_t gun_lock_state;
+	uint8_t power_output_state;
 } charger_info_t;
 
 typedef int (*charger_handle_state_t)(charger_info_t *charger_info);
@@ -120,6 +124,24 @@ typedef struct {
 	charger_handle_state_t handle_response;
 } charger_state_handler_t;
 
+typedef enum {
+	CHARGER_ERROR_STATUS_NONE = 0,
+	CHARGER_ERROR_STATUS_CHM_OUTPUT_VOLTAGE_UNMATCH,
+	CHARGER_ERROR_STATUS_CHM_OP_STATE_DISCHARGE_TIMEOUT,
+	CHARGER_ERROR_STATUS_CHM_OP_STATE_RELAY_ENDPOINT_OVERVOLTAGE_CHECK_TIMEOUT,
+	CHARGER_ERROR_STATUS_CHM_OP_STATE_INSULATION_CHECK_PRECHARGE_TIMEOUT,
+	CHARGER_ERROR_STATUS_CHM_OP_STATE_INSULATION_CHECK_TIMEOUT,
+	CHARGER_ERROR_STATUS_CHM_OP_STATE_INSULATION_CHECK_STOP_PRECHARGE_TIMEOUT,
+	CHARGER_ERROR_STATUS_CHM_OP_STATE_INSULATION_CHECK_DISCHARGE_TIMEOUT,
+	CHARGER_ERROR_STATUS_CRO_OP_STATE_GET_BATTERY_STATUS_TIMEOUT,
+	CHARGER_ERROR_STATUS_BRM_TIMEOUT,
+	CHARGER_ERROR_STATUS_BCP_TIMEOUT,
+	CHARGER_ERROR_STATUS_BRO_TIMEOUT,
+	CHARGER_ERROR_STATUS_CRO_OUTPUT_VOLTAGE_UNMATCH,
+	CHARGER_ERROR_STATUS_CRO_OP_STATE_PRECHARGE_TIMEOUT,
+	CHARGER_ERROR_STATUS_CSD_CEM_OP_STATE_DISCHARGE_TIMEOUT,
+} charger_error_status_t;
+
 void free_charger_info(charger_info_t *charger_info);
 charger_info_t *get_or_alloc_charger_info(can_info_t *can_info);
 
@@ -128,7 +150,14 @@ void set_charger_state(charger_info_t *charger_info, charger_state_t state);
 void set_charger_state_locked(charger_info_t *charger_info, charger_state_t state);
 void charger_handle_request(charger_info_t *charger_info);
 void charger_handle_response(charger_info_t *charger_info);
-
-void charger_set_auxiliary_power_state(charger_info_t *charger_info, uint8_t on_off);
-void charger_set_gun_lock_state(charger_info_t *charger_info, uint8_t on_off);
+void report_charger_status(charger_info_t *charger_info, charger_error_status_t charger_error_status);
+void set_auxiliary_power_state(charger_info_t *charger_info, uint8_t state);
+void set_gun_lock_state(charger_info_t *charger_info, uint8_t state);
+void set_power_output_enable(charger_info_t *charger_info, uint8_t state);
+int discharge(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx);
+int precharge(charger_info_t *charger_info, uint16_t voltage, charger_op_ctx_t *charger_op_ctx);
+int relay_endpoint_overvoltage_status(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx);
+int insulation_check(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx);
+int battery_voltage_status(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx);
+int wait_no_current(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx);
 #endif //_CHARGER_H

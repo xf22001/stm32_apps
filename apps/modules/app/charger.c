@@ -6,7 +6,7 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年04月28日 星期二 08时34分25秒
+ *   修改日期：2020年04月29日 星期三 13时53分02秒
  *   描    述：
  *
  *================================================================*/
@@ -43,9 +43,20 @@ static charger_info_config_t *get_charger_info_config(can_info_t *can_info)
 	}
 
 	if(charger_info_config != NULL) {
-		if(charger_info_config->report_charger_status == NULL) {
+		uart_info_t *uart_info = NULL;
+		a_f_b_info_t *a_f_b_info = NULL;
+
+		uart_info = get_or_alloc_uart_info(charger_info_config->huart);
+		if(uart_info == NULL) {
 			app_panic();
 		}
+
+		a_f_b_info = get_or_alloc_a_f_b_info(uart_info);
+		if(a_f_b_info == NULL) {
+			app_panic();
+		}
+
+		charger_info_config->a_f_b_info = a_f_b_info;
 
 		if(charger_info_config->set_auxiliary_power_state == NULL) {
 			app_panic();
@@ -63,10 +74,6 @@ static charger_info_config_t *get_charger_info_config(can_info_t *can_info)
 			app_panic();
 		}
 
-		if(charger_info_config->precharge == NULL) {
-			app_panic();
-		}
-
 		if(charger_info_config->relay_endpoint_overvoltage_status == NULL) {
 			app_panic();
 		}
@@ -76,10 +83,6 @@ static charger_info_config_t *get_charger_info_config(can_info_t *can_info)
 		}
 
 		if(charger_info_config->battery_voltage_status == NULL) {
-			app_panic();
-		}
-
-		if(charger_info_config->wait_no_current == NULL) {
 			app_panic();
 		}
 	}
@@ -289,6 +292,8 @@ charger_info_t *get_or_alloc_charger_info(can_info_t *can_info)
 		return charger_info;
 	}
 
+	memset(charger_info, 0, sizeof(charger_info_t));
+
 	charger_info->settings = bms_data_alloc_settings();
 
 	if(charger_info->settings == NULL) {
@@ -425,4 +430,61 @@ void charger_handle_response(charger_info_t *charger_info)
 		if(os_status != osOK) {
 		}
 	}
+}
+
+void report_charger_status(charger_info_t *charger_info, charger_error_status_t charger_error_status)
+{
+	udp_log_printf("%s:%s:%d charger_status:%d\n", __FILE__, __func__, __LINE__, charger_error_status);
+}
+
+void set_auxiliary_power_state(charger_info_t *charger_info, uint8_t state)
+{
+	charger_info->charger_info_config->set_auxiliary_power_state(state);
+}
+
+void set_gun_lock_state(charger_info_t *charger_info, uint8_t state)
+{
+	charger_info->charger_info_config->set_gun_lock_state(state);
+}
+
+void set_power_output_enable(charger_info_t *charger_info, uint8_t state)
+{
+	charger_info->charger_info_config->set_power_output_enable(state);
+}
+
+int discharge(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)
+{
+	return charger_info->charger_info_config->discharge(charger_info->charger_info_config->a_f_b_info, charger_op_ctx);
+}
+
+//20 * 1000
+int precharge(charger_info_t *charger_info, uint16_t voltage, charger_op_ctx_t *charger_op_ctx)
+{
+	int ret = 1;
+	ret = 0;
+	udp_log_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
+	return ret;
+}
+
+int relay_endpoint_overvoltage_status(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)
+{
+	return charger_info->charger_info_config->relay_endpoint_overvoltage_status(charger_info->charger_info_config->a_f_b_info, charger_op_ctx);
+}
+
+int insulation_check(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)
+{
+	return charger_info->charger_info_config->insulation_check(charger_info->charger_info_config->a_f_b_info, charger_op_ctx);
+}
+
+int battery_voltage_status(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)
+{
+	return charger_info->charger_info_config->battery_voltage_status(charger_info->charger_info_config->a_f_b_info, charger_op_ctx);
+}
+
+int wait_no_current(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)//模块输出电流//100
+{
+	int ret = 1;
+	ret = 0;
+	udp_log_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
+	return ret;
 }

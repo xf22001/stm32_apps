@@ -6,13 +6,11 @@
  *   文件名称：auxiliary_function_board.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月28日 星期二 11时34分17秒
- *   修改日期：2020年04月28日 星期二 17时10分36秒
+ *   修改日期：2020年04月29日 星期三 14时14分21秒
  *   描    述：
  *
  *================================================================*/
 #include "auxiliary_function_board.h"
-
-#include "usart_txrx.h"
 
 #include "os_utils.h"
 #define UDP_LOG
@@ -20,42 +18,118 @@
 
 #include <string.h>
 
-extern UART_HandleTypeDef huart1;
+static LIST_HEAD(a_f_b_info_list);
+static osMutexId a_f_b_info_list_mutex = NULL;
 
-static uint8_t tx_buffer[128];
-static uint8_t tx_size = 0;
-static uint8_t rx_buffer[128];
-static uint8_t rx_size = 0;
+static a_f_b_info_t *get_a_f_b_info(uart_info_t *uart_info)
+{
+	a_f_b_info_t *a_f_b_info = NULL;
+	a_f_b_info_t *a_f_b_info_item = NULL;
+	osStatus os_status;
 
-typedef int (*request_callback_t)(void *ctx);
-typedef int (*response_callback_t)(void *ctx);
+	if(a_f_b_info_list_mutex == NULL) {
+		return a_f_b_info;
+	}
 
-typedef enum {
-	A_F_B_STATE_IDLE = 0,
-	A_F_B_STATE_REQUEST,
-	A_F_B_STATE_ERROR,
-} a_f_b_state_t;
+	os_status = osMutexWait(a_f_b_info_list_mutex, osWaitForever);
 
-typedef struct {
-	a_f_b_state_t state;
-	void *ctx;
-	uint8_t request_code;
-	request_callback_t request_callback;
-	uint8_t response_code;
-	response_callback_t response_callback;
-} a_f_b_command_item_t;
+	if(os_status != osOK) {
+	}
 
-typedef struct {
-	uint8_t b0;//0xa5
-	uint8_t b1;//0x5a
-} a_f_b_magic_t;
+	list_for_each_entry(a_f_b_info_item, &a_f_b_info_list, a_f_b_info_t, list) {
+		if(a_f_b_info_item->uart_info == uart_info) {
+			a_f_b_info = a_f_b_info_item;
+			break;
+		}
+	}
 
-typedef struct {
-	a_f_b_magic_t magic;
-	uint8_t device_id;
-	uint8_t cmd;
-	uint8_t len;
-} a_f_b_head_t;
+	os_status = osMutexRelease(a_f_b_info_list_mutex);
+
+	if(os_status != osOK) {
+	}
+
+	return a_f_b_info;
+}
+
+void free_a_f_b_info(a_f_b_info_t *a_f_b_info)
+{
+	osStatus os_status;
+
+	if(a_f_b_info == NULL) {
+		return;
+	}
+
+	if(a_f_b_info_list_mutex == NULL) {
+		return;
+	}
+
+	os_status = osMutexWait(a_f_b_info_list_mutex, osWaitForever);
+
+	if(os_status != osOK) {
+	}
+
+	list_del(&a_f_b_info->list);
+
+	os_status = osMutexRelease(a_f_b_info_list_mutex);
+
+	if(os_status != osOK) {
+	}
+
+	os_free(a_f_b_info);
+}
+
+a_f_b_info_t *get_or_alloc_a_f_b_info(uart_info_t *uart_info)
+{
+	a_f_b_info_t *a_f_b_info = NULL;
+	osStatus os_status;
+	int i;
+
+	a_f_b_info = get_a_f_b_info(uart_info);
+
+	if(a_f_b_info != NULL) {
+		return a_f_b_info;
+	}
+
+	if(a_f_b_info_list_mutex == NULL) {
+		osMutexDef(a_f_b_info_list_mutex);
+		a_f_b_info_list_mutex = osMutexCreate(osMutex(a_f_b_info_list_mutex));
+
+		if(a_f_b_info_list_mutex == NULL) {
+			return a_f_b_info;
+		}
+	}
+
+	a_f_b_info = (a_f_b_info_t *)os_alloc(sizeof(a_f_b_info_t));
+
+	if(a_f_b_info == NULL) {
+		return a_f_b_info;
+	}
+
+	a_f_b_info->uart_info = uart_info;
+
+	for(i = 0; i < A_F_B_CMD_TOTAL; i++) {
+		a_f_b_info->cmd_ctx[i].state = A_F_B_STATE_IDLE;
+	}
+
+	memset(a_f_b_info->connect_state, 0, A_F_B_CONNECT_STATE_SIZE);
+
+	a_f_b_info->connect_state_index = 0;
+
+	os_status = osMutexWait(a_f_b_info_list_mutex, osWaitForever);
+
+	if(os_status != osOK) {
+	}
+
+	list_add_tail(&a_f_b_info->list, &a_f_b_info_list);
+
+	os_status = osMutexRelease(a_f_b_info_list_mutex);
+
+	if(os_status != osOK) {
+	}
+
+	return a_f_b_info;
+}
+
 
 static uint8_t a_f_b_crc(uint8_t *data, uint8_t len)
 {
@@ -69,56 +143,26 @@ static uint8_t a_f_b_crc(uint8_t *data, uint8_t len)
 	return crc;
 }
 
-typedef struct {
-	uint8_t start_discharge : 1;
-	uint8_t start_insulation_check : 1;
-	uint8_t start_adhesion : 1;
-} a_f_b_request_15_data_t;
-
-typedef struct {
-	a_f_b_head_t head;
-	a_f_b_request_15_data_t data;
-	uint8_t crc;
-} a_f_b_request_15_t;
-
-typedef struct {
-	uint8_t discharge_valid : 1;
-	uint8_t insulation_check_valid : 1;
-	uint8_t adhesion_valid : 1;
-} a_f_b_reponse_95_data_t;
-
-typedef struct {
-	a_f_b_head_t head;
-	a_f_b_reponse_95_data_t data;
-	uint8_t crc;
-} a_f_b_response_95_t;
-
-typedef struct {
-	a_f_b_request_15_data_t request_data;
-	a_f_b_reponse_95_data_t response_data;
-} a_f_b_0x15_0x95_ctx_t;
-
-static a_f_b_0x15_0x95_ctx_t a_f_b_0x15_0x95_ctx;
-static int request_0x15(void *ctx)
+static int request_0x15(a_f_b_info_t *a_f_b_info)
 {
 	int ret = 0;
-	a_f_b_0x15_0x95_ctx_t *a_f_b_0x15_0x95_ctx = (a_f_b_0x15_0x95_ctx_t *)ctx;
-	a_f_b_request_15_t *a_f_b_request_15 = (a_f_b_request_15_t *)tx_buffer;
+	a_f_b_0x15_0x95_ctx_t *a_f_b_0x15_0x95_ctx = (a_f_b_0x15_0x95_ctx_t *)&a_f_b_info->a_f_b_0x15_0x95_ctx;
+	a_f_b_request_15_t *a_f_b_request_15 = (a_f_b_request_15_t *)a_f_b_info->tx_buffer;
 
 	a_f_b_request_15->head.len = sizeof(a_f_b_request_15_data_t);
 	a_f_b_request_15->data = a_f_b_0x15_0x95_ctx->request_data;
 	a_f_b_request_15->crc = a_f_b_crc((uint8_t *)a_f_b_request_15, sizeof(a_f_b_request_15_t) - 1);
-	tx_size = sizeof(a_f_b_request_15_t);
-	rx_size = sizeof(a_f_b_response_95_t);
+	a_f_b_info->tx_size = sizeof(a_f_b_request_15_t);
+	a_f_b_info->rx_size = sizeof(a_f_b_response_95_t);
 
 	return ret;
 }
 
-static int response_0x95(void *ctx)
+static int response_0x95(a_f_b_info_t *a_f_b_info)
 {
 	int ret = -1;
-	a_f_b_0x15_0x95_ctx_t *a_f_b_0x15_0x95_ctx = (a_f_b_0x15_0x95_ctx_t *)ctx;
-	a_f_b_response_95_t *a_f_b_reponse_95 = (a_f_b_response_95_t *)rx_buffer;
+	a_f_b_0x15_0x95_ctx_t *a_f_b_0x15_0x95_ctx = (a_f_b_0x15_0x95_ctx_t *)&a_f_b_info->a_f_b_0x15_0x95_ctx;
+	a_f_b_response_95_t *a_f_b_reponse_95 = (a_f_b_response_95_t *)a_f_b_info->rx_buffer;
 
 	if(a_f_b_reponse_95->crc != a_f_b_crc((uint8_t *)a_f_b_reponse_95, sizeof(a_f_b_response_95_t) - 1)) {
 		return ret;
@@ -131,39 +175,38 @@ static int response_0x95(void *ctx)
 }
 
 static a_f_b_command_item_t a_f_b_command_item_0x15_0x95 = {
-	.state = A_F_B_STATE_IDLE,
-	.ctx = &a_f_b_0x15_0x95_ctx,
+	.cmd = A_F_B_CMD_0X15_0X95,
 	.request_code = 0x15,
 	.request_callback = request_0x15,
 	.response_code = 0x95,
 	.response_callback = response_0x95,
 };
 
-int request_discharge()
+int request_discharge(a_f_b_info_t *a_f_b_info)
 {
 	int ret = 0;
 
-	if(a_f_b_command_item_0x15_0x95.state == A_F_B_STATE_REQUEST) {
+	if(a_f_b_info->cmd_ctx[A_F_B_CMD_0X15_0X95].state == A_F_B_STATE_REQUEST) {
 		return ret;
 	}
 
-	memset(&a_f_b_0x15_0x95_ctx.request_data, 0, sizeof(a_f_b_0x15_0x95_ctx.request_data));
-	a_f_b_0x15_0x95_ctx.request_data.start_discharge = 1;
-	a_f_b_command_item_0x15_0x95.state = A_F_B_STATE_REQUEST;
+	memset(&a_f_b_info->a_f_b_0x15_0x95_ctx.request_data, 0, sizeof(a_f_b_info->a_f_b_0x15_0x95_ctx.request_data));
+	a_f_b_info->a_f_b_0x15_0x95_ctx.request_data.start_discharge = 1;
+	a_f_b_info->cmd_ctx[A_F_B_CMD_0X15_0X95].state = A_F_B_STATE_REQUEST;
 	ret = 0;
 
 	return ret;
 }
 
-int response_discharge(void)
+int response_discharge(a_f_b_info_t *a_f_b_info)
 {
 	int ret = -1;
 
-	if(a_f_b_command_item_0x15_0x95.state != A_F_B_STATE_IDLE) {//busy
+	if(a_f_b_info->cmd_ctx[A_F_B_CMD_0X15_0X95].state != A_F_B_STATE_IDLE) {//busy
 		return ret;
 	}
 
-	if(a_f_b_0x15_0x95_ctx.response_data.discharge_valid == 0) {
+	if(a_f_b_info->a_f_b_0x15_0x95_ctx.response_data.discharge_valid == 0) {
 		return ret;
 	}
 
@@ -172,31 +215,31 @@ int response_discharge(void)
 	return ret;
 }
 
-int request_insulation_check()
+int request_insulation_check(a_f_b_info_t *a_f_b_info)
 {
 	int ret = 0;
 
-	if(a_f_b_command_item_0x15_0x95.state == A_F_B_STATE_REQUEST) {
+	if(a_f_b_info->cmd_ctx[A_F_B_CMD_0X15_0X95].state == A_F_B_STATE_REQUEST) {
 		return ret;
 	}
 
-	memset(&a_f_b_0x15_0x95_ctx.request_data, 0, sizeof(a_f_b_0x15_0x95_ctx.request_data));
-	a_f_b_0x15_0x95_ctx.request_data.start_insulation_check = 1;
-	a_f_b_command_item_0x15_0x95.state = A_F_B_STATE_REQUEST;
+	memset(&a_f_b_info->a_f_b_0x15_0x95_ctx.request_data, 0, sizeof(a_f_b_info->a_f_b_0x15_0x95_ctx.request_data));
+	a_f_b_info->a_f_b_0x15_0x95_ctx.request_data.start_insulation_check = 1;
+	a_f_b_info->cmd_ctx[A_F_B_CMD_0X15_0X95].state = A_F_B_STATE_REQUEST;
 	ret = 0;
 
 	return ret;
 }
 
-int response_insulation_check(void)
+int response_insulation_check(a_f_b_info_t *a_f_b_info)
 {
 	int ret = -1;
 
-	if(a_f_b_command_item_0x15_0x95.state != A_F_B_STATE_IDLE) {//busy
+	if(a_f_b_info->cmd_ctx[A_F_B_CMD_0X15_0X95].state != A_F_B_STATE_IDLE) {//busy
 		return ret;
 	}
 
-	if(a_f_b_0x15_0x95_ctx.response_data.insulation_check_valid == 0) {
+	if(a_f_b_info->a_f_b_0x15_0x95_ctx.response_data.insulation_check_valid == 0) {
 		return ret;
 	}
 
@@ -205,77 +248,25 @@ int response_insulation_check(void)
 	return ret;
 }
 
-typedef struct {
-	uint8_t data;
-} a_f_b_request_11_data_t;
-
-typedef struct {
-	a_f_b_head_t head;
-	a_f_b_request_11_data_t data;
-	uint8_t crc;
-} a_f_b_request_11_t;
-
-typedef struct {
-	uint8_t b0;
-	uint8_t b1;
-} a_f_b_reponse_91_version_t;
-
-typedef struct {
-	uint8_t discharge_running : 1;
-	uint8_t insulation_check_running : 1;
-	uint8_t adhesion_check_running : 1;
-	uint8_t unused : 2;
-	uint8_t discharge_resistor_over_temperature : 1;
-	uint8_t adhesion_n : 1;
-	uint8_t adhesion_p : 1;
-} a_f_b_reponse_91_running_state_t;
-
-#pragma pack(push, 1)
-typedef struct {
-	a_f_b_reponse_91_version_t version;
-	a_f_b_reponse_91_running_state_t running_state;
-	uint8_t charger_output_voltage;//4.44v每位
-	uint8_t battery_voltage;//4.44v每位
-	uint16_t charger_output_voltage_1;//1v每位
-	uint8_t insulation_resistor_value;//0.1M欧每位
-	uint8_t dc_p_temperature;//-20-220 +20偏移
-	uint8_t dc_n_temperature;//-20-220 +20偏移
-	uint8_t system_error;//
-	uint8_t addr_485;//
-} a_f_b_reponse_91_data_t;
-#pragma pack(pop)
-
-typedef struct {
-	a_f_b_head_t head;
-	a_f_b_reponse_91_data_t data;
-	uint8_t crc;
-} a_f_b_response_91_t;
-
-typedef struct {
-	a_f_b_reponse_91_data_t response_data;
-} a_f_b_0x11_0x91_ctx_t;
-
-static a_f_b_0x11_0x91_ctx_t a_f_b_0x11_0x91_ctx;
-
-static int request_0x11(void *ctx)
+static int request_0x11(a_f_b_info_t *a_f_b_info)
 {
 	int ret = 0;
-	//a_f_b_0x11_0x91_ctx_t *a_f_b_0x11_0x91_ctx = (a_f_b_0x11_0x91_ctx_t *)ctx;
-	a_f_b_request_11_t *a_f_b_request_11 = (a_f_b_request_11_t *)tx_buffer;
+	//a_f_b_0x11_0x91_ctx_t *a_f_b_0x11_0x91_ctx = (a_f_b_0x11_0x91_ctx_t *)&a_f_b_info->a_f_b_0x11_0x91_ctx;
+	a_f_b_request_11_t *a_f_b_request_11 = (a_f_b_request_11_t *)a_f_b_info->tx_buffer;
 
 	a_f_b_request_11->data.data = 0x00;
 	a_f_b_request_11->crc = a_f_b_crc((uint8_t *)a_f_b_request_11, sizeof(a_f_b_request_11_t) - 1);
-	tx_size = sizeof(a_f_b_request_11_t);
-	rx_size = sizeof(a_f_b_response_91_t);
+	a_f_b_info->tx_size = sizeof(a_f_b_request_11_t);
+	a_f_b_info->rx_size = sizeof(a_f_b_response_91_t);
 
 	return ret;
 }
 
-static int response_0x91(void *ctx)
+static int response_0x91(a_f_b_info_t *a_f_b_info)
 {
 	int ret = -1;
-	a_f_b_0x11_0x91_ctx_t *a_f_b_0x11_0x91_ctx = (a_f_b_0x11_0x91_ctx_t *)ctx;
-	a_f_b_response_91_t *a_f_b_response_91 = (a_f_b_response_91_t *)rx_buffer;
+	a_f_b_0x11_0x91_ctx_t *a_f_b_0x11_0x91_ctx = (a_f_b_0x11_0x91_ctx_t *)&a_f_b_info->a_f_b_0x11_0x91_ctx;
+	a_f_b_response_91_t *a_f_b_response_91 = (a_f_b_response_91_t *)a_f_b_info->rx_buffer;
 
 	if(a_f_b_response_91->crc != a_f_b_crc((uint8_t *)a_f_b_response_91, sizeof(a_f_b_response_91_t) - 1)) {
 		return ret;
@@ -288,37 +279,36 @@ static int response_0x91(void *ctx)
 }
 
 static a_f_b_command_item_t a_f_b_command_item_0x11_0x91 = {
-	.state = A_F_B_STATE_IDLE,
-	.ctx = &a_f_b_0x11_0x91_ctx,
+	.cmd = A_F_B_CMD_0X11_0X91,
 	.request_code = 0x11,
 	.request_callback = request_0x11,
 	.response_code = 0x91,
 	.response_callback = response_0x91,
 };
 
-int request_a_f_b_status_data(void)
+int request_a_f_b_status_data(a_f_b_info_t *a_f_b_info)
 {
 	int ret = 0;
 
-	if(a_f_b_command_item_0x11_0x91.state == A_F_B_STATE_REQUEST) {
+	if(a_f_b_info->cmd_ctx[A_F_B_CMD_0X11_0X91].state == A_F_B_STATE_REQUEST) {
 		return ret;
 	}
 
-	a_f_b_command_item_0x11_0x91.state = A_F_B_STATE_REQUEST;
+	a_f_b_info->cmd_ctx[A_F_B_CMD_0X11_0X91].state = A_F_B_STATE_REQUEST;
 	ret = 0;
 
 	return ret;
 }
 
-int response_discharge_running_status(void)
+int response_discharge_running_status(a_f_b_info_t *a_f_b_info)
 {
 	int ret = -1;
 
-	if(a_f_b_command_item_0x15_0x95.state != A_F_B_STATE_IDLE) {//busy
+	if(a_f_b_info->cmd_ctx[A_F_B_CMD_0X11_0X91].state != A_F_B_STATE_IDLE) {//busy
 		return ret;
 	}
 
-	if(a_f_b_0x11_0x91_ctx.response_data.running_state.discharge_running == 1) {
+	if(a_f_b_info->a_f_b_0x11_0x91_ctx.response_data.running_state.discharge_running == 1) {
 		return ret;
 	}
 
@@ -327,32 +317,28 @@ int response_discharge_running_status(void)
 	return ret;
 }
 
-int response_battery_voltage(void)
+int response_battery_voltage(a_f_b_info_t *a_f_b_info)
 {
 	int ret = -1;
 
-	if(a_f_b_command_item_0x15_0x95.state != A_F_B_STATE_IDLE) {//busy
-		return ret;
-	}
-
-	ret = a_f_b_0x11_0x91_ctx.response_data.battery_voltage * 4.44;
+	ret = a_f_b_info->a_f_b_0x11_0x91_ctx.response_data.battery_voltage * 4.44;
 
 	return ret;
 }
 
-int response_insulation_check_running_status(void)
+int response_insulation_check_running_status(a_f_b_info_t *a_f_b_info)
 {
 	int ret = -1;
 
-	if(a_f_b_command_item_0x15_0x95.state != A_F_B_STATE_IDLE) {//busy
+	if(a_f_b_info->cmd_ctx[A_F_B_CMD_0X11_0X91].state != A_F_B_STATE_IDLE) {//busy
 		return ret;
 	}
 
-	if(a_f_b_0x11_0x91_ctx.response_data.running_state.insulation_check_running == 1) {
+	if(a_f_b_info->a_f_b_0x11_0x91_ctx.response_data.running_state.insulation_check_running == 1) {
 		return ret;
 	}
 
-	ret = a_f_b_0x11_0x91_ctx.response_data.insulation_resistor_value;
+	ret = a_f_b_info->a_f_b_0x11_0x91_ctx.response_data.insulation_resistor_value;
 
 	return ret;
 }
@@ -367,53 +353,89 @@ void test_a_f_b(void)
 	udp_log_printf("sizeof(a_f_b_response_91_t):%d\n", sizeof(a_f_b_response_91_t));
 }
 
+uint8_t get_a_f_b_connect_state(a_f_b_info_t *a_f_b_info)
+{
+	uint8_t ret = 0;
+	uint8_t count = 0;
+	int i;
+
+	for(i = 0; i < A_F_B_CONNECT_STATE_SIZE; i++) {
+		if(a_f_b_info->connect_state[i] != 0) {
+			count++;
+		}
+	}
+
+	if(count >= 8) {
+		ret = 0;
+	}
+
+	return ret;
+}
+
 void task_auxiliary_function_board_decode(void const *argument)
 {
 	int ret = 0;
 	int i;
 
-	uart_info_t *uart_info = get_or_alloc_uart_info(&huart1);
+	a_f_b_info_t *a_f_b_info = (a_f_b_info_t *)argument;
 
-	if(uart_info == NULL) {
+	if(a_f_b_info == NULL) {
 		app_panic();
 	}
 
 	while(1) {
 		for(i = 0; i < sizeof(a_f_b_command_table) / sizeof(a_f_b_command_item_t *); i++) {
 			a_f_b_command_item_t *item = a_f_b_command_table[i];
-			a_f_b_head_t *tx_head = (a_f_b_head_t *)tx_buffer;
-			a_f_b_head_t *rx_head = (a_f_b_head_t *)rx_buffer;
+			a_f_b_head_t *tx_head = (a_f_b_head_t *)a_f_b_info->tx_buffer;
+			a_f_b_head_t *rx_head = (a_f_b_head_t *)a_f_b_info->rx_buffer;
+			uint8_t connect_state_index = a_f_b_info->connect_state_index;
 
 
-			if(item->state == A_F_B_STATE_IDLE) {
+			if(a_f_b_info->cmd_ctx[item->cmd].state == A_F_B_STATE_IDLE) {
 				continue;
 			}
+
+			a_f_b_info->connect_state_index++;
+
+			if(a_f_b_info->connect_state_index >= A_F_B_CONNECT_STATE_SIZE) {
+				a_f_b_info->connect_state_index = 0;
+			}
+
+			a_f_b_info->connect_state[connect_state_index] = 0;
 
 			tx_head->magic.b0 = 0xa5;
 			tx_head->magic.b1 = 0x5a;
 			tx_head->device_id = 0x00;
 			tx_head->cmd = item->request_code;
 
-			memset(rx_buffer, 0, 128);
+			memset(a_f_b_info->rx_buffer, 0, A_F_B_BUFFER_SIZE);
 
-			ret = item->request_callback(item->ctx);
-			ret = uart_tx_rx_data(uart_info, rx_buffer, tx_size, rx_buffer, rx_size, 1000);
+			ret = item->request_callback(a_f_b_info);
+			ret = uart_tx_rx_data(a_f_b_info->uart_info, a_f_b_info->rx_buffer, a_f_b_info->tx_size, a_f_b_info->rx_buffer, a_f_b_info->rx_size, 1000);
 
-			if(ret != rx_size) {
-				item->state = A_F_B_STATE_ERROR;
+			if(ret != a_f_b_info->rx_size) {
+				a_f_b_info->cmd_ctx[item->cmd].state = A_F_B_STATE_ERROR;
 				continue;
 			}
 
 			if(rx_head->cmd != item->response_code) {
-				item->state = A_F_B_STATE_ERROR;
+				a_f_b_info->cmd_ctx[item->cmd].state = A_F_B_STATE_ERROR;
 				continue;
 			}
 
-			ret = item->response_callback(item->ctx);
+			ret = item->response_callback(a_f_b_info);
 
 			if(ret == 0) {
-				item->state = A_F_B_STATE_IDLE;
+				a_f_b_info->cmd_ctx[item->cmd].state = A_F_B_STATE_IDLE;
+				a_f_b_info->connect_state[connect_state_index] = 1;
+			} else {
+				a_f_b_info->cmd_ctx[item->cmd].state = A_F_B_STATE_ERROR;
 			}
+
 		}
+
+		osDelay(10);
+
+		request_a_f_b_status_data(a_f_b_info);
 	}
 }
