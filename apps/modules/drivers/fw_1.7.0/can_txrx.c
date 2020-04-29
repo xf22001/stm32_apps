@@ -6,12 +6,11 @@
  *   文件名称：can_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时07分55秒
- *   修改日期：2020年04月17日 星期五 09时43分55秒
+ *   修改日期：2020年04月29日 星期三 09时09分40秒
  *   描    述：
  *
  *================================================================*/
 #include "can_txrx.h"
-#include "can_config.h"
 
 #include "os_utils.h"
 
@@ -59,24 +58,42 @@ static void receive_init(CAN_HandleTypeDef *hcan)
 		return;
 	}
 
-	id.v = can_info->filter_id;
-	id_mask.v = can_info->filter_maskid;
+	if(can_info->can_config->filter_fifo == CAN_FILTER_FIFO0) {
+		can_info->receive_fifo = CAN_FIFO0;
+	} else if(can_info->can_config->filter_fifo == CAN_FILTER_FIFO1) {
+		can_info->receive_fifo = CAN_FIFO1;
+	} else {
+		app_panic();
+	}
+
+	id.s.id = can_info->can_config->filter_id;
+	id_mask.s.id = can_info->can_config->filter_maskid;
+
+	if(can_info->can_config->filter_rtr != 0) {
+		id.s.rtr = 1;
+		id_mask.s.rtr = 1;
+	}
+
+	if(can_info->can_config->filter_ext != 0) {
+		id.s.ext = 1;
+		id_mask.s.ext = 1;
+	}
 
 	can_info->hcan->pRxMsg = &can_info->rx_msg;
 	can_info->hcan->pRx1Msg = &can_info->rx_msg1;
 
-	filter.FilterNumber = can_info->filter_number;
+	filter.FilterNumber = can_info->can_config->filter_number;
 	filter.FilterMode = CAN_FILTERMODE_IDMASK;
 	filter.FilterScale = CAN_FILTERSCALE_32BIT;
 	filter.FilterIdHigh = id.s_lh.h;
 	filter.FilterIdLow = id.s_lh.l;
 	filter.FilterMaskIdHigh = id_mask.s_lh.h;
 	filter.FilterMaskIdLow = id_mask.s_lh.l;
-	filter.FilterFIFOAssignment = can_info->filter_fifo;
+	filter.FilterFIFOAssignment = can_info->can_config->filter_fifo;
 	filter.FilterActivation = ENABLE;
 	filter.BankNumber = 14;
 
-	HAL_CAN_ConfigFilter(can_info->config_can, &filter);
+	HAL_CAN_ConfigFilter(can_info->can_config->config_can, &filter);
 }
 
 void free_can_info(can_info_t *can_info)
@@ -119,9 +136,6 @@ can_info_t *get_or_alloc_can_info(CAN_HandleTypeDef *hcan)
 	can_config_t *can_config = NULL;
 	osStatus os_status;
 
-	u_can_filter_id_t id;
-	u_can_filter_id_t id_mask;
-
 	osMutexDef(hcan_mutex);
 	osMessageQDef(tx_msg_q, 1, uint16_t);
 	osMessageQDef(rx_msg_q, 1, uint16_t);
@@ -153,34 +167,8 @@ can_info_t *get_or_alloc_can_info(CAN_HandleTypeDef *hcan)
 		return can_info;
 	}
 
-	can_info->hcan = can_config->hcan;
-	can_info->config_can = can_config->config_can;
-	can_info->filter_number = can_config->filter_number;
-	can_info->filter_fifo = can_config->filter_fifo;
-	if(can_config->filter_fifo == CAN_FILTER_FIFO0) {
-		can_info->receive_fifo = CAN_FIFO0;
-	} else if(can_config->filter_fifo == CAN_FILTER_FIFO1) {
-		can_info->receive_fifo = CAN_FIFO1;
-	} else {
-		app_panic();
-	}
-
-	id.s.id = can_config->filter_id;
-	id_mask.s.id = can_config->filter_maskid;
-
-	if(can_config->filter_rtr != 0) {
-		id.s.rtr = 1;
-		id_mask.s.rtr = 1;
-	}
-
-	if(can_config->filter_ext != 0) {
-		id.s.ext = 1;
-		id_mask.s.ext = 1;
-	}
-
-	can_info->filter_id = id.v;
-	can_info->filter_maskid = id_mask.v;
-
+	can_info->hcan = hcan;
+	can_info->can_config = can_config;
 	can_info->hcan_mutex = osMutexCreate(osMutex(hcan_mutex));
 	can_info->tx_msg_q = osMessageCreate(osMessageQ(tx_msg_q), NULL);
 	can_info->rx_msg_q = osMessageCreate(osMessageQ(rx_msg_q), NULL);

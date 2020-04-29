@@ -6,7 +6,7 @@
  *   文件名称：event_helper.c
  *   创 建 者：肖飞
  *   创建日期：2020年01月07日 星期二 09时56分01秒
- *   修改日期：2020年03月24日 星期二 10时44分49秒
+ *   修改日期：2020年04月29日 星期三 09时08分29秒
  *   描    述：
  *
  *================================================================*/
@@ -48,7 +48,7 @@ failed:
 	if(event_pool->queue != NULL) {
 		status = osMessageDelete(event_pool->queue);
 
-		if(status != status) {
+		if(status != osOK) {
 		}
 	}
 
@@ -79,7 +79,7 @@ void free_event_pool(event_pool_t *event_pool)
 	if(event_pool->queue != NULL) {
 		status = osMessageDelete(event_pool->queue);
 
-		if(status != status) {
+		if(status != osOK) {
 		}
 	}
 

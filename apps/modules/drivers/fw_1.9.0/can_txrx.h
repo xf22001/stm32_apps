@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时29分22秒
- *   修改日期：2020年04月16日 星期四 17时35分10秒
+ *   修改日期：2020年04月29日 星期三 09时04分56秒
  *   描    述：
  *
  *================================================================*/
@@ -25,6 +25,7 @@ extern "C"
 #include "cmsis_os.h"
 
 #include "list_utils.h"
+#include "can_config.h"
 
 typedef struct {
 	uint32_t StdId;    /*!< Specifies the standard identifier.
@@ -80,11 +81,8 @@ typedef struct {
 	osMessageQId tx_msg_q;
 	osMessageQId rx_msg_q;
 
-	uint32_t filter_number;
-	uint32_t filter_fifo;
 	uint32_t receive_fifo;
-	uint32_t filter_id;
-	uint32_t filter_maskid;
+	can_config_t *can_config;
 
 	can_hal_init_t can_hal_init;
 	receive_init_t receive_init;
