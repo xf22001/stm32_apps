@@ -6,7 +6,7 @@
  *   文件名称：auxiliary_function_board.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月28日 星期二 11时34分17秒
- *   修改日期：2020年04月29日 星期三 14时14分21秒
+ *   修改日期：2020年04月30日 星期四 08时37分51秒
  *   描    述：
  *
  *================================================================*/
@@ -320,6 +320,10 @@ int response_discharge_running_status(a_f_b_info_t *a_f_b_info)
 int response_battery_voltage(a_f_b_info_t *a_f_b_info)
 {
 	int ret = -1;
+
+	if(a_f_b_info->cmd_ctx[A_F_B_CMD_0X11_0X91].state != A_F_B_STATE_IDLE) {//busy
+		return ret;
+	}
 
 	ret = a_f_b_info->a_f_b_0x11_0x91_ctx.response_data.battery_voltage * 4.44;
 

@@ -1,22 +1,25 @@
 
 
 /*================================================================
- *
- *
- *   文件名称：charger_config.c
+ *   
+ *   
+ *   文件名称：channel_config.c
  *   创 建 者：肖飞
- *   创建日期：2020年04月18日 星期六 12时33分30秒
- *   修改日期：2020年04月29日 星期三 13时38分46秒
+ *   创建日期：2020年04月30日 星期四 09时37分37秒
+ *   修改日期：2020年04月30日 星期四 10时30分30秒
  *   描    述：
  *
  *================================================================*/
-#include "charger_config.h"
+#include "channel_config.h"
+
 #include "os_utils.h"
 #define UDP_LOG
 #include "task_probe_tool.h"
 #include "main.h"
 #include "auxiliary_function_board.h"
 
+extern CAN_HandleTypeDef hcan1;
+extern CAN_HandleTypeDef hcan2;
 extern UART_HandleTypeDef huart3;
 
 static void set_auxiliary_power_state(uint8_t state)
@@ -221,12 +224,13 @@ static int battery_voltage_status(a_f_b_info_t *a_f_b_info, charger_op_ctx_t *ch
 	return ret;
 }
 
-extern CAN_HandleTypeDef hcan1;
-extern CAN_HandleTypeDef hcan2;
+channel_info_config_t channel_info_config = {
+	.channel_id = 0,
 
-charger_info_config_t charger_info_config_can1 = {
-	.hcan = &hcan1,
-	.huart = &huart3,
+	.hcan_charger = &hcan2,
+	.huart_a_f_b = &huart3,
+	.hcan_com = &hcan1,
+
 	.set_auxiliary_power_state = set_auxiliary_power_state,
 	.set_gun_lock_state = set_gun_lock_state,
 	.set_power_output_enable = set_power_output_enable,
@@ -236,14 +240,55 @@ charger_info_config_t charger_info_config_can1 = {
 	.battery_voltage_status = battery_voltage_status,
 };
 
-charger_info_config_t charger_info_config_can2 = {
-	.hcan = &hcan2,
-	.huart = &huart3,
-	.set_auxiliary_power_state = set_auxiliary_power_state,
-	.set_gun_lock_state = set_gun_lock_state,
-	.set_power_output_enable = set_power_output_enable,
-	.discharge = discharge,
-	.relay_endpoint_overvoltage_status = relay_endpoint_overvoltage_status,
-	.insulation_check = insulation_check,
-	.battery_voltage_status = battery_voltage_status,
+channel_info_config_t *channel_info_config_sz[] = {
+	&channel_info_config,
 };
+
+channel_info_config_t *get_channel_info_config(uint8_t channel_id)
+{
+	int i;
+	channel_info_config_t *channel_info_config = NULL;
+	channel_info_config_t *channel_info_config_item = NULL;
+
+	for(i = 0; i < sizeof(channel_info_config_sz) / sizeof(channel_info_config_t *); i++) {
+		channel_info_config_item = channel_info_config_sz[i];
+
+		if(channel_info_config_item->channel_id == channel_id) {
+			channel_info_config = channel_info_config_item;
+			break;
+		}
+	}
+
+	if(channel_info_config != NULL) {
+		if(channel_info_config->set_auxiliary_power_state == NULL) {
+			app_panic();
+		}
+
+		if(channel_info_config->set_gun_lock_state == NULL) {
+			app_panic();
+		}
+
+		if(channel_info_config->set_power_output_enable == NULL) {
+			app_panic();
+		}
+
+		if(channel_info_config->discharge == NULL) {
+			app_panic();
+		}
+
+		if(channel_info_config->relay_endpoint_overvoltage_status == NULL) {
+			app_panic();
+		}
+
+		if(channel_info_config->insulation_check == NULL) {
+			app_panic();
+		}
+
+		if(channel_info_config->battery_voltage_status == NULL) {
+			app_panic();
+		}
+	}
+
+	return channel_info_config;
+}
+

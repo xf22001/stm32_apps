@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.h
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分48秒
- *   修改日期：2020年04月29日 星期三 16时20分40秒
+ *   修改日期：2020年04月30日 星期四 10时43分31秒
  *   描    述：
  *
  *================================================================*/
@@ -16,6 +16,13 @@
 extern "C"
 {
 #endif
+
+#include "cmsis_os.h"
+#include "app_platform.h"
+
+#include "can_txrx.h"
+
+#include "channel_config.h"
 
 #ifdef __cplusplus
 }
@@ -309,4 +316,16 @@ typedef struct {
 	uint8_t cmd;//151
 	uint8_t unused[7];
 } cmd_151_t;//关闭辅板输出继电器
+
+typedef struct {
+	struct list_head list;
+	can_info_t *can_info;
+	osMutexId handle_mutex;
+
+	channel_info_config_t *channel_info_config;
+	
+} channel_com_info_t;
+
+int channel_com_info_set_channel_config(channel_com_info_t *channel_com_info, channel_info_config_t *channel_info_config);
+
 #endif //_CHANNEL_COMMUNICATION_H

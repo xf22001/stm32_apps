@@ -6,13 +6,12 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年04月29日 星期三 13时53分02秒
+ *   修改日期：2020年04月30日 星期四 10时52分13秒
  *   描    述：
  *
  *================================================================*/
 #include "charger.h"
 #include "charger_handler.h"
-#include "charger_config.h"
 
 #include "os_utils.h"
 #include <string.h>
@@ -21,74 +20,6 @@
 
 static LIST_HEAD(charger_info_list);
 static osMutexId charger_info_list_mutex = NULL;
-
-static charger_info_config_t *charger_info_config_sz[] = {
-	&charger_info_config_can1,
-	&charger_info_config_can2,
-};
-
-static charger_info_config_t *get_charger_info_config(can_info_t *can_info)
-{
-	int i;
-	charger_info_config_t *charger_info_config = NULL;
-	charger_info_config_t *charger_info_config_item = NULL;
-
-	for(i = 0; i < sizeof(charger_info_config_sz) / sizeof(charger_info_config_t *); i++) {
-		charger_info_config_item = charger_info_config_sz[i];
-
-		if(can_info->hcan == charger_info_config_item->hcan) {
-			charger_info_config = charger_info_config_item;
-			break;
-		}
-	}
-
-	if(charger_info_config != NULL) {
-		uart_info_t *uart_info = NULL;
-		a_f_b_info_t *a_f_b_info = NULL;
-
-		uart_info = get_or_alloc_uart_info(charger_info_config->huart);
-		if(uart_info == NULL) {
-			app_panic();
-		}
-
-		a_f_b_info = get_or_alloc_a_f_b_info(uart_info);
-		if(a_f_b_info == NULL) {
-			app_panic();
-		}
-
-		charger_info_config->a_f_b_info = a_f_b_info;
-
-		if(charger_info_config->set_auxiliary_power_state == NULL) {
-			app_panic();
-		}
-
-		if(charger_info_config->set_gun_lock_state == NULL) {
-			app_panic();
-		}
-
-		if(charger_info_config->set_power_output_enable == NULL) {
-			app_panic();
-		}
-
-		if(charger_info_config->discharge == NULL) {
-			app_panic();
-		}
-
-		if(charger_info_config->relay_endpoint_overvoltage_status == NULL) {
-			app_panic();
-		}
-
-		if(charger_info_config->insulation_check == NULL) {
-			app_panic();
-		}
-
-		if(charger_info_config->battery_voltage_status == NULL) {
-			app_panic();
-		}
-	}
-
-	return charger_info_config;
-}
 
 static void bms_data_settings_init(bms_data_settings_t *settings)
 {
@@ -263,13 +194,8 @@ char *get_charger_state_des(charger_state_t state)
 charger_info_t *get_or_alloc_charger_info(can_info_t *can_info)
 {
 	charger_info_t *charger_info = NULL;
-	charger_info_config_t *charger_info_config = get_charger_info_config(can_info);
 	osMutexDef(handle_mutex);
 	osStatus os_status;
-
-	if(charger_info_config == NULL) {
-		return charger_info;
-	}
 
 	charger_info = get_charger_info(can_info);
 
@@ -303,7 +229,6 @@ charger_info_t *get_or_alloc_charger_info(can_info_t *can_info)
 	charger_info->can_info = can_info;
 	charger_info->state = CHARGER_STATE_IDLE;
 	charger_info->handle_mutex = osMutexCreate(osMutex(handle_mutex));
-	charger_info->charger_info_config = charger_info_config;
 
 	os_status = osMutexWait(charger_info_list_mutex, osWaitForever);
 
@@ -327,6 +252,31 @@ failed:
 	}
 
 	return charger_info;
+}
+
+int charger_info_set_channel_config(charger_info_t *charger_info, channel_info_config_t *channel_info_config)
+{
+	int ret = -1;
+	uart_info_t *uart_info;
+	a_f_b_info_t *a_f_b_info;
+
+	uart_info = get_or_alloc_uart_info(channel_info_config->huart_a_f_b);
+
+	if(uart_info == NULL) {
+		return ret;
+	}
+
+	a_f_b_info = get_or_alloc_a_f_b_info(uart_info);
+
+	if(a_f_b_info == NULL) {
+		return ret;
+	}
+
+	charger_info->channel_info_config = channel_info_config;
+	charger_info->a_f_b_info = a_f_b_info;
+
+	ret = 0;
+	return ret;
 }
 
 charger_state_t get_charger_state(charger_info_t *charger_info)
@@ -439,22 +389,38 @@ void report_charger_status(charger_info_t *charger_info, charger_error_status_t 
 
 void set_auxiliary_power_state(charger_info_t *charger_info, uint8_t state)
 {
-	charger_info->charger_info_config->set_auxiliary_power_state(state);
+	if(charger_info->channel_info_config == NULL) {
+		app_panic();
+	}
+
+	charger_info->channel_info_config->set_auxiliary_power_state(state);
 }
 
 void set_gun_lock_state(charger_info_t *charger_info, uint8_t state)
 {
-	charger_info->charger_info_config->set_gun_lock_state(state);
+	if(charger_info->channel_info_config == NULL) {
+		app_panic();
+	}
+
+	charger_info->channel_info_config->set_gun_lock_state(state);
 }
 
 void set_power_output_enable(charger_info_t *charger_info, uint8_t state)
 {
-	charger_info->charger_info_config->set_power_output_enable(state);
+	if(charger_info->channel_info_config == NULL) {
+		app_panic();
+	}
+
+	charger_info->channel_info_config->set_power_output_enable(state);
 }
 
 int discharge(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)
 {
-	return charger_info->charger_info_config->discharge(charger_info->charger_info_config->a_f_b_info, charger_op_ctx);
+	if(charger_info->channel_info_config == NULL) {
+		app_panic();
+	}
+
+	return charger_info->channel_info_config->discharge(charger_info->a_f_b_info, charger_op_ctx);
 }
 
 //20 * 1000
@@ -468,22 +434,39 @@ int precharge(charger_info_t *charger_info, uint16_t voltage, charger_op_ctx_t *
 
 int relay_endpoint_overvoltage_status(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)
 {
-	return charger_info->charger_info_config->relay_endpoint_overvoltage_status(charger_info->charger_info_config->a_f_b_info, charger_op_ctx);
+	if(charger_info->channel_info_config == NULL) {
+		app_panic();
+	}
+
+	return charger_info->channel_info_config->relay_endpoint_overvoltage_status(charger_info->a_f_b_info, charger_op_ctx);
 }
 
 int insulation_check(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)
 {
-	return charger_info->charger_info_config->insulation_check(charger_info->charger_info_config->a_f_b_info, charger_op_ctx);
+	if(charger_info->channel_info_config == NULL) {
+		app_panic();
+	}
+
+	return charger_info->channel_info_config->insulation_check(charger_info->a_f_b_info, charger_op_ctx);
 }
 
 int battery_voltage_status(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)
 {
-	return charger_info->charger_info_config->battery_voltage_status(charger_info->charger_info_config->a_f_b_info, charger_op_ctx);
+	if(charger_info->channel_info_config == NULL) {
+		app_panic();
+	}
+
+	return charger_info->channel_info_config->battery_voltage_status(charger_info->a_f_b_info, charger_op_ctx);
 }
 
 int wait_no_current(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)//模块输出电流//100
 {
 	int ret = 1;
+
+	if(charger_info->channel_info_config == NULL) {
+		app_panic();
+	}
+
 	ret = 0;
 	udp_log_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
 	return ret;
