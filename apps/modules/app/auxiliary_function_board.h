@@ -6,7 +6,7 @@
  *   文件名称：auxiliary_function_board.h
  *   创 建 者：肖飞
  *   创建日期：2020年04月28日 星期二 11时34分23秒
- *   修改日期：2020年04月29日 星期三 14时05分09秒
+ *   修改日期：2020年04月30日 星期四 14时18分57秒
  *   描    述：
  *
  *================================================================*/
@@ -26,6 +26,7 @@ extern "C"
 
 #define A_F_B_BUFFER_SIZE 128
 #define A_F_B_CONNECT_STATE_SIZE 10
+#define A_F_B_CONNECT_STATE_OK_SIZE 6
 
 typedef enum {
 	A_F_B_STATE_IDLE = 0,
@@ -156,7 +157,6 @@ typedef int (*a_f_b_response_callback_t)(a_f_b_info_t *a_f_b_info);
 
 typedef struct {
 	a_f_b_cmd_t cmd;
-	void *ctx;
 	uint8_t request_code;
 	a_f_b_request_callback_t request_callback;
 	uint8_t response_code;
@@ -170,6 +170,6 @@ int request_insulation_check(a_f_b_info_t *a_f_b_info);
 int response_insulation_check(a_f_b_info_t *a_f_b_info);
 int request_a_f_b_status_data(a_f_b_info_t *a_f_b_info);
 int response_discharge_running_status(a_f_b_info_t *a_f_b_info);
-int response_battery_voltage(a_f_b_info_t *a_f_b_info);
 int response_insulation_check_running_status(a_f_b_info_t *a_f_b_info);
+a_f_b_reponse_91_data_t *get_a_f_b_status_data(a_f_b_info_t *a_f_b_info);
 #endif //_AUXILIARY_FUNCTION_BOARD_H

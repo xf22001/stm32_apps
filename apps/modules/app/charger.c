@@ -6,7 +6,7 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年04月30日 星期四 10时52分13秒
+ *   修改日期：2020年04月30日 星期四 16时30分12秒
  *   描    述：
  *
  *================================================================*/
@@ -402,6 +402,7 @@ void set_gun_lock_state(charger_info_t *charger_info, uint8_t state)
 		app_panic();
 	}
 
+	charger_info->gun_lock_state = state;
 	charger_info->channel_info_config->set_gun_lock_state(state);
 }
 
@@ -410,6 +411,8 @@ void set_power_output_enable(charger_info_t *charger_info, uint8_t state)
 	if(charger_info->channel_info_config == NULL) {
 		app_panic();
 	}
+
+	charger_info->power_output_state = state;
 
 	charger_info->channel_info_config->set_power_output_enable(state);
 }
@@ -426,10 +429,11 @@ int discharge(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)
 //20 * 1000
 int precharge(charger_info_t *charger_info, uint16_t voltage, charger_op_ctx_t *charger_op_ctx)
 {
-	int ret = 1;
-	ret = 0;
-	udp_log_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
-	return ret;
+	if(charger_info->channel_info_config == NULL) {
+		app_panic();
+	}
+
+	return charger_info->channel_info_config->precharge(charger_info->channel_com_info, voltage, charger_op_ctx);
 }
 
 int relay_endpoint_overvoltage_status(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)

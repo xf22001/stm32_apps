@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.h
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分48秒
- *   修改日期：2020年04月30日 星期四 10时43分31秒
+ *   修改日期：2020年04月30日 星期四 16时26分12秒
  *   描    述：
  *
  *================================================================*/
@@ -20,13 +20,20 @@ extern "C"
 #include "cmsis_os.h"
 #include "app_platform.h"
 
-#include "can_txrx.h"
-
+#include "os_utils.h"
 #include "channel_config.h"
+#include "charger.h"
+
+#include "channel.h"
+#include "auxiliary_function_board.h"
 
 #ifdef __cplusplus
 }
 #endif
+
+typedef struct {
+	uint8_t cmd;
+} cmd_common_t;
 
 typedef struct {
 	uint8_t gun_state : 1;//有无插枪
@@ -109,7 +116,7 @@ typedef struct {
 	uint8_t cmd;//3
 	uint8_t a_f_b_ver_h;//辅助功能板版本号h
 	uint8_t a_f_b_ver_l;//辅助功能板版本号l
-	uint8_t bms_connect_state;//bms通信质量
+	uint8_t bms_connect_state;//bms工作状态码
 	cmd_3_b4_t b4;
 	uint8_t unused[3];
 } cmd_3_t;//心跳2
@@ -317,14 +324,81 @@ typedef struct {
 	uint8_t unused[7];
 } cmd_151_t;//关闭辅板输出继电器
 
+typedef enum {
+	CHANNEL_COM_CMD_1_101 = 0,
+	CHANNEL_COM_CMD_2_102,
+	CHANNEL_COM_CMD_13_113,
+	CHANNEL_COM_CMD_3_103,
+	CHANNEL_COM_CMD_4_104,
+	CHANNEL_COM_CMD_TOTAL,
+} channel_com_cmd_t;
+
+typedef enum {
+	CHANNEL_COM_STATE_IDLE = 0,
+	CHANNEL_COM_STATE_REQUEST,
+	CHANNEL_COM_STATE_ERROR,
+} channel_com_state_t;
+
+typedef struct {
+	channel_com_state_t state;
+	uint32_t stamp;
+} channel_com_cmd_ctx_t;
+
 typedef struct {
 	struct list_head list;
 	can_info_t *can_info;
 	osMutexId handle_mutex;
-
 	channel_info_config_t *channel_info_config;
+
+	channel_com_cmd_ctx_t cmd_ctx[CHANNEL_COM_CMD_TOTAL];
+
+	channel_info_t *channel_info;
+	a_f_b_info_t *a_f_b_info;
+	charger_info_t *charger_info;
 	
+	can_tx_msg_t can_tx_msg;
+	can_rx_msg_t *can_rx_msg;
 } channel_com_info_t;
+
+typedef int (*channel_com_request_callback_t)(channel_com_info_t *channel_com_info);
+typedef int (*channel_com_response_callback_t)(channel_com_info_t *channel_com_info);
+
+typedef struct {
+	channel_com_cmd_t cmd;
+	uint8_t request_code;
+	channel_com_request_callback_t request_callback;
+	uint8_t response_code;
+	channel_com_response_callback_t response_callback;
+} channel_com_command_item_t;
+
+static inline uint16_t get_u16_from_u8_lh(uint8_t l, uint8_t h)
+{
+	u_uint16_bytes_t u_uint16_bytes;
+
+	u_uint16_bytes.v = 0;
+	u_uint16_bytes.s.byte0 = l;
+	u_uint16_bytes.s.byte1 = h;
+
+	return u_uint16_bytes.v;
+}
+
+static inline uint16_t get_u8_l_from_u16(uint16_t v)
+{
+	u_uint16_bytes_t u_uint16_bytes;
+
+	u_uint16_bytes.v = v;
+
+	return u_uint16_bytes.s.byte0;
+}
+
+static inline uint16_t get_u8_h_from_u16(uint16_t v)
+{
+	u_uint16_bytes_t u_uint16_bytes;
+
+	u_uint16_bytes.v = v;
+
+	return u_uint16_bytes.s.byte1;
+}
 
 int channel_com_info_set_channel_config(channel_com_info_t *channel_com_info, channel_info_config_t *channel_info_config);
 

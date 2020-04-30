@@ -6,7 +6,7 @@
  *   文件名称：auxiliary_function_board.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月28日 星期二 11时34分17秒
- *   修改日期：2020年04月30日 星期四 08时37分51秒
+ *   修改日期：2020年04月30日 星期四 14时19分02秒
  *   描    述：
  *
  *================================================================*/
@@ -141,6 +141,25 @@ static uint8_t a_f_b_crc(uint8_t *data, uint8_t len)
 	}
 
 	return crc;
+}
+
+uint8_t get_a_f_b_connect_state(a_f_b_info_t *a_f_b_info)
+{
+	uint8_t ret = 0;
+	uint8_t count = 0;
+	int i;
+
+	for(i = 0; i < A_F_B_CONNECT_STATE_SIZE; i++) {
+		if(a_f_b_info->connect_state[i] != 0) {
+			count++;
+		}
+	}
+
+	if(count >= 8) {
+		ret = 0;
+	}
+
+	return ret;
 }
 
 static int request_0x15(a_f_b_info_t *a_f_b_info)
@@ -317,19 +336,6 @@ int response_discharge_running_status(a_f_b_info_t *a_f_b_info)
 	return ret;
 }
 
-int response_battery_voltage(a_f_b_info_t *a_f_b_info)
-{
-	int ret = -1;
-
-	if(a_f_b_info->cmd_ctx[A_F_B_CMD_0X11_0X91].state != A_F_B_STATE_IDLE) {//busy
-		return ret;
-	}
-
-	ret = a_f_b_info->a_f_b_0x11_0x91_ctx.response_data.battery_voltage * 4.44;
-
-	return ret;
-}
-
 int response_insulation_check_running_status(a_f_b_info_t *a_f_b_info)
 {
 	int ret = -1;
@@ -338,13 +344,24 @@ int response_insulation_check_running_status(a_f_b_info_t *a_f_b_info)
 		return ret;
 	}
 
-	if(a_f_b_info->a_f_b_0x11_0x91_ctx.response_data.running_state.insulation_check_running == 1) {
+	if(a_f_b_info->a_f_b_0x11_0x91_ctx.response_data.running_state.insulation_check_running == 1) {//checking
 		return ret;
 	}
 
 	ret = a_f_b_info->a_f_b_0x11_0x91_ctx.response_data.insulation_resistor_value;
 
 	return ret;
+}
+
+a_f_b_reponse_91_data_t *get_a_f_b_status_data(a_f_b_info_t *a_f_b_info)
+{
+	a_f_b_reponse_91_data_t *a_f_b_reponse_91_data = NULL;
+
+	if(get_a_f_b_connect_state(a_f_b_info) >= A_F_B_CONNECT_STATE_OK_SIZE) {
+		a_f_b_reponse_91_data = &a_f_b_info->a_f_b_0x11_0x91_ctx.response_data;
+	}
+
+	return a_f_b_reponse_91_data;
 }
 
 static a_f_b_command_item_t *a_f_b_command_table[] = {
@@ -355,25 +372,6 @@ static a_f_b_command_item_t *a_f_b_command_table[] = {
 void test_a_f_b(void)
 {
 	udp_log_printf("sizeof(a_f_b_response_91_t):%d\n", sizeof(a_f_b_response_91_t));
-}
-
-uint8_t get_a_f_b_connect_state(a_f_b_info_t *a_f_b_info)
-{
-	uint8_t ret = 0;
-	uint8_t count = 0;
-	int i;
-
-	for(i = 0; i < A_F_B_CONNECT_STATE_SIZE; i++) {
-		if(a_f_b_info->connect_state[i] != 0) {
-			count++;
-		}
-	}
-
-	if(count >= 8) {
-		ret = 0;
-	}
-
-	return ret;
 }
 
 void task_auxiliary_function_board_decode(void const *argument)
