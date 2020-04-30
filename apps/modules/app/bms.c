@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年04月28日 星期二 09时04分42秒
+ *   修改日期：2020年04月30日 星期四 11时14分25秒
  *   描    述：
  *
  *================================================================*/
@@ -41,41 +41,6 @@ static LIST_HEAD(bms_info_list);
 static osMutexId bms_info_list_mutex = NULL;
 
 static bitmap_t *eeprom_modbus_data_bitmap = NULL;
-
-static bms_info_config_t *bms_info_config_sz[] = {
-	&bms_info_config_can1,
-	&bms_info_config_can2,
-};
-
-static bms_info_config_t *get_bms_info_config(can_info_t *can_info)
-{
-	int i;
-	bms_info_config_t *bms_info_config = NULL;
-	bms_info_config_t *bms_info_config_item = NULL;
-
-	for(i = 0; i < sizeof(bms_info_config_sz) / sizeof(bms_info_config_t *); i++) {
-		bms_info_config_item = bms_info_config_sz[i];
-
-		if(can_info->hcan == bms_info_config_item->hcan) {
-			bms_info_config = bms_info_config_item;
-			break;
-		}
-	}
-
-	if(bms_info_config->get_gun_connect_state == NULL) {
-		app_panic();
-	}
-
-	if(bms_info_config->get_bms_power_enable_state == NULL) {
-		app_panic();
-	}
-
-	if(bms_info_config->set_gun_on_off_state == NULL) {
-		app_panic();
-	}
-
-	return bms_info_config;
-}
 
 static void bms_data_settings_default_init(bms_data_settings_t *settings)
 {

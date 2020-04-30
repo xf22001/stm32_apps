@@ -6,12 +6,13 @@
  *   文件名称：bms_config.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月18日 星期六 12时29分29秒
- *   修改日期：2020年04月29日 星期三 09时11分13秒
+ *   修改日期：2020年04月30日 星期四 11时16分33秒
  *   描    述：
  *
  *================================================================*/
 #include "bms_config.h"
 #include "main.h"
+#include "os_utils.h"
 
 static uint8_t get_gun_connect_state(void)
 {
@@ -49,16 +50,44 @@ static void set_gun_on_off_state(uint8_t state)
 extern CAN_HandleTypeDef hcan1;
 extern CAN_HandleTypeDef hcan2;
 
-bms_info_config_t bms_info_config_can1 = {
-		.hcan = &hcan1,
-		.get_gun_connect_state = get_gun_connect_state,
-		.get_bms_power_enable_state = get_bms_power_enable_state,
-		.set_gun_on_off_state = set_gun_on_off_state,
-};
-
-bms_info_config_t bms_info_config_can2 = {
+static bms_info_config_t bms_info_config_can2 = {
 		.hcan = &hcan2,
 		.get_gun_connect_state = get_gun_connect_state,
 		.get_bms_power_enable_state = get_bms_power_enable_state,
 		.set_gun_on_off_state = set_gun_on_off_state,
 };
+
+static bms_info_config_t *bms_info_config_sz[] = {
+	&bms_info_config_can2,
+};
+
+bms_info_config_t *get_bms_info_config(can_info_t *can_info)
+{
+	int i;
+	bms_info_config_t *bms_info_config = NULL;
+	bms_info_config_t *bms_info_config_item = NULL;
+
+	for(i = 0; i < sizeof(bms_info_config_sz) / sizeof(bms_info_config_t *); i++) {
+		bms_info_config_item = bms_info_config_sz[i];
+
+		if(can_info->hcan == bms_info_config_item->hcan) {
+			bms_info_config = bms_info_config_item;
+			break;
+		}
+	}
+
+	if(bms_info_config->get_gun_connect_state == NULL) {
+		app_panic();
+	}
+
+	if(bms_info_config->get_bms_power_enable_state == NULL) {
+		app_panic();
+	}
+
+	if(bms_info_config->set_gun_on_off_state == NULL) {
+		app_panic();
+	}
+
+	return bms_info_config;
+}
+

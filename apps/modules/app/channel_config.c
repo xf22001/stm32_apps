@@ -6,7 +6,7 @@
  *   文件名称：channel_config.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月30日 星期四 09时37分37秒
- *   修改日期：2020年04月30日 星期四 10时30分30秒
+ *   修改日期：2020年04月30日 星期四 11时15分51秒
  *   描    述：
  *
  *================================================================*/
@@ -227,7 +227,7 @@ static int battery_voltage_status(a_f_b_info_t *a_f_b_info, charger_op_ctx_t *ch
 channel_info_config_t channel_info_config = {
 	.channel_id = 0,
 
-	.hcan_charger = &hcan2,
+	.hcan_charger = &hcan1,
 	.huart_a_f_b = &huart3,
 	.hcan_com = &hcan1,
 
@@ -240,7 +240,7 @@ channel_info_config_t channel_info_config = {
 	.battery_voltage_status = battery_voltage_status,
 };
 
-channel_info_config_t *channel_info_config_sz[] = {
+static channel_info_config_t *channel_info_config_sz[] = {
 	&channel_info_config,
 };
 

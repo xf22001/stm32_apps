@@ -6,7 +6,7 @@
  *   文件名称：test_charger_bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时28分36秒
- *   修改日期：2020年04月27日 星期一 08时28分22秒
+ *   修改日期：2020年04月30日 星期四 11时02分48秒
  *   描    述：
  *
  *================================================================*/
@@ -19,6 +19,7 @@
 #include "can.h"
 
 #include "bms.h"
+#include "channel_config.h"
 #include "charger.h"
 #include "task_modbus_slave.h"
 
@@ -106,9 +107,14 @@ void test_charger_bms(void)
 {
 	{
 		can_info_t *can_info = get_or_alloc_can_info(&hcan1);
+		channel_info_config_t *channel_info_config = get_channel_info_config(0);
 		osThreadDef(charger_request, task_charger_request, osPriorityNormal, 0, 256);
 		osThreadDef(charger_response, task_charger_response, osPriorityNormal, 0, 256);
 		charger_info_t *charger_info;
+
+		if(channel_info_config == NULL) {
+			app_panic();
+		}
 
 		if(can_info == NULL) {
 			app_panic();
@@ -119,6 +125,10 @@ void test_charger_bms(void)
 		charger_info = get_or_alloc_charger_info(can_info);
 
 		if(charger_info == NULL) {
+			app_panic();
+		}
+
+		if(charger_info_set_channel_config(charger_info, channel_info_config) != 0) {
 			app_panic();
 		}
 
