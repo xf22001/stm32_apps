@@ -6,7 +6,7 @@
  *   文件名称：test_can.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 16时45分27秒
- *   修改日期：2020年04月09日 星期四 14时23分30秒
+ *   修改日期：2020年05月01日 星期五 21时10分47秒
  *   描    述：
  *
  *================================================================*/
@@ -94,7 +94,6 @@ void test_can(void)
 			app_panic();
 		}
 
-		set_can_info_hal_init(can_info, MX_CAN1_Init);
 		osThreadCreate(osThread(test_can), can_info);
 	}
 
@@ -105,8 +104,6 @@ void test_can(void)
 		if(can_info == NULL) {
 			app_panic();
 		}
-
-		set_can_info_hal_init(can_info, MX_CAN2_Init);
 
 		osThreadCreate(osThread(test_can), can_info);
 	}

@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.h
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分48秒
- *   修改日期：2020年04月30日 星期四 16时26分12秒
+ *   修改日期：2020年05月01日 星期五 16时59分03秒
  *   描    述：
  *
  *================================================================*/
@@ -22,10 +22,6 @@ extern "C"
 
 #include "os_utils.h"
 #include "channel_config.h"
-#include "charger.h"
-
-#include "channel.h"
-#include "auxiliary_function_board.h"
 
 #ifdef __cplusplus
 }
@@ -352,9 +348,9 @@ typedef struct {
 
 	channel_com_cmd_ctx_t cmd_ctx[CHANNEL_COM_CMD_TOTAL];
 
-	channel_info_t *channel_info;
-	a_f_b_info_t *a_f_b_info;
-	charger_info_t *charger_info;
+	void *channel_info;
+	void *charger_info;
+	void *a_f_b_info;
 	
 	can_tx_msg_t can_tx_msg;
 	can_rx_msg_t *can_rx_msg;
@@ -400,6 +396,7 @@ static inline uint16_t get_u8_h_from_u16(uint16_t v)
 	return u_uint16_bytes.s.byte1;
 }
 
-int channel_com_info_set_channel_config(channel_com_info_t *channel_com_info, channel_info_config_t *channel_info_config);
+void free_channel_com_info(channel_com_info_t *channel_com_info);
+channel_com_info_t *get_or_alloc_channel_com_info(channel_info_config_t *channel_info_config);
 
 #endif //_CHANNEL_COMMUNICATION_H

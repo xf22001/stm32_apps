@@ -6,7 +6,7 @@
  *   文件名称：eeprom.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月14日 星期四 09时01分48秒
- *   修改日期：2020年04月04日 星期六 18时37分17秒
+ *   修改日期：2020年05月01日 星期五 20时01分15秒
  *   描    述：
  *
  *================================================================*/
@@ -31,10 +31,10 @@ typedef struct {
 	spi_info_t *spi_info;
 	osMutexId mutex;
 
-	GPIO_TypeDef *cs_gpio;
-	uint16_t cs_pin;
-	GPIO_TypeDef *wp_gpio;
-	uint16_t wp_pin;
+	GPIO_TypeDef *gpio_port_spi_cs;
+	uint16_t gpio_pin_spi_cs;
+	GPIO_TypeDef *gpio_port_spi_wp;
+	uint16_t gpio_pin_spi_wp;
 } eeprom_info_t;
 
 typedef struct {
@@ -55,7 +55,7 @@ typedef struct {
 #define EEPROM_1024_PAGE 256
 
 void free_eeprom_info(eeprom_info_t *eeprom_info);
-eeprom_info_t *get_or_alloc_eeprom_info(spi_info_t *spi_info);
+eeprom_info_t *get_or_alloc_eeprom_info( SPI_HandleTypeDef *hspi, GPIO_TypeDef *gpio_port_spi_cs, uint16_t gpio_pin_spi_cs, GPIO_TypeDef *gpio_port_spi_wp, uint16_t gpio_pin_spi_wp);
 uint8_t eeprom_id(eeprom_info_t *eeprom_info);
 uint8_t eeprom_read(eeprom_info_t *eeprom_info, uint32_t start, uint8_t *data, uint16_t size);
 uint8_t eeprom_write(eeprom_info_t *eeprom_info, uint32_t start, uint8_t *data, uint16_t size);

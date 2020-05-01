@@ -6,7 +6,7 @@
  *   文件名称：eeprom.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月14日 星期四 09时01分36秒
- *   修改日期：2020年04月04日 星期六 18时36分50秒
+ *   修改日期：2020年05月01日 星期五 19时56分00秒
  *   描    述：
  *
  *================================================================*/
@@ -21,44 +21,11 @@ extern SPI_HandleTypeDef hspi3;
 static LIST_HEAD(eeprom_info_list);
 static osMutexId eeprom_info_list_mutex = NULL;
 
-typedef struct {
-	SPI_HandleTypeDef *hspi;
-
-	GPIO_TypeDef *cs_gpio;
-	uint16_t cs_pin;
-	GPIO_TypeDef *wp_gpio;
-	uint16_t wp_pin;
-} eeprom_info_config_t;
-
-eeprom_info_config_t eeprom_info_config_sz[] = {
-	{
-		.hspi = &hspi3,
-		.cs_gpio = spi3_cs_GPIO_Port,
-		.cs_pin = spi3_cs_Pin,
-		.wp_gpio = spi3_wp_GPIO_Port,
-		.wp_pin = spi3_wp_Pin,
-	},
-};
-
-static eeprom_info_config_t *get_eeprom_info_config(spi_info_t *spi_info)
-{
-	int i;
-	eeprom_info_config_t *eeprom_info_config = NULL;
-	eeprom_info_config_t *eeprom_info_config_item = NULL;
-
-	for(i = 0; i < sizeof(eeprom_info_config_sz) / sizeof(eeprom_info_config_t); i++) {
-		eeprom_info_config_item = eeprom_info_config_sz + i;
-
-		if(spi_info->hspi == eeprom_info_config_item->hspi) {
-			eeprom_info_config = eeprom_info_config_item;
-			break;
-		}
-	}
-
-	return eeprom_info_config;
-}
-
-static eeprom_info_t *get_eeprom_info(spi_info_t *spi_info)
+static eeprom_info_t *get_eeprom_info(SPI_HandleTypeDef *hspi,
+                                      GPIO_TypeDef *gpio_port_spi_cs,
+                                      uint16_t gpio_pin_spi_cs,
+                                      GPIO_TypeDef *gpio_port_spi_wp,
+                                      uint16_t gpio_pin_spi_wp)
 {
 	eeprom_info_t *eeprom_info = NULL;
 	eeprom_info_t *eeprom_info_item = NULL;
@@ -75,10 +42,28 @@ static eeprom_info_t *get_eeprom_info(spi_info_t *spi_info)
 
 
 	list_for_each_entry(eeprom_info_item, &eeprom_info_list, eeprom_info_t, list) {
-		if(eeprom_info_item->spi_info == spi_info) {
-			eeprom_info = eeprom_info_item;
-			break;
+		if(eeprom_info_item->spi_info->hspi != hspi) {
+			continue;
 		}
+
+		if(eeprom_info_item->gpio_port_spi_cs != gpio_port_spi_cs) {
+			continue;
+		}
+
+		if(eeprom_info_item->gpio_pin_spi_cs != gpio_pin_spi_cs) {
+			continue;
+		}
+
+		if(eeprom_info_item->gpio_port_spi_wp != gpio_port_spi_wp) {
+			continue;
+		}
+
+		if(eeprom_info_item->gpio_pin_spi_wp != gpio_pin_spi_wp) {
+			continue;
+		}
+
+		eeprom_info = eeprom_info_item;
+		break;
 	}
 
 	os_status = osMutexRelease(eeprom_info_list_mutex);
@@ -121,16 +106,26 @@ void free_eeprom_info(eeprom_info_t *eeprom_info)
 	os_free(eeprom_info);
 }
 
-eeprom_info_t *get_or_alloc_eeprom_info(spi_info_t *spi_info)
+eeprom_info_t *get_or_alloc_eeprom_info( SPI_HandleTypeDef *hspi,
+        GPIO_TypeDef *gpio_port_spi_cs,
+        uint16_t gpio_pin_spi_cs,
+        GPIO_TypeDef *gpio_port_spi_wp,
+        uint16_t gpio_pin_spi_wp)
 {
 	eeprom_info_t *eeprom_info = NULL;
-	eeprom_info_config_t *eeprom_info_config = get_eeprom_info_config(spi_info);
 	osMutexDef(eeprom_mutex);
 	osStatus os_status;
+	spi_info_t *spi_info;
 
-	eeprom_info = get_eeprom_info(spi_info);
+	eeprom_info = get_eeprom_info(hspi, gpio_port_spi_cs, gpio_pin_spi_cs, gpio_port_spi_wp, gpio_pin_spi_wp);
 
 	if(eeprom_info != NULL) {
+		return eeprom_info;
+	}
+
+	spi_info = get_or_alloc_spi_info(hspi);
+
+	if(spi_info == NULL) {
 		return eeprom_info;
 	}
 
@@ -143,10 +138,6 @@ eeprom_info_t *get_or_alloc_eeprom_info(spi_info_t *spi_info)
 		}
 	}
 
-	if(eeprom_info_config == NULL) {
-		return eeprom_info;
-	}
-
 	eeprom_info = (eeprom_info_t *)os_alloc(sizeof(eeprom_info_t));
 
 	if(eeprom_info == NULL) {
@@ -154,11 +145,10 @@ eeprom_info_t *get_or_alloc_eeprom_info(spi_info_t *spi_info)
 	}
 
 	eeprom_info->spi_info = spi_info;
-
-	eeprom_info->cs_gpio = eeprom_info_config->cs_gpio;
-	eeprom_info->cs_pin = eeprom_info_config->cs_pin;
-	eeprom_info->wp_gpio = eeprom_info_config->wp_gpio;
-	eeprom_info->wp_pin = eeprom_info_config->wp_pin;
+	eeprom_info->gpio_port_spi_cs = gpio_port_spi_cs;
+	eeprom_info->gpio_pin_spi_cs = gpio_pin_spi_cs;
+	eeprom_info->gpio_port_spi_wp = gpio_port_spi_wp;
+	eeprom_info->gpio_pin_spi_wp = gpio_pin_spi_wp;
 
 	eeprom_info->mutex = osMutexCreate(osMutex(eeprom_mutex));
 
@@ -180,22 +170,22 @@ eeprom_info_t *get_or_alloc_eeprom_info(spi_info_t *spi_info)
 
 static inline void eeprom_enable_cs(eeprom_info_t *eeprom_info)
 {
-	HAL_GPIO_WritePin(eeprom_info->cs_gpio, eeprom_info->cs_pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(eeprom_info->gpio_port_spi_cs, eeprom_info->gpio_pin_spi_cs, GPIO_PIN_RESET);
 }
 
 static inline void eeprom_disable_cs(eeprom_info_t *eeprom_info)
 {
-	HAL_GPIO_WritePin(eeprom_info->cs_gpio, eeprom_info->cs_pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(eeprom_info->gpio_port_spi_cs, eeprom_info->gpio_pin_spi_cs, GPIO_PIN_SET);
 }
 
 static inline void eeprom_enable_wp(eeprom_info_t *eeprom_info)
 {
-	HAL_GPIO_WritePin(eeprom_info->wp_gpio, eeprom_info->wp_pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(eeprom_info->gpio_port_spi_wp, eeprom_info->gpio_pin_spi_wp, GPIO_PIN_RESET);
 }
 
 static inline void eeprom_disable_wp(eeprom_info_t *eeprom_info)
 {
-	HAL_GPIO_WritePin(eeprom_info->wp_gpio, eeprom_info->wp_pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(eeprom_info->gpio_port_spi_wp, eeprom_info->gpio_pin_spi_wp, GPIO_PIN_SET);
 }
 
 static inline void set_eeprom_addr(eeprom_addr_t *eeprom_addr, uint32_t addr)

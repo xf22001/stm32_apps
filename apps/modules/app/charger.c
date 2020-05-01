@@ -6,7 +6,7 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年04月30日 星期四 16时30分12秒
+ *   修改日期：2020年05月01日 星期五 17时03分17秒
  *   描    述：
  *
  *================================================================*/
@@ -15,8 +15,12 @@
 
 #include "os_utils.h"
 #include <string.h>
+#include <stdlib.h>
 #define UDP_LOG
 #include "task_probe_tool.h"
+#include "auxiliary_function_board.h"
+#include "channel_communication.h"
+#include "channel.h"
 
 static LIST_HEAD(charger_info_list);
 static osMutexId charger_info_list_mutex = NULL;
@@ -69,7 +73,7 @@ static bms_data_settings_t *bms_data_alloc_settings(void)
 	return settings;
 }
 
-static charger_info_t *get_charger_info(can_info_t *can_info)
+static charger_info_t *get_charger_info(channel_info_config_t *channel_info_config)
 {
 	charger_info_t *charger_info = NULL;
 	charger_info_t *charger_info_item = NULL;
@@ -85,7 +89,7 @@ static charger_info_t *get_charger_info(can_info_t *can_info)
 	}
 
 	list_for_each_entry(charger_info_item, &charger_info_list, charger_info_t, list) {
-		if(charger_info_item->can_info == can_info) {
+		if(charger_info_item->can_info->hcan == channel_info_config->hcan_charger) {
 			charger_info = charger_info_item;
 			break;
 		}
@@ -191,13 +195,59 @@ char *get_charger_state_des(charger_state_t state)
 	return des;
 }
 
-charger_info_t *get_or_alloc_charger_info(can_info_t *can_info)
+static int charger_info_set_channel_config(charger_info_t *charger_info, channel_info_config_t *channel_info_config)
+{
+	int ret = -1;
+	can_info_t *can_info;
+	channel_info_t *channel_info;
+	a_f_b_info_t *a_f_b_info;
+	channel_com_info_t *channel_com_info;
+
+	charger_info->channel_info_config = channel_info_config;
+
+	can_info = get_or_alloc_can_info(channel_info_config->hcan_charger);
+
+	if(can_info == NULL) {
+		return ret;
+	}
+
+	charger_info->can_info = can_info;
+
+	channel_info = get_or_alloc_channel_info(channel_info_config);
+
+	if(channel_info == NULL) {
+		return ret;
+	}
+
+	charger_info->channel_info = channel_info;
+
+	a_f_b_info = get_or_alloc_a_f_b_info(channel_info_config);
+
+	if(a_f_b_info == NULL) {
+		return ret;
+	}
+
+	charger_info->a_f_b_info = a_f_b_info;
+
+	channel_com_info = get_or_alloc_channel_com_info(channel_info_config);
+
+	if(channel_com_info == NULL) {
+		return ret;
+	}
+
+	charger_info->channel_com_info = channel_com_info;
+
+	ret = 0;
+	return ret;
+}
+
+charger_info_t *get_or_alloc_charger_info(channel_info_config_t *channel_info_config)
 {
 	charger_info_t *charger_info = NULL;
 	osMutexDef(handle_mutex);
 	osStatus os_status;
 
-	charger_info = get_charger_info(can_info);
+	charger_info = get_charger_info(channel_info_config);
 
 	if(charger_info != NULL) {
 		return charger_info;
@@ -220,13 +270,16 @@ charger_info_t *get_or_alloc_charger_info(can_info_t *can_info)
 
 	memset(charger_info, 0, sizeof(charger_info_t));
 
+	if(charger_info_set_channel_config(charger_info, channel_info_config) != 0) {
+		goto failed;
+	}
+
 	charger_info->settings = bms_data_alloc_settings();
 
 	if(charger_info->settings == NULL) {
 		goto failed;
 	}
 
-	charger_info->can_info = can_info;
 	charger_info->state = CHARGER_STATE_IDLE;
 	charger_info->handle_mutex = osMutexCreate(osMutex(handle_mutex));
 
@@ -252,31 +305,6 @@ failed:
 	}
 
 	return charger_info;
-}
-
-int charger_info_set_channel_config(charger_info_t *charger_info, channel_info_config_t *channel_info_config)
-{
-	int ret = -1;
-	uart_info_t *uart_info;
-	a_f_b_info_t *a_f_b_info;
-
-	uart_info = get_or_alloc_uart_info(channel_info_config->huart_a_f_b);
-
-	if(uart_info == NULL) {
-		return ret;
-	}
-
-	a_f_b_info = get_or_alloc_a_f_b_info(uart_info);
-
-	if(a_f_b_info == NULL) {
-		return ret;
-	}
-
-	charger_info->channel_info_config = channel_info_config;
-	charger_info->a_f_b_info = a_f_b_info;
-
-	ret = 0;
-	return ret;
 }
 
 charger_state_t get_charger_state(charger_info_t *charger_info)
@@ -389,78 +417,263 @@ void report_charger_status(charger_info_t *charger_info, charger_error_status_t 
 
 void set_auxiliary_power_state(charger_info_t *charger_info, uint8_t state)
 {
-	if(charger_info->channel_info_config == NULL) {
-		app_panic();
+	charger_info->gun_lock_state = state;
+
+	if(state == 0) {
+		HAL_GPIO_WritePin(charger_info->channel_info_config->gpio_port_auxiliary_power,
+		                  charger_info->channel_info_config->gpio_pin_auxiliary_power,
+		                  GPIO_PIN_RESET);
+	} else {
+		HAL_GPIO_WritePin(charger_info->channel_info_config->gpio_port_auxiliary_power,
+		                  charger_info->channel_info_config->gpio_pin_auxiliary_power,
+		                  GPIO_PIN_SET);
 	}
 
-	charger_info->channel_info_config->set_auxiliary_power_state(state);
+	udp_log_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
 }
 
 void set_gun_lock_state(charger_info_t *charger_info, uint8_t state)
 {
-	if(charger_info->channel_info_config == NULL) {
-		app_panic();
+	charger_info->gun_lock_state = state;
+
+	if(state == 0) {
+		HAL_GPIO_WritePin(charger_info->channel_info_config->gpio_port_gun_lock,
+		                  charger_info->channel_info_config->gpio_pin_gun_lock,
+		                  GPIO_PIN_RESET);
+	} else {
+		HAL_GPIO_WritePin(charger_info->channel_info_config->gpio_port_gun_lock,
+		                  charger_info->channel_info_config->gpio_pin_gun_lock,
+		                  GPIO_PIN_SET);
 	}
 
-	charger_info->gun_lock_state = state;
-	charger_info->channel_info_config->set_gun_lock_state(state);
+	udp_log_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
 }
 
 void set_power_output_enable(charger_info_t *charger_info, uint8_t state)
 {
-	if(charger_info->channel_info_config == NULL) {
-		app_panic();
-	}
-
 	charger_info->power_output_state = state;
 
-	charger_info->channel_info_config->set_power_output_enable(state);
+	if(state == 0) {
+		HAL_GPIO_WritePin(charger_info->channel_info_config->gpio_port_power_output,
+		                  charger_info->channel_info_config->gpio_pin_power_output,
+		                  GPIO_PIN_RESET);
+	} else {
+		HAL_GPIO_WritePin(charger_info->channel_info_config->gpio_port_power_output,
+		                  charger_info->channel_info_config->gpio_pin_power_output,
+		                  GPIO_PIN_SET);
+	}
+
+	udp_log_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
 }
 
 int discharge(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)
 {
-	if(charger_info->channel_info_config == NULL) {
-		app_panic();
+	uint32_t ticks = osKernelSysTick();
+	int ret = 1;
+	a_f_b_info_t *a_f_b_info = (a_f_b_info_t *)charger_info->a_f_b_info;
+
+	switch(charger_op_ctx->state) {
+		case 0: {
+			request_discharge(a_f_b_info);
+			charger_op_ctx->stamp = ticks;
+			charger_op_ctx->state = 1;
+		}
+		break;
+
+		case 1: {
+			if(ticks - charger_op_ctx->stamp >= (15 * 1000)) {
+				ret = -1;
+			} else {
+				if(response_discharge(a_f_b_info) == 0) {
+					request_a_f_b_status_data(a_f_b_info);
+					charger_op_ctx->stamp = ticks;
+					charger_op_ctx->state = 2;
+				}
+			}
+		}
+		break;
+
+		case 2: {
+			if(ticks - charger_op_ctx->stamp >= (10 * 1000)) {
+				ret = -1;
+			} else {
+				if(response_discharge_running_status(a_f_b_info) == 0) {
+					ret = 0;
+				}
+			}
+		}
+		break;
+
+		default:
+			break;
 	}
 
-	return charger_info->channel_info_config->discharge(charger_info->a_f_b_info, charger_op_ctx);
+	ret = 0;
+	udp_log_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
+	return ret;
 }
 
 //20 * 1000
 int precharge(charger_info_t *charger_info, uint16_t voltage, charger_op_ctx_t *charger_op_ctx)
 {
-	if(charger_info->channel_info_config == NULL) {
-		app_panic();
+	uint32_t ticks = osKernelSysTick();
+	int ret = 1;
+	//channel_com_info_t *channel_com_info = (channel_com_info_t *)charger_info->channel_com_info;
+	channel_info_t *channel_info = (channel_info_t *)charger_info->channel_info;
+
+	switch(charger_op_ctx->state) {
+		case 0: {
+			//request_precharge(channel_com_info, voltage);
+			charger_op_ctx->stamp = ticks;
+			charger_op_ctx->state = 1;
+		}
+		break;
+
+		case 2: {
+			if(ticks - charger_op_ctx->stamp >= (20 * 1000)) {
+				ret = -1;
+			} else {
+				if(abs(channel_info->module_output_voltage - voltage) <= 20) {
+					ret = 0;
+				}
+			}
+		}
+		break;
+
+		default:
+			break;
 	}
 
-	return charger_info->channel_info_config->precharge(charger_info->channel_com_info, voltage, charger_op_ctx);
+	ret = 0;
+	udp_log_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
+	return ret;
 }
 
 int relay_endpoint_overvoltage_status(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)
 {
-	if(charger_info->channel_info_config == NULL) {
-		app_panic();
+	uint32_t ticks = osKernelSysTick();
+	int ret = 1;
+	a_f_b_info_t *a_f_b_info = (a_f_b_info_t *)charger_info->a_f_b_info;
+
+	switch(charger_op_ctx->state) {
+		case 0: {
+			request_a_f_b_status_data(a_f_b_info);
+			charger_op_ctx->stamp = ticks;
+			charger_op_ctx->state = 1;
+		}
+		break;
+
+		case 1: {
+			if(ticks - charger_op_ctx->stamp >= (10 * 1000)) {
+				ret = -1;
+			} else {
+				uint8_t state = get_battery_available_state(a_f_b_info);
+
+				if(state == 1) {
+					ret = 0;
+				}
+			}
+		}
+		break;
+
+		default:
+			break;
 	}
 
-	return charger_info->channel_info_config->relay_endpoint_overvoltage_status(charger_info->a_f_b_info, charger_op_ctx);
+	ret = 0;
+	udp_log_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
+	return ret;
 }
 
 int insulation_check(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)
 {
-	if(charger_info->channel_info_config == NULL) {
-		app_panic();
+	uint32_t ticks = osKernelSysTick();
+	int ret = 1;
+	a_f_b_info_t *a_f_b_info = (a_f_b_info_t *)charger_info->a_f_b_info;
+
+	switch(charger_op_ctx->state) {
+		case 0: {
+			request_insulation_check(a_f_b_info);
+			charger_op_ctx->stamp = ticks;
+			charger_op_ctx->state = 1;
+		}
+		break;
+
+		case 1: {
+			if(ticks - charger_op_ctx->stamp >= (15 * 1000)) {
+				ret = -1;
+			} else {
+				if(response_insulation_check(a_f_b_info) == 0) {
+					request_a_f_b_status_data(a_f_b_info);
+					charger_op_ctx->stamp = ticks;
+					charger_op_ctx->state = 2;
+				}
+			}
+		}
+		break;
+
+		case 2: {
+			if(ticks - charger_op_ctx->stamp >= (15 * 1000)) {
+				ret = -1;
+			} else {
+				//>1 warning
+				//>5 ok
+				int resistor = response_insulation_check_running_status(a_f_b_info);
+
+				if(resistor > 5) {
+					ret = 0;
+				}
+
+				if(resistor > 1) {//warning
+					ret = 0;
+				}
+			}
+		}
+		break;
+
+		default:
+			break;
 	}
 
-	return charger_info->channel_info_config->insulation_check(charger_info->a_f_b_info, charger_op_ctx);
+	ret = 0;
+	udp_log_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
+	return ret;
 }
 
 int battery_voltage_status(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)
 {
-	if(charger_info->channel_info_config == NULL) {
-		app_panic();
+	uint32_t ticks = osKernelSysTick();
+	int ret = 1;
+	a_f_b_info_t *a_f_b_info = (a_f_b_info_t *)charger_info->a_f_b_info;
+
+	switch(charger_op_ctx->state) {
+		case 0: {
+			request_a_f_b_status_data(a_f_b_info);
+			charger_op_ctx->stamp = ticks;
+			charger_op_ctx->state = 1;
+		}
+		break;
+
+		case 1: {
+			if(ticks - charger_op_ctx->stamp >= (15 * 1000)) {
+				ret = -1;
+			} else {
+				uint8_t state = get_battery_available_state(a_f_b_info);
+
+				if(state == 1) {
+					ret = 0;
+				}
+			}
+		}
+		break;
+
+		default:
+			break;
 	}
 
-	return charger_info->channel_info_config->battery_voltage_status(charger_info->a_f_b_info, charger_op_ctx);
+	ret = 0;
+	udp_log_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
+	return ret;
 }
 
 int wait_no_current(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)//模块输出电流//100

@@ -6,7 +6,7 @@
  *   文件名称：auxiliary_function_board.h
  *   创 建 者：肖飞
  *   创建日期：2020年04月28日 星期二 11时34分23秒
- *   修改日期：2020年04月30日 星期四 14时18分57秒
+ *   修改日期：2020年05月01日 星期五 16时58分48秒
  *   描    述：
  *
  *================================================================*/
@@ -19,6 +19,8 @@ extern "C"
 
 #include "list_utils.h"
 #include "usart_txrx.h"
+
+#include "channel_config.h"
 
 #ifdef __cplusplus
 }
@@ -140,6 +142,7 @@ typedef enum {
 typedef struct {
 	struct list_head list;
 	uart_info_t *uart_info;
+	channel_info_config_t *channel_info_config;
 
 	uint8_t tx_buffer[A_F_B_BUFFER_SIZE];
 	uint8_t tx_size;
@@ -163,7 +166,9 @@ typedef struct {
 	a_f_b_response_callback_t response_callback;
 } a_f_b_command_item_t;
 
-a_f_b_info_t *get_or_alloc_a_f_b_info(uart_info_t *uart_info);
+void free_a_f_b_info(a_f_b_info_t *a_f_b_info);
+a_f_b_info_t *get_or_alloc_a_f_b_info(channel_info_config_t *channel_info_config);
+uint8_t get_a_f_b_connect_state(a_f_b_info_t *a_f_b_info);
 int request_discharge(a_f_b_info_t *a_f_b_info);
 int response_discharge(a_f_b_info_t *a_f_b_info);
 int request_insulation_check(a_f_b_info_t *a_f_b_info);
@@ -172,4 +177,5 @@ int request_a_f_b_status_data(a_f_b_info_t *a_f_b_info);
 int response_discharge_running_status(a_f_b_info_t *a_f_b_info);
 int response_insulation_check_running_status(a_f_b_info_t *a_f_b_info);
 a_f_b_reponse_91_data_t *get_a_f_b_status_data(a_f_b_info_t *a_f_b_info);
+uint8_t get_battery_available_state(a_f_b_info_t *a_f_b_info);
 #endif //_AUXILIARY_FUNCTION_BOARD_H

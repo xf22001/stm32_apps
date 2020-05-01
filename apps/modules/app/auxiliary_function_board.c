@@ -6,7 +6,7 @@
  *   文件名称：auxiliary_function_board.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月28日 星期二 11时34分17秒
- *   修改日期：2020年04月30日 星期四 14时19分02秒
+ *   修改日期：2020年05月01日 星期五 20时50分59秒
  *   描    述：
  *
  *================================================================*/
@@ -21,7 +21,7 @@
 static LIST_HEAD(a_f_b_info_list);
 static osMutexId a_f_b_info_list_mutex = NULL;
 
-static a_f_b_info_t *get_a_f_b_info(uart_info_t *uart_info)
+static a_f_b_info_t *get_a_f_b_info(channel_info_config_t *channel_info_config)
 {
 	a_f_b_info_t *a_f_b_info = NULL;
 	a_f_b_info_t *a_f_b_info_item = NULL;
@@ -37,7 +37,7 @@ static a_f_b_info_t *get_a_f_b_info(uart_info_t *uart_info)
 	}
 
 	list_for_each_entry(a_f_b_info_item, &a_f_b_info_list, a_f_b_info_t, list) {
-		if(a_f_b_info_item->uart_info == uart_info) {
+		if(a_f_b_info_item->uart_info->huart == channel_info_config->huart_a_f_b) {
 			a_f_b_info = a_f_b_info_item;
 			break;
 		}
@@ -78,13 +78,32 @@ void free_a_f_b_info(a_f_b_info_t *a_f_b_info)
 	os_free(a_f_b_info);
 }
 
-a_f_b_info_t *get_or_alloc_a_f_b_info(uart_info_t *uart_info)
+static int a_f_b_info_set_channel_config(a_f_b_info_t *a_f_b_info, channel_info_config_t *channel_info_config)
+{
+	int ret = -1;
+	uart_info_t *uart_info;
+
+	a_f_b_info->channel_info_config = channel_info_config;
+
+	uart_info = get_or_alloc_uart_info(channel_info_config->huart_a_f_b);
+
+	if(uart_info == NULL) {
+		return ret;
+	}
+
+	a_f_b_info->uart_info = uart_info;
+
+	ret = 0;
+	return ret;
+}
+
+a_f_b_info_t *get_or_alloc_a_f_b_info(channel_info_config_t *channel_info_config)
 {
 	a_f_b_info_t *a_f_b_info = NULL;
 	osStatus os_status;
 	int i;
 
-	a_f_b_info = get_a_f_b_info(uart_info);
+	a_f_b_info = get_a_f_b_info(channel_info_config);
 
 	if(a_f_b_info != NULL) {
 		return a_f_b_info;
@@ -105,7 +124,11 @@ a_f_b_info_t *get_or_alloc_a_f_b_info(uart_info_t *uart_info)
 		return a_f_b_info;
 	}
 
-	a_f_b_info->uart_info = uart_info;
+	memset(a_f_b_info, 0, sizeof(a_f_b_info_t));
+
+	if(a_f_b_info_set_channel_config(a_f_b_info, channel_info_config) != 0) {
+		goto failed;
+	}
 
 	for(i = 0; i < A_F_B_CMD_TOTAL; i++) {
 		a_f_b_info->cmd_ctx[i].state = A_F_B_STATE_IDLE;
@@ -125,6 +148,13 @@ a_f_b_info_t *get_or_alloc_a_f_b_info(uart_info_t *uart_info)
 	os_status = osMutexRelease(a_f_b_info_list_mutex);
 
 	if(os_status != osOK) {
+	}
+
+	return a_f_b_info;
+failed:
+	if(a_f_b_info != NULL) {
+		os_free(a_f_b_info);
+		a_f_b_info = NULL;
 	}
 
 	return a_f_b_info;
@@ -362,6 +392,21 @@ a_f_b_reponse_91_data_t *get_a_f_b_status_data(a_f_b_info_t *a_f_b_info)
 	}
 
 	return a_f_b_reponse_91_data;
+}
+
+uint8_t get_battery_available_state(a_f_b_info_t *a_f_b_info)
+{
+	uint8_t state = 0;
+	a_f_b_reponse_91_data_t *a_f_b_reponse_91_data = get_a_f_b_status_data(a_f_b_info);
+	int voltage = (a_f_b_reponse_91_data != NULL) ? a_f_b_info->a_f_b_0x11_0x91_ctx.response_data.battery_voltage * 4.44 : 0;
+
+	if(voltage > 20) {
+		state = 1;
+	}
+
+	udp_log_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
+
+	return state;
 }
 
 static a_f_b_command_item_t *a_f_b_command_table[] = {

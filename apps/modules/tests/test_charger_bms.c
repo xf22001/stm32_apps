@@ -6,7 +6,7 @@
  *   文件名称：test_charger_bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时28分36秒
- *   修改日期：2020年04月30日 星期四 11时02分48秒
+ *   修改日期：2020年05月01日 星期五 21时12分13秒
  *   描    述：
  *
  *================================================================*/
@@ -16,12 +16,11 @@
 
 #include "charger.h"
 #include "can_txrx.h"
-#include "can.h"
 
+#include "bms_config.h"
 #include "bms.h"
 #include "channel_config.h"
 #include "charger.h"
-#include "task_modbus_slave.h"
 
 extern CAN_HandleTypeDef hcan1;
 extern CAN_HandleTypeDef hcan2;
@@ -106,7 +105,6 @@ static void task_bms_response(void const *argument)
 void test_charger_bms(void)
 {
 	{
-		can_info_t *can_info = get_or_alloc_can_info(&hcan1);
 		channel_info_config_t *channel_info_config = get_channel_info_config(0);
 		osThreadDef(charger_request, task_charger_request, osPriorityNormal, 0, 256);
 		osThreadDef(charger_response, task_charger_response, osPriorityNormal, 0, 256);
@@ -116,19 +114,9 @@ void test_charger_bms(void)
 			app_panic();
 		}
 
-		if(can_info == NULL) {
-			app_panic();
-		}
-
-		set_can_info_hal_init(can_info, MX_CAN1_Init);
-
-		charger_info = get_or_alloc_charger_info(can_info);
+		charger_info = get_or_alloc_charger_info(channel_info_config);
 
 		if(charger_info == NULL) {
-			app_panic();
-		}
-
-		if(charger_info_set_channel_config(charger_info, channel_info_config) != 0) {
 			app_panic();
 		}
 
@@ -137,60 +125,21 @@ void test_charger_bms(void)
 	}
 
 	{
-		uart_info_t *uart_info = get_or_alloc_uart_info(&huart1);
-
-		if(uart_info == NULL) {
-			app_panic();
-		}
-
-		osThreadDef(task_modbus_slave, task_modbus_slave, osPriorityNormal, 0, 128 * 3);
-		osThreadCreate(osThread(task_modbus_slave), uart_info);
-	}
-
-	{
-		can_info_t *can_info = get_or_alloc_can_info(&hcan2);
-		uart_info_t *uart_info = get_or_alloc_uart_info(&huart1);
-		spi_info_t *spi_info = get_or_alloc_spi_info(&hspi3);
+		bms_info_config_t *bms_info_config = get_bms_info_config(0);
 		bms_info_t *bms_info;
-		eeprom_info_t *eeprom_info;
-		modbus_slave_info_t *modbus_slave_info;
+
 		osThreadDef(bms_request, task_bms_request, osPriorityNormal, 0, 256);
 		osThreadDef(bms_response, task_bms_response, osPriorityNormal, 0, 256);
 
-		if(can_info == NULL) {
+		if(bms_info_config == NULL) {
 			app_panic();
 		}
 
-		if(uart_info == NULL) {
-			app_panic();
-		}
-
-		if(spi_info == NULL) {
-			app_panic();
-		}
-
-		set_can_info_hal_init(can_info, MX_CAN2_Init);
-
-		eeprom_info = get_or_alloc_eeprom_info(spi_info);
-
-		if(eeprom_info == NULL) {
-			app_panic();
-		}
-
-		modbus_slave_info = get_or_alloc_modbus_slave_info(uart_info);
-
-		if(modbus_slave_info == NULL) {
-			app_panic();
-		}
-
-		bms_info = get_or_alloc_bms_info(can_info);
+		bms_info = get_or_alloc_bms_info(bms_info_config);
 
 		if(bms_info == NULL) {
 			app_panic();
 		}
-
-		bms_set_modbus_slave_info(bms_info, modbus_slave_info);
-		bms_set_eeprom_info(bms_info, eeprom_info);
 
 		bms_restore_data(bms_info);
 

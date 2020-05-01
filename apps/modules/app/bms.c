@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年04月30日 星期四 11时14分25秒
+ *   修改日期：2020年05月01日 星期五 21时27分48秒
  *   描    述：
  *
  *================================================================*/
@@ -18,6 +18,8 @@
 #include <string.h>
 #define UDP_LOG
 #include "task_probe_tool.h"
+#include "task_modbus_slave.h"
+#include "eeprom.h"
 
 #include "app.h"
 
@@ -148,7 +150,7 @@ static bms_data_settings_t *bms_data_alloc_settings(void)
 	return settings;
 }
 
-static bms_info_t *get_bms_info(can_info_t *can_info)
+static bms_info_t *get_bms_info(bms_info_config_t *bms_info_config)
 {
 	bms_info_t *bms_info = NULL;
 	bms_info_t *bms_info_item = NULL;
@@ -165,7 +167,7 @@ static bms_info_t *get_bms_info(can_info_t *can_info)
 
 
 	list_for_each_entry(bms_info_item, &bms_info_list, bms_info_t, list) {
-		if(bms_info_item->can_info == can_info) {
+		if(bms_info_item->can_info->hcan == bms_info_config->hcan) {
 			bms_info = bms_info_item;
 			break;
 		}
@@ -236,107 +238,77 @@ void set_gun_on_off(bms_info_t *bms_info, uint8_t on_off)
 {
 	bms_info->gun_on_off_state = on_off;
 
-	bms_info->bms_info_config->set_gun_on_off_state(on_off);
+	if(on_off == 0) {
+		HAL_GPIO_WritePin(bms_info->bms_info_config->gpio_port_gun_on_off_state,
+		                  bms_info->bms_info_config->gpio_pin_gun_on_off_state,
+		                  GPIO_PIN_RESET);
+	} else {
+		HAL_GPIO_WritePin(bms_info->bms_info_config->gpio_port_gun_on_off_state,
+		                  bms_info->bms_info_config->gpio_pin_gun_on_off_state,
+		                  GPIO_PIN_SET);
+	}
 }
 
-bms_info_t *get_or_alloc_bms_info(can_info_t *can_info)
+static int detect_eeprom(eeprom_info_t *eeprom_info)
 {
-	bms_info_t *bms_info = NULL;
-	int index = -1;
-	bms_info_config_t *bms_info_config = get_bms_info_config(can_info);
-	osStatus os_status;
+	int i;
+	int ret = -1;
+	uint8_t id;
 
-	osMutexDef(handle_mutex);
+	for(i = 0; i < 10; i++) {
+		id = eeprom_id(eeprom_info);
 
-	if(bms_info_config == NULL) {
-		return bms_info;
-	}
-
-	bms_info = get_bms_info(can_info);
-
-	if(bms_info != NULL) {
-		return bms_info;
-	}
-
-	if(bms_info_list_mutex == NULL) {
-		osMutexDef(bms_info_list_mutex);
-		bms_info_list_mutex = osMutexCreate(osMutex(bms_info_list_mutex));
-
-		if(bms_info_list_mutex == NULL) {
-			return bms_info;
+		if(id == 0x29) {
+			break;
 		}
+
+		osDelay(200);
 	}
 
-	if(eeprom_modbus_data_bitmap == NULL) {
-		eeprom_modbus_data_bitmap = alloc_bitmap(2);
+	if(id == 0x29) {
+		ret = 0;
 	}
 
-	if(eeprom_modbus_data_bitmap == NULL) {
-		return bms_info;
-	}
+	return ret;
+}
 
-	bms_info = (bms_info_t *)os_alloc(sizeof(bms_info_t));
+int save_eeprom_modbus_data(bms_info_t *bms_info)
+{
+	int ret = -1;
+	uint32_t offset;
+	uint32_t crc = 0;
+	eeprom_modbus_head_t eeprom_modbus_head;
+
+	offset = sizeof(eeprom_modbus_data_t) * bms_info->eeprom_modbus_data_index;
 
 	if(bms_info == NULL) {
-		return bms_info;
+		return ret;
 	}
 
-	memset(bms_info, 0, sizeof(bms_info_t));
-
-	index = get_first_value_index(eeprom_modbus_data_bitmap, 0);
-
-	if(index == -1) {
-		return bms_info;
+	if(detect_eeprom(bms_info->eeprom_info) != 0) {
+		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		return ret;
 	}
 
-	set_bitmap_value(eeprom_modbus_data_bitmap, index, 1);
+	eeprom_modbus_head.payload_size = sizeof(eeprom_modbus_data_t);
 
-	bms_info->eeprom_modbus_data_index = index;
+	crc += eeprom_modbus_head.payload_size;
+	crc += (uint32_t)'b';
+	crc += (uint32_t)'m';
+	crc += (uint32_t)'s';
 
-	bms_info->settings = bms_data_alloc_settings();
+	eeprom_modbus_head.crc = crc;
 
-	if(bms_info->settings == NULL) {
-		goto failed;
-	}
+	eeprom_write(bms_info->eeprom_info, offset, (uint8_t *)&eeprom_modbus_head, sizeof(eeprom_modbus_head_t));
+	offset += sizeof(eeprom_modbus_head_t);
 
-	bms_info->can_info = can_info;
-	bms_info->state = BMS_STATE_IDLE;
-	bms_info->handle_mutex = osMutexCreate(osMutex(handle_mutex));
-	bms_info->bms_info_config = bms_info_config;
+	eeprom_write(bms_info->eeprom_info, offset, (uint8_t *)bms_info->settings, sizeof(bms_data_settings_t));
+	offset += sizeof(bms_data_settings_t);
 
-	bms_info->gun_on_off_state = 0;
-	bms_info->bms_gun_connect = 0;
-	bms_info->bms_poweron_enable = 0;
+	eeprom_write(bms_info->eeprom_info, offset, (uint8_t *)&bms_info->configs, sizeof(bms_data_configs_t));
+	offset += sizeof(bms_data_configs_t);
 
-	memset(&bms_info->configs, 0, sizeof(bms_data_configs_t));
-
-	bms_info->modbus_slave_info = NULL;
-
-	set_gun_on_off(bms_info, 0);
-
-	os_status = osMutexWait(bms_info_list_mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
-
-	list_add_tail(&bms_info->list, &bms_info_list);
-
-	os_status = osMutexRelease(bms_info_list_mutex);
-
-	if(os_status != osOK) {
-	}
-
-
-	return bms_info;
-
-failed:
-
-	if(bms_info != NULL) {
-		os_free(bms_info);
-		bms_info = NULL;
-	}
-
-	return bms_info;
+	return 0;
 }
 
 static void modbus_slave_data_changed(void *fn_ctx, void *chain_ctx)
@@ -1386,7 +1358,7 @@ static void modbus_data_set(void *ctx, uint16_t addr, uint16_t value)
 	modbus_data_get_set(bms_info, addr, &value, MODBUS_DATA_SET);
 }
 
-void bms_set_modbus_slave_info(bms_info_t *bms_info, modbus_slave_info_t *modbus_slave_info)
+static void bms_set_modbus_slave_info(bms_info_t *bms_info, modbus_slave_info_t *modbus_slave_info)
 {
 	bms_info->modbus_slave_info = modbus_slave_info;
 
@@ -1401,32 +1373,149 @@ void bms_set_modbus_slave_info(bms_info_t *bms_info, modbus_slave_info_t *modbus
 	add_modbus_slave_data_changed_cb(bms_info->modbus_slave_info, &bms_info->modbus_slave_data_changed_cb);
 }
 
-void bms_set_eeprom_info(bms_info_t *bms_info, eeprom_info_t *eeprom_info)
+static int bms_info_set_bms_info_config(bms_info_t *bms_info, bms_info_config_t *bms_info_config)
 {
+	int ret = -1;
+	can_info_t *can_info;
+	eeprom_info_t *eeprom_info;
+	modbus_slave_info_t *modbus_slave_info;
+	osThreadDef(task_modbus_slave, task_modbus_slave, osPriorityNormal, 0, 128 * 3);
+
+	bms_info->bms_info_config = bms_info_config;
+
+	can_info = get_or_alloc_can_info(bms_info_config->hcan);
+
+	if(can_info == NULL) {
+		return ret;
+	}
+
+	bms_info->can_info = can_info;
+
+	eeprom_info = get_or_alloc_eeprom_info(bms_info_config->hspi,
+	                                       bms_info_config->gpio_port_spi_cs,
+	                                       bms_info_config->gpio_pin_spi_cs,
+	                                       bms_info_config->gpio_port_spi_wp,
+	                                       bms_info_config->gpio_pin_spi_wp);
+
+	if(eeprom_info == NULL) {
+		return ret;
+	}
+
 	bms_info->eeprom_info = eeprom_info;
+
+	modbus_slave_info = get_or_alloc_modbus_slave_info(bms_info_config->huart);
+
+	if(modbus_slave_info == NULL) {
+		return ret;
+	}
+
+	bms_set_modbus_slave_info(bms_info, modbus_slave_info);
+
+	osThreadCreate(osThread(task_modbus_slave), modbus_slave_info);
+
+	ret = 0;
+	return ret;
 }
 
-static int detect_eeprom(eeprom_info_t *eeprom_info)
+bms_info_t *get_or_alloc_bms_info(bms_info_config_t *bms_info_config)
 {
-	int i;
-	int ret = -1;
-	uint8_t id;
+	int index = -1;
+	osStatus os_status;
+	bms_info_t *bms_info = NULL;
+	osMutexDef(handle_mutex);
 
-	for(i = 0; i < 10; i++) {
-		id = eeprom_id(eeprom_info);
+	bms_info = get_bms_info(bms_info_config);
 
-		if(id == 0x29) {
-			break;
+	if(bms_info != NULL) {
+		return bms_info;
+	}
+
+	if(eeprom_modbus_data_bitmap == NULL) {
+		eeprom_modbus_data_bitmap = alloc_bitmap(2);
+	}
+
+	if(eeprom_modbus_data_bitmap == NULL) {
+		return bms_info;
+	}
+
+	if(bms_info_list_mutex == NULL) {
+		osMutexDef(bms_info_list_mutex);
+		bms_info_list_mutex = osMutexCreate(osMutex(bms_info_list_mutex));
+
+		if(bms_info_list_mutex == NULL) {
+			return bms_info;
 		}
-
-		osDelay(200);
 	}
 
-	if(id == 0x29) {
-		ret = 0;
+	bms_info = (bms_info_t *)os_alloc(sizeof(bms_info_t));
+
+	if(bms_info == NULL) {
+		return bms_info;
 	}
 
-	return ret;
+	memset(bms_info, 0, sizeof(bms_info_t));
+
+	if(bms_info_set_bms_info_config(bms_info, bms_info_config) != 0) {
+		goto failed;
+	}
+
+	index = get_first_value_index(eeprom_modbus_data_bitmap, 0);
+
+	if(index == -1) {
+		goto failed;
+	}
+
+	set_bitmap_value(eeprom_modbus_data_bitmap, index, 1);
+
+	bms_info->eeprom_modbus_data_index = index;
+
+	bms_info->settings = bms_data_alloc_settings();
+
+	if(bms_info->settings == NULL) {
+		goto failed;
+	}
+
+	bms_info->state = BMS_STATE_IDLE;
+	bms_info->handle_mutex = osMutexCreate(osMutex(handle_mutex));
+	bms_info->bms_info_config = bms_info_config;
+
+	bms_info->gun_on_off_state = 0;
+	bms_info->bms_gun_connect = 0;
+	bms_info->bms_poweron_enable = 0;
+
+	memset(&bms_info->configs, 0, sizeof(bms_data_configs_t));
+
+	bms_info->modbus_slave_info = NULL;
+
+	set_gun_on_off(bms_info, 0);
+
+	os_status = osMutexWait(bms_info_list_mutex, osWaitForever);
+
+	if(os_status != osOK) {
+	}
+
+	list_add_tail(&bms_info->list, &bms_info_list);
+
+	os_status = osMutexRelease(bms_info_list_mutex);
+
+	if(os_status != osOK) {
+	}
+
+
+	return bms_info;
+
+failed:
+
+	if(bms_info != NULL) {
+		os_free(bms_info);
+		bms_info = NULL;
+	}
+
+	if(eeprom_modbus_data_bitmap != NULL) {
+		set_bitmap_value(eeprom_modbus_data_bitmap, bms_info->eeprom_modbus_data_index, 0);
+	}
+
+	return bms_info;
 }
 
 int load_eeprom_modbus_data(bms_info_t *bms_info)
@@ -1474,45 +1563,6 @@ int load_eeprom_modbus_data(bms_info_t *bms_info)
 	offset += sizeof(bms_data_configs_t);
 
 	return ret;
-}
-
-int save_eeprom_modbus_data(bms_info_t *bms_info)
-{
-	int ret = -1;
-	uint32_t offset;
-	uint32_t crc = 0;
-	eeprom_modbus_head_t eeprom_modbus_head;
-
-	offset = sizeof(eeprom_modbus_data_t) * bms_info->eeprom_modbus_data_index;
-
-	if(bms_info == NULL) {
-		return ret;
-	}
-
-	if(detect_eeprom(bms_info->eeprom_info) != 0) {
-		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
-		return ret;
-	}
-
-	eeprom_modbus_head.payload_size = sizeof(eeprom_modbus_data_t);
-
-	crc += eeprom_modbus_head.payload_size;
-	crc += (uint32_t)'b';
-	crc += (uint32_t)'m';
-	crc += (uint32_t)'s';
-
-	eeprom_modbus_head.crc = crc;
-
-	eeprom_write(bms_info->eeprom_info, offset, (uint8_t *)&eeprom_modbus_head, sizeof(eeprom_modbus_head_t));
-	offset += sizeof(eeprom_modbus_head_t);
-
-	eeprom_write(bms_info->eeprom_info, offset, (uint8_t *)bms_info->settings, sizeof(bms_data_settings_t));
-	offset += sizeof(bms_data_settings_t);
-
-	eeprom_write(bms_info->eeprom_info, offset, (uint8_t *)&bms_info->configs, sizeof(bms_data_configs_t));
-	offset += sizeof(bms_data_configs_t);
-
-	return 0;
 }
 
 void bms_restore_data(bms_info_t *bms_info)
@@ -1709,12 +1759,28 @@ void bms_handle_response(bms_info_t *bms_info)
 
 uint8_t is_gun_connected(bms_info_t *bms_info)
 {
-	return bms_info->bms_info_config->get_gun_connect_state();
+	GPIO_PinState state = HAL_GPIO_ReadPin(bms_info->bms_info_config->gpio_port_gun_connect_state,
+	                                       bms_info->bms_info_config->gpio_pin_gun_connect_state);
+
+	if(state == GPIO_PIN_RESET) {
+		//return 0;
+		return 1;
+	} else {
+		return 1;
+	}
 }
 
 uint8_t is_bms_poweron_enable(bms_info_t *bms_info)
 {
-	return bms_info->bms_info_config->get_bms_power_enable_state();
+	GPIO_PinState state = HAL_GPIO_ReadPin(bms_info->bms_info_config->gpio_port_bms_power_enable_state,
+	                                       bms_info->bms_info_config->gpio_pin_bms_power_enable_state);
+
+	if(state == GPIO_PIN_RESET) {
+		//return 0;
+		return 1;
+	} else {
+		return 1;
+	}
 }
 
 static void update_ui_data(bms_info_t *bms_info)

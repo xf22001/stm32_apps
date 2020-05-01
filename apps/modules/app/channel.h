@@ -6,7 +6,7 @@
  *   文件名称：channel.h
  *   创 建 者：肖飞
  *   创建日期：2020年04月30日 星期四 08时56分47秒
- *   修改日期：2020年04月30日 星期四 16时12分20秒
+ *   修改日期：2020年05月01日 星期五 20时54分42秒
  *   描    述：
  *
  *================================================================*/
@@ -51,6 +51,6 @@ typedef struct {
 	uint16_t module_output_current;//模块充电电流
 } channel_info_t;
 
-channel_info_t *get_or_alloc_channel_info(uint8_t channel_id);
-int channel_set_channel_config(channel_info_t *channel_info, channel_info_config_t *channel_info_config);
+void free_channel_info(channel_info_t *channel_info);
+channel_info_t *get_or_alloc_channel_info(channel_info_config_t *channel_info_config);
 #endif //_CHANNEL_H

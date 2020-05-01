@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时07分55秒
- *   修改日期：2020年04月29日 星期三 11时01分59秒
+ *   修改日期：2020年05月01日 星期五 21时12分56秒
  *   描    述：
  *
  *================================================================*/
@@ -165,6 +165,12 @@ can_info_t *get_or_alloc_can_info(CAN_HandleTypeDef *hcan)
 		return can_info;
 	}
 
+	can_config = get_can_config(hcan);
+
+	if(can_config == NULL) {
+		return can_info;
+	}
+
 	if(can_info_list_mutex == NULL) {
 		osMutexDef(can_info_list_mutex);
 		can_info_list_mutex = osMutexCreate(osMutex(can_info_list_mutex));
@@ -172,12 +178,6 @@ can_info_t *get_or_alloc_can_info(CAN_HandleTypeDef *hcan)
 		if(can_info_list_mutex == NULL) {
 			return can_info;
 		}
-	}
-
-	can_config = get_can_config(hcan);
-
-	if(can_config == NULL) {
-		return can_info;
 	}
 
 	can_info = (can_info_t *)os_alloc(sizeof(can_info_t));

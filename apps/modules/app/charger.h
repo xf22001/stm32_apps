@@ -6,7 +6,7 @@
  *   文件名称：charger.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分46秒
- *   修改日期：2020年04月30日 星期四 10时42分54秒
+ *   修改日期：2020年05月01日 星期五 16时44分12秒
  *   描    述：
  *
  *================================================================*/
@@ -83,7 +83,11 @@ typedef struct {
 
 	channel_info_config_t *channel_info_config;
 
-	a_f_b_info_t *a_f_b_info;
+	void *a_f_b_info;
+
+	void *channel_com_info;
+
+	void *channel_info;
 
 	charger_op_ctx_t charger_op_ctx;
 
@@ -145,8 +149,7 @@ typedef enum {
 } charger_error_status_t;
 
 void free_charger_info(charger_info_t *charger_info);
-charger_info_t *get_or_alloc_charger_info(can_info_t *can_info);
-int charger_info_set_channel_config(charger_info_t *charger_info, channel_info_config_t *channel_info_config);
+charger_info_t *get_or_alloc_charger_info(channel_info_config_t *channel_info_config);
 
 charger_state_t get_charger_state(charger_info_t *charger_info);
 void set_charger_state(charger_info_t *charger_info, charger_state_t state);

@@ -6,7 +6,7 @@
  *   文件名称：modbus_master_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月20日 星期一 15时28分52秒
- *   修改日期：2020年04月22日 星期三 11时59分32秒
+ *   修改日期：2020年05月01日 星期五 21时04分45秒
  *   描    述：
  *
  *================================================================*/
@@ -18,7 +18,7 @@
 static LIST_HEAD(modbus_master_info_list);
 static osMutexId modbus_master_info_list_mutex = NULL;
 
-static modbus_master_info_t *get_modbus_master_info(uart_info_t *uart_info)
+static modbus_master_info_t *get_modbus_master_info(UART_HandleTypeDef *huart)
 {
 	modbus_master_info_t *modbus_master_info = NULL;
 	modbus_master_info_t *modbus_master_info_item = NULL;
@@ -34,7 +34,7 @@ static modbus_master_info_t *get_modbus_master_info(uart_info_t *uart_info)
 	}
 
 	list_for_each_entry(modbus_master_info_item, &modbus_master_info_list, modbus_master_info_t, list) {
-		if(modbus_master_info_item->uart_info == uart_info) {
+		if(modbus_master_info_item->uart_info->huart == huart) {
 			modbus_master_info = modbus_master_info_item;
 			break;
 		}
@@ -81,14 +81,20 @@ void free_modbus_master_info(modbus_master_info_t *modbus_master_info)
 	os_free(modbus_master_info);
 }
 
-modbus_master_info_t *get_or_alloc_modbus_master_info(uart_info_t *uart_info)
+modbus_master_info_t *get_or_alloc_modbus_master_info(UART_HandleTypeDef *huart)
 {
 	modbus_master_info_t *modbus_master_info = NULL;
 	osStatus os_status;
+	uart_info_t *uart_info;
 
-	modbus_master_info = get_modbus_master_info(uart_info);
+	modbus_master_info = get_modbus_master_info(huart);
 
 	if(modbus_master_info != NULL) {
+		return modbus_master_info;
+	}
+
+	uart_info = get_or_alloc_uart_info(huart);
+	if(uart_info == NULL) {
 		return modbus_master_info;
 	}
 

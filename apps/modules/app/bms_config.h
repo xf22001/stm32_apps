@@ -6,7 +6,7 @@
  *   文件名称：bms_config.h
  *   创 建 者：肖飞
  *   创建日期：2020年04月18日 星期六 12时29分38秒
- *   修改日期：2020年04月30日 星期四 11时15分19秒
+ *   修改日期：2020年05月01日 星期五 20时53分13秒
  *   描    述：
  *
  *================================================================*/
@@ -25,16 +25,28 @@ extern "C"
 }
 #endif
 
-typedef uint8_t (*get_gun_connect_state_t)(void);
-typedef uint8_t (*get_bms_power_enable_state_t)(void);
-typedef void (*set_gun_on_off_state_t)(uint8_t state);
-
 typedef struct {
+	uint8_t bms_id;
+
 	CAN_HandleTypeDef *hcan;
-	get_gun_connect_state_t get_gun_connect_state;
-	get_bms_power_enable_state_t get_bms_power_enable_state;
-	set_gun_on_off_state_t set_gun_on_off_state;
+
+	UART_HandleTypeDef *huart;
+
+	SPI_HandleTypeDef *hspi;
+	GPIO_TypeDef *gpio_port_spi_cs;
+	uint16_t gpio_pin_spi_cs;
+	GPIO_TypeDef *gpio_port_spi_wp;
+	uint16_t gpio_pin_spi_wp;
+
+	GPIO_TypeDef* gpio_port_gun_connect_state;
+	uint16_t gpio_pin_gun_connect_state;
+
+	GPIO_TypeDef* gpio_port_bms_power_enable_state;
+	uint16_t gpio_pin_bms_power_enable_state;
+
+	GPIO_TypeDef* gpio_port_gun_on_off_state;
+	uint16_t gpio_pin_gun_on_off_state;
 } bms_info_config_t;
 
-bms_info_config_t *get_bms_info_config(can_info_t *can_info);
+bms_info_config_t *get_bms_info_config(uint8_t bms_id);
 #endif //_BMS_CONFIG_H
