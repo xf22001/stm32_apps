@@ -6,7 +6,7 @@
  *   文件名称：charger.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分46秒
- *   修改日期：2020年05月01日 星期五 16时44分12秒
+ *   修改日期：2020年05月05日 星期二 20时43分39秒
  *   描    述：
  *
  *================================================================*/
@@ -31,6 +31,8 @@ extern "C"
 #include "list_utils.h"
 
 #include "channel_config.h"
+
+#include "callback_chain.h"
 
 typedef enum {
 	CHARGER_STATE_IDLE = 0,
@@ -95,6 +97,8 @@ typedef struct {
 
 	bms_data_settings_t *settings;
 
+	callback_chain_t *report_status_chain;
+
 	uint32_t stamp;
 	uint32_t stamp_1;
 	uint32_t stamp_2;
@@ -146,17 +150,24 @@ typedef enum {
 	CHARGER_ERROR_STATUS_CRO_OUTPUT_VOLTAGE_UNMATCH,
 	CHARGER_ERROR_STATUS_CRO_OP_STATE_PRECHARGE_TIMEOUT,
 	CHARGER_ERROR_STATUS_CSD_CEM_OP_STATE_DISCHARGE_TIMEOUT,
-} charger_error_status_t;
+} charger_info_error_status_t;
+
+typedef struct {
+	charger_state_t state;
+	charger_info_error_status_t error_status;
+} charger_report_status_t;
 
 void free_charger_info(charger_info_t *charger_info);
 charger_info_t *get_or_alloc_charger_info(channel_info_config_t *channel_info_config);
 
+int add_charger_info_report_status_cb(charger_info_t *charger_info, callback_item_t *callback_item);
+int remove_charger_info_report_status_cb(charger_info_t *charger_info, callback_item_t *callback_item);
+void charger_info_report_status(charger_info_t *charger_info, charger_info_error_status_t error_status);
 charger_state_t get_charger_state(charger_info_t *charger_info);
 void set_charger_state(charger_info_t *charger_info, charger_state_t state);
 void set_charger_state_locked(charger_info_t *charger_info, charger_state_t state);
 void charger_handle_request(charger_info_t *charger_info);
 void charger_handle_response(charger_info_t *charger_info);
-void report_charger_status(charger_info_t *charger_info, charger_error_status_t charger_error_status);
 void set_auxiliary_power_state(charger_info_t *charger_info, uint8_t state);
 void set_gun_lock_state(charger_info_t *charger_info, uint8_t state);
 void set_power_output_enable(charger_info_t *charger_info, uint8_t state);

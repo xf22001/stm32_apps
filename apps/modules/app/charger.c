@@ -6,7 +6,7 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年05月01日 星期五 17时03分17秒
+ *   修改日期：2020年05月05日 星期二 20时45分59秒
  *   描    述：
  *
  *================================================================*/
@@ -127,16 +127,20 @@ void free_charger_info(charger_info_t *charger_info)
 	if(os_status != osOK) {
 	}
 
-	if(charger_info->settings) {
-		os_free(charger_info->settings);
-	}
-
 	if(charger_info->handle_mutex) {
 		os_status = osMutexDelete(charger_info->handle_mutex);
 
 		if(osOK != os_status) {
 		}
 	}
+
+	if(charger_info->settings) {
+		os_free(charger_info->settings);
+	}
+
+	free_callback_chain(charger_info->report_status_chain);
+
+	charger_info->report_status_chain = NULL;
 
 	os_free(charger_info);
 }
@@ -270,6 +274,13 @@ charger_info_t *get_or_alloc_charger_info(channel_info_config_t *channel_info_co
 
 	memset(charger_info, 0, sizeof(charger_info_t));
 
+	charger_info->report_status_chain = alloc_callback_chain();
+
+	if(charger_info->report_status_chain == NULL) {
+		goto failed;
+	}
+
+
 	if(charger_info_set_channel_config(charger_info, channel_info_config) != 0) {
 		goto failed;
 	}
@@ -300,11 +311,39 @@ charger_info_t *get_or_alloc_charger_info(channel_info_config_t *channel_info_co
 failed:
 
 	if(charger_info != NULL) {
+		free_callback_chain(charger_info->report_status_chain);
+		charger_info->report_status_chain = NULL;
+
 		os_free(charger_info);
 		charger_info = NULL;
 	}
 
 	return charger_info;
+}
+
+int add_charger_info_report_status_cb(charger_info_t *charger_info, callback_item_t *callback_item)
+{
+	int ret = -1;
+	ret = register_callback(charger_info->report_status_chain, callback_item);
+	return ret;
+}
+
+int remove_charger_info_report_status_cb(charger_info_t *charger_info, callback_item_t *callback_item)
+{
+	int ret = -1;
+	ret = remove_callback(charger_info->report_status_chain, callback_item);
+	return ret;
+}
+
+void charger_info_report_status(charger_info_t *charger_info, charger_info_error_status_t error_status)
+{
+	charger_report_status_t charger_report_status;
+	charger_report_status.state = charger_info->state;
+	charger_report_status.error_status = error_status;
+
+	udp_log_printf("%s:%s:%d state:%s, error_status:%d\n", __FILE__, __func__, __LINE__, get_charger_state_des(charger_info->state), error_status);
+
+	do_callback_chain(charger_info->report_status_chain, &charger_report_status);
 }
 
 charger_state_t get_charger_state(charger_info_t *charger_info)
@@ -408,11 +447,6 @@ void charger_handle_response(charger_info_t *charger_info)
 		if(os_status != osOK) {
 		}
 	}
-}
-
-void report_charger_status(charger_info_t *charger_info, charger_error_status_t charger_error_status)
-{
-	udp_log_printf("%s:%s:%d charger_status:%d\n", __FILE__, __func__, __LINE__, charger_error_status);
 }
 
 void set_auxiliary_power_state(charger_info_t *charger_info, uint8_t state)

@@ -6,7 +6,7 @@
  *   文件名称：modbus_slave_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月20日 星期一 14时54分12秒
- *   修改日期：2020年05月01日 星期五 18时53分28秒
+ *   修改日期：2020年05月05日 星期二 12时34分34秒
  *   描    述：
  *
  *================================================================*/
@@ -146,6 +146,9 @@ modbus_slave_info_t *get_or_alloc_modbus_slave_info(UART_HandleTypeDef *huart)
 failed:
 
 	if(modbus_slave_info != NULL) {
+		free_callback_chain(modbus_slave_info->data_changed_chain);
+		modbus_slave_info->data_changed_chain = NULL;
+
 		os_free(modbus_slave_info);
 		modbus_slave_info = NULL;
 	}
