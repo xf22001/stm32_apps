@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月30日 星期四 08时56分05秒
- *   修改日期：2020年05月01日 星期五 21时42分50秒
+ *   修改日期：2020年05月06日 星期三 09时06分05秒
  *   描    述：
  *
  *================================================================*/
@@ -115,10 +115,6 @@ channel_info_t *get_or_alloc_channel_info(channel_info_config_t *channel_info_co
 
 	memset(channel_info, 0, sizeof(channel_info_t));
 
-	if(channel_set_channel_config(channel_info, channel_info_config) == 0) {
-		goto failed;
-	}
-
 	os_status = osMutexWait(channel_info_list_mutex, osWaitForever);
 
 	if(os_status != osOK) {
@@ -131,12 +127,14 @@ channel_info_t *get_or_alloc_channel_info(channel_info_config_t *channel_info_co
 	if(os_status != osOK) {
 	}
 
+	if(channel_set_channel_config(channel_info, channel_info_config) == 0) {
+		goto failed;
+	}
+
 	return channel_info;
 failed:
-
-	if(channel_info != NULL) {
-		os_free(channel_info);
-	}
+	free_channel_info(channel_info);
+	channel_info = NULL;
 
 	return channel_info;
 }

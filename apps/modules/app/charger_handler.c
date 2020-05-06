@@ -6,7 +6,7 @@
  *   文件名称：charger_handler.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时18分42秒
- *   修改日期：2020年05月05日 星期二 12时57分30秒
+ *   修改日期：2020年05月06日 星期三 09时25分12秒
  *   描    述：
  *
  *================================================================*/
@@ -673,9 +673,11 @@ static int handle_state_cro_request(charger_info_t *charger_info)
 	if(charger_info->settings->cro_data.cro_result == 0xaa) {
 		if(ticks - charger_info->stamp >= FN_BCL_TIMEOUT) {//定时发送
 			charger_info->settings->cem_data.u3.s.bcl_timeout = 0x01;
+			charger_info_report_status(charger_info, CHARGER_ERROR_STATUS_BCL_TIMEOUT);
 			set_charger_state(charger_info, CHARGER_STATE_CSD_CEM);
 		} else if(ticks - charger_info->stamp_1 >= BMS_GENERIC_TIMEOUT) {//定时发送
 			charger_info->settings->cem_data.u3.s.bcs_timeout = 0x01;
+			charger_info_report_status(charger_info, CHARGER_ERROR_STATUS_BCS_TIMEOUT);
 			set_charger_state(charger_info, CHARGER_STATE_CSD_CEM);
 		}
 	}
@@ -867,10 +869,12 @@ static int handle_state_ccs_request(charger_info_t *charger_info)
 
 	if(ticks - charger_info->stamp >= FN_BCL_TIMEOUT) {//bcl timeout
 		charger_info->settings->cem_data.u3.s.bcl_timeout = 0x01;
+		charger_info_report_status(charger_info, CHARGER_ERROR_STATUS_BCL_TIMEOUT);
 		set_charger_state(charger_info, CHARGER_STATE_CSD_CEM);
 	} else if(ticks - charger_info->stamp_1 >= BMS_GENERIC_TIMEOUT) {//bcs timeout
 		charger_info->settings->cem_data.u3.s.bcs_timeout = 0x01;
 		set_charger_state(charger_info, CHARGER_STATE_CSD_CEM);
+		charger_info_report_status(charger_info, CHARGER_ERROR_STATUS_BCS_TIMEOUT);
 	}
 
 	if(ticks - charger_info->send_stamp >= FN_CCS_SEND_PERIOD) {

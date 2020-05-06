@@ -6,7 +6,7 @@
  *   文件名称：charger.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分46秒
- *   修改日期：2020年05月05日 星期二 20时43分39秒
+ *   修改日期：2020年05月06日 星期三 09时25分49秒
  *   描    述：
  *
  *================================================================*/
@@ -149,6 +149,8 @@ typedef enum {
 	CHARGER_ERROR_STATUS_BRO_TIMEOUT,
 	CHARGER_ERROR_STATUS_CRO_OUTPUT_VOLTAGE_UNMATCH,
 	CHARGER_ERROR_STATUS_CRO_OP_STATE_PRECHARGE_TIMEOUT,
+	CHARGER_ERROR_STATUS_BCL_TIMEOUT,
+	CHARGER_ERROR_STATUS_BCS_TIMEOUT,
 	CHARGER_ERROR_STATUS_CSD_CEM_OP_STATE_DISCHARGE_TIMEOUT,
 } charger_info_error_status_t;
 

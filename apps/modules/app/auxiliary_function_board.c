@@ -6,7 +6,7 @@
  *   文件名称：auxiliary_function_board.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月28日 星期二 11时34分17秒
- *   修改日期：2020年05月01日 星期五 20时50分59秒
+ *   修改日期：2020年05月06日 星期三 08时59分35秒
  *   描    述：
  *
  *================================================================*/
@@ -126,10 +126,6 @@ a_f_b_info_t *get_or_alloc_a_f_b_info(channel_info_config_t *channel_info_config
 
 	memset(a_f_b_info, 0, sizeof(a_f_b_info_t));
 
-	if(a_f_b_info_set_channel_config(a_f_b_info, channel_info_config) != 0) {
-		goto failed;
-	}
-
 	for(i = 0; i < A_F_B_CMD_TOTAL; i++) {
 		a_f_b_info->cmd_ctx[i].state = A_F_B_STATE_IDLE;
 	}
@@ -150,12 +146,14 @@ a_f_b_info_t *get_or_alloc_a_f_b_info(channel_info_config_t *channel_info_config
 	if(os_status != osOK) {
 	}
 
+	if(a_f_b_info_set_channel_config(a_f_b_info, channel_info_config) != 0) {
+		goto failed;
+	}
+
 	return a_f_b_info;
 failed:
-	if(a_f_b_info != NULL) {
-		os_free(a_f_b_info);
-		a_f_b_info = NULL;
-	}
+	free_a_f_b_info(a_f_b_info);
+	a_f_b_info = NULL;
 
 	return a_f_b_info;
 }

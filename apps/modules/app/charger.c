@@ -6,7 +6,7 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年05月05日 星期二 20时45分59秒
+ *   修改日期：2020年05月06日 星期三 09时09分57秒
  *   描    述：
  *
  *================================================================*/
@@ -280,11 +280,6 @@ charger_info_t *get_or_alloc_charger_info(channel_info_config_t *channel_info_co
 		goto failed;
 	}
 
-
-	if(charger_info_set_channel_config(charger_info, channel_info_config) != 0) {
-		goto failed;
-	}
-
 	charger_info->settings = bms_data_alloc_settings();
 
 	if(charger_info->settings == NULL) {
@@ -306,17 +301,15 @@ charger_info_t *get_or_alloc_charger_info(channel_info_config_t *channel_info_co
 	if(os_status != osOK) {
 	}
 
+	if(charger_info_set_channel_config(charger_info, channel_info_config) != 0) {
+		goto failed;
+	}
+
 	return charger_info;
 
 failed:
-
-	if(charger_info != NULL) {
-		free_callback_chain(charger_info->report_status_chain);
-		charger_info->report_status_chain = NULL;
-
-		os_free(charger_info);
-		charger_info = NULL;
-	}
+	free_charger_info(charger_info);
+	charger_info = NULL;
 
 	return charger_info;
 }

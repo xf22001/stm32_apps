@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年05月01日 星期五 21时27分48秒
+ *   修改日期：2020年05月06日 星期三 09时05分07秒
  *   描    述：
  *
  *================================================================*/
@@ -1455,10 +1455,6 @@ bms_info_t *get_or_alloc_bms_info(bms_info_config_t *bms_info_config)
 
 	memset(bms_info, 0, sizeof(bms_info_t));
 
-	if(bms_info_set_bms_info_config(bms_info, bms_info_config) != 0) {
-		goto failed;
-	}
-
 	index = get_first_value_index(eeprom_modbus_data_bitmap, 0);
 
 	if(index == -1) {
@@ -1501,19 +1497,16 @@ bms_info_t *get_or_alloc_bms_info(bms_info_config_t *bms_info_config)
 	if(os_status != osOK) {
 	}
 
+	if(bms_info_set_bms_info_config(bms_info, bms_info_config) != 0) {
+		goto failed;
+	}
 
 	return bms_info;
 
 failed:
 
-	if(bms_info != NULL) {
-		os_free(bms_info);
-		bms_info = NULL;
-	}
-
-	if(eeprom_modbus_data_bitmap != NULL) {
-		set_bitmap_value(eeprom_modbus_data_bitmap, bms_info->eeprom_modbus_data_index, 0);
-	}
+	free_bms_info(bms_info);
+	bms_info = NULL;
 
 	return bms_info;
 }

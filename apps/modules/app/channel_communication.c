@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分44秒
- *   修改日期：2020年05月01日 星期五 16时57分01秒
+ *   修改日期：2020年05月06日 星期三 08时57分24秒
  *   描    述：
  *
  *================================================================*/
@@ -155,10 +155,6 @@ channel_com_info_t *get_or_alloc_channel_com_info(channel_info_config_t *channel
 
 	memset(channel_com_info, 0, sizeof(channel_com_info_t));
 
-	if(channel_com_info_set_channel_config(channel_com_info, channel_info_config) != 0) {
-		goto failed;
-	}
-
 	os_status = osMutexWait(channel_com_info_list_mutex, osWaitForever);
 
 	if(os_status != osOK) {
@@ -171,13 +167,16 @@ channel_com_info_t *get_or_alloc_channel_com_info(channel_info_config_t *channel
 	if(os_status != osOK) {
 	}
 
+	if(channel_com_info_set_channel_config(channel_com_info, channel_info_config) != 0) {
+		goto failed;
+	}
+
 	return channel_com_info;
 failed:
 
-	if(channel_com_info != NULL) {
-		os_free(channel_com_info);
-		channel_com_info = NULL;
-	}
+	free_channel_com_info(channel_com_info);
+
+	channel_com_info = NULL;
 
 	return channel_com_info;
 }
