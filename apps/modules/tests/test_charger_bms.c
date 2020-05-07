@@ -6,7 +6,7 @@
  *   文件名称：test_charger_bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时28分36秒
- *   修改日期：2020年05月01日 星期五 21时12分13秒
+ *   修改日期：2020年05月07日 星期四 10时12分59秒
  *   描    述：
  *
  *================================================================*/
@@ -36,6 +36,7 @@ static void task_charger_request(void const *argument)
 	}
 
 	for(;;) {
+		charger_periodic(charger_info);
 		charger_handle_request(charger_info);
 		osDelay(10);
 	}
@@ -54,7 +55,7 @@ static void task_charger_response(void const *argument)
 	}
 
 	for(;;) {
-		int ret = can_rx_data(charger_info->can_info, 10);
+		int ret = can_rx_data(charger_info->can_info, 1000);
 
 		if(ret == 0) {
 			charger_handle_response(charger_info);
@@ -94,7 +95,7 @@ static void task_bms_response(void const *argument)
 	}
 
 	for(;;) {
-		int ret = can_rx_data(bms_info->can_info, 10);
+		int ret = can_rx_data(bms_info->can_info, 1000);
 
 		if(ret == 0) {
 			bms_handle_response(bms_info);

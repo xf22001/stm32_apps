@@ -6,14 +6,14 @@
  *   文件名称：modbus_slave_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月20日 星期一 14时54分12秒
- *   修改日期：2020年05月05日 星期二 12时34分34秒
+ *   修改日期：2020年05月06日 星期三 13时26分44秒
  *   描    述：
  *
  *================================================================*/
 #include "modbus_slave_txrx.h"
 #include "modbus_spec.h"
 #include "os_utils.h"
-//#define UDP_LOG
+#define UDP_LOG
 #include "task_probe_tool.h"
 
 static LIST_HEAD(modbus_slave_info_list);
@@ -125,8 +125,8 @@ modbus_slave_info_t *get_or_alloc_modbus_slave_info(UART_HandleTypeDef *huart)
 	}
 
 	modbus_slave_info->uart_info = uart_info;
-	modbus_slave_info->rx_timeout = 100;
-	modbus_slave_info->tx_timeout = 100;
+	modbus_slave_info->rx_timeout = 1000;
+	modbus_slave_info->tx_timeout = 1000;
 	modbus_slave_info->modbus_slave_data_info = NULL;
 
 	os_status = osMutexWait(modbus_slave_info_list_mutex, osWaitForever);

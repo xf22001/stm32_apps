@@ -6,7 +6,7 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年05月06日 星期三 09时09分57秒
+ *   修改日期：2020年05月07日 星期四 17时03分14秒
  *   描    述：
  *
  *================================================================*/
@@ -20,7 +20,6 @@
 #include "task_probe_tool.h"
 #include "auxiliary_function_board.h"
 #include "channel_communication.h"
-#include "channel.h"
 
 static LIST_HEAD(charger_info_list);
 static osMutexId charger_info_list_mutex = NULL;
@@ -203,7 +202,6 @@ static int charger_info_set_channel_config(charger_info_t *charger_info, channel
 {
 	int ret = -1;
 	can_info_t *can_info;
-	channel_info_t *channel_info;
 	a_f_b_info_t *a_f_b_info;
 	channel_com_info_t *channel_com_info;
 
@@ -216,14 +214,6 @@ static int charger_info_set_channel_config(charger_info_t *charger_info, channel
 	}
 
 	charger_info->can_info = can_info;
-
-	channel_info = get_or_alloc_channel_info(channel_info_config);
-
-	if(channel_info == NULL) {
-		return ret;
-	}
-
-	charger_info->channel_info = channel_info;
 
 	a_f_b_info = get_or_alloc_a_f_b_info(channel_info_config);
 
@@ -328,13 +318,14 @@ int remove_charger_info_report_status_cb(charger_info_t *charger_info, callback_
 	return ret;
 }
 
-void charger_info_report_status(charger_info_t *charger_info, charger_info_error_status_t error_status)
+void charger_info_report_status(charger_info_t *charger_info, charger_state_t state, charger_info_status_t status)
 {
 	charger_report_status_t charger_report_status;
-	charger_report_status.state = charger_info->state;
-	charger_report_status.error_status = error_status;
 
-	udp_log_printf("%s:%s:%d state:%s, error_status:%d\n", __FILE__, __func__, __LINE__, get_charger_state_des(charger_info->state), error_status);
+	charger_report_status.state = state;
+	charger_report_status.status = status;
+
+	udp_log_printf("%s:%s:%d state:%s, status:%d\n", __FILE__, __func__, __LINE__, get_charger_state_des(state), status);
 
 	do_callback_chain(charger_info->report_status_chain, &charger_report_status);
 }
@@ -352,11 +343,13 @@ void set_charger_state(charger_info_t *charger_info, charger_state_t state)
 		return;
 	}
 
+	udp_log_printf("change to state:%s!\n", get_charger_state_des(state));
+
+	charger_info_report_status(charger_info, state, CHARGER_INFO_STATUS_NONE);
+
 	if((handler != NULL) && (handler->prepare != NULL)) {
 		handler->prepare(charger_info);
 	}
-
-	udp_log_printf("change to state:%s!\n", get_charger_state_des(state));
 
 	charger_info->state = state;
 }
@@ -541,26 +534,30 @@ int discharge(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)
 }
 
 //20 * 1000
-int precharge(charger_info_t *charger_info, uint16_t voltage, charger_op_ctx_t *charger_op_ctx)
+int precharge(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)
 {
 	uint32_t ticks = osKernelSysTick();
 	int ret = 1;
-	//channel_com_info_t *channel_com_info = (channel_com_info_t *)charger_info->channel_com_info;
-	channel_info_t *channel_info = (channel_info_t *)charger_info->channel_info;
+	channel_com_info_t *channel_com_info = (channel_com_info_t *)charger_info->channel_com_info;
 
 	switch(charger_op_ctx->state) {
 		case 0: {
-			//request_precharge(channel_com_info, voltage);
+			request_precharge(channel_com_info);
 			charger_op_ctx->stamp = ticks;
-			charger_op_ctx->state = 1;
+
+			if(charger_info->precharge_action == PRECHARGE_ACTION_START) {
+				charger_op_ctx->state = 1;
+			} else {
+				ret = 0;
+			}
 		}
 		break;
 
-		case 2: {
+		case 1: {
 			if(ticks - charger_op_ctx->stamp >= (20 * 1000)) {
 				ret = -1;
 			} else {
-				if(abs(channel_info->module_output_voltage - voltage) <= 20) {
+				if(abs(charger_info->module_output_voltage - charger_info->precharge_voltage) <= 20) {
 					ret = 0;
 				}
 			}
@@ -714,4 +711,79 @@ int wait_no_current(charger_info_t *charger_info, charger_op_ctx_t *charger_op_c
 	ret = 0;
 	udp_log_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
 	return ret;
+}
+
+static void channel_update_door_state(charger_info_t *charger_info)
+{
+	GPIO_PinState state = HAL_GPIO_ReadPin(charger_info->channel_info_config->gpio_port_door,
+	                                       charger_info->channel_info_config->gpio_pin_door);
+
+	//udp_log_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
+
+	if(state == GPIO_PIN_RESET) {
+		charger_info->door_state = 0;
+	} else {
+		charger_info->door_state = 1;
+	}
+}
+
+static uint8_t get_gun_connect_state(charger_info_t *charger_info)
+{
+	GPIO_PinState state = HAL_GPIO_ReadPin(charger_info->channel_info_config->gpio_port_gun,
+	                                       charger_info->channel_info_config->gpio_pin_gun);
+
+	//udp_log_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
+
+	if(state == GPIO_PIN_RESET) {
+		return 0;
+	} else {
+		return 1;
+	}
+}
+
+static void channel_update_gun_state(charger_info_t *charger_info)//100ms
+{
+	uint8_t state;
+	uint32_t ticks = osKernelSysTick();
+
+	if(ticks - charger_info->gun_connect_state_update_stamp < 100) {
+		return;
+	}
+
+	charger_info->gun_connect_state_update_stamp = ticks;
+
+	state = get_gun_connect_state(charger_info);
+
+	if(state != charger_info->gun_connect_state) {
+		charger_info->gun_connect_state_debounce_count++;
+
+		if(charger_info->gun_connect_state_debounce_count >= 3) {
+			charger_info->gun_connect_state_debounce_count = 0;
+			charger_info->gun_connect_state = state;
+			udp_log_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
+		}
+	} else {
+		charger_info->gun_connect_state_debounce_count = 0;
+	}
+}
+
+static uint8_t channel_update_error_stop_state(charger_info_t *charger_info)
+{
+	GPIO_PinState state = HAL_GPIO_ReadPin(charger_info->channel_info_config->gpio_port_error_stop,
+	                                       charger_info->channel_info_config->gpio_pin_error_stop);
+
+	//udp_log_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
+
+	if(state == GPIO_PIN_RESET) {
+		charger_info->error_stop_state = 0;
+	} else {
+		charger_info->error_stop_state = 1;
+	}
+}
+
+void charger_periodic(charger_info_t *charger_info)//10ms
+{
+	channel_update_gun_state(charger_info);
+	channel_update_door_state(charger_info);
+	channel_update_error_stop_state(charger_info);
 }

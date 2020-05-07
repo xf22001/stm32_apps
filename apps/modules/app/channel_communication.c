@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分44秒
- *   修改日期：2020年05月06日 星期三 08时57分24秒
+ *   修改日期：2020年05月07日 星期四 17时32分44秒
  *   描    述：
  *
  *================================================================*/
@@ -16,10 +16,8 @@
 #define UDP_LOG
 #include "task_probe_tool.h"
 
-#include "channel.h"
 #include "auxiliary_function_board.h"
 #include "charger.h"
-
 
 static LIST_HEAD(channel_com_info_list);
 static osMutexId channel_com_info_list_mutex = NULL;
@@ -81,11 +79,58 @@ void free_channel_com_info(channel_com_info_t *channel_com_info)
 	os_free(channel_com_info);
 }
 
+static void charger_info_report_status_cb(void *fn_ctx, void *chain_ctx)
+{
+	channel_com_info_t *channel_com_info = (channel_com_info_t *)fn_ctx;
+	charger_report_status_t *charger_report_status = (charger_report_status_t *)chain_ctx;
+
+	udp_log_printf("%s:%s:%d state:%s, status:%d\n",
+	               __FILE__, __func__, __LINE__,
+	               get_charger_state_des(charger_report_status->state),
+	               charger_report_status->status);
+
+	switch(charger_report_status->state) {
+		case CHARGER_STATE_IDLE: {
+		}
+		break;
+
+		case CHARGER_STATE_CHM: {
+		}
+		break;
+
+		case CHARGER_STATE_CRM: {
+		}
+		break;
+
+		case CHARGER_STATE_CTS_CML: {
+		}
+		break;
+
+		case CHARGER_STATE_CRO: {
+		}
+		break;
+
+		case CHARGER_STATE_CCS: {
+		}
+		break;
+
+		case CHARGER_STATE_CST: {
+		}
+		break;
+
+		case CHARGER_STATE_CSD_CEM: {
+		}
+		break;
+
+		default:
+			break;
+	}
+}
+
 static int channel_com_info_set_channel_config(channel_com_info_t *channel_com_info, channel_info_config_t *channel_info_config)
 {
 	int ret = -1;
 	can_info_t *can_info;
-	channel_info_t *channel_info;
 	a_f_b_info_t *a_f_b_info;
 	charger_info_t *charger_info;
 
@@ -99,14 +144,6 @@ static int channel_com_info_set_channel_config(channel_com_info_t *channel_com_i
 
 	channel_com_info->can_info = can_info;
 
-	channel_info = get_or_alloc_channel_info(channel_info_config);
-
-	if(channel_info == NULL) {
-		return ret;
-	}
-
-	channel_com_info->channel_info = channel_info;
-
 	charger_info = get_or_alloc_charger_info(channel_info_config);
 
 	if(charger_info == NULL) {
@@ -114,6 +151,10 @@ static int channel_com_info_set_channel_config(channel_com_info_t *channel_com_i
 	}
 
 	channel_com_info->charger_info = charger_info;
+
+	channel_com_info->charger_info_report_status_cb.fn = charger_info_report_status_cb;
+	channel_com_info->charger_info_report_status_cb.fn_ctx = channel_com_info;
+	add_charger_info_report_status_cb(charger_info, &channel_com_info->charger_info_report_status_cb);
 
 	a_f_b_info = get_or_alloc_a_f_b_info(channel_info_config);
 
@@ -181,17 +222,16 @@ failed:
 	return channel_com_info;
 }
 
-int request_1_101(channel_com_info_t *channel_com_info)
+int request_1_101(channel_com_info_t *channel_com_info)//500ms
 {
 	int ret = -1;
 	cmd_1_t *cmd_1 = (cmd_1_t *)channel_com_info->can_tx_msg.Data;
-	channel_info_t *channel_info = (channel_info_t *)channel_com_info->channel_info;
 	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
 	a_f_b_info_t *a_f_b_info = (a_f_b_info_t *)channel_com_info->a_f_b_info;
 
 	a_f_b_reponse_91_data_t *a_f_b_reponse_91_data = get_a_f_b_status_data(a_f_b_info);
 
-	cmd_1->b1.gun_state = channel_info->gun_connect_state;
+	cmd_1->b1.gun_state = charger_info->gun_connect_state;
 	cmd_1->b1.battery_available = get_battery_available_state(channel_com_info->a_f_b_info);
 	cmd_1->b1.output_state = charger_info->power_output_state;
 	cmd_1->b1.adhesion_p = (a_f_b_reponse_91_data != NULL) ? a_f_b_reponse_91_data->running_state.adhesion_p : 0;
@@ -207,6 +247,10 @@ int request_1_101(channel_com_info_t *channel_com_info)
 	cmd_1->ver_h = VER_MAJOR;
 	cmd_1->ver_h = VER_MINOR;
 
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_1_101].state = CHANNEL_COM_STATE_RESPONSE;
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_3_103].state = CHANNEL_COM_STATE_REQUEST;
+
 	ret = 0;
 
 	return ret;
@@ -216,18 +260,20 @@ int response_1_101(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 	cmd_101_t *cmd_101 = (cmd_101_t *)channel_com_info->can_rx_msg->Data;
-	channel_info_t *channel_info = (channel_info_t *)channel_com_info->channel_info;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
 
-	channel_info->charger_sn = cmd_101->charger_sn;
-	channel_info->gb = cmd_101->gb;
-	channel_info->test_mode = cmd_101->b3.test_mode;
-	channel_info->precharge_enable = cmd_101->b3.precharge_enable;
-	channel_info->fault = cmd_101->b3.fault;
-	channel_info->charger_power_on = cmd_101->b3.charger_power_on;
-	channel_info->manual = cmd_101->b3.manual;
-	channel_info->adhesion_test = cmd_101->b3.adhesion_test;
-	channel_info->double_gun_one_car = cmd_101->b3.double_gun_one_car;
-	channel_info->cp_ad = cmd_101->b3.cp_ad;
+	charger_info->settings->crm_data.charger_sn = cmd_101->charger_sn;
+	charger_info->gb = cmd_101->gb;
+	charger_info->test_mode = cmd_101->b3.test_mode;
+	charger_info->precharge_enable = cmd_101->b3.precharge_enable;
+	charger_info->fault = cmd_101->b3.fault;
+	charger_info->charger_power_on = cmd_101->b3.charger_power_on;
+	charger_info->manual = cmd_101->b3.manual;
+	charger_info->adhesion_test = cmd_101->b3.adhesion_test;
+	charger_info->double_gun_one_car = cmd_101->b3.double_gun_one_car;
+	charger_info->cp_ad = cmd_101->b3.cp_ad;
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_1_101].state = CHANNEL_COM_STATE_IDLE;
 
 	ret = 0;
 	return ret;
@@ -245,6 +291,8 @@ int request_2_102(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_2_102].state = CHANNEL_COM_STATE_IDLE;
+
 	ret = 0;
 
 	return ret;
@@ -254,10 +302,9 @@ int response_2_102(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 	cmd_102_t *cmd_102 = (cmd_102_t *)channel_com_info->can_rx_msg->Data;
-	channel_info_t *channel_info = (channel_info_t *)channel_com_info->channel_info;
 	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
 
-	channel_info->auxiliary_power_type = cmd_102->auxiliary_power_type;
+	charger_info->auxiliary_power_type = cmd_102->auxiliary_power_type;
 
 	charger_info->settings->cml_data.max_output_voltage =
 	    get_u16_from_u8_lh(cmd_102->charger_max_output_voltage_l, cmd_102->charger_max_output_voltage_h);
@@ -267,6 +314,8 @@ int response_2_102(channel_com_info_t *channel_com_info)
 
 	charger_info->settings->cml_data.max_output_current =
 	    get_u16_from_u8_lh(cmd_102->charger_max_output_current_l, cmd_102->charger_max_output_current_h);
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_2_102].state = CHANNEL_COM_STATE_REQUEST;
 
 	ret = 0;
 	return ret;
@@ -286,6 +335,8 @@ int request_13_113(channel_com_info_t *channel_com_info)
 
 	ret = 0;
 
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_13_113].state = CHANNEL_COM_STATE_IDLE;
+
 	return ret;
 }
 
@@ -297,6 +348,8 @@ int response_13_113(channel_com_info_t *channel_com_info)
 
 	charger_info->settings->cml_data.min_output_current =
 	    get_u16_from_u8_lh(cmd_113->charger_min_output_current_l, cmd_113->charger_min_output_current_h);
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_13_113].state = CHANNEL_COM_STATE_REQUEST;
 
 	ret = 0;
 	return ret;
@@ -310,39 +363,21 @@ static channel_com_command_item_t channel_com_command_item_13_113 = {
 	.response_callback = response_13_113,
 };
 
-static uint8_t get_door_state(channel_info_config_t *channel_info_config)
-{
-	uint8_t state;
-
-	state = 0;
-	udp_log_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
-
-	return state;
-}
-
-static uint8_t get_error_stop_state(channel_info_config_t *channel_info_config)
-{
-	uint8_t state;
-
-	state = 0;
-	udp_log_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
-
-	return state;
-}
-
 int request_3_103(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
-	cmd_3_t *cmd_3 = (cmd_3_t *)channel_com_info->can_rx_msg->Data;
+	cmd_3_t *cmd_3 = (cmd_3_t *)channel_com_info->can_tx_msg.Data;
 	a_f_b_info_t *a_f_b_info = (a_f_b_info_t *)channel_com_info->a_f_b_info;
-
 	a_f_b_reponse_91_data_t *a_f_b_reponse_91_data = get_a_f_b_status_data(a_f_b_info);
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
 
 	cmd_3->a_f_b_ver_h = (a_f_b_reponse_91_data != NULL) ? a_f_b_reponse_91_data->version.b1 : 0;
 	cmd_3->a_f_b_ver_l = (a_f_b_reponse_91_data != NULL) ? a_f_b_reponse_91_data->version.b0 : 0;
 	cmd_3->bms_connect_state = 0;//未实现
-	cmd_3->b4.door = get_door_state(channel_com_info->channel_info_config);
-	cmd_3->b4.stop = get_error_stop_state(channel_com_info->channel_info_config);
+	cmd_3->b4.door = charger_info->door_state;
+	cmd_3->b4.stop = charger_info->error_stop_state;
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_3_103].state = CHANNEL_COM_STATE_RESPONSE;
 
 	ret = 0;
 
@@ -353,11 +388,13 @@ int response_3_103(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 	cmd_103_t *cmd_103 = (cmd_103_t *)channel_com_info->can_rx_msg->Data;
-	channel_info_t *channel_info = (channel_info_t *)channel_com_info->channel_info;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
 
-	channel_info->module_output_voltage = get_u16_from_u8_lh(cmd_103->module_output_voltage_l, cmd_103->module_output_voltage_h);
-	channel_info->charnnel_max_output_power = get_u16_from_u8_lh(cmd_103->charnnel_max_output_power_l, cmd_103->charnnel_max_output_power_h);
-	channel_info->module_output_current = get_u16_from_u8_lh(cmd_103->module_output_current_l, cmd_103->module_output_current_h);
+	charger_info->module_output_voltage = get_u16_from_u8_lh(cmd_103->module_output_voltage_l, cmd_103->module_output_voltage_h);
+	charger_info->charnnel_max_output_power = get_u16_from_u8_lh(cmd_103->charnnel_max_output_power_l, cmd_103->charnnel_max_output_power_h);
+	charger_info->module_output_current = get_u16_from_u8_lh(cmd_103->module_output_current_l, cmd_103->module_output_current_h);
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_3_103].state = CHANNEL_COM_STATE_IDLE;
 
 	ret = 0;
 	return ret;
@@ -371,10 +408,23 @@ static channel_com_command_item_t channel_com_command_item_3_103 = {
 	.response_callback = response_3_103,
 };
 
+void request_precharge(channel_com_info_t *channel_com_info)
+{
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_4_104].state = CHANNEL_COM_STATE_REQUEST;
+}
+
 int request_4_104(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
-	cmd_4_t *cmd_4 = (cmd_4_t *)channel_com_info->can_rx_msg->Data;
+	cmd_4_t *cmd_4 = (cmd_4_t *)channel_com_info->can_tx_msg.Data;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
+
+	cmd_4->precharge_voltage_l = get_u8_l_from_u16(charger_info->precharge_voltage);
+	cmd_4->precharge_voltage_h = get_u8_h_from_u16(charger_info->precharge_voltage);
+	cmd_4->precharge_action = charger_info->precharge_action;
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_4_104].state = CHANNEL_COM_STATE_RESPONSE;
+
 	ret = 0;
 
 	return ret;
@@ -383,6 +433,8 @@ int request_4_104(channel_com_info_t *channel_com_info)
 int response_4_104(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_4_104].state = CHANNEL_COM_STATE_IDLE;
 
 	ret = 0;
 	return ret;
@@ -394,4 +446,917 @@ static channel_com_command_item_t channel_com_command_item_4_104 = {
 	.request_callback = request_4_104,
 	.response_code = 104,
 	.response_callback = response_4_104,
+};
+
+int request_5_105(channel_com_info_t *channel_com_info)//CHARGER_INFO_STATUS_BRM_RECEIVED
+{
+	int ret = -1;
+	cmd_5_t *cmd_5 = (cmd_5_t *)channel_com_info->can_tx_msg.Data;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
+
+	cmd_5->bms_version_l = charger_info->settings->brm_data.brm_data.version_1;
+	cmd_5->bms_version_h = get_u8_l_from_u16(charger_info->settings->brm_data.brm_data.version_0);
+	cmd_5->battery_type = charger_info->settings->brm_data.brm_data.battery_type;
+	cmd_5->total_battery_rate_capicity_l = get_u8_l_from_u16(charger_info->settings->brm_data.brm_data.total_battery_rate_capicity);
+	cmd_5->total_battery_rate_capicity_h = get_u8_h_from_u16(charger_info->settings->brm_data.brm_data.total_battery_rate_capicity);
+	cmd_5->total_battery_rate_voltage_l = get_u8_l_from_u16(charger_info->settings->brm_data.brm_data.total_battery_rate_voltage);
+	cmd_5->total_battery_rate_voltage_h = get_u8_h_from_u16(charger_info->settings->brm_data.brm_data.total_battery_rate_voltage);
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_5_105].state = CHANNEL_COM_STATE_RESPONSE;
+	ret = 0;
+
+	return ret;
+}
+
+int response_5_105(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_5_105].state = CHANNEL_COM_STATE_IDLE;
+
+	ret = 0;
+	return ret;
+}
+
+static channel_com_command_item_t channel_com_command_item_5_105 = {
+	.cmd = CHANNEL_COM_CMD_5_105,
+	.request_code = 5,
+	.request_callback = request_5_105,
+	.response_code = 105,
+	.response_callback = response_5_105,
+};
+
+int request_6_106(channel_com_info_t *channel_com_info)//CHARGER_INFO_STATUS_BCP_RECEIVED
+{
+	int ret = -1;
+
+	cmd_6_t *cmd_6 = (cmd_6_t *)channel_com_info->can_tx_msg.Data;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
+
+	cmd_6->single_battery_max_voltage_l = get_u8_l_from_u16(charger_info->settings->bcp_data.max_charge_voltage_single_battery);
+	cmd_6->single_battery_max_voltage_h = get_u8_h_from_u16(charger_info->settings->bcp_data.max_charge_voltage_single_battery);
+	cmd_6->max_temperature = charger_info->settings->bcp_data.max_temperature;
+	cmd_6->max_charge_voltage_l = get_u8_l_from_u16(charger_info->settings->bcp_data.max_charge_voltage);
+	cmd_6->max_charge_voltage_h = get_u8_h_from_u16(charger_info->settings->bcp_data.max_charge_voltage);
+	cmd_6->total_voltage_l = get_u8_l_from_u16(charger_info->settings->bcp_data.total_voltage);
+	cmd_6->total_voltage_h = get_u8_h_from_u16(charger_info->settings->bcp_data.total_voltage);
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_6_106].state = CHANNEL_COM_STATE_RESPONSE;
+
+	ret = 0;
+
+	return ret;
+}
+
+int response_6_106(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_6_106].state = CHANNEL_COM_STATE_IDLE;
+
+	ret = 0;
+	return ret;
+}
+
+static channel_com_command_item_t channel_com_command_item_6_106 = {
+	.cmd = CHANNEL_COM_CMD_6_106,
+	.request_code = 6,
+	.request_callback = request_6_106,
+	.response_code = 106,
+	.response_callback = response_6_106,
+};
+
+int request_7_107(channel_com_info_t *channel_com_info)//CHARGER_INFO_STATUS_BRM_RECEIVED
+{
+	int ret = -1;
+
+	cmd_7_t *cmd_7 = (cmd_7_t *)channel_com_info->can_tx_msg.Data;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
+
+	memcpy(cmd_7->vin, charger_info->settings->brm_data.vin + 0, 7);
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_7_107].state = CHANNEL_COM_STATE_RESPONSE;
+
+	ret = 0;
+
+	return ret;
+}
+
+int response_7_107(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_7_107].state = CHANNEL_COM_STATE_IDLE;
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_8_108].state = CHANNEL_COM_STATE_REQUEST;
+
+	ret = 0;
+	return ret;
+}
+
+static channel_com_command_item_t channel_com_command_item_7_107 = {
+	.cmd = CHANNEL_COM_CMD_7_107,
+	.request_code = 7,
+	.request_callback = request_7_107,
+	.response_code = 107,
+	.response_callback = response_7_107,
+};
+
+int request_8_108(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	cmd_8_t *cmd_8 = (cmd_8_t *)channel_com_info->can_tx_msg.Data;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
+
+	memcpy(cmd_8->vin, charger_info->settings->brm_data.vin + 7, 7);
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_8_108].state = CHANNEL_COM_STATE_RESPONSE;
+
+	ret = 0;
+
+	return ret;
+}
+
+int response_8_108(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_8_108].state = CHANNEL_COM_STATE_IDLE;
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_9_109].state = CHANNEL_COM_STATE_REQUEST;
+
+	ret = 0;
+	return ret;
+}
+
+static channel_com_command_item_t channel_com_command_item_8_108 = {
+	.cmd = CHANNEL_COM_CMD_8_108,
+	.request_code = 8,
+	.request_callback = request_8_108,
+	.response_code = 108,
+	.response_callback = response_8_108,
+};
+
+int request_9_109(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	cmd_9_t *cmd_9 = (cmd_9_t *)channel_com_info->can_tx_msg.Data;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
+
+	memcpy(cmd_9->vin, charger_info->settings->brm_data.vin + 14, 3);
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_9_109].state = CHANNEL_COM_STATE_RESPONSE;
+
+
+	ret = 0;
+
+	return ret;
+}
+
+int response_9_109(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_9_109].state = CHANNEL_COM_STATE_IDLE;
+
+	ret = 0;
+	return ret;
+}
+
+static channel_com_command_item_t channel_com_command_item_9_109 = {
+	.cmd = CHANNEL_COM_CMD_9_109,
+	.request_code = 9,
+	.request_callback = request_9_109,
+	.response_code = 109,
+	.response_callback = response_9_109,
+};
+
+int request_10_110(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STATUS_BCL_RECEIVED
+{
+	int ret = -1;
+
+	cmd_10_t *cmd_10 = (cmd_10_t *)channel_com_info->can_tx_msg.Data;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
+
+	cmd_10->require_voltage_l = get_u8_l_from_u16(charger_info->settings->bcl_data.require_voltage);
+	cmd_10->require_voltage_h = get_u8_h_from_u16(charger_info->settings->bcl_data.require_voltage);
+	cmd_10->require_current_l = get_u8_l_from_u16(charger_info->settings->bcl_data.require_current);
+	cmd_10->require_current_h = get_u8_h_from_u16(charger_info->settings->bcl_data.require_current);
+	cmd_10->soc = charger_info->settings->bcs_data.soc;
+	cmd_10->single_battery_max_voltage_l = get_u8_l_from_u16(charger_info->settings->bcs_data.u1.s.single_battery_max_voltage);
+	cmd_10->single_battery_max_voltage_h = get_u8_h_from_u16(charger_info->settings->bcs_data.u1.s.single_battery_max_voltage);
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_10_110].state = CHANNEL_COM_STATE_RESPONSE;
+
+	ret = 0;
+
+	return ret;
+}
+
+int response_10_110(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	cmd_110_t *cmd_110 = (cmd_110_t *)channel_com_info->can_rx_msg->Data;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
+
+	charger_info->settings->ccs_data.output_voltage =
+	    get_u16_from_u8_lh(cmd_110->output_voltage_l, cmd_110->output_voltage_h);
+
+	charger_info->settings->ccs_data.output_current =
+	    get_u16_from_u8_lh(cmd_110->output_current_l, cmd_110->output_current_h);
+
+	charger_info->settings->ccs_data.total_charge_time =
+	    get_u16_from_u8_lh(cmd_110->total_charge_time_l, cmd_110->total_charge_time_h);
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_10_110].state = CHANNEL_COM_STATE_IDLE;
+
+	ret = 0;
+	return ret;
+}
+
+static channel_com_command_item_t channel_com_command_item_10_110 = {
+	.cmd = CHANNEL_COM_CMD_10_110,
+	.request_code = 10,
+	.request_callback = request_10_110,
+	.response_code = 110,
+	.response_callback = response_10_110,
+};
+
+int request_11_111(channel_com_info_t *channel_com_info)//500ms CHARGER_INFO_STATUS_BCS_RECEIVED
+{
+	int ret = -1;
+
+	cmd_11_t *cmd_11 = (cmd_11_t *)channel_com_info->can_tx_msg.Data;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
+
+	cmd_11->charge_voltage_l = get_u8_l_from_u16(charger_info->settings->bcs_data.charge_voltage);
+	cmd_11->charge_voltage_h = get_u8_h_from_u16(charger_info->settings->bcs_data.charge_voltage);
+	cmd_11->charge_current_l = get_u8_l_from_u16(charger_info->settings->bcs_data.charge_current);
+	cmd_11->charge_current_h = get_u8_h_from_u16(charger_info->settings->bcs_data.charge_current);
+	cmd_11->remain_min_l = get_u8_l_from_u16(charger_info->settings->bcs_data.remain_min);
+	cmd_11->remain_min_h = get_u8_h_from_u16(charger_info->settings->bcs_data.remain_min);
+	cmd_11->battery_max_temperature = charger_info->settings->bsm_data.battery_max_temperature;
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_11_111].state = CHANNEL_COM_STATE_RESPONSE;
+
+	ret = 0;
+
+	return ret;
+}
+
+int response_11_111(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	cmd_111_t *cmd_111 = (cmd_111_t *)channel_com_info->can_rx_msg->Data;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
+
+	charger_info->settings->csd_data.total_charge_energy =
+	    get_u16_from_u8_lh(cmd_111->charger_output_energy_l, cmd_111->charger_output_energy_h);
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_11_111].state = CHANNEL_COM_STATE_IDLE;
+
+	ret = 0;
+	return ret;
+}
+
+static channel_com_command_item_t channel_com_command_item_11_111 = {
+	.cmd = CHANNEL_COM_CMD_11_111,
+	.request_code = 11,
+	.request_callback = request_11_111,
+	.response_code = 111,
+	.response_callback = response_11_111,
+};
+
+int request_20_120(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_20_120].state = CHANNEL_COM_STATE_IDLE;
+
+	ret = 0;
+
+	return ret;
+}
+
+int response_20_120(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	//打开辅板输出继电器
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_20_120].state = CHANNEL_COM_STATE_REQUEST;
+
+	ret = 0;
+	return ret;
+}
+
+static channel_com_command_item_t channel_com_command_item_20_120 = {
+	.cmd = CHANNEL_COM_CMD_20_120,
+	.request_code = 20,
+	.request_callback = request_20_120,
+	.response_code = 120,
+	.response_callback = response_20_120,
+};
+
+int request_21_121(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_21_121].state = CHANNEL_COM_STATE_IDLE;
+
+	ret = 0;
+
+	return ret;
+}
+
+int response_21_121(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	//锁定辅板电子锁
+	
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_21_121].state = CHANNEL_COM_STATE_REQUEST;
+
+	ret = 0;
+	return ret;
+}
+
+static channel_com_command_item_t channel_com_command_item_21_121 = {
+	.cmd = CHANNEL_COM_CMD_21_121,
+	.request_code = 21,
+	.request_callback = request_21_121,
+	.response_code = 121,
+	.response_callback = response_21_121,
+};
+
+int request_22_122(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_22_122].state = CHANNEL_COM_STATE_IDLE;
+
+	ret = 0;
+
+	return ret;
+}
+
+int response_22_122(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	//解除辅板电子锁
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_22_122].state = CHANNEL_COM_STATE_REQUEST;
+
+	ret = 0;
+	return ret;
+}
+
+static channel_com_command_item_t channel_com_command_item_22_122 = {
+	.cmd = CHANNEL_COM_CMD_22_122,
+	.request_code = 22,
+	.request_callback = request_22_122,
+	.response_code = 122,
+	.response_callback = response_22_122,
+};
+
+int request_25_125(channel_com_info_t *channel_com_info)//测试开机
+{
+	int ret = -1;
+
+	//通道主动开机命令
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_25_125].state = CHANNEL_COM_STATE_RESPONSE;
+
+	ret = 0;
+
+	return ret;
+}
+
+int response_25_125(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_25_125].state = CHANNEL_COM_STATE_IDLE;
+
+	ret = 0;
+	return ret;
+}
+
+static channel_com_command_item_t channel_com_command_item_25_125 = {
+	.cmd = CHANNEL_COM_CMD_25_125,
+	.request_code = 25,
+	.request_callback = request_25_125,
+	.response_code = 125,
+	.response_callback = response_25_125,
+};
+
+int request_30_130(channel_com_info_t *channel_com_info)//bsm状态错误;暂停充电超过10分钟;bms超时错误
+{
+	int ret = -1;
+
+	//通道主动停机命令
+	
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_30_130].state = CHANNEL_COM_STATE_RESPONSE;
+
+	ret = 0;
+
+	return ret;
+}
+
+int response_30_130(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_30_130].state = CHANNEL_COM_STATE_IDLE;
+
+	ret = 0;
+	return ret;
+}
+
+static channel_com_command_item_t channel_com_command_item_30_130 = {
+	.cmd = CHANNEL_COM_CMD_30_130,
+	.request_code = 30,
+	.request_callback = request_30_130,
+	.response_code = 130,
+	.response_callback = response_30_130,
+};
+
+int request_50_150(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	ret = 0;
+
+	return ret;
+}
+
+int response_50_150(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	//发送停机命令
+
+	ret = 0;
+	return ret;
+}
+
+static channel_com_command_item_t channel_com_command_item_50_150 = {
+	.cmd = CHANNEL_COM_CMD_50_150,
+	.request_code = 50,
+	.request_callback = request_50_150,
+	.response_code = 150,
+	.response_callback = response_50_150,
+};
+
+int request_51_151(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	ret = 0;
+
+	return ret;
+}
+
+int response_51_151(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+	//关闭辅板输出继电器
+
+	ret = 0;
+	return ret;
+}
+
+static channel_com_command_item_t channel_com_command_item_51_151 = {
+	.cmd = CHANNEL_COM_CMD_51_151,
+	.request_code = 51,
+	.request_callback = request_51_151,
+	.response_code = 151,
+	.response_callback = response_51_151,
+};
+
+int request_60_160(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	cmd_60_t *cmd_60 = (cmd_60_t *)channel_com_info->can_tx_msg.Data;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
+	uint8_t *brm_data = (uint8_t *)&charger_info->settings->brm_data;
+
+	memcpy(cmd_60->brm_data, brm_data + 0, 7);
+
+	ret = 0;
+
+	return ret;
+}
+
+int response_60_160(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	ret = 0;
+	return ret;
+}
+
+static channel_com_command_item_t channel_com_command_item_60_160 = {
+	.cmd = CHANNEL_COM_CMD_60_160,
+	.request_code = 60,
+	.request_callback = request_60_160,
+	.response_code = 160,
+	.response_callback = response_60_160,
+};
+
+int request_61_161(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	cmd_61_t *cmd_61 = (cmd_61_t *)channel_com_info->can_tx_msg.Data;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
+	uint8_t *brm_data = (uint8_t *)&charger_info->settings->brm_data;
+
+	memcpy(cmd_61->brm_data, brm_data + 7, 7);
+
+	ret = 0;
+
+	return ret;
+}
+
+int response_61_161(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	ret = 0;
+	return ret;
+}
+
+static channel_com_command_item_t channel_com_command_item_61_161 = {
+	.cmd = CHANNEL_COM_CMD_61_161,
+	.request_code = 61,
+	.request_callback = request_61_161,
+	.response_code = 161,
+	.response_callback = response_61_161,
+};
+
+int request_62_162(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+	cmd_62_t *cmd_62 = (cmd_62_t *)channel_com_info->can_tx_msg.Data;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
+	uint8_t *brm_data = (uint8_t *)&charger_info->settings->brm_data;
+
+	memcpy(cmd_62->brm_data, brm_data + 14, 7);
+
+	ret = 0;
+
+	return ret;
+}
+
+int response_62_162(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	ret = 0;
+	return ret;
+}
+
+static channel_com_command_item_t channel_com_command_item_62_162 = {
+	.cmd = CHANNEL_COM_CMD_62_162,
+	.request_code = 62,
+	.request_callback = request_62_162,
+	.response_code = 162,
+	.response_callback = response_62_162,
+};
+
+int request_63_163(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+	cmd_63_t *cmd_63 = (cmd_63_t *)channel_com_info->can_tx_msg.Data;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
+	uint8_t *brm_data = (uint8_t *)&charger_info->settings->brm_data;
+
+	memcpy(cmd_63->brm_data, brm_data + 21, 7);
+
+	ret = 0;
+
+	return ret;
+}
+
+int response_63_163(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	ret = 0;
+	return ret;
+}
+
+static channel_com_command_item_t channel_com_command_item_63_163 = {
+	.cmd = CHANNEL_COM_CMD_63_163,
+	.request_code = 63,
+	.request_callback = request_63_163,
+	.response_code = 163,
+	.response_callback = response_63_163,
+};
+
+int request_64_164(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+	cmd_64_t *cmd_64 = (cmd_64_t *)channel_com_info->can_tx_msg.Data;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
+	uint8_t *brm_data = (uint8_t *)&charger_info->settings->brm_data;
+
+	memcpy(cmd_64->brm_data, brm_data + 28, 7);
+
+	ret = 0;
+
+	return ret;
+}
+
+int response_64_164(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	ret = 0;
+	return ret;
+}
+
+static channel_com_command_item_t channel_com_command_item_64_164 = {
+	.cmd = CHANNEL_COM_CMD_64_164,
+	.request_code = 64,
+	.request_callback = request_64_164,
+	.response_code = 164,
+	.response_callback = response_64_164,
+};
+
+int request_65_165(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+	cmd_65_t *cmd_65 = (cmd_65_t *)channel_com_info->can_tx_msg.Data;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
+	uint8_t *brm_data = (uint8_t *)&charger_info->settings->brm_data;
+
+	memcpy(cmd_65->brm_data, brm_data + 35, 7);
+
+	ret = 0;
+
+	return ret;
+}
+
+int response_65_165(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	ret = 0;
+	return ret;
+}
+
+static channel_com_command_item_t channel_com_command_item_65_165 = {
+	.cmd = CHANNEL_COM_CMD_65_165,
+	.request_code = 65,
+	.request_callback = request_65_165,
+	.response_code = 165,
+	.response_callback = response_65_165,
+};
+
+int request_66_166(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+	cmd_66_t *cmd_66 = (cmd_66_t *)channel_com_info->can_tx_msg.Data;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
+	uint8_t *brm_data = (uint8_t *)&charger_info->settings->brm_data;
+
+	memcpy(cmd_66->brm_data, brm_data + 42, 7);
+
+	ret = 0;
+
+	return ret;
+}
+
+int response_66_166(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	ret = 0;
+	return ret;
+}
+
+static channel_com_command_item_t channel_com_command_item_66_166 = {
+	.cmd = CHANNEL_COM_CMD_66_166,
+	.request_code = 66,
+	.request_callback = request_66_166,
+	.response_code = 166,
+	.response_callback = response_66_166,
+};
+
+int request_67_167(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+	cmd_67_t *cmd_67 = (cmd_67_t *)channel_com_info->can_tx_msg.Data;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
+	uint8_t *bcp_data = (uint8_t *)&charger_info->settings->bcp_data;
+
+	memcpy(cmd_67->bcp_data, bcp_data + 0, 7);
+
+	ret = 0;
+
+	return ret;
+}
+
+int response_67_167(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	ret = 0;
+	return ret;
+}
+
+static channel_com_command_item_t channel_com_command_item_67_167 = {
+	.cmd = CHANNEL_COM_CMD_67_167,
+	.request_code = 67,
+	.request_callback = request_67_167,
+	.response_code = 167,
+	.response_callback = response_67_167,
+};
+
+int request_68_168(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+	cmd_68_t *cmd_68 = (cmd_68_t *)channel_com_info->can_tx_msg.Data;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
+	uint8_t *bcp_data = (uint8_t *)&charger_info->settings->bcp_data;
+
+	memcpy(cmd_68->bcp_data, bcp_data + 7, 7);
+
+	ret = 0;
+
+	return ret;
+}
+
+int response_68_168(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	ret = 0;
+	return ret;
+}
+
+static channel_com_command_item_t channel_com_command_item_68_168 = {
+	.cmd = CHANNEL_COM_CMD_68_168,
+	.request_code = 68,
+	.request_callback = request_68_168,
+	.response_code = 168,
+	.response_callback = response_68_168,
+};
+
+int request_69_169(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+	cmd_69_t *cmd_69 = (cmd_69_t *)channel_com_info->can_tx_msg.Data;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
+	uint8_t *bcs_data = (uint8_t *)&charger_info->settings->bcs_data;
+
+	memcpy(cmd_69->bcs_data, bcs_data + 0, 7);
+
+	ret = 0;
+
+	return ret;
+}
+
+int response_69_169(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	ret = 0;
+	return ret;
+}
+
+static channel_com_command_item_t channel_com_command_item_69_169 = {
+	.cmd = CHANNEL_COM_CMD_69_169,
+	.request_code = 69,
+	.request_callback = request_69_169,
+	.response_code = 169,
+	.response_callback = response_69_169,
+};
+
+int request_70_170(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+	cmd_70_t *cmd_70 = (cmd_70_t *)channel_com_info->can_tx_msg.Data;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
+	uint8_t *bcs_data = (uint8_t *)&charger_info->settings->bcs_data;
+	uint8_t *bcl_data = (uint8_t *)&charger_info->settings->bcl_data;
+
+	memcpy(cmd_70->bcs_data, bcs_data + 7, 2);
+	memcpy(cmd_70->bcl_data, bcl_data + 0, 5);
+
+	ret = 0;
+
+	return ret;
+}
+
+int response_70_170(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	ret = 0;
+	return ret;
+}
+
+static channel_com_command_item_t channel_com_command_item_70_170 = {
+	.cmd = CHANNEL_COM_CMD_70_170,
+	.request_code = 70,
+	.request_callback = request_70_170,
+	.response_code = 170,
+	.response_callback = response_70_170,
+};
+
+int request_71_171(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+	cmd_71_t *cmd_71 = (cmd_71_t *)channel_com_info->can_tx_msg.Data;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
+	uint8_t *bsm_data = (uint8_t *)&charger_info->settings->bsm_data;
+
+	memcpy(cmd_71->bsm_data, bsm_data + 0, 7);
+
+	ret = 0;
+
+	return ret;
+}
+
+int response_71_171(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	ret = 0;
+	return ret;
+}
+
+static channel_com_command_item_t channel_com_command_item_71_171 = {
+	.cmd = CHANNEL_COM_CMD_71_171,
+	.request_code = 71,
+	.request_callback = request_71_171,
+	.response_code = 171,
+	.response_callback = response_71_171,
+};
+
+int request_72_172(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+	cmd_72_t *cmd_72 = (cmd_72_t *)channel_com_info->can_tx_msg.Data;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
+	uint8_t *bst_data = (uint8_t *)&charger_info->settings->bst_data;
+
+	memcpy(cmd_72->bst_data, bst_data + 0, 4);
+
+	ret = 0;
+
+	return ret;
+}
+
+int response_72_172(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	ret = 0;
+	return ret;
+}
+
+static channel_com_command_item_t channel_com_command_item_72_172 = {
+	.cmd = CHANNEL_COM_CMD_72_172,
+	.request_code = 72,
+	.request_callback = request_72_172,
+	.response_code = 172,
+	.response_callback = response_72_172,
+};
+
+int request_73_173(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+	cmd_73_t *cmd_73 = (cmd_73_t *)channel_com_info->can_tx_msg.Data;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
+	uint8_t *bsd_data = (uint8_t *)&charger_info->settings->bsd_data;
+
+	memcpy(cmd_73->bsd_data, bsd_data + 0, 7);
+
+	ret = 0;
+
+	return ret;
+}
+
+int response_73_173(channel_com_info_t *channel_com_info)
+{
+	int ret = -1;
+
+	ret = 0;
+	return ret;
+}
+
+static channel_com_command_item_t channel_com_command_item_73_173 = {
+	.cmd = CHANNEL_COM_CMD_73_173,
+	.request_code = 73,
+	.request_callback = request_73_173,
+	.response_code = 173,
+	.response_callback = response_73_173,
 };
