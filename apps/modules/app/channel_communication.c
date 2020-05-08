@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分44秒
- *   修改日期：2020年05月08日 星期五 14时49分50秒
+ *   修改日期：2020年05月08日 星期五 15时44分08秒
  *   描    述：
  *
  *================================================================*/
@@ -362,7 +362,7 @@ failed:
 	return channel_com_info;
 }
 
-int request_1_101(channel_com_info_t *channel_com_info)//500ms
+static int request_1_101(channel_com_info_t *channel_com_info)//500ms
 {
 	int ret = -1;
 	cmd_1_t *cmd_1 = (cmd_1_t *)channel_com_info->can_tx_msg.Data;
@@ -394,7 +394,7 @@ int request_1_101(channel_com_info_t *channel_com_info)//500ms
 	return ret;
 }
 
-int response_1_101(channel_com_info_t *channel_com_info)
+static int response_1_101(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 	cmd_101_t *cmd_101 = (cmd_101_t *)channel_com_info->can_rx_msg->Data;
@@ -430,7 +430,7 @@ static channel_com_command_item_t channel_com_command_item_1_101 = {
 	.response_callback = response_1_101,
 };
 
-int request_2_102(channel_com_info_t *channel_com_info)
+static int request_2_102(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -441,7 +441,7 @@ int request_2_102(channel_com_info_t *channel_com_info)
 	return ret;
 }
 
-int response_2_102(channel_com_info_t *channel_com_info)
+static int response_2_102(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 	cmd_102_t *cmd_102 = (cmd_102_t *)channel_com_info->can_rx_msg->Data;
@@ -474,7 +474,7 @@ static channel_com_command_item_t channel_com_command_item_2_102 = {
 	.response_callback = response_2_102,
 };
 
-int request_13_113(channel_com_info_t *channel_com_info)
+static int request_13_113(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -485,7 +485,7 @@ int request_13_113(channel_com_info_t *channel_com_info)
 	return ret;
 }
 
-int response_13_113(channel_com_info_t *channel_com_info)
+static int response_13_113(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 	cmd_113_t *cmd_113 = (cmd_113_t *)channel_com_info->can_rx_msg->Data;
@@ -510,7 +510,7 @@ static channel_com_command_item_t channel_com_command_item_13_113 = {
 	.response_callback = response_13_113,
 };
 
-int request_3_103(channel_com_info_t *channel_com_info)
+static int request_3_103(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 	cmd_3_t *cmd_3 = (cmd_3_t *)channel_com_info->can_tx_msg.Data;
@@ -531,7 +531,7 @@ int request_3_103(channel_com_info_t *channel_com_info)
 	return ret;
 }
 
-int response_3_103(channel_com_info_t *channel_com_info)
+static int response_3_103(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 	cmd_103_t *cmd_103 = (cmd_103_t *)channel_com_info->can_rx_msg->Data;
@@ -562,7 +562,7 @@ void request_precharge(channel_com_info_t *channel_com_info)
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_4_104].retry = 0;
 }
 
-int request_4_104(channel_com_info_t *channel_com_info)
+static int request_4_104(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 	cmd_4_t *cmd_4 = (cmd_4_t *)channel_com_info->can_tx_msg.Data;
@@ -579,7 +579,7 @@ int request_4_104(channel_com_info_t *channel_com_info)
 	return ret;
 }
 
-int response_4_104(channel_com_info_t *channel_com_info)
+static int response_4_104(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -598,7 +598,7 @@ static channel_com_command_item_t channel_com_command_item_4_104 = {
 	.response_callback = response_4_104,
 };
 
-int request_5_105(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STATUS_BRM_RECEIVED
+static int request_5_105(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STATUS_BRM_RECEIVED
 {
 	int ret = -1;
 	cmd_5_t *cmd_5 = (cmd_5_t *)channel_com_info->can_tx_msg.Data;
@@ -618,7 +618,7 @@ int request_5_105(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STAT
 	return ret;
 }
 
-int response_5_105(channel_com_info_t *channel_com_info)
+static int response_5_105(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -637,7 +637,7 @@ static channel_com_command_item_t channel_com_command_item_5_105 = {
 	.response_callback = response_5_105,
 };
 
-int request_6_106(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STATUS_BCP_RECEIVED
+static int request_6_106(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STATUS_BCP_RECEIVED
 {
 	int ret = -1;
 
@@ -659,7 +659,7 @@ int request_6_106(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STAT
 	return ret;
 }
 
-int response_6_106(channel_com_info_t *channel_com_info)
+static int response_6_106(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -678,7 +678,7 @@ static channel_com_command_item_t channel_com_command_item_6_106 = {
 	.response_callback = response_6_106,
 };
 
-int request_7_107(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STATUS_BRM_RECEIVED
+static int request_7_107(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STATUS_BRM_RECEIVED
 {
 	int ret = -1;
 
@@ -694,7 +694,7 @@ int request_7_107(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STAT
 	return ret;
 }
 
-int response_7_107(channel_com_info_t *channel_com_info)
+static int response_7_107(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -715,7 +715,7 @@ static channel_com_command_item_t channel_com_command_item_7_107 = {
 	.response_callback = response_7_107,
 };
 
-int request_8_108(channel_com_info_t *channel_com_info)
+static int request_8_108(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -731,7 +731,7 @@ int request_8_108(channel_com_info_t *channel_com_info)
 	return ret;
 }
 
-int response_8_108(channel_com_info_t *channel_com_info)
+static int response_8_108(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -752,7 +752,7 @@ static channel_com_command_item_t channel_com_command_item_8_108 = {
 	.response_callback = response_8_108,
 };
 
-int request_9_109(channel_com_info_t *channel_com_info)
+static int request_9_109(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -769,7 +769,7 @@ int request_9_109(channel_com_info_t *channel_com_info)
 	return ret;
 }
 
-int response_9_109(channel_com_info_t *channel_com_info)
+static int response_9_109(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -788,7 +788,7 @@ static channel_com_command_item_t channel_com_command_item_9_109 = {
 	.response_callback = response_9_109,
 };
 
-int request_10_110(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STATUS_BCL_RECEIVED
+static int request_10_110(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STATUS_BCL_RECEIVED
 {
 	int ret = -1;
 
@@ -810,7 +810,7 @@ int request_10_110(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STA
 	return ret;
 }
 
-int response_10_110(channel_com_info_t *channel_com_info)
+static int response_10_110(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -841,7 +841,7 @@ static channel_com_command_item_t channel_com_command_item_10_110 = {
 	.response_callback = response_10_110,
 };
 
-int request_11_111(channel_com_info_t *channel_com_info)//500ms CHARGER_INFO_STATUS_BCS_RECEIVED
+static int request_11_111(channel_com_info_t *channel_com_info)//500ms CHARGER_INFO_STATUS_BCS_RECEIVED
 {
 	int ret = -1;
 
@@ -863,7 +863,7 @@ int request_11_111(channel_com_info_t *channel_com_info)//500ms CHARGER_INFO_STA
 	return ret;
 }
 
-int response_11_111(channel_com_info_t *channel_com_info)
+static int response_11_111(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -888,7 +888,7 @@ static channel_com_command_item_t channel_com_command_item_11_111 = {
 	.response_callback = response_11_111,
 };
 
-int request_20_120(channel_com_info_t *channel_com_info)
+static int request_20_120(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -899,7 +899,7 @@ int request_20_120(channel_com_info_t *channel_com_info)
 	return ret;
 }
 
-int response_20_120(channel_com_info_t *channel_com_info)
+static int response_20_120(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -921,7 +921,7 @@ static channel_com_command_item_t channel_com_command_item_20_120 = {
 	.response_callback = response_20_120,
 };
 
-int request_21_121(channel_com_info_t *channel_com_info)
+static int request_21_121(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -932,7 +932,7 @@ int request_21_121(channel_com_info_t *channel_com_info)
 	return ret;
 }
 
-int response_21_121(channel_com_info_t *channel_com_info)
+static int response_21_121(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -954,7 +954,7 @@ static channel_com_command_item_t channel_com_command_item_21_121 = {
 	.response_callback = response_21_121,
 };
 
-int request_22_122(channel_com_info_t *channel_com_info)
+static int request_22_122(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -965,7 +965,7 @@ int request_22_122(channel_com_info_t *channel_com_info)
 	return ret;
 }
 
-int response_22_122(channel_com_info_t *channel_com_info)
+static int response_22_122(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -987,7 +987,7 @@ static channel_com_command_item_t channel_com_command_item_22_122 = {
 	.response_callback = response_22_122,
 };
 
-int request_25_125(channel_com_info_t *channel_com_info)//测试开机
+static int request_25_125(channel_com_info_t *channel_com_info)//测试开机
 {
 	int ret = -1;
 
@@ -1000,7 +1000,7 @@ int request_25_125(channel_com_info_t *channel_com_info)//测试开机
 	return ret;
 }
 
-int response_25_125(channel_com_info_t *channel_com_info)
+static int response_25_125(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -1019,7 +1019,7 @@ static channel_com_command_item_t channel_com_command_item_25_125 = {
 	.response_callback = response_25_125,
 };
 
-int request_30_130(channel_com_info_t *channel_com_info)//bsm状态错误;暂停充电超过10分钟;bms超时错误
+static int request_30_130(channel_com_info_t *channel_com_info)//bsm状态错误;暂停充电超过10分钟;bms超时错误
 {
 	int ret = -1;
 
@@ -1032,7 +1032,7 @@ int request_30_130(channel_com_info_t *channel_com_info)//bsm状态错误;暂停
 	return ret;
 }
 
-int response_30_130(channel_com_info_t *channel_com_info)
+static int response_30_130(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -1051,7 +1051,7 @@ static channel_com_command_item_t channel_com_command_item_30_130 = {
 	.response_callback = response_30_130,
 };
 
-int request_50_150(channel_com_info_t *channel_com_info)
+static int request_50_150(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -1062,7 +1062,7 @@ int request_50_150(channel_com_info_t *channel_com_info)
 	return ret;
 }
 
-int response_50_150(channel_com_info_t *channel_com_info)
+static int response_50_150(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -1084,7 +1084,7 @@ static channel_com_command_item_t channel_com_command_item_50_150 = {
 	.response_callback = response_50_150,
 };
 
-int request_51_151(channel_com_info_t *channel_com_info)
+static int request_51_151(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -1095,7 +1095,7 @@ int request_51_151(channel_com_info_t *channel_com_info)
 	return ret;
 }
 
-int response_51_151(channel_com_info_t *channel_com_info)
+static int response_51_151(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 	//关闭辅板输出继电器
@@ -1116,7 +1116,7 @@ static channel_com_command_item_t channel_com_command_item_51_151 = {
 	.response_callback = response_51_151,
 };
 
-int request_60_160(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STATUS_BRM_RECEIVED
+static int request_60_160(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STATUS_BRM_RECEIVED
 {
 	int ret = -1;
 
@@ -1133,7 +1133,7 @@ int request_60_160(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STA
 	return ret;
 }
 
-int response_60_160(channel_com_info_t *channel_com_info)
+static int response_60_160(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -1154,7 +1154,7 @@ static channel_com_command_item_t channel_com_command_item_60_160 = {
 	.response_callback = response_60_160,
 };
 
-int request_61_161(channel_com_info_t *channel_com_info)
+static int request_61_161(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -1171,7 +1171,7 @@ int request_61_161(channel_com_info_t *channel_com_info)
 	return ret;
 }
 
-int response_61_161(channel_com_info_t *channel_com_info)
+static int response_61_161(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -1192,7 +1192,7 @@ static channel_com_command_item_t channel_com_command_item_61_161 = {
 	.response_callback = response_61_161,
 };
 
-int request_62_162(channel_com_info_t *channel_com_info)
+static int request_62_162(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 	cmd_62_t *cmd_62 = (cmd_62_t *)channel_com_info->can_tx_msg.Data;
@@ -1208,7 +1208,7 @@ int request_62_162(channel_com_info_t *channel_com_info)
 	return ret;
 }
 
-int response_62_162(channel_com_info_t *channel_com_info)
+static int response_62_162(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -1229,7 +1229,7 @@ static channel_com_command_item_t channel_com_command_item_62_162 = {
 	.response_callback = response_62_162,
 };
 
-int request_63_163(channel_com_info_t *channel_com_info)
+static int request_63_163(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 	cmd_63_t *cmd_63 = (cmd_63_t *)channel_com_info->can_tx_msg.Data;
@@ -1245,7 +1245,7 @@ int request_63_163(channel_com_info_t *channel_com_info)
 	return ret;
 }
 
-int response_63_163(channel_com_info_t *channel_com_info)
+static int response_63_163(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -1266,7 +1266,7 @@ static channel_com_command_item_t channel_com_command_item_63_163 = {
 	.response_callback = response_63_163,
 };
 
-int request_64_164(channel_com_info_t *channel_com_info)
+static int request_64_164(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 	cmd_64_t *cmd_64 = (cmd_64_t *)channel_com_info->can_tx_msg.Data;
@@ -1282,7 +1282,7 @@ int request_64_164(channel_com_info_t *channel_com_info)
 	return ret;
 }
 
-int response_64_164(channel_com_info_t *channel_com_info)
+static int response_64_164(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -1303,7 +1303,7 @@ static channel_com_command_item_t channel_com_command_item_64_164 = {
 	.response_callback = response_64_164,
 };
 
-int request_65_165(channel_com_info_t *channel_com_info)
+static int request_65_165(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 	cmd_65_t *cmd_65 = (cmd_65_t *)channel_com_info->can_tx_msg.Data;
@@ -1319,7 +1319,7 @@ int request_65_165(channel_com_info_t *channel_com_info)
 	return ret;
 }
 
-int response_65_165(channel_com_info_t *channel_com_info)
+static int response_65_165(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -1340,7 +1340,7 @@ static channel_com_command_item_t channel_com_command_item_65_165 = {
 	.response_callback = response_65_165,
 };
 
-int request_66_166(channel_com_info_t *channel_com_info)
+static int request_66_166(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 	cmd_66_t *cmd_66 = (cmd_66_t *)channel_com_info->can_tx_msg.Data;
@@ -1356,7 +1356,7 @@ int request_66_166(channel_com_info_t *channel_com_info)
 	return ret;
 }
 
-int response_66_166(channel_com_info_t *channel_com_info)
+static int response_66_166(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -1375,7 +1375,7 @@ static channel_com_command_item_t channel_com_command_item_66_166 = {
 	.response_callback = response_66_166,
 };
 
-int request_67_167(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STATUS_BCL_RECEIVED
+static int request_67_167(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STATUS_BCL_RECEIVED
 {
 	int ret = -1;
 	cmd_67_t *cmd_67 = (cmd_67_t *)channel_com_info->can_tx_msg.Data;
@@ -1391,7 +1391,7 @@ int request_67_167(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STA
 	return ret;
 }
 
-int response_67_167(channel_com_info_t *channel_com_info)
+static int response_67_167(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -1412,7 +1412,7 @@ static channel_com_command_item_t channel_com_command_item_67_167 = {
 	.response_callback = response_67_167,
 };
 
-int request_68_168(channel_com_info_t *channel_com_info)
+static int request_68_168(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 	cmd_68_t *cmd_68 = (cmd_68_t *)channel_com_info->can_tx_msg.Data;
@@ -1428,7 +1428,7 @@ int request_68_168(channel_com_info_t *channel_com_info)
 	return ret;
 }
 
-int response_68_168(channel_com_info_t *channel_com_info)
+static int response_68_168(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -1449,7 +1449,7 @@ static channel_com_command_item_t channel_com_command_item_68_168 = {
 	.response_callback = response_68_168,
 };
 
-int request_69_169(channel_com_info_t *channel_com_info)
+static int request_69_169(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 	cmd_69_t *cmd_69 = (cmd_69_t *)channel_com_info->can_tx_msg.Data;
@@ -1465,7 +1465,7 @@ int request_69_169(channel_com_info_t *channel_com_info)
 	return ret;
 }
 
-int response_69_169(channel_com_info_t *channel_com_info)
+static int response_69_169(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -1486,7 +1486,7 @@ static channel_com_command_item_t channel_com_command_item_69_169 = {
 	.response_callback = response_69_169,
 };
 
-int request_70_170(channel_com_info_t *channel_com_info)
+static int request_70_170(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 	cmd_70_t *cmd_70 = (cmd_70_t *)channel_com_info->can_tx_msg.Data;
@@ -1504,7 +1504,7 @@ int request_70_170(channel_com_info_t *channel_com_info)
 	return ret;
 }
 
-int response_70_170(channel_com_info_t *channel_com_info)
+static int response_70_170(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -1524,7 +1524,7 @@ static channel_com_command_item_t channel_com_command_item_70_170 = {
 	.response_callback = response_70_170,
 };
 
-int request_71_171(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STATUS_BSM_RECEIVED
+static int request_71_171(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STATUS_BSM_RECEIVED
 {
 	int ret = -1;
 	cmd_71_t *cmd_71 = (cmd_71_t *)channel_com_info->can_tx_msg.Data;
@@ -1540,7 +1540,7 @@ int request_71_171(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STA
 	return ret;
 }
 
-int response_71_171(channel_com_info_t *channel_com_info)
+static int response_71_171(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -1560,7 +1560,7 @@ static channel_com_command_item_t channel_com_command_item_71_171 = {
 	.response_callback = response_71_171,
 };
 
-int request_72_172(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STATUS_BST_RECEIVED
+static int request_72_172(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STATUS_BST_RECEIVED
 {
 	int ret = -1;
 	cmd_72_t *cmd_72 = (cmd_72_t *)channel_com_info->can_tx_msg.Data;
@@ -1576,7 +1576,7 @@ int request_72_172(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STA
 	return ret;
 }
 
-int response_72_172(channel_com_info_t *channel_com_info)
+static int response_72_172(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
@@ -1595,7 +1595,7 @@ static channel_com_command_item_t channel_com_command_item_72_172 = {
 	.response_callback = response_72_172,
 };
 
-int request_73_173(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STATUS_BSD_RECEIVED
+static int request_73_173(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STATUS_BSD_RECEIVED
 {
 	int ret = -1;
 	cmd_73_t *cmd_73 = (cmd_73_t *)channel_com_info->can_tx_msg.Data;
@@ -1611,7 +1611,7 @@ int request_73_173(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STA
 	return ret;
 }
 
-int response_73_173(channel_com_info_t *channel_com_info)
+static int response_73_173(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 

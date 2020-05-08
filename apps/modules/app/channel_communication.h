@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.h
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分48秒
- *   修改日期：2020年05月08日 星期五 14时23分54秒
+ *   修改日期：2020年05月08日 星期五 15时37分42秒
  *   描    述：
  *
  *================================================================*/
@@ -607,5 +607,7 @@ static inline uint16_t get_u8_h_from_u16(uint16_t v)
 void free_channel_com_info(channel_com_info_t *channel_com_info);
 channel_com_info_t *get_or_alloc_channel_com_info(channel_info_config_t *channel_info_config);
 void request_precharge(channel_com_info_t *channel_com_info);
+void task_channel_com_request(void const *argument);
+void task_channel_com_response(void const *argument);
 
 #endif //_CHANNEL_COMMUNICATION_H
