@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分44秒
- *   修改日期：2020年05月07日 星期四 17时32分44秒
+ *   修改日期：2020年05月08日 星期五 14时49分50秒
  *   描    述：
  *
  *================================================================*/
@@ -91,14 +91,26 @@ static void charger_info_report_status_cb(void *fn_ctx, void *chain_ctx)
 
 	switch(charger_report_status->state) {
 		case CHARGER_STATE_IDLE: {
+			channel_com_info->cmd_ctx[CHANNEL_COM_CMD_5_105].available = 0;
+			channel_com_info->cmd_ctx[CHANNEL_COM_CMD_6_106].available = 0;
+			channel_com_info->cmd_ctx[CHANNEL_COM_CMD_7_107].available = 0;
+			channel_com_info->cmd_ctx[CHANNEL_COM_CMD_10_110].available = 0;
+			channel_com_info->cmd_ctx[CHANNEL_COM_CMD_11_111].available = 0;
+			channel_com_info->cmd_ctx[CHANNEL_COM_CMD_67_167].available = 0;
+			channel_com_info->cmd_ctx[CHANNEL_COM_CMD_71_171].available = 0;
+			channel_com_info->cmd_ctx[CHANNEL_COM_CMD_72_172].available = 0;
+			channel_com_info->cmd_ctx[CHANNEL_COM_CMD_73_173].available = 0;
+			channel_com_info->bms_status = RETURN_ERROR;
 		}
 		break;
 
 		case CHARGER_STATE_CHM: {
+			channel_com_info->bms_status = BMS_STARTING;
 		}
 		break;
 
 		case CHARGER_STATE_CRM: {
+			channel_com_info->bms_status = BMS_STARTING;
 		}
 		break;
 
@@ -111,6 +123,7 @@ static void charger_info_report_status_cb(void *fn_ctx, void *chain_ctx)
 		break;
 
 		case CHARGER_STATE_CCS: {
+			channel_com_info->bms_status = BMS_SUCCESS;
 		}
 		break;
 
@@ -125,6 +138,133 @@ static void charger_info_report_status_cb(void *fn_ctx, void *chain_ctx)
 		default:
 			break;
 	}
+
+	switch(charger_report_status->status) {
+		case CHARGER_INFO_STATUS_NONE: {
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_CHM_OUTPUT_VOLTAGE_UNMATCH: {
+			channel_com_info->bms_status = BMS_U_UNMATCH;
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_CHM_OP_STATE_DISCHARGE_TIMEOUT: {
+			channel_com_info->bms_status = RETURN_DISCHARGE_TIMEOUT;
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_CHM_OP_STATE_RELAY_ENDPOINT_OVERVOLTAGE_CHECK_TIMEOUT: {
+			channel_com_info->bms_status = RETURN_INC_BMS_ERROR;
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_CHM_OP_STATE_INSULATION_CHECK_PRECHARGE_TIMEOUT: {
+			channel_com_info->bms_status = PRECHARGE_ERROR;
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_CHM_OP_STATE_INSULATION_CHECK_TIMEOUT: {
+			channel_com_info->bms_status = PRECHARGE_ERROR;
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_CHM_OP_STATE_INSULATION_CHECK_STOP_PRECHARGE_TIMEOUT: {
+			channel_com_info->bms_status = PRECHARGE_ERROR;
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_CHM_OP_STATE_INSULATION_CHECK_DISCHARGE_TIMEOUT: {
+			channel_com_info->bms_status = RETURN_DISCHARGE_TIMEOUT;
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_CRO_OP_STATE_GET_BATTERY_STATUS_TIMEOUT: {
+			channel_com_info->bms_status = PRECHARGE_ERROR;
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_BRM_TIMEOUT: {
+			channel_com_info->bms_status = BRM_TIMEOUT;
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_BCP_TIMEOUT: {
+			channel_com_info->bms_status = BCP_TIMEOUT;
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_BRO_TIMEOUT: {
+			channel_com_info->bms_status = BRO_TIMEOUT;
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_CRO_OUTPUT_VOLTAGE_UNMATCH: {
+			channel_com_info->bms_status = BMS_U_UNMATCH;
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_CRO_OP_STATE_PRECHARGE_TIMEOUT: {
+			channel_com_info->bms_status = PRECHARGE_ERROR;
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_BCL_TIMEOUT: {
+			channel_com_info->bms_status = BCL_TIMEOUT;
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_BCS_TIMEOUT: {
+			channel_com_info->bms_status = BCS_TIMEOUT;
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_CSD_CEM_OP_STATE_DISCHARGE_TIMEOUT: {
+			channel_com_info->bms_status = RETURN_DISCHARGE_TIMEOUT;
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_BRM_RECEIVED: {
+			channel_com_info->cmd_ctx[CHANNEL_COM_CMD_5_105].available = 1;
+			channel_com_info->cmd_ctx[CHANNEL_COM_CMD_7_107].available = 1;
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_BCP_RECEIVED: {
+			channel_com_info->cmd_ctx[CHANNEL_COM_CMD_6_106].available = 1;
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_BCL_RECEIVED: {
+			channel_com_info->cmd_ctx[CHANNEL_COM_CMD_10_110].available = 1;
+			channel_com_info->cmd_ctx[CHANNEL_COM_CMD_67_167].available = 1;
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_BSM_RECEIVED: {
+			channel_com_info->cmd_ctx[CHANNEL_COM_CMD_71_171].available = 1;
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_BCS_RECEIVED: {
+			channel_com_info->cmd_ctx[CHANNEL_COM_CMD_11_111].available = 1;
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_BST_RECEIVED: {
+			channel_com_info->cmd_ctx[CHANNEL_COM_CMD_72_172].available = 1;
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_BSD_RECEIVED: {
+			channel_com_info->cmd_ctx[CHANNEL_COM_CMD_73_173].available = 1;
+		}
+		break;
+
+		default:
+			break;
+	}
+
 }
 
 static int channel_com_info_set_channel_config(channel_com_info_t *channel_com_info, channel_info_config_t *channel_info_config)
@@ -249,8 +389,6 @@ int request_1_101(channel_com_info_t *channel_com_info)//500ms
 
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_1_101].state = CHANNEL_COM_STATE_RESPONSE;
 
-	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_3_103].state = CHANNEL_COM_STATE_REQUEST;
-
 	ret = 0;
 
 	return ret;
@@ -275,12 +413,17 @@ int response_1_101(channel_com_info_t *channel_com_info)
 
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_1_101].state = CHANNEL_COM_STATE_IDLE;
 
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_3_103].state = CHANNEL_COM_STATE_REQUEST;
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_3_103].retry = 0;
+
+
 	ret = 0;
 	return ret;
 }
 
 static channel_com_command_item_t channel_com_command_item_1_101 = {
 	.cmd = CHANNEL_COM_CMD_1_101,
+	.request_period = 500,
 	.request_code = 1,
 	.request_callback = request_1_101,
 	.response_code = 101,
@@ -316,6 +459,7 @@ int response_2_102(channel_com_info_t *channel_com_info)
 	    get_u16_from_u8_lh(cmd_102->charger_max_output_current_l, cmd_102->charger_max_output_current_h);
 
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_2_102].state = CHANNEL_COM_STATE_REQUEST;
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_2_102].retry = 0;
 
 	ret = 0;
 	return ret;
@@ -323,6 +467,7 @@ int response_2_102(channel_com_info_t *channel_com_info)
 
 static channel_com_command_item_t channel_com_command_item_2_102 = {
 	.cmd = CHANNEL_COM_CMD_2_102,
+	.request_period = 0,
 	.request_code = 2,
 	.request_callback = request_2_102,
 	.response_code = 102,
@@ -350,6 +495,7 @@ int response_13_113(channel_com_info_t *channel_com_info)
 	    get_u16_from_u8_lh(cmd_113->charger_min_output_current_l, cmd_113->charger_min_output_current_h);
 
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_13_113].state = CHANNEL_COM_STATE_REQUEST;
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_13_113].retry = 0;
 
 	ret = 0;
 	return ret;
@@ -357,6 +503,7 @@ int response_13_113(channel_com_info_t *channel_com_info)
 
 static channel_com_command_item_t channel_com_command_item_13_113 = {
 	.cmd = CHANNEL_COM_CMD_13_113,
+	.request_period = 0,
 	.request_code = 13,
 	.request_callback = request_13_113,
 	.response_code = 113,
@@ -373,7 +520,7 @@ int request_3_103(channel_com_info_t *channel_com_info)
 
 	cmd_3->a_f_b_ver_h = (a_f_b_reponse_91_data != NULL) ? a_f_b_reponse_91_data->version.b1 : 0;
 	cmd_3->a_f_b_ver_l = (a_f_b_reponse_91_data != NULL) ? a_f_b_reponse_91_data->version.b0 : 0;
-	cmd_3->bms_connect_state = 0;//未实现
+	cmd_3->bms_status = channel_com_info->bms_status;//未实现
 	cmd_3->b4.door = charger_info->door_state;
 	cmd_3->b4.stop = charger_info->error_stop_state;
 
@@ -402,6 +549,7 @@ int response_3_103(channel_com_info_t *channel_com_info)
 
 static channel_com_command_item_t channel_com_command_item_3_103 = {
 	.cmd = CHANNEL_COM_CMD_3_103,
+	.request_period = 0,
 	.request_code = 3,
 	.request_callback = request_3_103,
 	.response_code = 103,
@@ -411,6 +559,7 @@ static channel_com_command_item_t channel_com_command_item_3_103 = {
 void request_precharge(channel_com_info_t *channel_com_info)
 {
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_4_104].state = CHANNEL_COM_STATE_REQUEST;
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_4_104].retry = 0;
 }
 
 int request_4_104(channel_com_info_t *channel_com_info)
@@ -442,13 +591,14 @@ int response_4_104(channel_com_info_t *channel_com_info)
 
 static channel_com_command_item_t channel_com_command_item_4_104 = {
 	.cmd = CHANNEL_COM_CMD_4_104,
+	.request_period = 0,
 	.request_code = 4,
 	.request_callback = request_4_104,
 	.response_code = 104,
 	.response_callback = response_4_104,
 };
 
-int request_5_105(channel_com_info_t *channel_com_info)//CHARGER_INFO_STATUS_BRM_RECEIVED
+int request_5_105(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STATUS_BRM_RECEIVED
 {
 	int ret = -1;
 	cmd_5_t *cmd_5 = (cmd_5_t *)channel_com_info->can_tx_msg.Data;
@@ -480,13 +630,14 @@ int response_5_105(channel_com_info_t *channel_com_info)
 
 static channel_com_command_item_t channel_com_command_item_5_105 = {
 	.cmd = CHANNEL_COM_CMD_5_105,
+	.request_period = 200,
 	.request_code = 5,
 	.request_callback = request_5_105,
 	.response_code = 105,
 	.response_callback = response_5_105,
 };
 
-int request_6_106(channel_com_info_t *channel_com_info)//CHARGER_INFO_STATUS_BCP_RECEIVED
+int request_6_106(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STATUS_BCP_RECEIVED
 {
 	int ret = -1;
 
@@ -520,13 +671,14 @@ int response_6_106(channel_com_info_t *channel_com_info)
 
 static channel_com_command_item_t channel_com_command_item_6_106 = {
 	.cmd = CHANNEL_COM_CMD_6_106,
+	.request_period = 200,
 	.request_code = 6,
 	.request_callback = request_6_106,
 	.response_code = 106,
 	.response_callback = response_6_106,
 };
 
-int request_7_107(channel_com_info_t *channel_com_info)//CHARGER_INFO_STATUS_BRM_RECEIVED
+int request_7_107(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STATUS_BRM_RECEIVED
 {
 	int ret = -1;
 
@@ -548,6 +700,7 @@ int response_7_107(channel_com_info_t *channel_com_info)
 
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_7_107].state = CHANNEL_COM_STATE_IDLE;
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_8_108].state = CHANNEL_COM_STATE_REQUEST;
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_8_108].retry = 0;
 
 	ret = 0;
 	return ret;
@@ -555,6 +708,7 @@ int response_7_107(channel_com_info_t *channel_com_info)
 
 static channel_com_command_item_t channel_com_command_item_7_107 = {
 	.cmd = CHANNEL_COM_CMD_7_107,
+	.request_period = 200,
 	.request_code = 7,
 	.request_callback = request_7_107,
 	.response_code = 107,
@@ -583,6 +737,7 @@ int response_8_108(channel_com_info_t *channel_com_info)
 
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_8_108].state = CHANNEL_COM_STATE_IDLE;
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_9_109].state = CHANNEL_COM_STATE_REQUEST;
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_9_109].retry = 0;
 
 	ret = 0;
 	return ret;
@@ -590,6 +745,7 @@ int response_8_108(channel_com_info_t *channel_com_info)
 
 static channel_com_command_item_t channel_com_command_item_8_108 = {
 	.cmd = CHANNEL_COM_CMD_8_108,
+	.request_period = 0,
 	.request_code = 8,
 	.request_callback = request_8_108,
 	.response_code = 108,
@@ -625,6 +781,7 @@ int response_9_109(channel_com_info_t *channel_com_info)
 
 static channel_com_command_item_t channel_com_command_item_9_109 = {
 	.cmd = CHANNEL_COM_CMD_9_109,
+	.request_period = 0,
 	.request_code = 9,
 	.request_callback = request_9_109,
 	.response_code = 109,
@@ -677,6 +834,7 @@ int response_10_110(channel_com_info_t *channel_com_info)
 
 static channel_com_command_item_t channel_com_command_item_10_110 = {
 	.cmd = CHANNEL_COM_CMD_10_110,
+	.request_period = 200,
 	.request_code = 10,
 	.request_callback = request_10_110,
 	.response_code = 110,
@@ -723,6 +881,7 @@ int response_11_111(channel_com_info_t *channel_com_info)
 
 static channel_com_command_item_t channel_com_command_item_11_111 = {
 	.cmd = CHANNEL_COM_CMD_11_111,
+	.request_period = 500,
 	.request_code = 11,
 	.request_callback = request_11_111,
 	.response_code = 111,
@@ -747,6 +906,7 @@ int response_20_120(channel_com_info_t *channel_com_info)
 	//打开辅板输出继电器
 
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_20_120].state = CHANNEL_COM_STATE_REQUEST;
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_20_120].retry = 0;
 
 	ret = 0;
 	return ret;
@@ -754,6 +914,7 @@ int response_20_120(channel_com_info_t *channel_com_info)
 
 static channel_com_command_item_t channel_com_command_item_20_120 = {
 	.cmd = CHANNEL_COM_CMD_20_120,
+	.request_period = 0,
 	.request_code = 20,
 	.request_callback = request_20_120,
 	.response_code = 120,
@@ -776,8 +937,9 @@ int response_21_121(channel_com_info_t *channel_com_info)
 	int ret = -1;
 
 	//锁定辅板电子锁
-	
+
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_21_121].state = CHANNEL_COM_STATE_REQUEST;
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_21_121].retry = 0;
 
 	ret = 0;
 	return ret;
@@ -785,6 +947,7 @@ int response_21_121(channel_com_info_t *channel_com_info)
 
 static channel_com_command_item_t channel_com_command_item_21_121 = {
 	.cmd = CHANNEL_COM_CMD_21_121,
+	.request_period = 0,
 	.request_code = 21,
 	.request_callback = request_21_121,
 	.response_code = 121,
@@ -809,6 +972,7 @@ int response_22_122(channel_com_info_t *channel_com_info)
 	//解除辅板电子锁
 
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_22_122].state = CHANNEL_COM_STATE_REQUEST;
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_22_122].retry = 0;
 
 	ret = 0;
 	return ret;
@@ -816,6 +980,7 @@ int response_22_122(channel_com_info_t *channel_com_info)
 
 static channel_com_command_item_t channel_com_command_item_22_122 = {
 	.cmd = CHANNEL_COM_CMD_22_122,
+	.request_period = 0,
 	.request_code = 22,
 	.request_callback = request_22_122,
 	.response_code = 122,
@@ -847,6 +1012,7 @@ int response_25_125(channel_com_info_t *channel_com_info)
 
 static channel_com_command_item_t channel_com_command_item_25_125 = {
 	.cmd = CHANNEL_COM_CMD_25_125,
+	.request_period = 0,
 	.request_code = 25,
 	.request_callback = request_25_125,
 	.response_code = 125,
@@ -858,7 +1024,7 @@ int request_30_130(channel_com_info_t *channel_com_info)//bsm状态错误;暂停
 	int ret = -1;
 
 	//通道主动停机命令
-	
+
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_30_130].state = CHANNEL_COM_STATE_RESPONSE;
 
 	ret = 0;
@@ -878,6 +1044,7 @@ int response_30_130(channel_com_info_t *channel_com_info)
 
 static channel_com_command_item_t channel_com_command_item_30_130 = {
 	.cmd = CHANNEL_COM_CMD_30_130,
+	.request_period = 0,
 	.request_code = 30,
 	.request_callback = request_30_130,
 	.response_code = 130,
@@ -887,6 +1054,8 @@ static channel_com_command_item_t channel_com_command_item_30_130 = {
 int request_50_150(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_50_150].state = CHANNEL_COM_STATE_IDLE;
 
 	ret = 0;
 
@@ -899,12 +1068,16 @@ int response_50_150(channel_com_info_t *channel_com_info)
 
 	//发送停机命令
 
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_50_150].state = CHANNEL_COM_STATE_REQUEST;
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_50_150].retry = 0;
+
 	ret = 0;
 	return ret;
 }
 
 static channel_com_command_item_t channel_com_command_item_50_150 = {
 	.cmd = CHANNEL_COM_CMD_50_150,
+	.request_period = 0,
 	.request_code = 50,
 	.request_callback = request_50_150,
 	.response_code = 150,
@@ -917,6 +1090,8 @@ int request_51_151(channel_com_info_t *channel_com_info)
 
 	ret = 0;
 
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_51_151].state = CHANNEL_COM_STATE_IDLE;
+
 	return ret;
 }
 
@@ -925,19 +1100,23 @@ int response_51_151(channel_com_info_t *channel_com_info)
 	int ret = -1;
 	//关闭辅板输出继电器
 
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_51_151].state = CHANNEL_COM_STATE_REQUEST;
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_51_151].retry = 0;
+
 	ret = 0;
 	return ret;
 }
 
 static channel_com_command_item_t channel_com_command_item_51_151 = {
 	.cmd = CHANNEL_COM_CMD_51_151,
+	.request_period = 0,
 	.request_code = 51,
 	.request_callback = request_51_151,
 	.response_code = 151,
 	.response_callback = response_51_151,
 };
 
-int request_60_160(channel_com_info_t *channel_com_info)
+int request_60_160(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STATUS_BRM_RECEIVED
 {
 	int ret = -1;
 
@@ -946,6 +1125,8 @@ int request_60_160(channel_com_info_t *channel_com_info)
 	uint8_t *brm_data = (uint8_t *)&charger_info->settings->brm_data;
 
 	memcpy(cmd_60->brm_data, brm_data + 0, 7);
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_60_160].state = CHANNEL_COM_STATE_RESPONSE;
 
 	ret = 0;
 
@@ -956,12 +1137,17 @@ int response_60_160(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_60_160].state = CHANNEL_COM_STATE_IDLE;
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_61_161].state = CHANNEL_COM_STATE_REQUEST;
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_61_161].retry = 0;
+
 	ret = 0;
 	return ret;
 }
 
 static channel_com_command_item_t channel_com_command_item_60_160 = {
 	.cmd = CHANNEL_COM_CMD_60_160,
+	.request_period = 200,
 	.request_code = 60,
 	.request_callback = request_60_160,
 	.response_code = 160,
@@ -978,6 +1164,8 @@ int request_61_161(channel_com_info_t *channel_com_info)
 
 	memcpy(cmd_61->brm_data, brm_data + 7, 7);
 
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_61_161].state = CHANNEL_COM_STATE_RESPONSE;
+
 	ret = 0;
 
 	return ret;
@@ -987,12 +1175,17 @@ int response_61_161(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_61_161].state = CHANNEL_COM_STATE_IDLE;
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_62_162].state = CHANNEL_COM_STATE_REQUEST;
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_62_162].retry = 0;
+
 	ret = 0;
 	return ret;
 }
 
 static channel_com_command_item_t channel_com_command_item_61_161 = {
 	.cmd = CHANNEL_COM_CMD_61_161,
+	.request_period = 0,
 	.request_code = 61,
 	.request_callback = request_61_161,
 	.response_code = 161,
@@ -1008,6 +1201,8 @@ int request_62_162(channel_com_info_t *channel_com_info)
 
 	memcpy(cmd_62->brm_data, brm_data + 14, 7);
 
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_62_162].state = CHANNEL_COM_STATE_RESPONSE;
+
 	ret = 0;
 
 	return ret;
@@ -1017,12 +1212,17 @@ int response_62_162(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_62_162].state = CHANNEL_COM_STATE_IDLE;
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_63_163].state = CHANNEL_COM_STATE_REQUEST;
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_63_163].retry = 0;
+
 	ret = 0;
 	return ret;
 }
 
 static channel_com_command_item_t channel_com_command_item_62_162 = {
 	.cmd = CHANNEL_COM_CMD_62_162,
+	.request_period = 0,
 	.request_code = 62,
 	.request_callback = request_62_162,
 	.response_code = 162,
@@ -1038,6 +1238,8 @@ int request_63_163(channel_com_info_t *channel_com_info)
 
 	memcpy(cmd_63->brm_data, brm_data + 21, 7);
 
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_63_163].state = CHANNEL_COM_STATE_RESPONSE;
+
 	ret = 0;
 
 	return ret;
@@ -1047,12 +1249,17 @@ int response_63_163(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_63_163].state = CHANNEL_COM_STATE_IDLE;
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_64_164].state = CHANNEL_COM_STATE_REQUEST;
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_64_164].retry = 0;
+
 	ret = 0;
 	return ret;
 }
 
 static channel_com_command_item_t channel_com_command_item_63_163 = {
 	.cmd = CHANNEL_COM_CMD_63_163,
+	.request_period = 0,
 	.request_code = 63,
 	.request_callback = request_63_163,
 	.response_code = 163,
@@ -1068,6 +1275,8 @@ int request_64_164(channel_com_info_t *channel_com_info)
 
 	memcpy(cmd_64->brm_data, brm_data + 28, 7);
 
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_64_164].state = CHANNEL_COM_STATE_RESPONSE;
+
 	ret = 0;
 
 	return ret;
@@ -1077,12 +1286,17 @@ int response_64_164(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_64_164].state = CHANNEL_COM_STATE_IDLE;
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_65_165].state = CHANNEL_COM_STATE_REQUEST;
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_65_165].retry = 0;
+
 	ret = 0;
 	return ret;
 }
 
 static channel_com_command_item_t channel_com_command_item_64_164 = {
 	.cmd = CHANNEL_COM_CMD_64_164,
+	.request_period = 0,
 	.request_code = 64,
 	.request_callback = request_64_164,
 	.response_code = 164,
@@ -1098,6 +1312,8 @@ int request_65_165(channel_com_info_t *channel_com_info)
 
 	memcpy(cmd_65->brm_data, brm_data + 35, 7);
 
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_65_165].state = CHANNEL_COM_STATE_RESPONSE;
+
 	ret = 0;
 
 	return ret;
@@ -1107,12 +1323,17 @@ int response_65_165(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_65_165].state = CHANNEL_COM_STATE_IDLE;
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_66_166].state = CHANNEL_COM_STATE_REQUEST;
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_66_166].retry = 0;
+
 	ret = 0;
 	return ret;
 }
 
 static channel_com_command_item_t channel_com_command_item_65_165 = {
 	.cmd = CHANNEL_COM_CMD_65_165,
+	.request_period = 0,
 	.request_code = 65,
 	.request_callback = request_65_165,
 	.response_code = 165,
@@ -1128,6 +1349,8 @@ int request_66_166(channel_com_info_t *channel_com_info)
 
 	memcpy(cmd_66->brm_data, brm_data + 42, 7);
 
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_66_166].state = CHANNEL_COM_STATE_RESPONSE;
+
 	ret = 0;
 
 	return ret;
@@ -1137,19 +1360,22 @@ int response_66_166(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_66_166].state = CHANNEL_COM_STATE_IDLE;
+
 	ret = 0;
 	return ret;
 }
 
 static channel_com_command_item_t channel_com_command_item_66_166 = {
 	.cmd = CHANNEL_COM_CMD_66_166,
+	.request_period = 0,
 	.request_code = 66,
 	.request_callback = request_66_166,
 	.response_code = 166,
 	.response_callback = response_66_166,
 };
 
-int request_67_167(channel_com_info_t *channel_com_info)
+int request_67_167(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STATUS_BCL_RECEIVED
 {
 	int ret = -1;
 	cmd_67_t *cmd_67 = (cmd_67_t *)channel_com_info->can_tx_msg.Data;
@@ -1157,6 +1383,8 @@ int request_67_167(channel_com_info_t *channel_com_info)
 	uint8_t *bcp_data = (uint8_t *)&charger_info->settings->bcp_data;
 
 	memcpy(cmd_67->bcp_data, bcp_data + 0, 7);
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_67_167].state = CHANNEL_COM_STATE_RESPONSE;
 
 	ret = 0;
 
@@ -1167,12 +1395,17 @@ int response_67_167(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_67_167].state = CHANNEL_COM_STATE_IDLE;
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_68_168].state = CHANNEL_COM_STATE_REQUEST;
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_68_168].retry = 0;
+
 	ret = 0;
 	return ret;
 }
 
 static channel_com_command_item_t channel_com_command_item_67_167 = {
 	.cmd = CHANNEL_COM_CMD_67_167,
+	.request_period = 200,
 	.request_code = 67,
 	.request_callback = request_67_167,
 	.response_code = 167,
@@ -1188,6 +1421,8 @@ int request_68_168(channel_com_info_t *channel_com_info)
 
 	memcpy(cmd_68->bcp_data, bcp_data + 7, 7);
 
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_68_168].state = CHANNEL_COM_STATE_RESPONSE;
+
 	ret = 0;
 
 	return ret;
@@ -1197,12 +1432,17 @@ int response_68_168(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_68_168].state = CHANNEL_COM_STATE_IDLE;
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_69_169].state = CHANNEL_COM_STATE_REQUEST;
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_69_169].retry = 0;
+
 	ret = 0;
 	return ret;
 }
 
 static channel_com_command_item_t channel_com_command_item_68_168 = {
 	.cmd = CHANNEL_COM_CMD_68_168,
+	.request_period = 0,
 	.request_code = 68,
 	.request_callback = request_68_168,
 	.response_code = 168,
@@ -1218,6 +1458,8 @@ int request_69_169(channel_com_info_t *channel_com_info)
 
 	memcpy(cmd_69->bcs_data, bcs_data + 0, 7);
 
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_69_169].state = CHANNEL_COM_STATE_RESPONSE;
+
 	ret = 0;
 
 	return ret;
@@ -1227,12 +1469,17 @@ int response_69_169(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_69_169].state = CHANNEL_COM_STATE_IDLE;
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_70_170].state = CHANNEL_COM_STATE_REQUEST;
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_70_170].retry = 0;
+
 	ret = 0;
 	return ret;
 }
 
 static channel_com_command_item_t channel_com_command_item_69_169 = {
 	.cmd = CHANNEL_COM_CMD_69_169,
+	.request_period = 0,
 	.request_code = 69,
 	.request_callback = request_69_169,
 	.response_code = 169,
@@ -1250,6 +1497,8 @@ int request_70_170(channel_com_info_t *channel_com_info)
 	memcpy(cmd_70->bcs_data, bcs_data + 7, 2);
 	memcpy(cmd_70->bcl_data, bcl_data + 0, 5);
 
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_70_170].state = CHANNEL_COM_STATE_RESPONSE;
+
 	ret = 0;
 
 	return ret;
@@ -1259,19 +1508,23 @@ int response_70_170(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_70_170].state = CHANNEL_COM_STATE_IDLE;
+
 	ret = 0;
 	return ret;
 }
 
 static channel_com_command_item_t channel_com_command_item_70_170 = {
 	.cmd = CHANNEL_COM_CMD_70_170,
+	.request_period = 0,
+	.request_code = 69,
 	.request_code = 70,
 	.request_callback = request_70_170,
 	.response_code = 170,
 	.response_callback = response_70_170,
 };
 
-int request_71_171(channel_com_info_t *channel_com_info)
+int request_71_171(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STATUS_BSM_RECEIVED
 {
 	int ret = -1;
 	cmd_71_t *cmd_71 = (cmd_71_t *)channel_com_info->can_tx_msg.Data;
@@ -1279,6 +1532,8 @@ int request_71_171(channel_com_info_t *channel_com_info)
 	uint8_t *bsm_data = (uint8_t *)&charger_info->settings->bsm_data;
 
 	memcpy(cmd_71->bsm_data, bsm_data + 0, 7);
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_71_171].state = CHANNEL_COM_STATE_RESPONSE;
 
 	ret = 0;
 
@@ -1289,19 +1544,23 @@ int response_71_171(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_71_171].state = CHANNEL_COM_STATE_IDLE;
+
 	ret = 0;
 	return ret;
 }
 
 static channel_com_command_item_t channel_com_command_item_71_171 = {
 	.cmd = CHANNEL_COM_CMD_71_171,
+	.request_period = 200,
+	.request_code = 69,
 	.request_code = 71,
 	.request_callback = request_71_171,
 	.response_code = 171,
 	.response_callback = response_71_171,
 };
 
-int request_72_172(channel_com_info_t *channel_com_info)
+int request_72_172(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STATUS_BST_RECEIVED
 {
 	int ret = -1;
 	cmd_72_t *cmd_72 = (cmd_72_t *)channel_com_info->can_tx_msg.Data;
@@ -1309,6 +1568,8 @@ int request_72_172(channel_com_info_t *channel_com_info)
 	uint8_t *bst_data = (uint8_t *)&charger_info->settings->bst_data;
 
 	memcpy(cmd_72->bst_data, bst_data + 0, 4);
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_72_172].state = CHANNEL_COM_STATE_RESPONSE;
 
 	ret = 0;
 
@@ -1319,19 +1580,22 @@ int response_72_172(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_72_172].state = CHANNEL_COM_STATE_IDLE;
+
 	ret = 0;
 	return ret;
 }
 
 static channel_com_command_item_t channel_com_command_item_72_172 = {
 	.cmd = CHANNEL_COM_CMD_72_172,
+	.request_period = 200,
 	.request_code = 72,
 	.request_callback = request_72_172,
 	.response_code = 172,
 	.response_callback = response_72_172,
 };
 
-int request_73_173(channel_com_info_t *channel_com_info)
+int request_73_173(channel_com_info_t *channel_com_info)//200ms CHARGER_INFO_STATUS_BSD_RECEIVED
 {
 	int ret = -1;
 	cmd_73_t *cmd_73 = (cmd_73_t *)channel_com_info->can_tx_msg.Data;
@@ -1339,6 +1603,8 @@ int request_73_173(channel_com_info_t *channel_com_info)
 	uint8_t *bsd_data = (uint8_t *)&charger_info->settings->bsd_data;
 
 	memcpy(cmd_73->bsd_data, bsd_data + 0, 7);
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_73_173].state = CHANNEL_COM_STATE_RESPONSE;
 
 	ret = 0;
 
@@ -1349,14 +1615,154 @@ int response_73_173(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
 
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_73_173].state = CHANNEL_COM_STATE_IDLE;
+
 	ret = 0;
 	return ret;
 }
 
 static channel_com_command_item_t channel_com_command_item_73_173 = {
 	.cmd = CHANNEL_COM_CMD_73_173,
+	.request_period = 200,
 	.request_code = 73,
 	.request_callback = request_73_173,
 	.response_code = 173,
 	.response_callback = response_73_173,
 };
+
+static channel_com_command_item_t *channel_com_command_table[] = {
+	&channel_com_command_item_1_101,
+	&channel_com_command_item_2_102,
+	&channel_com_command_item_13_113,
+	&channel_com_command_item_3_103,
+	&channel_com_command_item_4_104,
+	&channel_com_command_item_5_105,
+	&channel_com_command_item_6_106,
+	&channel_com_command_item_7_107,
+	&channel_com_command_item_8_108,
+	&channel_com_command_item_9_109,
+	&channel_com_command_item_10_110,
+	&channel_com_command_item_11_111,
+	&channel_com_command_item_20_120,
+	&channel_com_command_item_21_121,
+	&channel_com_command_item_22_122,
+	&channel_com_command_item_25_125,
+	&channel_com_command_item_30_130,
+	&channel_com_command_item_50_150,
+	&channel_com_command_item_51_151,
+	&channel_com_command_item_60_160,
+	&channel_com_command_item_61_161,
+	&channel_com_command_item_62_162,
+	&channel_com_command_item_63_163,
+	&channel_com_command_item_64_164,
+	&channel_com_command_item_65_165,
+	&channel_com_command_item_66_166,
+	&channel_com_command_item_67_167,
+	&channel_com_command_item_68_168,
+	&channel_com_command_item_69_169,
+	&channel_com_command_item_70_170,
+	&channel_com_command_item_71_171,
+	&channel_com_command_item_72_172,
+	&channel_com_command_item_73_173,
+};
+
+static void channel_com_request_periodic(channel_com_info_t *channel_com_info)
+{
+	int i;
+	uint32_t ticks = osKernelSysTick();
+
+	for(i = 0; i < sizeof(channel_com_command_table) / sizeof(channel_com_command_item_t *); i++) {
+		channel_com_command_item_t *item = channel_com_command_table[i];
+
+		if(item->request_period == 0) {
+			continue;
+		}
+
+		if(channel_com_info->cmd_ctx[item->cmd].available == 0) {
+			continue;
+		}
+
+		if(ticks - channel_com_info->cmd_ctx[item->cmd].stamp >= item->request_period) {
+			channel_com_info->cmd_ctx[item->cmd].stamp = ticks;
+			channel_com_info->cmd_ctx[item->cmd].state = CHANNEL_COM_STATE_REQUEST;
+		}
+	}
+
+}
+
+void task_channel_com_request(void const *argument)
+{
+	int ret = 0;
+	int i;
+
+	channel_com_info_t *channel_com_info = (channel_com_info_t *)argument;
+
+	if(channel_com_info == NULL) {
+		app_panic();
+	}
+
+	while(1) {
+		for(i = 0; i < sizeof(channel_com_command_table) / sizeof(channel_com_command_item_t *); i++) {
+			channel_com_command_item_t *item = channel_com_command_table[i];
+			cmd_common_t *cmd_common = (cmd_common_t *)channel_com_info->can_tx_msg.Data;
+
+			if(channel_com_info->cmd_ctx[item->cmd].state == CHANNEL_COM_STATE_IDLE) {
+				continue;
+			}
+
+			memset(channel_com_info->can_tx_msg.Data, 0, 8);
+
+			cmd_common->cmd = item->request_code;
+
+			ret = item->request_callback(channel_com_info);
+
+			channel_com_info->cmd_ctx[item->cmd].retry++;
+
+			ret = can_tx_data(channel_com_info->can_info, &channel_com_info->can_tx_msg, 10);
+
+			if(ret != 0) {
+				if(channel_com_info->cmd_ctx[item->cmd].retry <= 3) {
+					channel_com_info->cmd_ctx[item->cmd].state = CHANNEL_COM_STATE_REQUEST;
+				}
+			}
+		}
+
+		channel_com_request_periodic(channel_com_info);
+		osDelay(10);
+	}
+}
+
+void task_channel_com_response(void const *argument)
+{
+	int ret = 0;
+	int i;
+
+	channel_com_info_t *channel_com_info = (channel_com_info_t *)argument;
+
+	if(channel_com_info == NULL) {
+		app_panic();
+	}
+
+	while(1) {
+		ret = can_rx_data(channel_com_info->can_info, 1000);
+
+		if(ret != 0) {
+			continue;
+		}
+
+		for(i = 0; i < sizeof(channel_com_command_table) / sizeof(channel_com_command_item_t *); i++) {
+			channel_com_command_item_t *item = channel_com_command_table[i];
+			cmd_common_t *cmd_common = (cmd_common_t *)channel_com_info->can_rx_msg->Data;
+
+			if(cmd_common->cmd == item->response_code) {
+				ret = item->response_callback(channel_com_info);
+
+				if(ret != 0) {
+				}
+
+				break;
+			}
+
+		}
+	}
+}

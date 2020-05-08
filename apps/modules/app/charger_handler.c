@@ -6,7 +6,7 @@
  *   文件名称：charger_handler.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时18分42秒
- *   修改日期：2020年05月07日 星期四 17时01分57秒
+ *   修改日期：2020年05月08日 星期五 14时25分49秒
  *   描    述：
  *
  *================================================================*/
@@ -35,6 +35,11 @@ static int handle_common_bst_response(charger_info_t *charger_info)
 			bst_data_t *data = (bst_data_t *)rx_msg->Data;
 
 			charger_info->settings->bst_data = *data;
+
+			if(charger_info->bst_received == 0) {
+				charger_info->bst_received = 1;
+				charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_BST_RECEIVED);
+			}
 
 			set_charger_state(charger_info, CHARGER_STATE_CST);
 
@@ -108,6 +113,7 @@ static int prepare_state_chm(charger_info_t *charger_info)
 	charger_info->stamp_1 = ticks;
 
 	charger_info->bhm_received = 0;
+	charger_info->bst_received = 0;
 
 	charger_info->chm_op_state = CHM_OP_STATE_NONE;
 
@@ -854,6 +860,8 @@ static int prepare_state_ccs(charger_info_t *charger_info)
 	charger_info->stamp = ticks;
 	charger_info->stamp_1 = ticks;
 
+	charger_info->bsm_received = 0;
+
 	return ret;
 }
 
@@ -935,6 +943,11 @@ static int handle_state_ccs_response(charger_info_t *charger_info)
 			bsm_data_t *data = (bsm_data_t *)rx_msg->Data;
 
 			charger_info->settings->bsm_data = *data;
+
+			if(charger_info->bsm_received == 0) {
+				charger_info->bsm_received = 1;
+				charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_BSM_RECEIVED);
+			}
 
 			ret = 0;
 		}
@@ -1026,6 +1039,11 @@ static int handle_state_cst_response(charger_info_t *charger_info)
 			charger_info->settings->bst_data = *data;
 
 			charger_info->stamp = ticks;
+
+			if(charger_info->bst_received == 0) {
+				charger_info->bst_received = 1;
+				charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_BST_RECEIVED);
+			}
 
 			ret = 0;
 		}

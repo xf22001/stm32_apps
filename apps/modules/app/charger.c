@@ -6,7 +6,7 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年05月07日 星期四 17时03分14秒
+ *   修改日期：2020年05月08日 星期五 09时21分17秒
  *   描    述：
  *
  *================================================================*/
@@ -767,7 +767,7 @@ static void channel_update_gun_state(charger_info_t *charger_info)//100ms
 	}
 }
 
-static uint8_t channel_update_error_stop_state(charger_info_t *charger_info)
+static void channel_update_error_stop_state(charger_info_t *charger_info)
 {
 	GPIO_PinState state = HAL_GPIO_ReadPin(charger_info->channel_info_config->gpio_port_error_stop,
 	                                       charger_info->channel_info_config->gpio_pin_error_stop);

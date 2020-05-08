@@ -6,7 +6,7 @@
  *   文件名称：charger.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分46秒
- *   修改日期：2020年05月07日 星期四 17时31分44秒
+ *   修改日期：2020年05月08日 星期五 14时25分23秒
  *   描    述：
  *
  *================================================================*/
@@ -117,7 +117,9 @@ typedef struct {
 	uint8_t brm_received;
 	uint8_t bcp_received;
 	uint8_t bcl_received;
+	uint8_t bsm_received;
 	uint8_t bcs_received;
+	uint8_t bst_received;
 	uint8_t bsd_received;
 
 	uint16_t precharge_voltage;
@@ -178,7 +180,9 @@ typedef enum {
 	CHARGER_INFO_STATUS_BRM_RECEIVED,
 	CHARGER_INFO_STATUS_BCP_RECEIVED,
 	CHARGER_INFO_STATUS_BCL_RECEIVED,
+	CHARGER_INFO_STATUS_BSM_RECEIVED,
 	CHARGER_INFO_STATUS_BCS_RECEIVED,
+	CHARGER_INFO_STATUS_BST_RECEIVED,
 	CHARGER_INFO_STATUS_BSD_RECEIVED,
 } charger_info_status_t;
 

@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.h
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分48秒
- *   修改日期：2020年05月07日 星期四 17时31分17秒
+ *   修改日期：2020年05月08日 星期五 14时23分54秒
  *   描    述：
  *
  *================================================================*/
@@ -146,7 +146,7 @@ typedef struct {
 	uint8_t cmd;//3
 	uint8_t a_f_b_ver_h;//辅助功能板版本号h
 	uint8_t a_f_b_ver_l;//辅助功能板版本号l
-	uint8_t bms_connect_state;//bms工作状态码
+	uint8_t bms_status;//bms工作状态码
 	cmd_3_b4_t b4;
 	uint8_t unused[3];
 } cmd_3_t;//心跳2
@@ -539,7 +539,8 @@ typedef enum {
 typedef struct {
 	channel_com_state_t state;
 	uint32_t stamp;
-	uint32_t duration;
+	uint32_t retry;
+	uint8_t available;
 } channel_com_cmd_ctx_t;
 
 typedef struct {
@@ -567,6 +568,7 @@ typedef int (*channel_com_response_callback_t)(channel_com_info_t *channel_com_i
 
 typedef struct {
 	channel_com_cmd_t cmd;
+	uint32_t request_period;
 	uint8_t request_code;
 	channel_com_request_callback_t request_callback;
 	uint8_t response_code;
