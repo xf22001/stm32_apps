@@ -6,7 +6,7 @@
  *   文件名称：request_default.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月05日 星期四 10时09分49秒
- *   修改日期：2020年03月27日 星期五 08时37分19秒
+ *   修改日期：2020年05月09日 星期六 08时28分25秒
  *   描    述：
  *
  *================================================================*/
@@ -17,12 +17,13 @@
 #include "task_probe_tool.h"
 #include "main.h"
 
-static int chunk_sendto(uint32_t fn, void *data, size_t size, char *send_buffer, size_t send_buffer_size)
+static int chunk_sendto(uint32_t fn, uint32_t stage, void *data, size_t size, char *send_buffer, size_t send_buffer_size)
 {
 	int ret = 0;
 	request_info_t request_info;
 
 	request_info.fn = (unsigned int)fn;
+	request_info.stage = (unsigned int)stage;
 	request_info.data = (const unsigned char *)data;
 	request_info.size = size;
 	request_info.consumed = 0;
@@ -97,7 +98,7 @@ static void request_periodic(uint8_t *send_buffer, uint16_t send_buffer_size)
 	udp_log_printf("%s:%s\n", __FILE__, __func__);
 
 	if(get_client_state() == CLIENT_CONNECTED) {
-		chunk_sendto(1, (void *)0x8000000, 128, (char *)send_buffer, send_buffer_size);
+		chunk_sendto(1, 0, (void *)0x8000000, 128, (char *)send_buffer, send_buffer_size);
 	}
 }
 
