@@ -6,7 +6,7 @@
  *   文件名称：request.h
  *   创 建 者：肖飞
  *   创建日期：2020年02月16日 星期日 11时03分12秒
- *   修改日期：2020年02月16日 星期日 19时53分10秒
+ *   修改日期：2020年05月09日 星期六 16时49分16秒
  *   描    述：
  *
  *================================================================*/
@@ -25,6 +25,8 @@ extern "C"
 
 #define DEFAULT_REQUEST_MAGIC 0xa5a55a5a
 
+#pragma pack(push, 1)
+
 typedef struct {
 	unsigned int magic;
 	unsigned int total_size;
@@ -42,6 +44,8 @@ typedef struct {
 	header_info_t header;
 	payload_info_t payload;
 } request_t;
+
+#pragma pack(pop)
 
 typedef struct {
 	unsigned int fn;

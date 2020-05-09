@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分44秒
- *   修改日期：2020年05月08日 星期五 15时44分08秒
+ *   修改日期：2020年05月09日 星期六 10时22分06秒
  *   描    述：
  *
  *================================================================*/
@@ -94,6 +94,7 @@ static void charger_info_report_status_cb(void *fn_ctx, void *chain_ctx)
 			channel_com_info->cmd_ctx[CHANNEL_COM_CMD_5_105].available = 0;
 			channel_com_info->cmd_ctx[CHANNEL_COM_CMD_6_106].available = 0;
 			channel_com_info->cmd_ctx[CHANNEL_COM_CMD_7_107].available = 0;
+			channel_com_info->cmd_ctx[CHANNEL_COM_CMD_60_160].available = 0;
 			channel_com_info->cmd_ctx[CHANNEL_COM_CMD_10_110].available = 0;
 			channel_com_info->cmd_ctx[CHANNEL_COM_CMD_11_111].available = 0;
 			channel_com_info->cmd_ctx[CHANNEL_COM_CMD_67_167].available = 0;
@@ -227,6 +228,7 @@ static void charger_info_report_status_cb(void *fn_ctx, void *chain_ctx)
 		case CHARGER_INFO_STATUS_BRM_RECEIVED: {
 			channel_com_info->cmd_ctx[CHANNEL_COM_CMD_5_105].available = 1;
 			channel_com_info->cmd_ctx[CHANNEL_COM_CMD_7_107].available = 1;
+			channel_com_info->cmd_ctx[CHANNEL_COM_CMD_60_160].available = 1;
 		}
 		break;
 
@@ -351,6 +353,8 @@ channel_com_info_t *get_or_alloc_channel_com_info(channel_info_config_t *channel
 	if(channel_com_info_set_channel_config(channel_com_info, channel_info_config) != 0) {
 		goto failed;
 	}
+
+	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_1_101].available = 1;
 
 	return channel_com_info;
 failed:

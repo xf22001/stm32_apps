@@ -6,7 +6,7 @@
  *   文件名称：i-a-c.h
  *   创 建 者：肖飞
  *   创建日期：2020年04月22日 星期三 13时03分47秒
- *   修改日期：2020年04月22日 星期三 13时43分38秒
+ *   修改日期：2020年05月09日 星期六 13时33分49秒
  *   描    述：
  *
  *================================================================*/
@@ -22,8 +22,25 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif
-//industrial ait conditioning
+//industrial air conditioning
 
+typedef enum {
+	i_a_c_fn_on_off = 256,//开关机设定 读/写 1 0~1 0 关闭,1 开启
+	i_a_c_fn_teamperature_refrigeration_start_threshold = 257,//制冷开启温度 读/写 32 -30~45 单位:°C,实际值*10
+	i_a_c_fn_teamperature_refrigeration_tolerance = 258,//制冷回差 读/写 3 1~8 单位:°C,实际值*10
+	i_a_c_fn_teamprature_heating_start_threshold = 259,//制热开启温度 读/写 5 -30~35 单位:°C,实际值*10
+	i_a_c_fn_teamprature_heating_tolerance = 260,//制热回差 读/写 4 1~30 单位:°C,实际值*10
+	i_a_c_fn_dehumidification_threshold = 261,//除湿开启湿度 读/写 85 50~90 单位: %RH,实际值*10
+	i_a_c_fn_dehumidification_tolerance = 262,//除湿回差 读/写 10 2~15 单位: %RH,实际值*10
+	i_a_c_fn_over_teamprature_warning_type = 267,//应急风机/温度报警 读/写 1 0~1 0 应急风机,1 温度报警
+	i_a_c_fn_emergency_fan_start_threshold = 268,//应急风机开启温度 读/写 60 30~60 单位:°C,实际值*10
+	i_a_c_fn_humidity_warning_type = 269,//排氢风机/湿度报警 读/写 1 0~1 0 排氢风机,1 湿度报警
+	i_a_c_fn_teamprature_warning_upper_limit = 273,//温度报警上限 读/写 60 0~90 单位:°C,实际值*10
+	i_a_c_fn_teamprature_warning_floor_limit = 274,//温度报警下限 读/写 -20 -40~40 单位:°C,实际值*10
+	i_a_c_fn_teamprature_sensor_and_dehumidification_setting = 276,//湿度传感器使能及除湿使能 读/写 3 0~3 0:不开启,1:开启传感器 2:开启除湿1,3:开启除湿2
+	i_a_c_fn_humidity_warning_upper_limit = 278,//湿度报警上限 读/写 99 40~99 单位: %RH,实际值*10
+	i_a_c_fn_humidity_warning_floor_limit = 279,//湿度报警下限 读/写 0 0~60 单位: %RH,实际值*10
+} i_a_c_fn_t;
 
 //warn
 typedef struct {
