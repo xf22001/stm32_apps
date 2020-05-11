@@ -6,7 +6,7 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年05月08日 星期五 09时21分17秒
+ *   修改日期：2020年05月11日 星期一 11时43分36秒
  *   描    述：
  *
  *================================================================*/
@@ -264,6 +264,8 @@ charger_info_t *get_or_alloc_charger_info(channel_info_config_t *channel_info_co
 
 	memset(charger_info, 0, sizeof(charger_info_t));
 
+	charger_info->gb = BMS_STARDARD_2015;
+
 	charger_info->report_status_chain = alloc_callback_chain();
 
 	if(charger_info->report_status_chain == NULL) {
@@ -437,7 +439,11 @@ void charger_handle_response(charger_info_t *charger_info)
 
 void set_auxiliary_power_state(charger_info_t *charger_info, uint8_t state)
 {
-	charger_info->gun_lock_state = state;
+	if(charger_info->gb == BMS_STARDARD_CCS) {
+		return;
+	}
+
+	charger_info->auxiliary_power_state = state;
 
 	if(state == 0) {
 		HAL_GPIO_WritePin(charger_info->channel_info_config->gpio_port_auxiliary_power,
@@ -473,6 +479,10 @@ void set_power_output_enable(charger_info_t *charger_info, uint8_t state)
 {
 	charger_info->power_output_state = state;
 
+	if(charger_info->test_mode == 1) {
+		return;
+	}
+
 	if(state == 0) {
 		HAL_GPIO_WritePin(charger_info->channel_info_config->gpio_port_power_output,
 		                  charger_info->channel_info_config->gpio_pin_power_output,
@@ -492,40 +502,44 @@ int discharge(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)
 	int ret = 1;
 	a_f_b_info_t *a_f_b_info = (a_f_b_info_t *)charger_info->a_f_b_info;
 
-	switch(charger_op_ctx->state) {
-		case 0: {
-			request_discharge(a_f_b_info);
-			charger_op_ctx->stamp = ticks;
-			charger_op_ctx->state = 1;
-		}
-		break;
-
-		case 1: {
-			if(ticks - charger_op_ctx->stamp >= (15 * 1000)) {
-				ret = -1;
-			} else {
-				if(response_discharge(a_f_b_info) == 0) {
-					request_a_f_b_status_data(a_f_b_info);
-					charger_op_ctx->stamp = ticks;
-					charger_op_ctx->state = 2;
-				}
+	if(charger_info->gb == BMS_STARDARD_2015) {
+		switch(charger_op_ctx->state) {
+			case 0: {
+				request_discharge(a_f_b_info);
+				charger_op_ctx->stamp = ticks;
+				charger_op_ctx->state = 1;
 			}
-		}
-		break;
-
-		case 2: {
-			if(ticks - charger_op_ctx->stamp >= (10 * 1000)) {
-				ret = -1;
-			} else {
-				if(response_discharge_running_status(a_f_b_info) == 0) {
-					ret = 0;
-				}
-			}
-		}
-		break;
-
-		default:
 			break;
+
+			case 1: {
+				if(ticks - charger_op_ctx->stamp >= (15 * 1000)) {
+					ret = -1;
+				} else {
+					if(response_discharge(a_f_b_info) == 0) {
+						request_a_f_b_status_data(a_f_b_info);
+						charger_op_ctx->stamp = ticks;
+						charger_op_ctx->state = 2;
+					}
+				}
+			}
+			break;
+
+			case 2: {
+				if(ticks - charger_op_ctx->stamp >= (10 * 1000)) {
+					ret = -1;
+				} else {
+					if(response_discharge_running_status(a_f_b_info) == 0) {
+						ret = 0;
+					}
+				}
+			}
+			break;
+
+			default:
+				break;
+		}
+	} else {
+		ret = 0;
 	}
 
 	ret = 0;
@@ -540,32 +554,38 @@ int precharge(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)
 	int ret = 1;
 	channel_com_info_t *channel_com_info = (channel_com_info_t *)charger_info->channel_com_info;
 
-	switch(charger_op_ctx->state) {
-		case 0: {
-			request_precharge(channel_com_info);
-			charger_op_ctx->stamp = ticks;
+	if((charger_info->precharge_enable == 1)
+	   && (charger_info->gb == BMS_STARDARD_2015)
+	   && (charger_info->test_mode == 0)) {
+		switch(charger_op_ctx->state) {
+			case 0: {
+				request_precharge(channel_com_info);
+				charger_op_ctx->stamp = ticks;
 
-			if(charger_info->precharge_action == PRECHARGE_ACTION_START) {
-				charger_op_ctx->state = 1;
-			} else {
-				ret = 0;
-			}
-		}
-		break;
-
-		case 1: {
-			if(ticks - charger_op_ctx->stamp >= (20 * 1000)) {
-				ret = -1;
-			} else {
-				if(abs(charger_info->module_output_voltage - charger_info->precharge_voltage) <= 20) {
+				if(charger_info->precharge_action == PRECHARGE_ACTION_START) {
+					charger_op_ctx->state = 1;
+				} else {
 					ret = 0;
 				}
 			}
-		}
-		break;
-
-		default:
 			break;
+
+			case 1: {
+				if(ticks - charger_op_ctx->stamp >= (20 * 1000)) {
+					ret = -1;
+				} else {
+					if(abs(charger_info->module_output_voltage - charger_info->precharge_voltage) <= 20) {
+						ret = 0;
+					}
+				}
+			}
+			break;
+
+			default:
+				break;
+		}
+	} else {
+		ret = 0;
 	}
 
 	ret = 0;
@@ -615,48 +635,53 @@ int insulation_check(charger_info_t *charger_info, charger_op_ctx_t *charger_op_
 	int ret = 1;
 	a_f_b_info_t *a_f_b_info = (a_f_b_info_t *)charger_info->a_f_b_info;
 
-	switch(charger_op_ctx->state) {
-		case 0: {
-			request_insulation_check(a_f_b_info);
-			charger_op_ctx->stamp = ticks;
-			charger_op_ctx->state = 1;
-		}
-		break;
-
-		case 1: {
-			if(ticks - charger_op_ctx->stamp >= (15 * 1000)) {
-				ret = -1;
-			} else {
-				if(response_insulation_check(a_f_b_info) == 0) {
-					request_a_f_b_status_data(a_f_b_info);
-					charger_op_ctx->stamp = ticks;
-					charger_op_ctx->state = 2;
-				}
+	if(charger_info->gb == BMS_STARDARD_2015) {
+		switch(charger_op_ctx->state) {
+			case 0: {
+				request_insulation_check(a_f_b_info);
+				charger_op_ctx->stamp = ticks;
+				charger_op_ctx->state = 1;
 			}
-		}
-		break;
-
-		case 2: {
-			if(ticks - charger_op_ctx->stamp >= (15 * 1000)) {
-				ret = -1;
-			} else {
-				//>1 warning
-				//>5 ok
-				int resistor = response_insulation_check_running_status(a_f_b_info);
-
-				if(resistor > 5) {
-					ret = 0;
-				}
-
-				if(resistor > 1) {//warning
-					ret = 0;
-				}
-			}
-		}
-		break;
-
-		default:
 			break;
+
+			case 1: {
+				if(ticks - charger_op_ctx->stamp >= (15 * 1000)) {
+					ret = -1;
+				} else {
+					if(response_insulation_check(a_f_b_info) == 0) {
+						request_a_f_b_status_data(a_f_b_info);
+						charger_op_ctx->stamp = ticks;
+						charger_op_ctx->state = 2;
+					}
+				}
+			}
+			break;
+
+			case 2: {
+				if(ticks - charger_op_ctx->stamp >= (15 * 1000)) {
+					ret = -1;
+				} else {
+					//>1 warning
+					//>5 ok
+					int resistor = response_insulation_check_running_status(a_f_b_info);
+
+					if(resistor > 5) {
+						ret = 0;
+					}
+
+					if(resistor > 1) {//warning
+						ret = 0;
+					}
+				}
+			}
+			break;
+
+			default:
+				break;
+		}
+
+	} else {
+		ret = 0;
 	}
 
 	ret = 0;
@@ -729,6 +754,10 @@ static void channel_update_door_state(charger_info_t *charger_info)
 
 static uint8_t get_gun_connect_state(charger_info_t *charger_info)
 {
+	if(charger_info->gb == BMS_STARDARD_CCS) {
+		return 1;
+	}
+
 	GPIO_PinState state = HAL_GPIO_ReadPin(charger_info->channel_info_config->gpio_port_gun,
 	                                       charger_info->channel_info_config->gpio_pin_gun);
 

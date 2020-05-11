@@ -6,7 +6,7 @@
  *   文件名称：charger_handler.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时18分42秒
- *   修改日期：2020年05月08日 星期五 14时25分49秒
+ *   修改日期：2020年05月11日 星期一 11时56分59秒
  *   描    述：
  *
  *================================================================*/
@@ -878,6 +878,12 @@ static int send_ccs(charger_info_t *charger_info)
 	tx_msg.DLC = sizeof(ccs_data_t);
 
 	data = (ccs_data_t *)tx_msg.Data;
+
+	if(charger_info->test_mode == 0) {
+		charger_info->settings->ccs_data.output_voltage = charger_info->charger_output_voltage;
+		charger_info->settings->ccs_data.output_current = charger_info->charger_output_current;
+	}
+
 	*data = charger_info->settings->ccs_data;
 
 	ret = can_tx_data(can_info, &tx_msg, 10);
@@ -903,6 +909,10 @@ static int handle_state_ccs_request(charger_info_t *charger_info)
 	if(ticks - charger_info->send_stamp >= FN_CCS_SEND_PERIOD) {
 		send_ccs(charger_info);
 		charger_info->send_stamp = ticks;
+	}
+
+	if(charger_info->charger_power_on == 0) {//主板复位
+		set_charger_state(charger_info, CHARGER_STATE_CST);
 	}
 
 	return ret;

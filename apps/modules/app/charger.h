@@ -6,7 +6,7 @@
  *   文件名称：charger.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分46秒
- *   修改日期：2020年05月08日 星期五 14时25分23秒
+ *   修改日期：2020年05月11日 星期一 14时27分11秒
  *   描    述：
  *
  *================================================================*/
@@ -77,6 +77,13 @@ typedef enum {
 } csd_cem_op_state_t;
 
 typedef enum {
+	BMS_STARDARD_2011 = 0,//11年国标
+	BMS_STARDARD_2015,//15年国标
+	BMS_STARDARD_2015_ID,
+	BMS_STARDARD_CCS,//欧标
+} bms_standard_t;
+
+typedef enum {
 	PRECHARGE_ACTION_STOP = 0,
 	PRECHARGE_ACTION_START = 1,
 	PRECHARGE_ACTION_START_SINGLE_MODULE = 2,
@@ -125,7 +132,7 @@ typedef struct {
 	uint16_t precharge_voltage;
 	uint8_t precharge_action;//0-停止预充, 1-开始预充, 2-单模块预充
 
-	uint8_t auxiliary_power_state;//辅助电源打开状态
+	uint8_t auxiliary_power_state;//辅助电源打开状态 unused
 	uint8_t gun_lock_state;//锁枪状态
 	uint8_t power_output_state;//当前输出继电器打开状态
 	uint8_t gun_connect_state;//插枪状态
@@ -133,16 +140,18 @@ typedef struct {
 	uint8_t gun_connect_state_update_stamp;
 	uint8_t door_state;
 	uint8_t error_stop_state;
-	uint8_t gb;//标准
+	uint8_t gb;//标准 参考bms_standard_t
 	uint8_t test_mode;//测试模式
 	uint8_t precharge_enable;//允许预充
-	uint8_t fault;//充电机故障
+	uint8_t fault;//充电机故障 unused
 	uint8_t charger_power_on;//充电机主板开机状态
 	uint8_t manual;//手动模式
 	uint8_t adhesion_test;//粘连检测
 	uint8_t double_gun_one_car;//双枪充一车
 	uint8_t cp_ad;//cp-ad采样
-	uint8_t auxiliary_power_type;//12-24v选择
+	uint16_t charger_output_voltage;//xiaofei
+	uint16_t charger_output_current;
+	uint8_t auxiliary_power_type;//12-24v选择 0:12v 1 24v
 	uint16_t module_output_voltage;//模块充电电压
 	uint16_t charnnel_max_output_power;//通道最大输出功率
 	uint16_t module_output_current;//模块充电电流

@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分44秒
- *   修改日期：2020年05月09日 星期六 10时22分06秒
+ *   修改日期：2020年05月11日 星期一 11时54分54秒
  *   描    述：
  *
  *================================================================*/
@@ -366,6 +366,63 @@ failed:
 	return channel_com_info;
 }
 
+typedef enum {
+	CHANNEL_COM_BMS_STATE_IDLE = 0,
+	CHANNEL_COM_BMS_STATE_CONNECT,
+	CHANNEL_COM_BMS_STATE_SHAKE_HAND,
+	CHANNEL_COM_BMS_STATE_CONFIG,
+	CHANNEL_COM_BMS_STATE_CHARGE,
+	CHANNEL_COM_BMS_STATE_END,
+	CHANNEL_COM_BMS_STATE_NONE,
+	CHANNEL_COM_BMS_STATE_CTRL_TEST,
+} channel_com_bms_state_t;
+
+static uint8_t channel_com_get_charger_state(charger_info_t *charger_info)
+{
+	channel_com_bms_state_t channel_com_bms_state = CHANNEL_COM_BMS_STATE_IDLE;
+
+	if(charger_info->manual == 1) {
+		channel_com_bms_state = CHANNEL_COM_BMS_STATE_CTRL_TEST;
+	} else {
+		charger_state_t state = get_charger_state(charger_info);
+
+		switch(state) {
+			case CHARGER_STATE_IDLE: {
+				channel_com_bms_state = CHANNEL_COM_BMS_STATE_IDLE;
+			}
+			break;
+
+			case CHARGER_STATE_CHM:
+			case CHARGER_STATE_CRM: {
+				channel_com_bms_state = CHANNEL_COM_BMS_STATE_SHAKE_HAND;
+			}
+			break;
+
+			case CHARGER_STATE_CTS_CML:
+			case CHARGER_STATE_CRO: {
+				channel_com_bms_state = CHANNEL_COM_BMS_STATE_CONFIG;
+			}
+			break;
+
+			case CHARGER_STATE_CCS: {
+				channel_com_bms_state = CHANNEL_COM_BMS_STATE_CHARGE;
+			}
+			break;
+
+			case CHARGER_STATE_CST:
+			case CHARGER_STATE_CSD_CEM: {
+				channel_com_bms_state = CHANNEL_COM_BMS_STATE_END;
+			}
+			break;
+
+			default:
+				break;
+		}
+	}
+
+	return channel_com_bms_state;
+}
+
 static int request_1_101(channel_com_info_t *channel_com_info)//500ms
 {
 	int ret = -1;
@@ -384,7 +441,7 @@ static int request_1_101(channel_com_info_t *channel_com_info)//500ms
 	cmd_1->b1.bms_charger_enable = charger_info->settings->bsm_data.u2.s.battery_charge_enable;
 	cmd_1->b1.a_f_b_state = get_a_f_b_connect_state(channel_com_info->a_f_b_info);
 
-	cmd_1->bms_state = get_charger_state(charger_info);
+	cmd_1->bms_state = channel_com_get_charger_state(charger_info);
 	cmd_1->dc_p_temperature = (a_f_b_reponse_91_data != NULL) ? a_f_b_reponse_91_data->dc_p_temperature : 0;
 	cmd_1->dc_n_temperature = (a_f_b_reponse_91_data != NULL) ? a_f_b_reponse_91_data->dc_n_temperature : 0;
 	cmd_1->insulation_resistor_value = (a_f_b_reponse_91_data != NULL) ? a_f_b_reponse_91_data->insulation_resistor_value : 0;
@@ -414,6 +471,8 @@ static int response_1_101(channel_com_info_t *channel_com_info)
 	charger_info->adhesion_test = cmd_101->b3.adhesion_test;
 	charger_info->double_gun_one_car = cmd_101->b3.double_gun_one_car;
 	charger_info->cp_ad = cmd_101->b3.cp_ad;
+	charger_info->charger_output_voltage = get_u16_from_u8_lh(cmd_101->charger_output_voltage_l, cmd_101->charger_output_voltage_h);
+	charger_info->charger_output_current = get_u16_from_u8_lh(cmd_101->charger_output_current_l, cmd_101->charger_output_current_h);
 
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_1_101].state = CHANNEL_COM_STATE_IDLE;
 
@@ -906,11 +965,17 @@ static int request_20_120(channel_com_info_t *channel_com_info)
 static int response_20_120(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
 
 	//打开辅板输出继电器
+	set_power_output_enable(charger_info, 1);
 
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_20_120].state = CHANNEL_COM_STATE_REQUEST;
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_20_120].retry = 0;
+
+	if(charger_info->manual == 1) {
+		channel_com_info->cmd_ctx[CHANNEL_COM_CMD_25_125].state = CHANNEL_COM_STATE_REQUEST;
+	}
 
 	ret = 0;
 	return ret;
@@ -1102,7 +1167,10 @@ static int request_51_151(channel_com_info_t *channel_com_info)
 static int response_51_151(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
+
 	//关闭辅板输出继电器
+	set_power_output_enable(charger_info, 0);
 
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_51_151].state = CHANNEL_COM_STATE_REQUEST;
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_51_151].retry = 0;
