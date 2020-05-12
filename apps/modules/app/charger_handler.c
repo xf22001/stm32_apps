@@ -6,7 +6,7 @@
  *   文件名称：charger_handler.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时18分42秒
- *   修改日期：2020年05月11日 星期一 11时56分59秒
+ *   修改日期：2020年05月12日 星期二 09时13分26秒
  *   描    述：
  *
  *================================================================*/
@@ -911,9 +911,9 @@ static int handle_state_ccs_request(charger_info_t *charger_info)
 		charger_info->send_stamp = ticks;
 	}
 
-	if(charger_info->charger_power_on == 0) {//主板复位
-		set_charger_state(charger_info, CHARGER_STATE_CST);
-	}
+	//if(charger_info->charger_power_on == 0) {//主板复位
+	//	set_charger_state(charger_info, CHARGER_STATE_CST);
+	//}
 
 	return ret;
 }

@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2020年04月21日 星期二 12时21分42秒
+ *   修改日期：2020年05月12日 星期二 09时36分14秒
  *   描    述：
  *
  *================================================================*/
@@ -249,7 +249,7 @@ int uart_tx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t 
 
 		ret = get_uart_sent(uart_info);
 
-		if(event.status != osEventMessage) {
+		if(event.status == osEventTimeout) {
 			HAL_UART_AbortTransmit(uart_info->huart);
 		}
 	}
@@ -277,7 +277,7 @@ static uint16_t wait_for_uart_receive(uart_info_t *uart_info, uint16_t size, uin
 		if(uart_info->rx_msg_q != NULL) {
 			osEvent event = osMessageGet(uart_info->rx_msg_q, wait_ticks);
 
-			if(event.status != osEventMessage) {
+			if(event.status == osEventTimeout) {
 			}
 		}
 
@@ -385,7 +385,7 @@ int uart_tx_rx_data(uart_info_t *uart_info, uint8_t *tx_data, uint16_t tx_size, 
 	if(uart_info->tx_msg_q != NULL) {
 		osEvent event = osMessageGet(uart_info->tx_msg_q, 0);
 
-		if(event.status != osEventMessage) {
+		if(event.status == osEventTimeout) {
 			HAL_UART_AbortTransmit(uart_info->huart);
 		}
 	}

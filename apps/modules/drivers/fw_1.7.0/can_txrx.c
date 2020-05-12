@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时07分55秒
- *   修改日期：2020年05月01日 星期五 21时12分56秒
+ *   修改日期：2020年05月12日 星期二 09时35分27秒
  *   描    述：
  *
  *================================================================*/
@@ -275,9 +275,8 @@ int can_tx_data(can_info_t *can_info, can_tx_msg_t *msg, uint32_t timeout)
 	if(can_info->tx_msg_q != NULL) {
 		osEvent event = osMessageGet(can_info->tx_msg_q, timeout);
 
-		if(event.status == osEventMessage) {
+		if(event.status != osEventTimeout) {
 			ret = 0;
-		} else {
 		}
 	}
 
@@ -330,7 +329,7 @@ int can_rx_data(can_info_t *can_info, uint32_t timeout)
 	if(can_info->rx_msg_q != NULL) {
 		osEvent event = osMessageGet(can_info->rx_msg_q, timeout);
 
-		if(event.status == osEventMessage) {
+		if(event.status != osEventTimeout) {
 			ret = 0;
 		} else {
 			//can_transmit_dummy(can_info->hcan);
