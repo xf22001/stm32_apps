@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2020年05月12日 星期二 09时36分14秒
+ *   修改日期：2020年05月13日 星期三 15时11分32秒
  *   描    述：
  *
  *================================================================*/
@@ -98,6 +98,13 @@ void free_uart_info(uart_info_t *uart_info)
 		}
 	}
 
+	if(uart_info->log_mutex) {
+		os_status = osMutexDelete(uart_info->log_mutex);
+
+		if(osOK != os_status) {
+		}
+	}
+
 	os_free(uart_info);
 }
 
@@ -107,6 +114,7 @@ uart_info_t *get_or_alloc_uart_info(UART_HandleTypeDef *huart)
 	osMessageQDef(tx_msg_q, 1, uint16_t);
 	osMessageQDef(rx_msg_q, 1, uint16_t);
 	osMutexDef(huart_mutex);
+	osMutexDef(log_mutex);
 	osStatus os_status;
 
 	uart_info = get_uart_info(huart);
@@ -134,6 +142,7 @@ uart_info_t *get_or_alloc_uart_info(UART_HandleTypeDef *huart)
 	uart_info->tx_msg_q = osMessageCreate(osMessageQ(tx_msg_q), NULL);
 	uart_info->rx_msg_q = osMessageCreate(osMessageQ(rx_msg_q), NULL);
 	uart_info->huart_mutex = osMutexCreate(osMutex(huart_mutex));
+	uart_info->log_mutex = osMutexCreate(osMutex(log_mutex));
 	uart_info->rx_poll_interval = 5;
 	uart_info->max_pending_duration = 50;
 
@@ -415,9 +424,24 @@ int log_uart_data(void *data, size_t size)
 {
 	int ret = 0;
 	uart_info_t *uart_info = get_log_uart_info();
+	osStatus os_status;
 
 	if(uart_info != NULL) {
+		if(uart_info->log_mutex) {
+			os_status = osMutexWait(uart_info->log_mutex, osWaitForever);
+
+			if(os_status != osOK) {
+			}
+		}
+
 		ret = uart_tx_data(uart_info, (uint8_t *)data, size, 1000);
+
+		if(uart_info->log_mutex) {
+			os_status = osMutexRelease(uart_info->log_mutex);
+
+			if(os_status != osOK) {
+			}
+		}
 	}
 
 	return ret;

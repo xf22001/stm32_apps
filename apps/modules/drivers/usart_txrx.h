@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分40秒
- *   修改日期：2020年04月17日 星期五 08时36分38秒
+ *   修改日期：2020年05月13日 星期三 11时34分30秒
  *   描    述：
  *
  *================================================================*/
@@ -31,6 +31,7 @@ typedef struct {
 	osMessageQId tx_msg_q;
 	osMessageQId rx_msg_q;
 	osMutexId huart_mutex;
+	osMutexId log_mutex;
 	uint32_t rx_poll_interval; //ticks
 	uint32_t max_pending_duration; //ticks
 } uart_info_t;
