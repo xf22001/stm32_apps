@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2020年05月13日 星期三 15时11分32秒
+ *   修改日期：2020年05月13日 星期三 15时22分57秒
  *   描    述：
  *
  *================================================================*/
@@ -404,15 +404,9 @@ int uart_tx_rx_data(uart_info_t *uart_info, uint8_t *tx_data, uint16_t tx_size, 
 
 static uart_info_t *log_uart_info = NULL;
 
-void set_log_uart_info(UART_HandleTypeDef *huart)
+void set_log_uart_info(uart_info_t *uart_info)
 {
-	uart_info_t *uart_info = get_uart_info(huart);
-
-	if(uart_info == NULL) {
-		log_uart_info = NULL;
-	} else {
-		log_uart_info = uart_info;
-	}
+	log_uart_info = uart_info;
 }
 
 static uart_info_t *get_log_uart_info(void)

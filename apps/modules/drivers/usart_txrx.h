@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分40秒
- *   修改日期：2020年05月13日 星期三 11时34分30秒
+ *   修改日期：2020年05月13日 星期三 15时23分50秒
  *   描    述：
  *
  *================================================================*/
@@ -44,7 +44,7 @@ void set_max_pending_duration(uart_info_t *uart_info, uint32_t max_pending_durat
 int uart_tx_data(uart_info_t *info, uint8_t *data, uint16_t size, uint32_t timeout);
 int uart_rx_data(uart_info_t *info, uint8_t *data, uint16_t size, uint32_t timeout);
 int uart_tx_rx_data(uart_info_t *uart_info, uint8_t *tx_data, uint16_t tx_size, uint8_t *rx_data, uint16_t rx_size, uint32_t timeout);
-void set_log_uart_info(UART_HandleTypeDef *huart);
+void set_log_uart_info(uart_info_t *uart_info);
 int log_uart_data(void *data, size_t size);
 
 #if defined(UART_LOG)
