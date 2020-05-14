@@ -6,7 +6,7 @@
  *   文件名称：modbus_master_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月20日 星期一 15时28分52秒
- *   修改日期：2020年05月13日 星期三 16时16分52秒
+ *   修改日期：2020年05月14日 星期四 08时13分05秒
  *   描    述：
  *
  *================================================================*/
@@ -18,7 +18,7 @@
 static LIST_HEAD(modbus_master_info_list);
 static osMutexId modbus_master_info_list_mutex = NULL;
 
-static modbus_master_info_t *get_modbus_master_info(UART_HandleTypeDef *huart, uint8_t station)
+static modbus_master_info_t *get_modbus_master_info(UART_HandleTypeDef *huart)
 {
 	modbus_master_info_t *modbus_master_info = NULL;
 	modbus_master_info_t *modbus_master_info_item = NULL;
@@ -34,8 +34,7 @@ static modbus_master_info_t *get_modbus_master_info(UART_HandleTypeDef *huart, u
 	}
 
 	list_for_each_entry(modbus_master_info_item, &modbus_master_info_list, modbus_master_info_t, list) {
-		if(modbus_master_info_item->uart_info->huart == huart
-		   && modbus_master_info_item->station == station) {
+		if(modbus_master_info_item->uart_info->huart == huart) {
 			modbus_master_info = modbus_master_info_item;
 			break;
 		}
@@ -82,13 +81,13 @@ void free_modbus_master_info(modbus_master_info_t *modbus_master_info)
 	os_free(modbus_master_info);
 }
 
-modbus_master_info_t *get_or_alloc_modbus_master_info(UART_HandleTypeDef *huart, uint8_t station)
+modbus_master_info_t *get_or_alloc_modbus_master_info(UART_HandleTypeDef *huart)
 {
 	modbus_master_info_t *modbus_master_info = NULL;
 	osStatus os_status;
 	uart_info_t *uart_info;
 
-	modbus_master_info = get_modbus_master_info(huart, station);
+	modbus_master_info = get_modbus_master_info(huart);
 
 	if(modbus_master_info != NULL) {
 		return modbus_master_info;
@@ -116,7 +115,6 @@ modbus_master_info_t *get_or_alloc_modbus_master_info(UART_HandleTypeDef *huart,
 	}
 
 	modbus_master_info->uart_info = uart_info;
-	modbus_master_info->station = station;
 	modbus_master_info->rx_timeout = 100;
 	modbus_master_info->tx_timeout = 100;
 
@@ -147,7 +145,7 @@ typedef struct {
 	uint8_t bytes_size;
 } modbus_master_response_0x03_head_t;
 
-int modbus_master_read_items(modbus_master_info_t *modbus_master_info, uint16_t addr, uint16_t number, uint16_t *values)//read some number
+int modbus_master_read_items(modbus_master_info_t *modbus_master_info, uint8_t station, uint16_t addr, uint16_t number, uint16_t *values)//read some number
 {
 	int ret = -1;
 	int rx_size;
@@ -163,7 +161,7 @@ int modbus_master_read_items(modbus_master_info_t *modbus_master_info, uint16_t 
 		return ret;
 	}
 
-	request_0x03->head.station = modbus_master_info->station;
+	request_0x03->head.station = station;
 	request_0x03->head.fn = 0x03;
 	set_modbus_addr(&request_0x03->addr, addr);
 	set_modbus_number(&request_0x03->number, number);
@@ -193,7 +191,7 @@ int modbus_master_read_items(modbus_master_info_t *modbus_master_info, uint16_t 
 
 	//udp_log_hexdump("modbus_master_info->rx_buffer", (const char *)modbus_master_response_0x03_head, modbus_master_info->rx_size);
 
-	if(modbus_master_response_0x03_head->head.station != modbus_master_info->station) {
+	if(modbus_master_response_0x03_head->head.station != station) {
 		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return ret;
 	}
@@ -245,7 +243,7 @@ typedef struct {
 	modbus_crc_t crc;
 } modbus_master_response_0x06_t;
 
-int modbus_master_write_one_item(modbus_master_info_t *modbus_master_info, uint16_t addr, uint16_t value)//write one number
+int modbus_master_write_one_item(modbus_master_info_t *modbus_master_info, uint8_t station, uint16_t addr, uint16_t value)//write one number
 {
 	int ret = -1;
 	int rx_size;
@@ -254,7 +252,7 @@ int modbus_master_write_one_item(modbus_master_info_t *modbus_master_info, uint1
 	modbus_crc_t *modbus_crc = NULL;
 	uint16_t crc;
 
-	request_0x06->head.station = modbus_master_info->station;
+	request_0x06->head.station = station;
 	request_0x06->head.fn = 0x06;
 	set_modbus_addr(&request_0x06->addr, addr);
 	set_modbus_data_item(&request_0x06->data, value);
@@ -284,7 +282,7 @@ int modbus_master_write_one_item(modbus_master_info_t *modbus_master_info, uint1
 
 	//udp_log_hexdump("modbus_master_info->rx_buffer", (const char *)request_0x06, modbus_master_info->tx_size);
 
-	if(modbus_master_response_0x06->head.station != modbus_master_info->station) {
+	if(modbus_master_response_0x06->head.station != station) {
 		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return ret;
 	}
@@ -332,7 +330,7 @@ typedef struct {
 	modbus_crc_t crc;
 } modbus_master_response_0x10_t;
 
-int modbus_master_write_items(modbus_master_info_t *modbus_master_info, uint16_t addr, uint16_t number, uint16_t *values)//write more number
+int modbus_master_write_items(modbus_master_info_t *modbus_master_info, uint8_t station, uint16_t addr, uint16_t number, uint16_t *values)//write more number
 {
 	int ret = -1;
 	int rx_size;
@@ -348,7 +346,7 @@ int modbus_master_write_items(modbus_master_info_t *modbus_master_info, uint16_t
 		return ret;
 	}
 
-	modbus_master_request_0x10_head->head.station = modbus_master_info->station;
+	modbus_master_request_0x10_head->head.station = station;
 	modbus_master_request_0x10_head->head.fn = 0x10;
 	set_modbus_addr(&modbus_master_request_0x10_head->addr, addr);
 	set_modbus_number(&modbus_master_request_0x10_head->number, number);
@@ -387,7 +385,7 @@ int modbus_master_write_items(modbus_master_info_t *modbus_master_info, uint16_t
 
 	//udp_log_hexdump("modbus_master_info->rx_buffer", (const char *)modbus_master_response_0x10, modbus_master_info->rx_size);
 
-	if(modbus_master_response_0x10->head.station != modbus_master_info->station) {
+	if(modbus_master_response_0x10->head.station != station) {
 		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return ret;
 	}
