@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分44秒
- *   修改日期：2020年05月11日 星期一 11时54分54秒
+ *   修改日期：2020年05月14日 星期四 09时51分04秒
  *   描    述：
  *
  *================================================================*/
@@ -438,7 +438,7 @@ static int request_1_101(channel_com_info_t *channel_com_info)//500ms
 	cmd_1->b1.adhesion_p = (a_f_b_reponse_91_data != NULL) ? a_f_b_reponse_91_data->running_state.adhesion_p : 0;
 	cmd_1->b1.adhesion_n = (a_f_b_reponse_91_data != NULL) ? a_f_b_reponse_91_data->running_state.adhesion_n : 0;
 	cmd_1->b1.gun_lock_state = charger_info->gun_lock_state;
-	cmd_1->b1.bms_charger_enable = charger_info->settings->bsm_data.u2.s.battery_charge_enable;
+	cmd_1->b1.bms_charger_enable = charger_info->settings->ccs_data.u1.s.charge_enable;
 	cmd_1->b1.a_f_b_state = get_a_f_b_connect_state(channel_com_info->a_f_b_info);
 
 	cmd_1->bms_state = channel_com_get_charger_state(charger_info);
