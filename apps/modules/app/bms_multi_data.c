@@ -6,7 +6,7 @@
  *   文件名称：bms_multi_data.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月09日 星期四 13时04分55秒
- *   修改日期：2020年05月14日 星期四 14时03分31秒
+ *   修改日期：2020年05月14日 星期四 14时27分35秒
  *   描    述：
  *
  *================================================================*/
@@ -14,6 +14,11 @@
 #include <string.h>
 //#define UDP_LOG
 #include "task_probe_tool.h"
+
+#define UART_LOG
+#include "uart_debug.h"
+
+#include "can.h"
 
 #include "log.h"
 
@@ -146,7 +151,7 @@ int handle_multi_data_response(can_info_t *can_info, multi_packets_info_t *multi
 					bms_multi_data_response_t *data = (bms_multi_data_response_t *)rx_msg->Data;
 
 					_printf("%s process fn %02x data response\n",
-					               (can_info->filter_fifo == 0x00) ? "hcan1" : "hcan2",
+					               (can_info->hcan == &hcan1) ? "hcan1" : "hcan2",
 					               data->fn);
 					//状态已经复位，下面代码无意义
 					if((data->bytes == multi_packets_des->bms_data_multi_bytes) && (data->packets == multi_packets_des->bms_data_multi_packets) && (data->fn == multi_packets_des->bms_data_multi_fn)) {
@@ -182,7 +187,7 @@ int handle_multi_data_response(can_info_t *can_info, multi_packets_info_t *multi
 						multi_packets_des->bms_data_multi_next_index++;
 					} else if(data->index == multi_packets_des->bms_data_multi_packets) {
 						_printf("%s send fn %02x data response\n",
-						               (can_info->filter_fifo == 0x00) ? "hcan1" : "hcan2",
+						               (can_info->hcan == &hcan1) ? "hcan1" : "hcan2",
 						               multi_packets_des->bms_data_multi_fn);
 						send_bms_multi_data_response(can_info, multi_packets_des, settings);
 					}
@@ -284,7 +289,7 @@ static int send_multi_data(can_info_t *can_info, multi_packets_des_t *multi_pack
 		ret = can_tx_data(can_info, &tx_msg, 10);
 
 		_printf("%s send fn:%02x, index:%d, ret:%d\n",
-		               (can_info->filter_fifo == 0x00) ? "hcan1" : "hcan2",
+		               (can_info->hcan == &hcan1) ? "hcan1" : "hcan2",
 		               multi_packets_des->bms_data_multi_fn,
 		               multi_packets_des->bms_data_multi_next_index,
 		               ret);
