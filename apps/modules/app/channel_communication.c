@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分44秒
- *   修改日期：2020年05月14日 星期四 13时12分33秒
+ *   修改日期：2020年05月14日 星期四 14时06分26秒
  *   描    述：
  *
  *================================================================*/
@@ -16,10 +16,13 @@
 #define UDP_LOG
 #include "task_probe_tool.h"
 
+#define UART_LOG
+#include "uart_debug.h"
+
 #include "auxiliary_function_board.h"
 #include "charger.h"
 
-#define _printf udp_log_printf
+#include "log.h"
 
 static LIST_HEAD(channel_com_info_list);
 static osMutexId channel_com_info_list_mutex = NULL;

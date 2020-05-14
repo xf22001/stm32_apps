@@ -6,7 +6,7 @@
  *   文件名称：request_ws.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月23日 星期日 15时44分51秒
- *   修改日期：2020年05月14日 星期四 13时10分01秒
+ *   修改日期：2020年05月14日 星期四 14时09分44秒
  *   描    述：
  *
  *================================================================*/
@@ -17,8 +17,7 @@
 #define UDP_LOG
 #include "task_probe_tool.h"
 
-#define _printf udp_log_printf
-#define _hexdump udp_log_hexdump
+#include "log.h"
 
 static void request_init(void)
 {

@@ -6,7 +6,7 @@
  *   文件名称：auxiliary_function_board.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月28日 星期二 11时34分17秒
- *   修改日期：2020年05月14日 星期四 12时56分40秒
+ *   修改日期：2020年05月14日 星期四 14时03分11秒
  *   描    述：
  *
  *================================================================*/
@@ -16,9 +16,12 @@
 #define UDP_LOG
 #include "task_probe_tool.h"
 
-#include <string.h>
+#define UART_LOG
+#include "uart_debug.h"
 
-#define _printf udp_log_printf
+#include "log.h"
+
+#include <string.h>
 
 static LIST_HEAD(a_f_b_info_list);
 static osMutexId a_f_b_info_list_mutex = NULL;

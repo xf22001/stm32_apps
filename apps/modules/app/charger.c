@@ -6,7 +6,7 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年05月14日 星期四 13时00分06秒
+ *   修改日期：2020年05月14日 星期四 14时04分34秒
  *   描    述：
  *
  *================================================================*/
@@ -21,7 +21,10 @@
 #include "auxiliary_function_board.h"
 #include "channel_communication.h"
 
-#define _printf udp_log_printf
+#define UART_LOG
+#include "uart_debug.h"
+
+#include "log.h"
 
 static LIST_HEAD(charger_info_list);
 static osMutexId charger_info_list_mutex = NULL;

@@ -6,7 +6,7 @@
  *   文件名称：bms_multi_data.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月09日 星期四 13时04分55秒
- *   修改日期：2020年05月14日 星期四 12时57分53秒
+ *   修改日期：2020年05月14日 星期四 14时03分31秒
  *   描    述：
  *
  *================================================================*/
@@ -15,7 +15,7 @@
 //#define UDP_LOG
 #include "task_probe_tool.h"
 
-#define _printf udp_log_printf
+#include "log.h"
 
 static int send_bms_multi_request_response(can_info_t *can_info, multi_packets_des_t *multi_packets_des, bms_data_settings_t *settings)
 {

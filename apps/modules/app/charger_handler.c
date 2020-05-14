@@ -6,7 +6,7 @@
  *   文件名称：charger_handler.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时18分42秒
- *   修改日期：2020年05月14日 星期四 13时00分47秒
+ *   修改日期：2020年05月14日 星期四 13时59分21秒
  *   描    述：
  *
  *================================================================*/
@@ -18,7 +18,10 @@
 #define UDP_LOG
 #include "task_probe_tool.h"
 
-#define _printf udp_log_printf
+#define UART_LOG
+#include "uart_debug.h"
+
+#include "log.h"
 
 static int handle_common_bst_response(charger_info_t *charger_info)
 {

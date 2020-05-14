@@ -6,7 +6,7 @@
  *   文件名称：channels.c
  *   创 建 者：肖飞
  *   创建日期：2020年01月02日 星期四 08时53分35秒
- *   修改日期：2020年05月14日 星期四 12时53分33秒
+ *   修改日期：2020年05月14日 星期四 14时01分53秒
  *   描    述：
  *
  *================================================================*/
@@ -15,7 +15,7 @@
 #define UDP_LOG
 #include "task_probe_tool.h"
 
-#define _printf udp_log_printf
+#include "log.h"
 
 static LIST_HEAD(channels_info_list);
 osMutexId channels_info_list_mutex = NULL;

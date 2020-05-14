@@ -6,7 +6,7 @@
  *   文件名称：test_serial.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 10时54分01秒
- *   修改日期：2020年05月14日 星期四 13时19分01秒
+ *   修改日期：2020年05月14日 星期四 14时06分44秒
  *   描    述：
  *
  *================================================================*/
@@ -20,8 +20,7 @@
 #define UDP_LOG
 #include "task_probe_tool.h"
 
-#define _printf udp_log_printf
-#define _hexdump udp_log_hexdump
+#include "log.h"
 
 static void task_uart_tx(void const *argument)
 {

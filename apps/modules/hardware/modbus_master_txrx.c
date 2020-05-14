@@ -6,7 +6,7 @@
  *   文件名称：modbus_master_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月20日 星期一 15时28分52秒
- *   修改日期：2020年05月14日 星期四 13时05分42秒
+ *   修改日期：2020年05月14日 星期四 14时07分32秒
  *   描    述：
  *
  *================================================================*/
@@ -15,8 +15,7 @@
 //#define UDP_LOG
 #include "task_probe_tool.h"
 
-#define _printf udp_log_printf
-#define _hexdump udp_log_hexdump
+#include "log.h"
 
 static LIST_HEAD(modbus_master_info_list);
 static osMutexId modbus_master_info_list_mutex = NULL;

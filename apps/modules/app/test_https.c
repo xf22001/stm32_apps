@@ -6,7 +6,7 @@
  *   文件名称：test_https.c
  *   创 建 者：肖飞
  *   创建日期：2020年01月27日 星期一 12时22分23秒
- *   修改日期：2020年05月14日 星期四 13时09分27秒
+ *   修改日期：2020年05月14日 星期四 14时05分46秒
  *   描    述：
  *
  *================================================================*/
@@ -18,7 +18,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define _printf udp_log_printf
+#include "log.h"
 
 static HTTP_INFO hi;
 static BOOL verify_cert = FALSE;

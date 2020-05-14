@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年05月14日 星期四 13时01分49秒
+ *   修改日期：2020年05月14日 星期四 14时05分09秒
  *   描    述：
  *
  *================================================================*/
@@ -23,6 +23,7 @@
 #include "modbus_data_value.h"
 
 #include "app.h"
+#include "log.h"
 
 #ifndef BMS_VERSION_SERIAL
 #define BMS_VERSION_SERIAL 0
@@ -39,8 +40,6 @@
 #ifndef BMS_VERSION_YEAR
 #define BMS_VERSION_YEAR 0
 #endif
-
-#define _printf udp_log_printf
 
 static LIST_HEAD(bms_info_list);
 static osMutexId bms_info_list_mutex = NULL;

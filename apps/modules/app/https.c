@@ -16,7 +16,7 @@
 #define UDP_LOG
 #include "task_probe_tool.h"
 
-#define _printf udp_log_printf
+#include "log.h"
 
 /*---------------------------------------------------------------------*/
 static int _error;
