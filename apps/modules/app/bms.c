@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年05月14日 星期四 09时27分52秒
+ *   修改日期：2020年05月14日 星期四 09时38分34秒
  *   描    述：
  *
  *================================================================*/
@@ -496,7 +496,7 @@ static void modbus_data_get_set(bms_info_t *bms_info, uint16_t addr, uint16_t *v
 		break;
 
 		case MODBUS_ADDR_BCL_CHARGE_MODE: {
-			modbus_data_value_with_offset_rw(value, bms_info->settings->bcl_data.require_current, -1, op);
+			modbus_data_value_with_offset_rw(value, bms_info->settings->bcl_data.charge_mode, -1, op);
 		}
 		break;
 
