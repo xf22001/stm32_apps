@@ -6,7 +6,7 @@
  *   文件名称：request_default.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月05日 星期四 10时09分49秒
- *   修改日期：2020年05月14日 星期四 14时06分07秒
+ *   修改日期：2020年05月14日 星期四 14时46分19秒
  *   描    述：
  *
  *================================================================*/
@@ -14,10 +14,13 @@
 
 #include "net_client.h"
 #include "request.h"
+#define UDP_LOG
 #include "task_probe_tool.h"
 #include "main.h"
 
-#include "log.h"
+#define _printf udp_log_printf
+#define _hexdump udp_log_hexdump
+#define _puts udp_log_puts
 
 static int chunk_sendto(uint32_t fn, uint32_t stage, void *data, size_t size, char *send_buffer, size_t send_buffer_size)
 {

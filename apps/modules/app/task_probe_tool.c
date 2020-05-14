@@ -6,7 +6,7 @@
  *   文件名称：task_probe_tool.c
  *   创 建 者：肖飞
  *   创建日期：2020年03月20日 星期五 13时37分12秒
- *   修改日期：2020年05月14日 星期四 14时02分11秒
+ *   修改日期：2020年05月14日 星期四 14时41分33秒
  *   描    述：
  *
  *================================================================*/
@@ -23,7 +23,9 @@
 #include "os_utils.h"
 #include "probe_tool_handler.h"
 
-#include "log.h"
+#define _printf udp_log_printf
+#define _hexdump udp_log_hexdump
+#define _puts udp_log_puts
 
 static int broadcast_sock = -1;
 static struct sockaddr_in broadcast_addr;

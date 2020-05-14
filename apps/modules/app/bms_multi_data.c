@@ -6,7 +6,7 @@
  *   文件名称：bms_multi_data.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月09日 星期四 13时04分55秒
- *   修改日期：2020年05月14日 星期四 14时27分35秒
+ *   修改日期：2020年05月14日 星期四 14时51分18秒
  *   描    述：
  *
  *================================================================*/
@@ -15,7 +15,7 @@
 //#define UDP_LOG
 #include "task_probe_tool.h"
 
-#define UART_LOG
+//#define UART_LOG
 #include "uart_debug.h"
 
 #include "can.h"

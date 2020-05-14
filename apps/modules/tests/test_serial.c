@@ -6,21 +6,21 @@
  *   文件名称：test_serial.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 10时54分01秒
- *   修改日期：2020年05月14日 星期四 14时32分16秒
+ *   修改日期：2020年05月14日 星期四 14时44分53秒
  *   描    述：
  *
  *================================================================*/
 #include "test_serial.h"
 #include <string.h>
-
-//#define UART_LOG
 #include "usart_txrx.h"
 
 #include "os_utils.h"
 #define UDP_LOG
 #include "task_probe_tool.h"
 
-#include "log.h"
+#define _printf udp_log_printf
+#define _hexdump udp_log_hexdump
+#define _puts udp_log_puts
 
 static void task_uart_tx(void const *argument)
 {

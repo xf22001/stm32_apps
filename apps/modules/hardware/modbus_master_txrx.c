@@ -6,7 +6,7 @@
  *   文件名称：modbus_master_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月20日 星期一 15时28分52秒
- *   修改日期：2020年05月14日 星期四 14时07分32秒
+ *   修改日期：2020年05月14日 星期四 14时43分16秒
  *   描    述：
  *
  *================================================================*/
@@ -14,6 +14,9 @@
 #include "os_utils.h"
 //#define UDP_LOG
 #include "task_probe_tool.h"
+
+#define UART_LOG
+#include "uart_debug.h"
 
 #include "log.h"
 

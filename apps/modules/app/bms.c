@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年05月14日 星期四 14时05分09秒
+ *   修改日期：2020年05月14日 星期四 14时42分36秒
  *   描    述：
  *
  *================================================================*/
@@ -21,6 +21,9 @@
 #include "task_modbus_slave.h"
 #include "eeprom.h"
 #include "modbus_data_value.h"
+
+#define UART_LOG
+#include "uart_debug.h"
 
 #include "app.h"
 #include "log.h"
