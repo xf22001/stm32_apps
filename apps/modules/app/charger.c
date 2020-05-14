@@ -6,7 +6,7 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年05月11日 星期一 11时43分36秒
+ *   修改日期：2020年05月14日 星期四 13时00分06秒
  *   描    述：
  *
  *================================================================*/
@@ -20,6 +20,8 @@
 #include "task_probe_tool.h"
 #include "auxiliary_function_board.h"
 #include "channel_communication.h"
+
+#define _printf udp_log_printf
 
 static LIST_HEAD(charger_info_list);
 static osMutexId charger_info_list_mutex = NULL;
@@ -327,7 +329,7 @@ void charger_info_report_status(charger_info_t *charger_info, charger_state_t st
 	charger_report_status.state = state;
 	charger_report_status.status = status;
 
-	udp_log_printf("%s:%s:%d state:%s, status:%d\n", __FILE__, __func__, __LINE__, get_charger_state_des(state), status);
+	_printf("%s:%s:%d state:%s, status:%d\n", __FILE__, __func__, __LINE__, get_charger_state_des(state), status);
 
 	do_callback_chain(charger_info->report_status_chain, &charger_report_status);
 }
@@ -345,7 +347,7 @@ void set_charger_state(charger_info_t *charger_info, charger_state_t state)
 		return;
 	}
 
-	udp_log_printf("change to state:%s!\n", get_charger_state_des(state));
+	_printf("change to state:%s!\n", get_charger_state_des(state));
 
 	charger_info_report_status(charger_info, state, CHARGER_INFO_STATUS_NONE);
 
@@ -455,7 +457,7 @@ void set_auxiliary_power_state(charger_info_t *charger_info, uint8_t state)
 		                  GPIO_PIN_SET);
 	}
 
-	udp_log_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
+	_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
 }
 
 void set_gun_lock_state(charger_info_t *charger_info, uint8_t state)
@@ -472,7 +474,7 @@ void set_gun_lock_state(charger_info_t *charger_info, uint8_t state)
 		                  GPIO_PIN_SET);
 	}
 
-	udp_log_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
+	_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
 }
 
 void set_power_output_enable(charger_info_t *charger_info, uint8_t state)
@@ -493,7 +495,7 @@ void set_power_output_enable(charger_info_t *charger_info, uint8_t state)
 		                  GPIO_PIN_SET);
 	}
 
-	udp_log_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
+	_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
 }
 
 int discharge(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)
@@ -543,7 +545,7 @@ int discharge(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)
 	}
 
 	ret = 0;
-	udp_log_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
+	_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
 	return ret;
 }
 
@@ -589,7 +591,7 @@ int precharge(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)
 	}
 
 	ret = 0;
-	udp_log_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
+	_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
 	return ret;
 }
 
@@ -625,7 +627,7 @@ int relay_endpoint_overvoltage_status(charger_info_t *charger_info, charger_op_c
 	}
 
 	ret = 0;
-	udp_log_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
+	_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
 	return ret;
 }
 
@@ -685,7 +687,7 @@ int insulation_check(charger_info_t *charger_info, charger_op_ctx_t *charger_op_
 	}
 
 	ret = 0;
-	udp_log_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
+	_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
 	return ret;
 }
 
@@ -721,7 +723,7 @@ int battery_voltage_status(charger_info_t *charger_info, charger_op_ctx_t *charg
 	}
 
 	ret = 0;
-	udp_log_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
+	_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
 	return ret;
 }
 
@@ -734,7 +736,7 @@ int wait_no_current(charger_info_t *charger_info, charger_op_ctx_t *charger_op_c
 	}
 
 	ret = 0;
-	udp_log_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
+	_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
 	return ret;
 }
 
@@ -743,7 +745,7 @@ static void channel_update_door_state(charger_info_t *charger_info)
 	GPIO_PinState state = HAL_GPIO_ReadPin(charger_info->channel_info_config->gpio_port_door,
 	                                       charger_info->channel_info_config->gpio_pin_door);
 
-	//udp_log_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
+	//_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
 
 	if(state == GPIO_PIN_RESET) {
 		charger_info->door_state = 0;
@@ -761,7 +763,7 @@ static uint8_t get_gun_connect_state(charger_info_t *charger_info)
 	GPIO_PinState state = HAL_GPIO_ReadPin(charger_info->channel_info_config->gpio_port_gun,
 	                                       charger_info->channel_info_config->gpio_pin_gun);
 
-	//udp_log_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
+	//_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
 
 	if(state == GPIO_PIN_RESET) {
 		return 0;
@@ -789,7 +791,7 @@ static void channel_update_gun_state(charger_info_t *charger_info)//100ms
 		if(charger_info->gun_connect_state_debounce_count >= 3) {
 			charger_info->gun_connect_state_debounce_count = 0;
 			charger_info->gun_connect_state = state;
-			udp_log_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
+			_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
 		}
 	} else {
 		charger_info->gun_connect_state_debounce_count = 0;
@@ -801,7 +803,7 @@ static void channel_update_error_stop_state(charger_info_t *charger_info)
 	GPIO_PinState state = HAL_GPIO_ReadPin(charger_info->channel_info_config->gpio_port_error_stop,
 	                                       charger_info->channel_info_config->gpio_pin_error_stop);
 
-	//udp_log_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
+	//_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
 
 	if(state == GPIO_PIN_RESET) {
 		charger_info->error_stop_state = 0;

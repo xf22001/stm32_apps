@@ -6,12 +6,17 @@
  *   文件名称：uart_debug.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月13日 星期三 10时45分00秒
- *   修改日期：2020年05月13日 星期三 14时59分50秒
+ *   修改日期：2020年05月14日 星期四 13时08分35秒
  *   描    述：
  *
  *================================================================*/
+#define UART_LOG
 #include "uart_debug.h"
 #include "uart_debug_handler.h"
+#include <stdio.h>
+
+#define _printf uart_log_printf
+#define _hexdump uart_log_hexdump
 
 static char buffer[DEBUG_BUFFER_SIZE];
 static uint8_t received = 0;
@@ -51,12 +56,12 @@ void task_uart_debug(void const *argument)
 				continue;
 			}
 		} else {
-			uart_log_printf("\n");
+			_printf("\n");
 
 			received = DEBUG_BUFFER_SIZE - 1;
 		}
 
-		//uart_log_hexdump("buffer", (const char *)buffer, received);
+		//_hexdump("buffer", (const char *)buffer, received);
 
 		buffer[received] = 0;
 
@@ -67,9 +72,9 @@ void task_uart_debug(void const *argument)
 			char *arguments = &buffer[catched];
 			uint8_t found = 0;
 
-			//uart_log_printf("fn:%d!\n", fn);
-			//uart_log_printf("catched:%d!\n", catched);
-			//uart_log_printf("arguments:%s!\n", arguments);
+			//_printf("fn:%d!\n", fn);
+			//_printf("catched:%d!\n", catched);
+			//_printf("arguments:%s!\n", arguments);
 
 			for(i = 0; i < uart_fn_map_info.uart_fn_map_size; i++) {
 				uart_fn_item_t *uart_fn_item = uart_fn_map_info.uart_fn_map + i;
@@ -82,10 +87,10 @@ void task_uart_debug(void const *argument)
 			}
 
 			if(found == 0) {
-				uart_log_printf("invalid function:%d!\n", fn);
+				_printf("invalid function:%d!\n", fn);
 			}
 		} else {
-			uart_log_printf("invalid command:\'%s\'\n", buffer);
+			_printf("invalid command:\'%s\'\n", buffer);
 		}
 
 		received = 0;

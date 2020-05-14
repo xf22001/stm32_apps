@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分44秒
- *   修改日期：2020年05月14日 星期四 09时51分04秒
+ *   修改日期：2020年05月14日 星期四 13时12分33秒
  *   描    述：
  *
  *================================================================*/
@@ -18,6 +18,8 @@
 
 #include "auxiliary_function_board.h"
 #include "charger.h"
+
+#define _printf udp_log_printf
 
 static LIST_HEAD(channel_com_info_list);
 static osMutexId channel_com_info_list_mutex = NULL;
@@ -84,7 +86,7 @@ static void charger_info_report_status_cb(void *fn_ctx, void *chain_ctx)
 	channel_com_info_t *channel_com_info = (channel_com_info_t *)fn_ctx;
 	charger_report_status_t *charger_report_status = (charger_report_status_t *)chain_ctx;
 
-	udp_log_printf("%s:%s:%d state:%s, status:%d\n",
+	_printf("%s:%s:%d state:%s, status:%d\n",
 	               __FILE__, __func__, __LINE__,
 	               get_charger_state_des(charger_report_status->state),
 	               charger_report_status->status);
@@ -583,7 +585,7 @@ static int request_3_103(channel_com_info_t *channel_com_info)
 
 	cmd_3->a_f_b_ver_h = (a_f_b_reponse_91_data != NULL) ? a_f_b_reponse_91_data->version.b1 : 0;
 	cmd_3->a_f_b_ver_l = (a_f_b_reponse_91_data != NULL) ? a_f_b_reponse_91_data->version.b0 : 0;
-	cmd_3->bms_status = channel_com_info->bms_status;//未实现
+	cmd_3->bms_status = channel_com_info->bms_status;
 	cmd_3->b4.door = charger_info->door_state;
 	cmd_3->b4.stop = charger_info->error_stop_state;
 

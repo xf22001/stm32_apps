@@ -6,7 +6,7 @@
  *   文件名称：request_monitor.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月09日 星期六 10时49分40秒
- *   修改日期：2020年05月12日 星期二 10时34分39秒
+ *   修改日期：2020年05月14日 星期四 12时59分07秒
  *   描    述：
  *
  *================================================================*/
@@ -16,6 +16,9 @@
 #include "request.h"
 #include "task_probe_tool.h"
 #include "main.h"
+
+#define _printf udp_log_printf
+#define _hexdump udp_log_hexdump
 
 static int chunk_sendto(uint32_t fn, uint32_t stage, void *data, size_t size, char *send_buffer, size_t send_buffer_size)
 {
@@ -60,27 +63,27 @@ static void request_set_lan_led_state(uint32_t state)
 
 static void request_init(void)
 {
-	udp_log_printf("%s:%s\n", __FILE__, __func__);
+	_printf("%s:%s\n", __FILE__, __func__);
 }
 
 static void request_before_create_server_connect(void)
 {
-	udp_log_printf("%s:%s\n", __FILE__, __func__);
+	_printf("%s:%s\n", __FILE__, __func__);
 }
 
 static void request_after_create_server_connect(void)
 {
-	udp_log_printf("%s:%s\n", __FILE__, __func__);
+	_printf("%s:%s\n", __FILE__, __func__);
 }
 
 static void request_before_close_server_connect(void)
 {
-	udp_log_printf("%s:%s\n", __FILE__, __func__);
+	_printf("%s:%s\n", __FILE__, __func__);
 }
 
 static void request_after_close_server_connect(void)
 {
-	udp_log_printf("%s:%s\n", __FILE__, __func__);
+	_printf("%s:%s\n", __FILE__, __func__);
 }
 
 static void request_parse(char *buffer, size_t size, size_t max_request_size, char **prequest, size_t *request_size)
@@ -90,12 +93,12 @@ static void request_parse(char *buffer, size_t size, size_t max_request_size, ch
 
 static void request_process(uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
-	udp_log_hexdump("request_process", (const char *)request, request_size);
+	_hexdump("request_process", (const char *)request, request_size);
 }
 
 static void request_periodic(uint8_t *send_buffer, uint16_t send_buffer_size)
 {
-	udp_log_printf("%s:%s\n", __FILE__, __func__);
+	_printf("%s:%s\n", __FILE__, __func__);
 
 	if(get_client_state() == CLIENT_CONNECTED) {
 		chunk_sendto(1, 0, (void *)0x8000000, 128, (char *)send_buffer, send_buffer_size);

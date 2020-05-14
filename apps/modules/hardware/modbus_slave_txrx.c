@@ -6,15 +6,18 @@
  *   文件名称：modbus_slave_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月20日 星期一 14时54分12秒
- *   修改日期：2020年05月06日 星期三 13时26分44秒
+ *   修改日期：2020年05月14日 星期四 13时06分10秒
  *   描    述：
  *
  *================================================================*/
 #include "modbus_slave_txrx.h"
 #include "modbus_spec.h"
 #include "os_utils.h"
-#define UDP_LOG
+//#define UDP_LOG
 #include "task_probe_tool.h"
+
+#define _printf udp_log_printf
+#define _hexdump udp_log_hexdump
 
 static LIST_HEAD(modbus_slave_info_list);
 static osMutexId modbus_slave_info_list_mutex = NULL;
@@ -205,7 +208,7 @@ static int fn_0x03(modbus_slave_info_t *modbus_slave_info)//read some number
 	int i;
 
 	if(modbus_slave_info->rx_size < sizeof(modbus_slave_request_0x03_t)) {
-		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return ret;
 	}
 
@@ -214,7 +217,7 @@ static int fn_0x03(modbus_slave_info_t *modbus_slave_info)//read some number
 	                      (uint8_t *)modbus_crc - (uint8_t *)request_0x03);
 
 	if(crc != get_modbus_crc(modbus_crc)) {
-		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return ret;
 	}
 
@@ -222,7 +225,7 @@ static int fn_0x03(modbus_slave_info_t *modbus_slave_info)//read some number
 	number = get_modbus_number(&request_0x03->number);
 
 	if(modbus_slave_info->modbus_slave_data_info->valid(modbus_slave_info->modbus_slave_data_info->ctx, addr, number) == 0) {
-		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return ret;
 	}
 
@@ -234,7 +237,7 @@ static int fn_0x03(modbus_slave_info_t *modbus_slave_info)//read some number
 	for(i = 0; i < number; i++) {
 		uint16_t value;
 		value = modbus_slave_info->modbus_slave_data_info->get(modbus_slave_info->modbus_slave_data_info->ctx, addr + i);
-		//udp_log_printf("request read addr:%d, data:%d(%x)\n", addr + i, value, value);
+		//_printf("request read addr:%d, data:%d(%x)\n", addr + i, value, value);
 
 		set_modbus_data_item(data_item + i, value);
 	}
@@ -249,7 +252,7 @@ static int fn_0x03(modbus_slave_info_t *modbus_slave_info)//read some number
 
 	modbus_slave_info->tx_size = (uint8_t *)(modbus_crc + 1) - (uint8_t *)modbus_slave_response_0x03_head;
 
-	//udp_log_hexdump("modbus_slave_info->tx_buffer", (const char *)modbus_slave_info->tx_buffer, modbus_slave_info->tx_size);
+	//_hexdump("modbus_slave_info->tx_buffer", (const char *)modbus_slave_info->tx_buffer, modbus_slave_info->tx_size);
 	uart_tx_data(modbus_slave_info->uart_info, modbus_slave_info->tx_buffer, modbus_slave_info->tx_size, modbus_slave_info->tx_timeout);
 
 	ret = 0;
@@ -282,7 +285,7 @@ static int fn_0x06(modbus_slave_info_t *modbus_slave_info)//write one number
 	int i;
 
 	if(modbus_slave_info->rx_size < sizeof(modbus_slave_request_0x06_t)) {
-		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return ret;
 	}
 
@@ -291,7 +294,7 @@ static int fn_0x06(modbus_slave_info_t *modbus_slave_info)//write one number
 	                      (uint8_t *)modbus_crc - (uint8_t *)request_0x06);
 
 	if(crc != get_modbus_crc(modbus_crc)) {
-		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return ret;
 	}
 
@@ -300,14 +303,14 @@ static int fn_0x06(modbus_slave_info_t *modbus_slave_info)//write one number
 	data_item = &request_0x06->data;
 
 	if(modbus_slave_info->modbus_slave_data_info->valid(modbus_slave_info->modbus_slave_data_info->ctx, addr, 1) == 0) {
-		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return ret;
 	}
 
 	//wite one number
 	for(i = 0; i < 1; i++) {
 		uint16_t value = get_modbus_data_item(data_item + i);
-		//udp_log_printf("request write addr:%d, data:%d(%x)\n", addr + i, value, value);
+		//_printf("request write addr:%d, data:%d(%x)\n", addr + i, value, value);
 		modbus_slave_info->modbus_slave_data_info->set(modbus_slave_info->modbus_slave_data_info->ctx,
 		        addr + i,
 		        value);
@@ -332,7 +335,7 @@ static int fn_0x06(modbus_slave_info_t *modbus_slave_info)//write one number
 	set_modbus_crc(modbus_crc, crc);
 	modbus_slave_info->tx_size = (uint8_t *)(modbus_crc + 1) - (uint8_t *)modbus_slave_response_0x06;
 
-	//udp_log_hexdump("modbus_slave_info->tx_buffer", (const char *)modbus_slave_info->tx_buffer, modbus_slave_info->tx_size);
+	//_hexdump("modbus_slave_info->tx_buffer", (const char *)modbus_slave_info->tx_buffer, modbus_slave_info->tx_size);
 	uart_tx_data(modbus_slave_info->uart_info, modbus_slave_info->tx_buffer, modbus_slave_info->tx_size, modbus_slave_info->tx_timeout);
 
 	modbus_slave_data_changed(modbus_slave_info);
@@ -368,7 +371,7 @@ static int fn_0x10(modbus_slave_info_t *modbus_slave_info)//write more number
 	int i;
 
 	if(modbus_slave_info->rx_size < sizeof(modbus_slave_request_0x10_head_t)) {
-		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return ret;
 	}
 
@@ -376,7 +379,7 @@ static int fn_0x10(modbus_slave_info_t *modbus_slave_info)//write more number
 	number = get_modbus_number(&modbus_slave_request_0x10_head->number);
 
 	if(modbus_slave_info->modbus_slave_data_info->valid(modbus_slave_info->modbus_slave_data_info->ctx, addr, number) == 0) {
-		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return ret;
 	}
 
@@ -388,7 +391,7 @@ static int fn_0x10(modbus_slave_info_t *modbus_slave_info)//write more number
 	                      (uint8_t *)modbus_crc - (uint8_t *)modbus_slave_request_0x10_head);
 
 	if(crc != get_modbus_crc(modbus_crc)) {
-		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return ret;
 	}
 
@@ -396,7 +399,7 @@ static int fn_0x10(modbus_slave_info_t *modbus_slave_info)//write more number
 	for(i = 0; i < number; i++) {
 		uint16_t value = get_modbus_data_item(data_item + i);
 
-		//udp_log_printf("request multi-write addr:%d, data:%d(%x)\n", addr + i, value, value);
+		//_printf("request multi-write addr:%d, data:%d(%x)\n", addr + i, value, value);
 		modbus_slave_info->modbus_slave_data_info->set(modbus_slave_info->modbus_slave_data_info->ctx, addr + i, value);
 	}
 
@@ -413,7 +416,7 @@ static int fn_0x10(modbus_slave_info_t *modbus_slave_info)//write more number
 	set_modbus_crc(modbus_crc, crc);
 	modbus_slave_info->tx_size = (uint8_t *)(modbus_crc + 1) - (uint8_t *)modbus_slave_response_0x10;
 
-	//udp_log_hexdump("modbus_slave_info->tx_buffer", (const char *)modbus_slave_info->tx_buffer, modbus_slave_info->tx_size);
+	//_hexdump("modbus_slave_info->tx_buffer", (const char *)modbus_slave_info->tx_buffer, modbus_slave_info->tx_size);
 	uart_tx_data(modbus_slave_info->uart_info, modbus_slave_info->tx_buffer, modbus_slave_info->tx_size, modbus_slave_info->tx_timeout);
 
 	modbus_slave_data_changed(modbus_slave_info);
@@ -456,13 +459,13 @@ static int modubs_decode_request(modbus_slave_info_t *modbus_slave_info)
 		return ret;
 	}
 
-	//udp_log_printf("\nmodbus_slave_info->rx_size:%d\n", modbus_slave_info->rx_size);
-	//udp_log_hexdump("modbus_slave_info->rx_buffer", (const char *)modbus_slave_info->rx_buffer, modbus_slave_info->rx_size);
+	//_printf("\nmodbus_slave_info->rx_size:%d\n", modbus_slave_info->rx_size);
+	//_hexdump("modbus_slave_info->rx_buffer", (const char *)modbus_slave_info->rx_buffer, modbus_slave_info->rx_size);
 
 	head = (modbus_head_t *)modbus_slave_info->rx_buffer;
 
-	//udp_log_printf("head->station:%02x\n", head->station);
-	//udp_log_printf("head->fn:%02x\n", head->fn);
+	//_printf("head->station:%02x\n", head->station);
+	//_printf("head->fn:%02x\n", head->fn);
 
 	if(modbus_slave_info->modbus_slave_data_info == NULL) {
 		return ret;
@@ -477,7 +480,7 @@ static int modubs_decode_request(modbus_slave_info_t *modbus_slave_info)
 		}
 	}
 
-	//udp_log_printf("modbus decode duration:%0d\n", osKernelSysTick() - ticks);
+	//_printf("modbus decode duration:%0d\n", osKernelSysTick() - ticks);
 
 	return ret;
 }

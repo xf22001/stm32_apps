@@ -6,10 +6,11 @@
  *   文件名称：task_probe_tool.c
  *   创 建 者：肖飞
  *   创建日期：2020年03月20日 星期五 13时37分12秒
- *   修改日期：2020年03月23日 星期一 08时54分51秒
+ *   修改日期：2020年05月14日 星期四 12时55分37秒
  *   描    述：
  *
  *================================================================*/
+#define UDP_LOG
 #include "task_probe_tool.h"
 
 #include "app_platform.h"
@@ -21,6 +22,8 @@
 
 #include "os_utils.h"
 #include "probe_tool_handler.h"
+
+#define _printf udp_log_printf
 
 static int broadcast_sock = -1;
 static struct sockaddr_in broadcast_addr;
@@ -172,7 +175,7 @@ static void p_select_timeout_statistic(void)
 	uint32_t duration = osKernelSysTick() - select_timeout_count_stamp;
 
 	if(duration != 0) {
-		udp_log_printf("select_timeout_count per second:%d\n", (select_timeout_count * 1000) / duration);
+		_printf("select_timeout_count per second:%d\n", (select_timeout_count * 1000) / duration);
 	}
 
 	select_timeout_count = 0;

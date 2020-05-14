@@ -6,7 +6,7 @@
  *   文件名称：modbus_data_value.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月14日 星期四 08时25分59秒
- *   修改日期：2020年05月14日 星期四 09时06分19秒
+ *   修改日期：2020年05月14日 星期四 13时11分27秒
  *   描    述：
  *
  *================================================================*/
@@ -69,7 +69,6 @@ static inline void modbus_data_value_copy(uint16_t *value, uint16_t *store, uint
 	uint16_t *to = NULL;
 
 	if(offset * sizeof(uint16_t) >= size) {
-		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return;
 	}
 

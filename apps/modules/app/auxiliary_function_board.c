@@ -6,7 +6,7 @@
  *   文件名称：auxiliary_function_board.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月28日 星期二 11时34分17秒
- *   修改日期：2020年05月06日 星期三 08时59分35秒
+ *   修改日期：2020年05月14日 星期四 12时56分40秒
  *   描    述：
  *
  *================================================================*/
@@ -17,6 +17,8 @@
 #include "task_probe_tool.h"
 
 #include <string.h>
+
+#define _printf udp_log_printf
 
 static LIST_HEAD(a_f_b_info_list);
 static osMutexId a_f_b_info_list_mutex = NULL;
@@ -402,7 +404,7 @@ uint8_t get_battery_available_state(a_f_b_info_t *a_f_b_info)
 		state = 1;
 	}
 
-	udp_log_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
+	_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
 
 	return state;
 }
@@ -414,7 +416,7 @@ static a_f_b_command_item_t *a_f_b_command_table[] = {
 
 void test_a_f_b(void)
 {
-	udp_log_printf("sizeof(a_f_b_response_91_t):%d\n", sizeof(a_f_b_response_91_t));
+	_printf("sizeof(a_f_b_response_91_t):%d\n", sizeof(a_f_b_response_91_t));
 }
 
 void task_auxiliary_function_board_decode(void const *argument)

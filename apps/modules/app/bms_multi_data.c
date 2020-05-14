@@ -6,7 +6,7 @@
  *   文件名称：bms_multi_data.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月09日 星期四 13时04分55秒
- *   修改日期：2020年04月12日 星期日 13时20分31秒
+ *   修改日期：2020年05月14日 星期四 12时57分53秒
  *   描    述：
  *
  *================================================================*/
@@ -14,6 +14,8 @@
 #include <string.h>
 //#define UDP_LOG
 #include "task_probe_tool.h"
+
+#define _printf udp_log_printf
 
 static int send_bms_multi_request_response(can_info_t *can_info, multi_packets_des_t *multi_packets_des, bms_data_settings_t *settings)
 {
@@ -143,7 +145,7 @@ int handle_multi_data_response(can_info_t *can_info, multi_packets_info_t *multi
 					multi_packets_des_t *multi_packets_des = &multi_packets_info->tx_des;
 					bms_multi_data_response_t *data = (bms_multi_data_response_t *)rx_msg->Data;
 
-					udp_log_printf("%s process fn %02x data response\n",
+					_printf("%s process fn %02x data response\n",
 					               (can_info->filter_fifo == 0x00) ? "hcan1" : "hcan2",
 					               data->fn);
 					//状态已经复位，下面代码无意义
@@ -179,7 +181,7 @@ int handle_multi_data_response(can_info_t *can_info, multi_packets_info_t *multi
 					if(data->index < multi_packets_des->bms_data_multi_packets) {
 						multi_packets_des->bms_data_multi_next_index++;
 					} else if(data->index == multi_packets_des->bms_data_multi_packets) {
-						udp_log_printf("%s send fn %02x data response\n",
+						_printf("%s send fn %02x data response\n",
 						               (can_info->filter_fifo == 0x00) ? "hcan1" : "hcan2",
 						               multi_packets_des->bms_data_multi_fn);
 						send_bms_multi_data_response(can_info, multi_packets_des, settings);
@@ -281,7 +283,7 @@ static int send_multi_data(can_info_t *can_info, multi_packets_des_t *multi_pack
 
 		ret = can_tx_data(can_info, &tx_msg, 10);
 
-		udp_log_printf("%s send fn:%02x, index:%d, ret:%d\n",
+		_printf("%s send fn:%02x, index:%d, ret:%d\n",
 		               (can_info->filter_fifo == 0x00) ? "hcan1" : "hcan2",
 		               multi_packets_des->bms_data_multi_fn,
 		               multi_packets_des->bms_data_multi_next_index,

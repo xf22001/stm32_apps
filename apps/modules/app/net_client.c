@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2020年03月27日 星期五 08时48分14秒
+ *   修改日期：2020年05月14日 星期四 13时13分22秒
  *   描    述：
  *
  *================================================================*/
@@ -24,6 +24,9 @@
 #include "net_protocol.h"
 
 #include <string.h>
+
+#define _printf udp_log_printf
+#define _hexdump udp_log_hexdump
 
 static net_client_info_t net_client_info = {
 	.sock_fd = -1,
@@ -131,7 +134,7 @@ static void default_init(void)
 	if(request_callback->init != NULL) {
 		request_callback->init();
 	} else {
-		udp_log_printf("%s:%s\n", __FILE__, __func__);
+		_printf("%s:%s\n", __FILE__, __func__);
 	}
 }
 
@@ -151,7 +154,7 @@ static void blink_led_lan(uint32_t periodic)
 	if(request_callback->set_lan_led_state != NULL) {
 		request_callback->set_lan_led_state(led_lan_state);
 	} else {
-		udp_log_printf("%s:%s\n", __FILE__, __func__);
+		_printf("%s:%s\n", __FILE__, __func__);
 	}
 }
 
@@ -160,7 +163,7 @@ static void default_before_create_server_connect(void)
 	if(request_callback->before_connect != NULL) {
 		request_callback->before_connect();
 	} else {
-		udp_log_printf("%s:%s\n", __FILE__, __func__);
+		_printf("%s:%s\n", __FILE__, __func__);
 	}
 }
 
@@ -169,7 +172,7 @@ static void default_after_create_server_connect(void)
 	if(request_callback->after_connect != NULL) {
 		request_callback->after_connect();
 	} else {
-		udp_log_printf("%s:%s\n", __FILE__, __func__);
+		_printf("%s:%s\n", __FILE__, __func__);
 	}
 }
 
@@ -178,7 +181,7 @@ static void default_before_close_server_connect(void)
 	if(request_callback->before_close != NULL) {
 		request_callback->before_close();
 	} else {
-		udp_log_printf("%s:%s\n", __FILE__, __func__);
+		_printf("%s:%s\n", __FILE__, __func__);
 	}
 }
 
@@ -187,7 +190,7 @@ static void default_after_close_server_connect(void)
 	if(request_callback->after_close != NULL) {
 		request_callback->after_close();
 	} else {
-		udp_log_printf("%s:%s\n", __FILE__, __func__);
+		_printf("%s:%s\n", __FILE__, __func__);
 	}
 }
 
@@ -196,7 +199,7 @@ static void default_parse(char *buffer, size_t size, size_t max_request_size, ch
 	if(request_callback->parse != NULL) {
 		request_callback->parse(buffer, size, max_request_size, prequest, request_size);
 	} else {
-		udp_log_printf("%s:%s\n", __FILE__, __func__);
+		_printf("%s:%s\n", __FILE__, __func__);
 		*prequest = buffer;
 		*request_size = size;
 	}
@@ -209,7 +212,7 @@ static void default_process(uint8_t *request, uint16_t request_size, uint8_t *se
 	if(request_callback->process != NULL) {
 		request_callback->process(request, request_size, send_buffer, send_buffer_size);
 	} else {
-		udp_log_printf("%s:%s\n", __FILE__, __func__);
+		_printf("%s:%s\n", __FILE__, __func__);
 	}
 }
 
@@ -218,7 +221,7 @@ static void default_periodic(uint8_t *send_buffer, uint16_t send_buffer_size)
 	if(request_callback->periodic != NULL) {
 		request_callback->periodic(send_buffer, send_buffer_size);
 	} else {
-		udp_log_printf("%s:%s\n", __FILE__, __func__);
+		_printf("%s:%s\n", __FILE__, __func__);
 	}
 }
 
@@ -305,14 +308,14 @@ static int create_connect(void)
 	ret = before_create_server_connect();
 
 	if(ret != 0) {
-		udp_log_printf("[%s] before_create_server_connect error!\n", __func__);
+		_printf("[%s] before_create_server_connect error!\n", __func__);
 		return ret;
 	}
 
 	ret = create_server_connect();
 
 	if(ret != 0) {
-		udp_log_printf("[%s] create_server_connect error!\n", __func__);
+		_printf("[%s] create_server_connect error!\n", __func__);
 		return ret;
 	}
 
@@ -361,8 +364,8 @@ static void process_server_message(net_message_buffer_t *recv, net_message_buffe
 	size_t left = recv->used;
 	uint8_t *buffer = recv->buffer;
 
-	udp_log_printf("net client got %d bytes\n", recv->used);
-	udp_log_hexdump(NULL, (const char *)buffer, left);
+	_printf("net client got %d bytes\n", recv->used);
+	_hexdump(NULL, (const char *)buffer, left);
 
 	while(left >= sizeof(request_t)) {
 		default_parse((char *)buffer, left, NET_MESSAGE_BUFFER_SIZE, &request, &request_size);
@@ -380,8 +383,8 @@ static void process_server_message(net_message_buffer_t *recv, net_message_buffe
 			left -= 1;
 		}
 
-		udp_log_printf("net client request_size %d bytes\n", request_size);
-		udp_log_printf("net client left %d bytes\n", left);
+		_printf("net client request_size %d bytes\n", request_size);
+		_printf("net client left %d bytes\n", left);
 	}
 
 	if(left > 0) {
@@ -417,7 +420,7 @@ static int recv_from_server(void)
 			        NET_MESSAGE_BUFFER_SIZE - recv_message_buffer.used);
 
 			if(ret <= 0) {
-				udp_log_printf("[%s] close connect.\n", __func__);
+				_printf("[%s] close connect.\n", __func__);
 				close_connect();
 			} else {
 				recv_message_buffer.used += ret;
@@ -437,7 +440,7 @@ int send_to_server(uint8_t *buffer, size_t len)
 	int max_fd = 0;
 
 	if(net_client_info.sock_fd == -1) {
-		udp_log_printf("[%s] socket fd is not valid!\n", __func__);
+		_printf("[%s] socket fd is not valid!\n", __func__);
 		return ret;
 	}
 
@@ -456,7 +459,7 @@ int send_to_server(uint8_t *buffer, size_t len)
 			ret = net_client_info.protocol_if->net_send(&net_client_info, buffer, len);
 
 			if(ret <= 0) {
-				udp_log_printf("[%s] net_send error!\n", __func__);
+				_printf("[%s] net_send error!\n", __func__);
 			}
 		} else {
 			ret = -1;

@@ -6,7 +6,7 @@
  *   文件名称：channels.c
  *   创 建 者：肖飞
  *   创建日期：2020年01月02日 星期四 08时53分35秒
- *   修改日期：2020年04月28日 星期二 12时45分39秒
+ *   修改日期：2020年05月14日 星期四 12时53分33秒
  *   描    述：
  *
  *================================================================*/
@@ -15,12 +15,14 @@
 #define UDP_LOG
 #include "task_probe_tool.h"
 
+#define _printf udp_log_printf
+
 static LIST_HEAD(channels_info_list);
 osMutexId channels_info_list_mutex = NULL;
 
 static void default_periodic(channels_info_t *channels_info)
 {
-	udp_log_printf("%s\n", __func__);
+	_printf("%s\n", __func__);
 }
 
 static void channels_periodic(channels_info_t *channels_info)
@@ -37,7 +39,7 @@ static void channels_periodic(channels_info_t *channels_info)
 static int default_handle_channel_event(channel_event_t *channel_event)
 {
 	int ret = 0;
-	udp_log_printf("channel %d process event!\n", channel_event->channel_id);
+	_printf("channel %d process event!\n", channel_event->channel_id);
 	return ret;
 }
 

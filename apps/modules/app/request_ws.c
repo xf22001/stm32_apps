@@ -6,7 +6,7 @@
  *   文件名称：request_ws.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月23日 星期日 15时44分51秒
- *   修改日期：2020年03月06日 星期五 15时03分08秒
+ *   修改日期：2020年05月14日 星期四 13时10分01秒
  *   描    述：
  *
  *================================================================*/
@@ -17,29 +17,32 @@
 #define UDP_LOG
 #include "task_probe_tool.h"
 
+#define _printf udp_log_printf
+#define _hexdump udp_log_hexdump
+
 static void request_init(void)
 {
-	udp_log_printf("%s:%s\n", __FILE__, __func__);
+	_printf("%s:%s\n", __FILE__, __func__);
 }
 
 static void request_before_create_server_connect(void)
 {
-	udp_log_printf("%s:%s\n", __FILE__, __func__);
+	_printf("%s:%s\n", __FILE__, __func__);
 }
 
 static void request_after_create_server_connect(void)
 {
-	udp_log_printf("%s:%s\n", __FILE__, __func__);
+	_printf("%s:%s\n", __FILE__, __func__);
 }
 
 static void request_before_close_server_connect(void)
 {
-	udp_log_printf("%s:%s\n", __FILE__, __func__);
+	_printf("%s:%s\n", __FILE__, __func__);
 }
 
 static void request_after_close_server_connect(void)
 {
-	udp_log_printf("%s:%s\n", __FILE__, __func__);
+	_printf("%s:%s\n", __FILE__, __func__);
 }
 
 static void request_parse(char *buffer, size_t size, size_t max_request_size, char **prequest, size_t *request_size)
@@ -50,12 +53,12 @@ static void request_parse(char *buffer, size_t size, size_t max_request_size, ch
 
 static void request_process(uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
-	udp_log_hexdump("request_process", (const char *)request, request_size);
+	_hexdump("request_process", (const char *)request, request_size);
 }
 
 static void request_periodic(uint8_t *send_buffer, uint16_t send_buffer_size)
 {
-	udp_log_printf("%s:%s\n", __FILE__, __func__);
+	_printf("%s:%s\n", __FILE__, __func__);
 }
 
 request_callback_t request_callback_ws = {

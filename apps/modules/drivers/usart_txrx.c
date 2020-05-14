@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2020年05月13日 星期三 15时22分57秒
+ *   修改日期：2020年05月14日 星期四 13时04分20秒
  *   描    述：
  *
  *================================================================*/
@@ -19,6 +19,8 @@
 #include "os_utils.h"
 //#define UDP_LOG
 #include "task_probe_tool.h"
+
+#define _printf udp_log_printf
 
 static LIST_HEAD(uart_info_list);
 static osMutexId uart_info_list_mutex = NULL;
@@ -235,21 +237,21 @@ int uart_tx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t 
 		os_status = osMutexWait(uart_info->huart_mutex, osWaitForever);
 
 		if(os_status != osOK) {
-			udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+			_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		}
 	}
 
 	status = HAL_UART_Transmit_DMA(uart_info->huart, data, size);
 
 	if(status != HAL_OK) {
-		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 	}
 
 	if(uart_info->huart_mutex) {
 		os_status = osMutexRelease(uart_info->huart_mutex);
 
 		if(os_status != osOK) {
-			udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+			_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		}
 	}
 
@@ -303,7 +305,7 @@ static uint16_t wait_for_uart_receive(uart_info_t *uart_info, uint16_t size, uin
 			if(pre_received == received) {
 				//pending for a long time(poll interval)
 				if(cur_ticks - pre_received_ticks >= uart_info->max_pending_duration) {
-					udp_log_printf("%s:%s:%d pending duration:%d\n", __FILE__, __func__, __LINE__, cur_ticks - pre_received_ticks);
+					_printf("%s:%s:%d pending duration:%d\n", __FILE__, __func__, __LINE__, cur_ticks - pre_received_ticks);
 					HAL_UART_AbortReceive(uart_info->huart);
 					break;
 				}
@@ -333,21 +335,21 @@ int uart_rx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t 
 		os_status = osMutexWait(uart_info->huart_mutex, osWaitForever);
 
 		if(os_status != osOK) {
-			udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+			_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		}
 	}
 
 	status = HAL_UART_Receive_DMA(uart_info->huart, data, size);
 
 	if(status != HAL_OK) {
-		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 	}
 
 	if(uart_info->huart_mutex) {
 		os_status = osMutexRelease(uart_info->huart_mutex);
 
 		if(os_status != osOK) {
-			udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+			_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		}
 	}
 
@@ -366,14 +368,14 @@ int uart_tx_rx_data(uart_info_t *uart_info, uint8_t *tx_data, uint16_t tx_size, 
 		os_status = osMutexWait(uart_info->huart_mutex, osWaitForever);
 
 		if(os_status != osOK) {
-			udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+			_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		}
 	}
 
 	status = HAL_UART_Receive_DMA(uart_info->huart, rx_data, rx_size);
 
 	if(status != HAL_OK) {
-		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 	}
 
 	status = HAL_UART_Transmit_DMA(uart_info->huart, tx_data, tx_size);
@@ -385,7 +387,7 @@ int uart_tx_rx_data(uart_info_t *uart_info, uint8_t *tx_data, uint16_t tx_size, 
 		os_status = osMutexRelease(uart_info->huart_mutex);
 
 		if(os_status != osOK) {
-			udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+			_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		}
 	}
 

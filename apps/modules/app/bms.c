@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年05月14日 星期四 09时38分34秒
+ *   修改日期：2020年05月14日 星期四 13时01分49秒
  *   描    述：
  *
  *================================================================*/
@@ -39,6 +39,8 @@
 #ifndef BMS_VERSION_YEAR
 #define BMS_VERSION_YEAR 0
 #endif
+
+#define _printf udp_log_printf
 
 static LIST_HEAD(bms_info_list);
 static osMutexId bms_info_list_mutex = NULL;
@@ -287,7 +289,7 @@ int save_eeprom_modbus_data(bms_info_t *bms_info)
 	}
 
 	if(detect_eeprom(bms_info->eeprom_info) != 0) {
-		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return ret;
 	}
 
@@ -314,7 +316,7 @@ int save_eeprom_modbus_data(bms_info_t *bms_info)
 
 static void modbus_slave_data_changed(void *fn_ctx, void *chain_ctx)
 {
-	//udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+	//_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 	save_eeprom_modbus_data((bms_info_t *)fn_ctx);
 }
 
@@ -324,17 +326,17 @@ static uint8_t modbus_addr_valid(void *ctx, uint16_t start, uint16_t number)
 	uint16_t end = start + number;//无效边界
 
 	if(end <= start) {
-		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return valid;
 	}
 
 	if(start < 0) {
-		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return valid;
 	}
 
 	if(end > MODBUS_ADDR_INVALID) {
-		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return valid;
 	}
 
@@ -926,7 +928,7 @@ static void modbus_data_get_set(bms_info_t *bms_info, uint16_t addr, uint16_t *v
 		break;
 
 		default:
-			udp_log_printf("error! op:%s, addr:%d\n",
+			_printf("error! op:%s, addr:%d\n",
 			               (op == MODBUS_DATA_GET) ? "get" :
 			               (op == MODBUS_DATA_SET) ? "set" :
 			               "unknow",
@@ -1119,7 +1121,7 @@ int load_eeprom_modbus_data(bms_info_t *bms_info)
 	offset = sizeof(eeprom_modbus_data_t) * bms_info->eeprom_modbus_data_index;
 
 	if(detect_eeprom(bms_info->eeprom_info) != 0) {
-		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return ret;
 	}
 
@@ -1127,7 +1129,7 @@ int load_eeprom_modbus_data(bms_info_t *bms_info)
 	offset += sizeof(eeprom_modbus_head_t);
 
 	if(eeprom_modbus_head.payload_size != sizeof(eeprom_modbus_data_t)) {
-		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return ret;
 	}
 
@@ -1137,7 +1139,7 @@ int load_eeprom_modbus_data(bms_info_t *bms_info)
 	crc += (uint32_t)'s';
 
 	if(crc != eeprom_modbus_head.crc) {
-		udp_log_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 		return ret;
 	}
 
@@ -1161,7 +1163,7 @@ void bms_restore_data(bms_info_t *bms_info)
 	}
 
 	ret = load_eeprom_modbus_data(bms_info);
-	udp_log_printf("load_eeprom_modbus_data %s!\n", (ret == 0) ? "successfully" : "failed");
+	_printf("load_eeprom_modbus_data %s!\n", (ret == 0) ? "successfully" : "failed");
 
 	reset_bms_data_settings_charger_data(bms_info);
 
@@ -1258,7 +1260,7 @@ void set_bms_state(bms_info_t *bms_info, bms_state_t state)
 		handler->prepare(bms_info);
 	}
 
-	udp_log_printf("change to state:%s!\n", get_bms_state_des(state));
+	_printf("change to state:%s!\n", get_bms_state_des(state));
 
 	bms_info->state = state;
 }

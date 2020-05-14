@@ -16,6 +16,8 @@
 #define UDP_LOG
 #include "task_probe_tool.h"
 
+#define _printf udp_log_printf
+
 /*---------------------------------------------------------------------*/
 static int _error;
 
@@ -99,9 +101,9 @@ char *strtoken(char *src, char *dst, int size)
 static int parse_url(char *src_url, int *https, char *host, char *port, char *url)
 {
 	char *p1, *p2;
-	static char str[1024];
+	static char str[256];
 
-	memset(str, 0, 1024);
+	memset(str, 0, 256);
 
 	if(strncmp(src_url, "http://", 7) == 0) {
 		p1 = &src_url[7];
@@ -206,14 +208,14 @@ static int http_parse(HTTP_INFO *hi)
 				*p2 = 0;
 
 				if(len > 0) {
-					// udp_log_printf("header: %s(%ld)\n", p1, len);
+					// _printf("header: %s(%ld)\n", p1, len);
 
 					http_header(hi, p1);
 					p1 = p2 + 2;    // skip CR+LF
 				} else {
 					hi->header_end = TRUE; // reach the header-end.
 
-					// udp_log_printf("header_end .... \n");
+					// _printf("header_end .... \n");
 
 					p1 = p2 + 2;    // skip CR+LF
 
@@ -382,7 +384,7 @@ static int https_init(HTTP_INFO *hi, BOOL https, BOOL verify)
 	hi->tls.verify = verify;
 	hi->url.https = https;
 
-//  udp_log_printf("https_init ... \n");
+//  _printf("https_init ... \n");
 
 	return 0;
 }
@@ -404,7 +406,7 @@ static int https_close(HTTP_INFO *hi)
 		mbedtls_entropy_free(&hi->tls.entropy);
 	}
 
-//  udp_log_printf("https_close ... \n");
+//  _printf("https_close ... \n");
 
 	return 0;
 }
@@ -518,7 +520,7 @@ static void my_debug( void *ctx, int level,
 
 	//fprintf( (FILE *) ctx, "%s:%04d: %s", file, line, str );
 	//fflush(  (FILE *) ctx  );
-	udp_log_printf("%s:%04d: %s", file, line, str);
+	_printf("%s:%04d: %s", file, line, str);
 }
 
 /*---------------------------------------------------------------------*/
@@ -721,7 +723,7 @@ int http_get(HTTP_INFO *hi, char *url, char *response, int size)
 		return -1;
 	}
 
-//  udp_log_printf("request: %s \r\n\r\n", request);
+//  _printf("request: %s \r\n\r\n", request);
 
 	hi->response.status = 0;
 	hi->response.content_length = 0;
@@ -755,8 +757,8 @@ int http_get(HTTP_INFO *hi, char *url, char *response, int size)
 		hi->r_len += ret;
 		hi->r_buf[hi->r_len] = 0;
 
-		// udp_log_printf("read(%ld): |%s| \n", hi->r_len, hi->r_buf);
-		// udp_log_printf("read(%ld) ... \n", hi->r_len);
+		// _printf("read(%ld): |%s| \n", hi->r_len, hi->r_buf);
+		// _printf("read(%ld) ... \n", hi->r_len);
 
 		if(http_parse(hi) != 0) {
 			break;
@@ -772,12 +774,12 @@ int http_get(HTTP_INFO *hi, char *url, char *response, int size)
 	}
 
 	/*
-	udp_log_printf("status: %d \n", hi->response.status);
-	udp_log_printf("cookie: %s \n", hi->response.cookie);
-	udp_log_printf("location: %s \n", hi->response.location);
-	udp_log_printf("referrer: %s \n", hi->response.referrer);
-	udp_log_printf("length: %ld \n", hi->response.content_length);
-	udp_log_printf("body: %ld \n", hi->body_len);
+	_printf("status: %d \n", hi->response.status);
+	_printf("cookie: %s \n", hi->response.cookie);
+	_printf("location: %s \n", hi->response.location);
+	_printf("referrer: %s \n", hi->response.referrer);
+	_printf("length: %ld \n", hi->response.content_length);
+	_printf("body: %ld \n", hi->body_len);
 	*/
 
 	return hi->response.status;
@@ -839,7 +841,7 @@ int http_post(HTTP_INFO *hi, char *url, char *data, char *response, int size)
 		}
 
 //      else
-//          udp_log_printf("socket reuse: %d \n", sock_fd);
+//          _printf("socket reuse: %d \n", sock_fd);
 	}
 
 	/* Send HTTP request. */
@@ -868,7 +870,7 @@ int http_post(HTTP_INFO *hi, char *url, char *data, char *response, int size)
 		return -1;
 	}
 
-//  udp_log_printf("request: %s \r\n\r\n", request);
+//  _printf("request: %s \r\n\r\n", request);
 
 	hi->response.status = 0;
 	hi->response.content_length = 0;
@@ -904,8 +906,8 @@ int http_post(HTTP_INFO *hi, char *url, char *data, char *response, int size)
 		hi->r_len += ret;
 		hi->r_buf[hi->r_len] = 0;
 
-//        udp_log_printf("read(%ld): %s \n", hi->r_len, hi->r_buf);
-//        udp_log_printf("read(%ld) \n", hi->r_len);
+//        _printf("read(%ld): %s \n", hi->r_len, hi->r_buf);
+//        _printf("read(%ld) \n", hi->r_len);
 
 		if(http_parse(hi) != 0) {
 			break;
@@ -921,12 +923,12 @@ int http_post(HTTP_INFO *hi, char *url, char *data, char *response, int size)
 	}
 
 	/*
-	    udp_log_printf("status: %d \n", hi->response.status);
-	    udp_log_printf("cookie: %s \n", hi->response.cookie);
-	    udp_log_printf("location: %s \n", hi->response.location);
-	    udp_log_printf("referrer: %s \n", hi->response.referrer);
-	    udp_log_printf("length: %d \n", hi->response.content_length);
-	    udp_log_printf("body: %d \n", hi->body_len);
+	    _printf("status: %d \n", hi->response.status);
+	    _printf("cookie: %s \n", hi->response.cookie);
+	    _printf("location: %s \n", hi->response.location);
+	    _printf("referrer: %s \n", hi->response.referrer);
+	    _printf("length: %d \n", hi->response.content_length);
+	    _printf("body: %d \n", hi->body_len);
 	*/
 
 	return hi->response.status;
@@ -991,7 +993,7 @@ int http_open(HTTP_INFO *hi, char *url)
 		}
 
 //      else
-//          udp_log_printf("socket reuse: %d \n", sock_fd);
+//          _printf("socket reuse: %d \n", sock_fd);
 	}
 
 	strncpy(hi->url.host, host, strlen(host));
@@ -1058,7 +1060,7 @@ int http_write_header(HTTP_INFO *hi)
 	len += snprintf(&request[len], H_FIELD_SIZE, "\r\n");
 
 
-	udp_log_printf("%s", request);
+	_printf("%s", request);
 
 	if ((ret = https_write(hi, request, len)) != len) {
 		https_close(hi);
@@ -1121,7 +1123,7 @@ int http_write_ws_header(HTTP_INFO *hi)
 	len += snprintf(&request[len], H_FIELD_SIZE, "\r\n");
 
 
-	udp_log_printf("%s", request);
+	_printf("%s", request);
 
 	if ((ret = https_write(hi, request, len)) != len) {
 		https_close(hi);
@@ -1215,7 +1217,7 @@ int http_read_chunked(HTTP_INFO *hi, char *response, int size)
 		return -1;
 	}
 
-//  udp_log_printf("request: %s \r\n\r\n", request);
+//  _printf("request: %s \r\n\r\n", request);
 
 	hi->response.status = 0;
 	hi->response.content_length = 0;
@@ -1248,8 +1250,8 @@ int http_read_chunked(HTTP_INFO *hi, char *response, int size)
 		hi->r_len += ret;
 		hi->r_buf[hi->r_len] = 0;
 
-//        udp_log_printf("read(%ld): %s \n", hi->r_len, hi->r_buf);
-//        udp_log_printf("read(%ld) \n", hi->r_len);
+//        _printf("read(%ld): %s \n", hi->r_len, hi->r_buf);
+//        _printf("read(%ld) \n", hi->r_len);
 
 		if(http_parse(hi) != 0) {
 			break;
@@ -1261,12 +1263,12 @@ int http_read_chunked(HTTP_INFO *hi, char *response, int size)
 	}
 
 	/*
-	    udp_log_printf("status: %d \n", hi->status);
-	    udp_log_printf("cookie: %s \n", hi->cookie);
-	    udp_log_printf("location: %s \n", hi->location);
-	    udp_log_printf("referrer: %s \n", hi->referrer);
-	    udp_log_printf("length: %d \n", hi->content_length);
-	    udp_log_printf("body: %d \n", hi->body_len);
+	    _printf("status: %d \n", hi->status);
+	    _printf("cookie: %s \n", hi->cookie);
+	    _printf("location: %s \n", hi->location);
+	    _printf("referrer: %s \n", hi->referrer);
+	    _printf("length: %d \n", hi->content_length);
+	    _printf("body: %d \n", hi->body_len);
 	*/
 
 	return hi->response.status;

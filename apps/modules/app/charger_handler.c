@@ -6,7 +6,7 @@
  *   文件名称：charger_handler.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时18分42秒
- *   修改日期：2020年05月14日 星期四 10时05分55秒
+ *   修改日期：2020年05月14日 星期四 13时00分47秒
  *   描    述：
  *
  *================================================================*/
@@ -17,6 +17,8 @@
 #include "bms_multi_data.h"
 #define UDP_LOG
 #include "task_probe_tool.h"
+
+#define _printf udp_log_printf
 
 static int handle_common_bst_response(charger_info_t *charger_info)
 {
@@ -170,13 +172,13 @@ static int handle_state_chm_request(charger_info_t *charger_info)
 
 				charger_info->chm_op_state = CHM_OP_STATE_RELAY_ENDPOINT_OVERVOLTAGE_CHECK;
 
-				udp_log_printf("CHM_OP_STATE_DISCHARGE done!\n");
+				_printf("CHM_OP_STATE_DISCHARGE done!\n");
 			} else if(op_ret == -1) {
 				charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_CHM_OP_STATE_DISCHARGE_TIMEOUT);
 
 				set_charger_state(charger_info, CHARGER_STATE_IDLE);
 
-				udp_log_printf("CHM_OP_STATE_DISCHARGE timeout\n");
+				_printf("CHM_OP_STATE_DISCHARGE timeout\n");
 
 			}
 		}
@@ -201,13 +203,13 @@ static int handle_state_chm_request(charger_info_t *charger_info)
 
 				charger_info->chm_op_state = CHM_OP_STATE_INSULATION_CHECK_PRECHARGE;
 
-				udp_log_printf("CHM_OP_STATE_RELAY_ENDPOINT_OVERVOLTAGE_CHECK done!\n");
+				_printf("CHM_OP_STATE_RELAY_ENDPOINT_OVERVOLTAGE_CHECK done!\n");
 			} else if(op_ret == -1) {
 				charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_CHM_OP_STATE_RELAY_ENDPOINT_OVERVOLTAGE_CHECK_TIMEOUT);
 
 				set_charger_state(charger_info, CHARGER_STATE_IDLE);
 
-				udp_log_printf("CHM_OP_STATE_RELAY_ENDPOINT_OVERVOLTAGE_CHECK timeout!\n");
+				_printf("CHM_OP_STATE_RELAY_ENDPOINT_OVERVOLTAGE_CHECK timeout!\n");
 			}
 		}
 		break;
@@ -225,14 +227,14 @@ static int handle_state_chm_request(charger_info_t *charger_info)
 
 				charger_info->chm_op_state = CHM_OP_STATE_INSULATION_CHECK_DELAY_1;
 
-				udp_log_printf("CHM_OP_STATE_INSULATION_CHECK_PRECHARGE done!\n");
+				_printf("CHM_OP_STATE_INSULATION_CHECK_PRECHARGE done!\n");
 			} else if(op_ret == -1) {
 				charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_CHM_OP_STATE_INSULATION_CHECK_PRECHARGE_TIMEOUT);
 				charger_info->charger_op_ctx.state = 0;
 
 				charger_info->chm_op_state = CHM_OP_STATE_ABORT_DISCHARGE;
 
-				udp_log_printf("CHM_OP_STATE_INSULATION_CHECK_PRECHARGE timeout!\n");
+				_printf("CHM_OP_STATE_INSULATION_CHECK_PRECHARGE timeout!\n");
 			}
 		}
 		break;
@@ -244,7 +246,7 @@ static int handle_state_chm_request(charger_info_t *charger_info)
 
 				charger_info->chm_op_state = CHM_OP_STATE_INSULATION_CHECK_STOP_PRECHARGE;
 
-				udp_log_printf("CHM_OP_STATE_INSULATION_CHECK_DELAY_1 done!\n");
+				_printf("CHM_OP_STATE_INSULATION_CHECK_DELAY_1 done!\n");
 			}
 		}
 		break;
@@ -260,14 +262,14 @@ static int handle_state_chm_request(charger_info_t *charger_info)
 
 				charger_info->chm_op_state = CHM_OP_STATE_INSULATION_CHECK_DELAY_2;
 
-				udp_log_printf("CHM_OP_STATE_INSULATION_CHECK_STOP_PRECHARGE done!\n");
+				_printf("CHM_OP_STATE_INSULATION_CHECK_STOP_PRECHARGE done!\n");
 			} else if(op_ret == -1) {
 				charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_CHM_OP_STATE_INSULATION_CHECK_STOP_PRECHARGE_TIMEOUT);
 				charger_info->charger_op_ctx.state = 0;
 
 				charger_info->chm_op_state = CHM_OP_STATE_ABORT_DISCHARGE;
 
-				udp_log_printf("CHM_OP_STATE_INSULATION_CHECK_STOP_PRECHARGE timeout!\n");
+				_printf("CHM_OP_STATE_INSULATION_CHECK_STOP_PRECHARGE timeout!\n");
 			}
 		}
 		break;
@@ -279,7 +281,7 @@ static int handle_state_chm_request(charger_info_t *charger_info)
 
 				charger_info->chm_op_state = CHM_OP_STATE_INSULATION_CHECK_DISCHARGE;
 
-				udp_log_printf("CHM_OP_STATE_INSULATION_CHECK_DELAY_2 done!\n");
+				_printf("CHM_OP_STATE_INSULATION_CHECK_DELAY_2 done!\n");
 			}
 		}
 		break;
@@ -293,12 +295,12 @@ static int handle_state_chm_request(charger_info_t *charger_info)
 
 				charger_info->chm_op_state = CHM_OP_STATE_INSULATION_CHECK;
 
-				udp_log_printf("CHM_OP_STATE_INSULATION_CHECK_DISCHARGE done!\n");
+				_printf("CHM_OP_STATE_INSULATION_CHECK_DISCHARGE done!\n");
 			} else if(op_ret == -1) {
 				charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_CHM_OP_STATE_INSULATION_CHECK_DISCHARGE_TIMEOUT);
 				set_charger_state(charger_info, CHARGER_STATE_IDLE);
 
-				udp_log_printf("CHM_OP_STATE_INSULATION_CHECK_DISCHARGE timeout\n");
+				_printf("CHM_OP_STATE_INSULATION_CHECK_DISCHARGE timeout\n");
 			}
 		}
 		break;
@@ -316,13 +318,13 @@ static int handle_state_chm_request(charger_info_t *charger_info)
 
 				set_charger_state(charger_info, CHARGER_STATE_CRM);
 
-				udp_log_printf("CHM_OP_STATE_INSULATION_CHECK done!\n");
+				_printf("CHM_OP_STATE_INSULATION_CHECK done!\n");
 			} else if(op_ret == -1) {
 				charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_CHM_OP_STATE_INSULATION_CHECK_TIMEOUT);
 
 				set_charger_state(charger_info, CHARGER_STATE_IDLE);
 
-				udp_log_printf("CHM_OP_STATE_INSULATION_CHECK timeout!\n");
+				_printf("CHM_OP_STATE_INSULATION_CHECK timeout!\n");
 			}
 		}
 		break;
@@ -335,12 +337,12 @@ static int handle_state_chm_request(charger_info_t *charger_info)
 				set_power_output_enable(charger_info, 0);//关闭输出
 				set_charger_state(charger_info, CHARGER_STATE_IDLE);
 
-				udp_log_printf("CHM_OP_STATE_ABORT_DISCHARGE done!\n");
+				_printf("CHM_OP_STATE_ABORT_DISCHARGE done!\n");
 			} else if(op_ret == -1) {
 				set_power_output_enable(charger_info, 0);//关闭输出
 				set_charger_state(charger_info, CHARGER_STATE_IDLE);
 
-				udp_log_printf("CHM_OP_STATE_ABORT_DISCHARGE timeout\n");
+				_printf("CHM_OP_STATE_ABORT_DISCHARGE timeout\n");
 			}
 		}
 		break;
@@ -715,7 +717,7 @@ static int handle_state_cro_request(charger_info_t *charger_info)
 				charger_info->cro_op_state = CRO_OP_STATE_GET_BATTERY_STATUS;
 			}
 
-			udp_log_printf("CRO_OP_STATE_START_PRECHARGE done!\n");
+			_printf("CRO_OP_STATE_START_PRECHARGE done!\n");
 		}
 		break;
 
@@ -731,13 +733,13 @@ static int handle_state_cro_request(charger_info_t *charger_info)
 
 				charger_info->cro_op_state = CRO_OP_STATE_PRECHARGE;
 
-				udp_log_printf("CRO_OP_STATE_GET_BATTERY_STATUS done\n");
+				_printf("CRO_OP_STATE_GET_BATTERY_STATUS done\n");
 			} else if(op_ret == -1) {
 				charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_CRO_OP_STATE_GET_BATTERY_STATUS_TIMEOUT);
 
 				set_charger_state(charger_info, CHARGER_STATE_CST);
 
-				udp_log_printf("CRO_OP_STATE_GET_BATTERY_STATUS timeout\n");
+				_printf("CRO_OP_STATE_GET_BATTERY_STATUS timeout\n");
 			}
 		}
 		break;
@@ -751,13 +753,13 @@ static int handle_state_cro_request(charger_info_t *charger_info)
 
 				charger_info->cro_op_state = CRO_OP_STATE_PRECHARGE_DELAY_1;
 
-				udp_log_printf("CRO_OP_STATE_PRECHARGE done\n");
+				_printf("CRO_OP_STATE_PRECHARGE done\n");
 			} else if(op_ret == -1) {
 				charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_CRO_OP_STATE_PRECHARGE_TIMEOUT);
 
 				set_charger_state(charger_info, CHARGER_STATE_CST);
 
-				udp_log_printf("CRO_OP_STATE_PRECHARGE timeout\n");
+				_printf("CRO_OP_STATE_PRECHARGE timeout\n");
 			}
 		}
 		break;
@@ -770,7 +772,7 @@ static int handle_state_cro_request(charger_info_t *charger_info)
 
 				charger_info->cro_op_state = CRO_OP_STATE_PRECHARGE_DELAY_2;
 
-				udp_log_printf("CRO_OP_STATE_PRECHARGE_DELAY_1 done!\n");
+				_printf("CRO_OP_STATE_PRECHARGE_DELAY_1 done!\n");
 			}
 		}
 		break;
@@ -786,7 +788,7 @@ static int handle_state_cro_request(charger_info_t *charger_info)
 
 				charger_info->cro_op_state = CRO_OP_STATE_NONE;
 
-				udp_log_printf("CRO_OP_STATE_PRECHARGE_DELAY_2 done!\n");
+				_printf("CRO_OP_STATE_PRECHARGE_DELAY_2 done!\n");
 			}
 		}
 		break;
@@ -1232,14 +1234,14 @@ static int handle_state_csd_cem_request(charger_info_t *charger_info)
 
 				charger_info->csd_cem_op_state = CSD_CEM_OP_STATE_DISABLE_OUTPUT_DELAY;
 
-				udp_log_printf("CSD_CEM_OP_STATE_WAIT_NO_CURRENT done!\n");
+				_printf("CSD_CEM_OP_STATE_WAIT_NO_CURRENT done!\n");
 
 			} else if(op_ret == -1) {
 				charger_info->stamp_1 = ticks;
 
 				charger_info->csd_cem_op_state = CSD_CEM_OP_STATE_DISABLE_OUTPUT_DELAY;
 
-				udp_log_printf("CSD_CEM_OP_STATE_WAIT_NO_CURRENT timeout\n");
+				_printf("CSD_CEM_OP_STATE_WAIT_NO_CURRENT timeout\n");
 			}
 		}
 		break;
@@ -1252,7 +1254,7 @@ static int handle_state_csd_cem_request(charger_info_t *charger_info)
 
 				charger_info->csd_cem_op_state = CSD_CEM_OP_STATE_DISCHARGE;
 
-				udp_log_printf("CSD_CEM_OP_STATE_DISABLE_OUTPUT_DELAY done!\n");
+				_printf("CSD_CEM_OP_STATE_DISABLE_OUTPUT_DELAY done!\n");
 			}
 		}
 		break;
@@ -1266,7 +1268,7 @@ static int handle_state_csd_cem_request(charger_info_t *charger_info)
 
 				set_charger_state(charger_info, CHARGER_STATE_IDLE);
 
-				udp_log_printf("CSD_CEM_OP_STATE_DISCHARGE done!\n");
+				_printf("CSD_CEM_OP_STATE_DISCHARGE done!\n");
 			} else if(op_ret == -1) {
 				charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_CSD_CEM_OP_STATE_DISCHARGE_TIMEOUT);
 
@@ -1274,7 +1276,7 @@ static int handle_state_csd_cem_request(charger_info_t *charger_info)
 
 				set_charger_state(charger_info, CHARGER_STATE_IDLE);
 
-				udp_log_printf("CSD_CEM_OP_STATE_DISCHARGE timeout\n");
+				_printf("CSD_CEM_OP_STATE_DISCHARGE timeout\n");
 
 			}
 		}
