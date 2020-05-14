@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2020年05月14日 星期四 14时31分22秒
+ *   修改日期：2020年05月14日 星期四 15时49分57秒
  *   描    述：
  *
  *================================================================*/
@@ -433,7 +433,7 @@ int log_uart_data(void *data, size_t size)
 			}
 		}
 
-		ret = uart_tx_data(uart_info, (uint8_t *)data, size, 1000);
+		ret = uart_tx_data(uart_info, (uint8_t *)data, size, 100);
 
 		if(uart_info->log_mutex) {
 			os_status = osMutexRelease(uart_info->log_mutex);

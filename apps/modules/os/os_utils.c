@@ -6,7 +6,7 @@
  *   文件名称：os_utils.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分17秒
- *   修改日期：2020年03月20日 星期五 11时13分28秒
+ *   修改日期：2020年05月14日 星期四 16时23分57秒
  *   描    述：
  *
  *================================================================*/
@@ -33,30 +33,28 @@ void os_free(void *p)
 int log_printf(log_fn_t log_fn, const char *fmt, ...)
 {
 	va_list ap;
-	int size = 0;
+	int ret = -1;
 	char *log_buffer = (char *)os_alloc(LOG_BUFFER_SIZE);
 
 	if(log_buffer == NULL) {
-		return size;
+		return ret;
 	}
 
 	va_start(ap, fmt);
-	size = vsnprintf(log_buffer, LOG_BUFFER_SIZE, fmt, ap);
+	ret = vsnprintf(log_buffer, LOG_BUFFER_SIZE, fmt, ap);
 	va_end(ap);
 
-	if((LOG_BUFFER_SIZE - 1) <= size) {
-		size = LOG_BUFFER_SIZE;
-	} else {
-		size += 1;
+	if(ret > LOG_BUFFER_SIZE) {
+		ret = LOG_BUFFER_SIZE;
 	}
 
 	if(log_fn != NULL) {
-		size = log_fn(log_buffer, size);
+		ret = log_fn(log_buffer, ret);
 	}
 
 	os_free(log_buffer);
 
-	return (size - 1);
+	return ret;
 }
 
 static int32_t my_isprint(int32_t c)
@@ -89,10 +87,8 @@ void log_hexdump(log_fn_t log_fn, const char *label, const char *data, int len)
 	if(label != NULL) {
 		ret = snprintf(buffer, BUFFER_LEN, "%s:\n", label);
 
-		if((BUFFER_LEN - 1) <= ret) {
+		if(ret > BUFFER_LEN) {
 			ret = BUFFER_LEN;
-		} else {
-			ret += 1;
 		}
 
 		if(log_fn != NULL) {
@@ -101,7 +97,7 @@ void log_hexdump(log_fn_t log_fn, const char *label, const char *data, int len)
 	}
 
 	while(start < end) {
-		int left = BUFFER_LEN - 1;//剩余可打印字符数,去掉结束的0
+		int left = BUFFER_LEN;
 		long address = start - data;
 
 		buffer_start = buffer;
@@ -112,20 +108,20 @@ void log_hexdump(log_fn_t log_fn, const char *label, const char *data, int len)
 			c = bytes_per_line;
 		}
 
-		ret = snprintf(buffer_start, left + 1, "%08lx", offset + address);
+		ret = snprintf(buffer_start, left, "%08lx", offset + address);
 		buffer_start += ret;
 
-		if(left <= ret) {
+		if(ret >= left) {
 			left = 0;
 			goto out;
 		} else {
 			left -= ret;
 		}
 
-		ret = snprintf(buffer_start, left + 1, " ");
+		ret = snprintf(buffer_start, left, " ");
 		buffer_start += ret;
 
-		if(left <= ret) {
+		if(ret >= left) {
 			left = 0;
 			goto out;
 		} else {
@@ -134,10 +130,10 @@ void log_hexdump(log_fn_t log_fn, const char *label, const char *data, int len)
 
 		for(i = 0; i < c; i++) {
 			if(i % 8 == 0) {
-				ret = snprintf(buffer_start, left + 1, " ");
+				ret = snprintf(buffer_start, left, " ");
 				buffer_start += ret;
 
-				if(left <= ret) {
+				if(ret >= left) {
 					left = 0;
 					goto out;
 				} else {
@@ -145,10 +141,10 @@ void log_hexdump(log_fn_t log_fn, const char *label, const char *data, int len)
 				}
 			}
 
-			ret = snprintf(buffer_start, left + 1, "%02x ", (unsigned char)start[i]);
+			ret = snprintf(buffer_start, left, "%02x ", (unsigned char)start[i]);
 			buffer_start += ret;
 
-			if(left <= ret) {
+			if(ret >= left) {
 				left = 0;
 				goto out;
 			} else {
@@ -158,10 +154,10 @@ void log_hexdump(log_fn_t log_fn, const char *label, const char *data, int len)
 
 		for(i = c; i < bytes_per_line; i++) {
 			if(i % 8 == 0) {
-				ret = snprintf(buffer_start, left + 1, " ");
+				ret = snprintf(buffer_start, left, " ");
 				buffer_start += ret;
 
-				if(left <= ret) {
+				if(ret >= left) {
 					left = 0;
 					goto out;
 				} else {
@@ -169,10 +165,10 @@ void log_hexdump(log_fn_t log_fn, const char *label, const char *data, int len)
 				}
 			}
 
-			ret = snprintf(buffer_start, left + 1, "%2s ", " ");
+			ret = snprintf(buffer_start, left, "%2s ", " ");
 			buffer_start += ret;
 
-			if(left <= ret) {
+			if(ret >= left) {
 				left = 0;
 				goto out;
 			} else {
@@ -180,10 +176,10 @@ void log_hexdump(log_fn_t log_fn, const char *label, const char *data, int len)
 			}
 		}
 
-		ret = snprintf(buffer_start, left + 1, "|");
+		ret = snprintf(buffer_start, left, "|");
 		buffer_start += ret;
 
-		if(left <= ret) {
+		if(ret >= left) {
 			left = 0;
 			goto out;
 		} else {
@@ -191,10 +187,10 @@ void log_hexdump(log_fn_t log_fn, const char *label, const char *data, int len)
 		}
 
 		for(i = 0; i < c; i++) {
-			ret = snprintf(buffer_start, left + 1, "%c", my_isprint(start[i]) ? start[i] : '.');
+			ret = snprintf(buffer_start, left, "%c", my_isprint(start[i]) ? start[i] : '.');
 			buffer_start += ret;
 
-			if(left <= ret) {
+			if(ret >= left) {
 				left = 0;
 				goto out;
 			} else {
@@ -202,20 +198,20 @@ void log_hexdump(log_fn_t log_fn, const char *label, const char *data, int len)
 			}
 		}
 
-		ret = snprintf(buffer_start, left + 1, "|");
+		ret = snprintf(buffer_start, left, "|");
 		buffer_start += ret;
 
-		if(left <= ret) {
+		if(ret >= left) {
 			left = 0;
 			goto out;
 		} else {
 			left -= ret;
 		}
 
-		ret = snprintf(buffer_start, left + 1, "\n");
+		ret = snprintf(buffer_start, left, "\n");
 		buffer_start += ret;
 
-		if(left <= ret) {
+		if(ret >= left) {
 			left = 0;
 			goto out;
 		} else {
@@ -243,11 +239,11 @@ int log_puts(log_fn_t log_fn, const char *s)
 		if(ret > (1024 - 1)) {
 			log_hexdump(log_fn, NULL, s, ret);
 		} else {
-			ret = log_fn((void *)s, ret + 1);
+			ret = log_fn((void *)s, ret);
 		}
 	}
 
-	return (ret - 1);
+	return ret;
 }
 
 void app_panic(void)
