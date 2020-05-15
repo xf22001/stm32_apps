@@ -6,7 +6,7 @@
  *   文件名称：auxiliary_function_board.h
  *   创 建 者：肖飞
  *   创建日期：2020年04月28日 星期二 11时34分23秒
- *   修改日期：2020年05月01日 星期五 16时58分48秒
+ *   修改日期：2020年05月15日 星期五 14时43分49秒
  *   描    述：
  *
  *================================================================*/
@@ -178,4 +178,5 @@ int response_discharge_running_status(a_f_b_info_t *a_f_b_info);
 int response_insulation_check_running_status(a_f_b_info_t *a_f_b_info);
 a_f_b_reponse_91_data_t *get_a_f_b_status_data(a_f_b_info_t *a_f_b_info);
 uint8_t get_battery_available_state(a_f_b_info_t *a_f_b_info);
+void task_auxiliary_function_board_decode(void const *argument);
 #endif //_AUXILIARY_FUNCTION_BOARD_H

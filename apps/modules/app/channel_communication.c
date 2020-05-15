@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分44秒
- *   修改日期：2020年05月15日 星期五 13时28分47秒
+ *   修改日期：2020年05月15日 星期五 15时00分51秒
  *   描    述：
  *
  *================================================================*/
@@ -85,9 +85,9 @@ static void charger_info_report_status_cb(void *fn_ctx, void *chain_ctx)
 	charger_report_status_t *charger_report_status = (charger_report_status_t *)chain_ctx;
 
 	_printf("%s:%s:%d state:%s, status:%d\n",
-	               __FILE__, __func__, __LINE__,
-	               get_charger_state_des(charger_report_status->state),
-	               charger_report_status->status);
+	        __FILE__, __func__, __LINE__,
+	        get_charger_state_des(charger_report_status->state),
+	        charger_report_status->status);
 
 	switch(charger_report_status->state) {
 		case CHARGER_STATE_IDLE: {
@@ -1755,6 +1755,7 @@ static void channel_com_request_periodic(channel_com_info_t *channel_com_info)
 		}
 
 		if(ticks - channel_com_info->cmd_ctx[item->cmd].stamp >= item->request_period) {
+			channel_com_info->cmd_ctx[item->cmd].retry = 0;
 			channel_com_info->cmd_ctx[item->cmd].stamp = ticks;
 			channel_com_info->cmd_ctx[item->cmd].state = CHANNEL_COM_STATE_REQUEST;
 		}
@@ -1778,9 +1779,13 @@ void task_channel_com_request(void const *argument)
 			channel_com_command_item_t *item = channel_com_command_table[i];
 			cmd_common_t *cmd_common = (cmd_common_t *)channel_com_info->can_tx_msg.Data;
 
-			if(channel_com_info->cmd_ctx[item->cmd].state == CHANNEL_COM_STATE_IDLE) {
+			if(channel_com_info->cmd_ctx[item->cmd].state != CHANNEL_COM_STATE_REQUEST) {
 				continue;
 			}
+
+			_printf("request cmd %d, retry:%d\n",
+			        item->request_code,
+			        channel_com_info->cmd_ctx[item->cmd].retry);
 
 			memset(channel_com_info->can_tx_msg.Data, 0, 8);
 
@@ -1795,6 +1800,8 @@ void task_channel_com_request(void const *argument)
 			if(ret != 0) {
 				if(channel_com_info->cmd_ctx[item->cmd].retry <= 3) {
 					channel_com_info->cmd_ctx[item->cmd].state = CHANNEL_COM_STATE_REQUEST;
+				} else {
+					channel_com_info->cmd_ctx[item->cmd].state = CHANNEL_COM_STATE_ERROR;
 				}
 			}
 		}

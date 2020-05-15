@@ -6,7 +6,7 @@
  *   文件名称：auxiliary_function_board.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月28日 星期二 11时34分17秒
- *   修改日期：2020年05月15日 星期五 14时32分34秒
+ *   修改日期：2020年05月15日 星期五 14时49分25秒
  *   描    述：
  *
  *================================================================*/
@@ -455,6 +455,8 @@ void task_auxiliary_function_board_decode(void const *argument)
 
 			ret = item->request_callback(a_f_b_info);
 			ret = uart_tx_rx_data(a_f_b_info->uart_info, a_f_b_info->rx_buffer, a_f_b_info->tx_size, a_f_b_info->rx_buffer, a_f_b_info->rx_size, 1000);
+
+			_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
 
 			if(ret != a_f_b_info->rx_size) {
 				a_f_b_info->cmd_ctx[item->cmd].state = A_F_B_STATE_ERROR;
