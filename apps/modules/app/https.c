@@ -13,12 +13,8 @@
 #include "mbedtls/base64.h"
 //#include "ca_cert.h"
 #include "https.h"
-#define UDP_LOG
-#include "task_probe_tool.h"
 
-#define _printf udp_log_printf
-#define _hexdump udp_log_hexdump
-#define _puts udp_log_puts
+#include "log.h"
 
 /*---------------------------------------------------------------------*/
 static int _error;

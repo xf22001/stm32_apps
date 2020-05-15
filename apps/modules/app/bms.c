@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年05月14日 星期四 14时42分36秒
+ *   修改日期：2020年05月15日 星期五 08时35分27秒
  *   描    述：
  *
  *================================================================*/
@@ -16,16 +16,11 @@
 #include "os_utils.h"
 #include "bitmap_ops.h"
 #include <string.h>
-#define UDP_LOG
-#include "task_probe_tool.h"
 #include "task_modbus_slave.h"
 #include "eeprom.h"
 #include "modbus_data_value.h"
-
-#define UART_LOG
-#include "uart_debug.h"
-
 #include "app.h"
+
 #include "log.h"
 
 #ifndef BMS_VERSION_SERIAL

@@ -3,15 +3,14 @@
 /*================================================================
  *   
  *   
- *   文件名称：task_probe_tool.c
+ *   文件名称：probe_tool.c
  *   创 建 者：肖飞
- *   创建日期：2020年03月20日 星期五 13时37分12秒
- *   修改日期：2020年05月14日 星期四 14时41分33秒
+ *   创建日期：2020年05月15日 星期五 08时02分35秒
+ *   修改日期：2020年05月15日 星期五 08时42分51秒
  *   描    述：
  *
  *================================================================*/
-#define UDP_LOG
-#include "task_probe_tool.h"
+#include "probe_tool.h"
 
 #include "app_platform.h"
 #include "cmsis_os.h"
@@ -23,9 +22,8 @@
 #include "os_utils.h"
 #include "probe_tool_handler.h"
 
-#define _printf udp_log_printf
-#define _hexdump udp_log_hexdump
-#define _puts udp_log_puts
+#define LOG_UDP
+#include "log.h"
 
 static int broadcast_sock = -1;
 static struct sockaddr_in broadcast_addr;

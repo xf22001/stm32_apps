@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2020年05月14日 星期四 14时47分55秒
+ *   修改日期：2020年05月15日 星期五 08时43分51秒
  *   描    述：
  *
  *================================================================*/
@@ -19,13 +19,8 @@
 
 #include "os_utils.h"
 #include "net_client.h"
-#include "task_probe_tool.h"
-#define UDP_LOG
-#include "net_protocol.h"
 
-#define _printf udp_log_printf
-#define _hexdump udp_log_hexdump
-#define _puts udp_log_puts
+#include "log.h"
 
 #include <string.h>
 

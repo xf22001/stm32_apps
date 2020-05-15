@@ -6,18 +6,11 @@
  *   文件名称：auxiliary_function_board.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月28日 星期二 11时34分17秒
- *   修改日期：2020年05月14日 星期四 14时03分11秒
+ *   修改日期：2020年05月15日 星期五 08时33分12秒
  *   描    述：
  *
  *================================================================*/
 #include "auxiliary_function_board.h"
-
-#include "os_utils.h"
-#define UDP_LOG
-#include "task_probe_tool.h"
-
-#define UART_LOG
-#include "uart_debug.h"
 
 #include "log.h"
 

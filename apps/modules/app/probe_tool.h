@@ -1,16 +1,28 @@
-#ifndef _TASK_PROBE_TOOL_H
-#define _TASK_PROBE_TOOL_H
+
+
+/*================================================================
+ *   
+ *   
+ *   文件名称：probe_tool.h
+ *   创 建 者：肖飞
+ *   创建日期：2020年05月15日 星期五 08时03分37秒
+ *   修改日期：2020年05月15日 星期五 08时04分16秒
+ *   描    述：
+ *
+ *================================================================*/
+#ifndef _PROBE_TOOL_H
+#define _PROBE_TOOL_H
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
+#include "request.h"
+#include "os_utils.h"
+
 #ifdef __cplusplus
 }
 #endif
-
-#include "request.h"
-#include "os_utils.h"
 
 #define BROADCAST_PORT 6000
 #define PROBE_TOOL_PORT 6001
@@ -37,14 +49,4 @@ void fn_hello(request_t *request);
 uint8_t is_log_client_address_valid(void);
 void task_probe_tool(void const *argument);
 
-#if defined(UDP_LOG)
-#define udp_log_printf(fmt, ...) log_printf((log_fn_t)log_udp_data, fmt, ## __VA_ARGS__)
-#define udp_log_hexdump(label, data, len) log_hexdump((log_fn_t)log_udp_data, label, data, len)
-#define udp_log_puts(s) log_puts((log_fn_t)log_udp_data, s)
-#else//#if defined(UDP_LOG)
-#define udp_log_printf(fmt, ...)
-#define udp_log_hexdump(label, data, len)
-#define udp_log_puts(s)
-#endif//#if defined(UDP_LOG)
-
-#endif //_TASK_PROBE_TOOL_H
+#endif //_PROBE_TOOL_H

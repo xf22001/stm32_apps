@@ -6,7 +6,7 @@
  *   文件名称：net_protocol_udp.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月17日 星期一 14时41分21秒
- *   修改日期：2020年02月17日 星期一 14时56分08秒
+ *   修改日期：2020年05月15日 星期五 08时43分18秒
  *   描    述：
  *
  *================================================================*/
@@ -20,7 +20,8 @@
 #include "os_utils.h"
 #include "net_client.h"
 #include "net_protocol.h"
-#include "task_probe_tool.h"
+
+#include "log.h"
 
 static int udp_client_connect(void *ctx)
 {

@@ -6,21 +6,17 @@
  *   文件名称：test_https.c
  *   创 建 者：肖飞
  *   创建日期：2020年01月27日 星期一 12时22分23秒
- *   修改日期：2020年05月14日 星期四 14时47分33秒
+ *   修改日期：2020年05月15日 星期五 08时36分49秒
  *   描    述：
  *
  *================================================================*/
 #include "test_https.h"
 #include "https.h"
-#define UDP_LOG
-#include "task_probe_tool.h"
 #include "mbedtls/platform.h"
 #include <string.h>
 #include <stdio.h>
 
-#define _printf udp_log_printf
-#define _hexdump udp_log_hexdump
-#define _puts udp_log_puts
+#include "log.h"
 
 static HTTP_INFO hi;
 static BOOL verify_cert = FALSE;

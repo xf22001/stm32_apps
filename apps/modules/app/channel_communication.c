@@ -6,18 +6,13 @@
  *   文件名称：channel_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分44秒
- *   修改日期：2020年05月14日 星期四 14时06分26秒
+ *   修改日期：2020年05月15日 星期五 08时38分29秒
  *   描    述：
  *
  *================================================================*/
 #include "channel_communication.h"
 #include <string.h>
 #include "app.h"
-#define UDP_LOG
-#include "task_probe_tool.h"
-
-#define UART_LOG
-#include "uart_debug.h"
 
 #include "auxiliary_function_board.h"
 #include "charger.h"

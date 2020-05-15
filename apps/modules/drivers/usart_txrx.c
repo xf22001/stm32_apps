@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2020年05月14日 星期四 15时49分57秒
+ *   修改日期：2020年05月15日 星期五 08时47分16秒
  *   描    述：
  *
  *================================================================*/
@@ -17,11 +17,6 @@
 #include <stdarg.h>
 
 #include "os_utils.h"
-//#define UDP_LOG
-#include "task_probe_tool.h"
-
-//#define UART_LOG
-#include "uart_debug.h"
 
 #include "log.h"
 

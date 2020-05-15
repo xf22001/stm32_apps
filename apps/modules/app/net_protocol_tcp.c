@@ -6,7 +6,7 @@
  *   文件名称：net_protocol_tcp.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月17日 星期一 14时39分04秒
- *   修改日期：2020年02月17日 星期一 14时55分22秒
+ *   修改日期：2020年05月15日 星期五 08时43分34秒
  *   描    述：
  *
  *================================================================*/
@@ -20,7 +20,7 @@
 #include "os_utils.h"
 #include "net_client.h"
 #include "net_protocol.h"
-#include "task_probe_tool.h"
+#include "log.h"
 
 static int tcp_client_connect(void *ctx)
 {

@@ -6,21 +6,15 @@
  *   文件名称：uart_debug.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月13日 星期三 10时45分00秒
- *   修改日期：2020年05月14日 星期四 14时15分00秒
+ *   修改日期：2020年05月15日 星期五 08时36分23秒
  *   描    述：
  *
  *================================================================*/
-#define UDP_LOG
-#include "task_probe_tool.h"
-
-#define UART_LOG
-#include "uart_debug.h"
 #include "uart_debug_handler.h"
 #include <stdio.h>
 
-#define _printf uart_log_printf
-#define _hexdump uart_log_hexdump
-#define _puts uart_log_puts
+#define LOG_UART
+#include "log.h"
 
 static char buffer[DEBUG_BUFFER_SIZE];
 static uint8_t received = 0;

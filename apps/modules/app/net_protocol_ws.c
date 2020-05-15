@@ -6,7 +6,7 @@
  *   文件名称：net_protocol_ws.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月23日 星期日 12时23分31秒
- *   修改日期：2020年03月20日 星期五 11时36分11秒
+ *   修改日期：2020年05月15日 星期五 08时39分16秒
  *   描    述：
  *
  *================================================================*/
@@ -23,8 +23,8 @@
 #include "net_protocol.h"
 #include "https.h"
 #include "mbedtls/platform.h"
-#define UDP_LOG
-#include "task_probe_tool.h"
+
+#include "log.h"
 
 //static HTTP_INFO hi_instance;
 static BOOL verify_cert = FALSE;

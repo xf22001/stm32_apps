@@ -6,15 +6,14 @@
  *   文件名称：channel_config.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月30日 星期四 09时37分37秒
- *   修改日期：2020年05月01日 星期五 16时48分59秒
+ *   修改日期：2020年05月15日 星期五 08时39分34秒
  *   描    述：
  *
  *================================================================*/
 #include "channel_config.h"
 
 #include "os_utils.h"
-#define UDP_LOG
-#include "task_probe_tool.h"
+#include "log.h"
 #include "main.h"
 #include "auxiliary_function_board.h"
 

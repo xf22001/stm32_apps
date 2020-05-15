@@ -6,20 +6,15 @@
  *   文件名称：bms_multi_data.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月09日 星期四 13时04分55秒
- *   修改日期：2020年05月14日 星期四 14时51分18秒
+ *   修改日期：2020年05月15日 星期五 09时09分39秒
  *   描    述：
  *
  *================================================================*/
 #include "bms_multi_data.h"
 #include <string.h>
-//#define UDP_LOG
-#include "task_probe_tool.h"
-
-//#define UART_LOG
-#include "uart_debug.h"
-
 #include "can.h"
 
+#define LOG_NONE
 #include "log.h"
 
 static int send_bms_multi_request_response(can_info_t *can_info, multi_packets_des_t *multi_packets_des, bms_data_settings_t *settings)
