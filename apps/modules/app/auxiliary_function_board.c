@@ -6,7 +6,7 @@
  *   文件名称：auxiliary_function_board.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月28日 星期二 11时34分17秒
- *   修改日期：2020年05月15日 星期五 08时33分12秒
+ *   修改日期：2020年05月15日 星期五 13时26分02秒
  *   描    述：
  *
  *================================================================*/
@@ -132,6 +132,10 @@ a_f_b_info_t *get_or_alloc_a_f_b_info(channel_info_config_t *channel_info_config
 
 	a_f_b_info->connect_state_index = 0;
 
+	if(a_f_b_info_set_channel_config(a_f_b_info, channel_info_config) != 0) {
+		goto failed;
+	}
+
 	os_status = osMutexWait(a_f_b_info_list_mutex, osWaitForever);
 
 	if(os_status != osOK) {
@@ -142,10 +146,6 @@ a_f_b_info_t *get_or_alloc_a_f_b_info(channel_info_config_t *channel_info_config
 	os_status = osMutexRelease(a_f_b_info_list_mutex);
 
 	if(os_status != osOK) {
-	}
-
-	if(a_f_b_info_set_channel_config(a_f_b_info, channel_info_config) != 0) {
-		goto failed;
 	}
 
 	return a_f_b_info;

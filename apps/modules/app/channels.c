@@ -6,21 +6,23 @@
  *   文件名称：channels.c
  *   创 建 者：肖飞
  *   创建日期：2020年01月02日 星期四 08时53分35秒
- *   修改日期：2020年05月15日 星期五 08时32分54秒
+ *   修改日期：2020年05月15日 星期五 13时42分26秒
  *   描    述：
  *
  *================================================================*/
 #include "channels.h"
 #include "os_utils.h"
+#include <string.h>
 
 #include "log.h"
 
 static LIST_HEAD(channels_info_list);
 osMutexId channels_info_list_mutex = NULL;
 
+static uint32_t error_count = 0;
 static void default_periodic(channels_info_t *channels_info)
 {
-	_printf("%s\n", __func__);
+	_printf("%s error_count:%u\n", __func__, error_count);
 }
 
 static void channels_periodic(channels_info_t *channels_info)
@@ -41,7 +43,7 @@ static int default_handle_channel_event(channel_event_t *channel_event)
 	return ret;
 }
 
-static channels_info_t *get_channels_info(event_pool_t *event_pool)
+static channels_info_t *get_channels_info(channels_info_config_t *channels_info_config)
 {
 	channels_info_t *channels_info = NULL;
 	channels_info_t *channels_info_item = NULL;
@@ -58,7 +60,7 @@ static channels_info_t *get_channels_info(event_pool_t *event_pool)
 
 
 	list_for_each_entry(channels_info_item, &channels_info_list, channels_info_t, list) {
-		if(channels_info_item->event_pool == event_pool) {
+		if(channels_info_item->channels_info_config == channels_info_config) {
 			channels_info = channels_info_item;
 			break;
 		}
@@ -91,25 +93,59 @@ void free_channels_info(channels_info_t *channels_info)
 
 	list_del(&channels_info->list);
 
-	os_free(channels_info);
-
 	os_status = osMutexRelease(channels_info_list_mutex);
 
 	if(os_status != osOK) {
 	}
 
+	if(channels_info->event_pool != NULL) {
+		free_event_pool(channels_info->event_pool);
+	}
+
+	os_free(channels_info);
+
 	return;
 }
 
-channels_info_t *get_or_alloc_channels_info(event_pool_t *event_pool)
+static int channels_set_channels_info_config(channels_info_t *channels_info, channels_info_config_t *channels_info_config)
+{
+	int ret = -1;
+	int i;
+	channels_info->channels_info_config = channels_info_config;
+	event_pool_t *event_pool;
+
+	event_pool = alloc_event_pool();
+
+	if(event_pool == NULL) {
+		return ret;
+	}
+
+	channels_info->event_pool = event_pool;
+
+	for(i = 0; i < CHANNEL_INSTANCES_NUMBER; i++) {
+		channel_info_t *channel_info = channels_info->channel_info + i;
+		channel_info->channel_id = i;
+		channel_info->state = CHANNEL_STATE_IDLE;
+		channel_info->handle_channel_event = default_handle_channel_event;
+	}
+
+	ret = 0;
+
+	return ret;
+}
+
+channels_info_t *get_or_alloc_channels_info(channels_info_config_t *channels_info_config)
 {
 	channels_info_t *channels_info = NULL;
-	uint8_t i;
 	osStatus os_status;
 
-	channels_info = get_channels_info(event_pool);
+	channels_info = get_channels_info(channels_info_config);
 
 	if(channels_info != NULL) {
+		return channels_info;
+	}
+
+	if(channels_info_config == NULL) {
 		return channels_info;
 	}
 
@@ -125,18 +161,10 @@ channels_info_t *get_or_alloc_channels_info(event_pool_t *event_pool)
 	channels_info = (channels_info_t *)os_alloc(sizeof(channels_info_t));
 
 	if(channels_info == NULL) {
-		free_event_pool(event_pool);
 		return channels_info;
 	}
 
-	channels_info->event_pool = event_pool;
-
-	for(i = 0; i < CHANNEL_INSTANCES_NUMBER; i++) {
-		channel_info_t *channel_info = channels_info->channel_info + i;
-		channel_info->channel_id = i;
-		channel_info->state = CHANNEL_STATE_IDLE;
-		channel_info->handle_channel_event = default_handle_channel_event;
-	}
+	memset(channels_info, 0, sizeof(channels_info_t));
 
 	os_status = osMutexWait(channels_info_list_mutex, osWaitForever);
 
@@ -148,6 +176,18 @@ channels_info_t *get_or_alloc_channels_info(event_pool_t *event_pool)
 	os_status = osMutexRelease(channels_info_list_mutex);
 
 	if(os_status != osOK) {
+	}
+
+	if(channels_set_channels_info_config(channels_info, channels_info_config) != 0) {
+		goto failed;
+	}
+
+	return channels_info;
+
+failed:
+
+	if(channels_info != NULL) {
+		free_channels_info(channels_info);
 	}
 
 	return channels_info;
@@ -192,8 +232,13 @@ void channels_process_event(channels_info_t *channels_info)
 
 void task_channels(void const *argument)
 {
-	event_pool_t *event_pool = (event_pool_t *)argument;
-	channels_info_t *channels_info = get_or_alloc_channels_info(event_pool);
+	channels_info_config_t *channels_info_config = (channels_info_config_t *)argument;
+
+	channels_info_t *channels_info = get_or_alloc_channels_info(channels_info_config);
+
+	if(channels_info_config == NULL) {
+		app_panic();
+	}
 
 	if(channels_info == NULL) {
 		app_panic();
@@ -207,12 +252,22 @@ void task_channels(void const *argument)
 	}
 }
 
+int send_channel_event(channels_info_t *channels_info, channel_event_t *channel_event, uint32_t timeout)
+{
+	return event_pool_put_event(channels_info->event_pool, channel_event, timeout);
+}
+
 void task_channel_event(void const *argument)
 {
-	event_pool_t *event_pool = (event_pool_t *)argument;
+	channels_info_config_t *channels_info_config = (channels_info_config_t *)argument;
+	channels_info_t *channels_info = get_or_alloc_channels_info(channels_info_config);
 	uint8_t id = 0;
 
-	if(event_pool == NULL) {
+	if(channels_info_config == NULL) {
+		app_panic();
+	}
+
+	if(channels_info == NULL) {
 		app_panic();
 	}
 
@@ -223,9 +278,10 @@ void task_channel_event(void const *argument)
 			int ret;
 
 			channel_event->channel_id = id;
-			ret = event_pool_put_event(event_pool, channel_event, 0);
+			ret = send_channel_event(channels_info, channel_event, 0);
 
 			if(ret != 0) {
+				error_count++;
 				os_free(channel_event);
 			}
 		}
@@ -236,6 +292,6 @@ void task_channel_event(void const *argument)
 			id = 0;
 		}
 
-		//osDelay(1);
+		osDelay(100);
 	}
 }

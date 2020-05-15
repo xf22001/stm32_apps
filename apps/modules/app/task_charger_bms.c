@@ -1,16 +1,16 @@
 
 
 /*================================================================
- *
- *
- *   文件名称：test_charger_bms.c
+ *   
+ *   
+ *   文件名称：task_charger_bms.c
  *   创 建 者：肖飞
- *   创建日期：2019年10月31日 星期四 14时28分36秒
- *   修改日期：2020年05月07日 星期四 10时12分59秒
+ *   创建日期：2020年05月15日 星期五 13时53分16秒
+ *   修改日期：2020年05月15日 星期五 13时53分49秒
  *   描    述：
  *
  *================================================================*/
-#include "test_charger_bms.h"
+#include "task_charger_bms.h"
 
 #include "os_utils.h"
 
@@ -103,7 +103,7 @@ static void task_bms_response(void const *argument)
 	}
 }
 
-void test_charger_bms(void)
+void task_charger_bms(void)
 {
 	{
 		channel_info_config_t *channel_info_config = get_channel_info_config(0);
