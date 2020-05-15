@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分44秒
- *   修改日期：2020年05月15日 星期五 15时00分51秒
+ *   修改日期：2020年05月15日 星期五 15时49分20秒
  *   描    述：
  *
  *================================================================*/
@@ -276,8 +276,6 @@ static int channel_com_info_set_channel_config(channel_com_info_t *channel_com_i
 	a_f_b_info_t *a_f_b_info;
 	charger_info_t *charger_info;
 
-	channel_com_info->channel_info_config = channel_info_config;
-
 	can_info = get_or_alloc_can_info(channel_info_config->hcan_com);
 
 	if(can_info == NULL) {
@@ -337,6 +335,8 @@ channel_com_info_t *get_or_alloc_channel_com_info(channel_info_config_t *channel
 	}
 
 	memset(channel_com_info, 0, sizeof(channel_com_info_t));
+
+	channel_com_info->channel_info_config = channel_info_config;
 
 	os_status = osMutexWait(channel_com_info_list_mutex, osWaitForever);
 

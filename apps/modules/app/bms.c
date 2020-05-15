@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年05月15日 星期五 13时28分11秒
+ *   修改日期：2020年05月15日 星期五 15时50分52秒
  *   描    述：
  *
  *================================================================*/
@@ -974,8 +974,6 @@ static int bms_info_set_bms_info_config(bms_info_t *bms_info, bms_info_config_t 
 	modbus_slave_info_t *modbus_slave_info;
 	osThreadDef(task_modbus_slave, task_modbus_slave, osPriorityNormal, 0, 128 * 3);
 
-	bms_info->bms_info_config = bms_info_config;
-
 	can_info = get_or_alloc_can_info(bms_info_config->hcan);
 
 	if(can_info == NULL) {
@@ -1048,6 +1046,8 @@ bms_info_t *get_or_alloc_bms_info(bms_info_config_t *bms_info_config)
 
 	memset(bms_info, 0, sizeof(bms_info_t));
 
+	bms_info->bms_info_config = bms_info_config;
+
 	index = get_first_value_index(eeprom_modbus_data_bitmap, 0);
 
 	if(index == -1) {
@@ -1066,7 +1066,6 @@ bms_info_t *get_or_alloc_bms_info(bms_info_config_t *bms_info_config)
 
 	bms_info->state = BMS_STATE_IDLE;
 	bms_info->handle_mutex = osMutexCreate(osMutex(handle_mutex));
-	bms_info->bms_info_config = bms_info_config;
 
 	bms_info->gun_on_off_state = 0;
 	bms_info->bms_gun_connect = 0;

@@ -6,7 +6,7 @@
  *   文件名称：auxiliary_function_board.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月28日 星期二 11时34分17秒
- *   修改日期：2020年05月15日 星期五 14时49分25秒
+ *   修改日期：2020年05月15日 星期五 15时50分02秒
  *   描    述：
  *
  *================================================================*/
@@ -81,8 +81,6 @@ static int a_f_b_info_set_channel_config(a_f_b_info_t *a_f_b_info, channel_info_
 	int ret = -1;
 	uart_info_t *uart_info;
 
-	a_f_b_info->channel_info_config = channel_info_config;
-
 	uart_info = get_or_alloc_uart_info(channel_info_config->huart_a_f_b);
 
 	if(uart_info == NULL) {
@@ -123,6 +121,8 @@ a_f_b_info_t *get_or_alloc_a_f_b_info(channel_info_config_t *channel_info_config
 	}
 
 	memset(a_f_b_info, 0, sizeof(a_f_b_info_t));
+
+	a_f_b_info->channel_info_config = channel_info_config;
 
 	for(i = 0; i < A_F_B_CMD_TOTAL; i++) {
 		a_f_b_info->cmd_ctx[i].state = A_F_B_STATE_IDLE;

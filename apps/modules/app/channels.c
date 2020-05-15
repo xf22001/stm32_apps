@@ -6,7 +6,7 @@
  *   文件名称：channels.c
  *   创 建 者：肖飞
  *   创建日期：2020年01月02日 星期四 08时53分35秒
- *   修改日期：2020年05月15日 星期五 13时42分26秒
+ *   修改日期：2020年05月15日 星期五 15时41分41秒
  *   描    述：
  *
  *================================================================*/
@@ -19,10 +19,9 @@
 static LIST_HEAD(channels_info_list);
 osMutexId channels_info_list_mutex = NULL;
 
-static uint32_t error_count = 0;
 static void default_periodic(channels_info_t *channels_info)
 {
-	_printf("%s error_count:%u\n", __func__, error_count);
+	//_printf("%s\n", __func__);
 }
 
 static void channels_periodic(channels_info_t *channels_info)
@@ -111,7 +110,6 @@ static int channels_set_channels_info_config(channels_info_t *channels_info, cha
 {
 	int ret = -1;
 	int i;
-	channels_info->channels_info_config = channels_info_config;
 	event_pool_t *event_pool;
 
 	event_pool = alloc_event_pool();
@@ -165,6 +163,8 @@ channels_info_t *get_or_alloc_channels_info(channels_info_config_t *channels_inf
 	}
 
 	memset(channels_info, 0, sizeof(channels_info_t));
+
+	channels_info->channels_info_config = channels_info_config;
 
 	os_status = osMutexWait(channels_info_list_mutex, osWaitForever);
 
@@ -273,6 +273,7 @@ void task_channel_event(void const *argument)
 
 	while(1) {
 		channel_event_t *channel_event = (channel_event_t *)os_alloc(sizeof(channel_event_t));
+		static uint32_t error_count = 0;
 
 		if(channel_event != NULL) {
 			int ret;
@@ -282,6 +283,7 @@ void task_channel_event(void const *argument)
 
 			if(ret != 0) {
 				error_count++;
+				_printf("error_count:%u\n", error_count);
 				os_free(channel_event);
 			}
 		}
@@ -292,6 +294,6 @@ void task_channel_event(void const *argument)
 			id = 0;
 		}
 
-		osDelay(100);
+		osDelay(1000);
 	}
 }

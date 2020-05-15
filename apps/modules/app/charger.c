@@ -6,7 +6,7 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年05月15日 星期五 13时27分17秒
+ *   修改日期：2020年05月15日 星期五 15时47分43秒
  *   描    述：
  *
  *================================================================*/
@@ -205,8 +205,6 @@ static int charger_info_set_channel_config(charger_info_t *charger_info, channel
 	a_f_b_info_t *a_f_b_info;
 	channel_com_info_t *channel_com_info;
 
-	charger_info->channel_info_config = channel_info_config;
-
 	can_info = get_or_alloc_can_info(channel_info_config->hcan_charger);
 
 	if(can_info == NULL) {
@@ -263,6 +261,8 @@ charger_info_t *get_or_alloc_charger_info(channel_info_config_t *channel_info_co
 	}
 
 	memset(charger_info, 0, sizeof(charger_info_t));
+
+	charger_info->channel_info_config = channel_info_config;
 
 	charger_info->gb = BMS_STARDARD_2015;
 
