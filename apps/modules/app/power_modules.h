@@ -6,7 +6,7 @@
  *   文件名称：power_modules.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时37分07秒
- *   修改日期：2020年05月15日 星期五 17时31分12秒
+ *   修改日期：2020年05月16日 星期六 09时48分40秒
  *   描    述：
  *
  *================================================================*/
@@ -28,6 +28,7 @@ extern "C"
 #endif
 
 #define POWER_MODULES_SIZE 20
+#define POWER_MODULES_CMD_STATE_SIZE 3
 
 typedef enum {
 	POWER_MODULE_TYPE_UNKNOW = 0,
@@ -65,6 +66,7 @@ typedef struct {
 
 	power_module_type_t power_module_type;
 	void *power_modules_handler;
+	uint8_t power_modules_valid;//初始化是否成功
 	power_module_info_t power_module_info[POWER_MODULES_SIZE];
 } power_modules_info_t;
 
@@ -74,6 +76,8 @@ typedef void (*query_status_t)(power_modules_info_t *power_modules_info, int mod
 typedef void (*query_a_line_input_voltage_t)(power_modules_info_t *power_modules_info, int module_id);
 typedef void (*query_b_line_input_voltage_t)(power_modules_info_t *power_modules_info, int module_id);
 typedef void (*query_c_line_input_voltage_t)(power_modules_info_t *power_modules_info, int module_id);
+typedef void (*power_modules_init_t)(power_modules_info_t *power_modules_info);
+typedef void (*power_modules_request_t)(power_modules_info_t *power_modules_info);
 typedef void (*power_modules_decode_t)(power_modules_info_t *power_modules_info);
 
 typedef struct {
@@ -84,6 +88,8 @@ typedef struct {
 	query_a_line_input_voltage_t query_a_line_input_voltage;
 	query_b_line_input_voltage_t query_b_line_input_voltage;
 	query_c_line_input_voltage_t query_c_line_input_voltage;
+	power_modules_init_t power_modules_init;
+	power_modules_request_t power_modules_request;
 	power_modules_decode_t power_modules_decode;
 } power_modules_handler_t;
 
@@ -96,5 +102,7 @@ void query_status(power_modules_info_t *power_modules_info, int module_id);
 void query_a_line_input_voltage(power_modules_info_t *power_modules_info, int module_id);
 void query_b_line_input_voltage(power_modules_info_t *power_modules_info, int module_id);
 void query_c_line_input_voltage(power_modules_info_t *power_modules_info, int module_id);
-void power_modules_decode(power_modules_info_t *power_modules_info, can_rx_msg_t *can_rx_msg);
+void power_modules_init(power_modules_info_t *power_modules_info);
+void power_modules_request(power_modules_info_t *power_modules_info);
+void power_modules_decode(power_modules_info_t *power_modules_info);
 #endif //_POWER_MODULES_H
