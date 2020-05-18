@@ -6,7 +6,7 @@
  *   文件名称：os_utils.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分36秒
- *   修改日期：2020年05月18日 星期一 09时12分05秒
+ *   修改日期：2020年05月18日 星期一 13时25分16秒
  *   描    述：
  *
  *================================================================*/
@@ -79,7 +79,7 @@ static inline uint16_t get_u8_h_from_u16(uint16_t v)
 	return u_uint16_bytes.s.byte1;
 }
 
-static inline uint16_t get_u32_from_u8_b0123(uint8_t b0, uint8_t b1, uint8_t b2, uint8_t b3)
+static inline uint32_t get_u32_from_u8_b0123(uint8_t b0, uint8_t b1, uint8_t b2, uint8_t b3)
 {
 	u_uint32_bytes_t u_uint32_bytes;
 
@@ -90,6 +90,42 @@ static inline uint16_t get_u32_from_u8_b0123(uint8_t b0, uint8_t b1, uint8_t b2,
 	u_uint32_bytes.s.byte3 = b3;
 
 	return u_uint32_bytes.v;
+}
+
+static inline uint8_t get_u8_b0_from_u32(uint32_t v)
+{
+	u_uint32_bytes_t u_uint32_bytes;
+
+	u_uint32_bytes.v = v;
+
+	return u_uint32_bytes.s.byte0;
+}
+
+static inline uint8_t get_u8_b1_from_u32(uint32_t v)
+{
+	u_uint32_bytes_t u_uint32_bytes;
+
+	u_uint32_bytes.v = v;
+
+	return u_uint32_bytes.s.byte1;
+}
+
+static inline uint8_t get_u8_b2_from_u32(uint32_t v)
+{
+	u_uint32_bytes_t u_uint32_bytes;
+
+	u_uint32_bytes.v = v;
+
+	return u_uint32_bytes.s.byte2;
+}
+
+static inline uint8_t get_u8_b3_from_u32(uint32_t v)
+{
+	u_uint32_bytes_t u_uint32_bytes;
+
+	u_uint32_bytes.v = v;
+
+	return u_uint32_bytes.s.byte3;
 }
 
 typedef int (*log_fn_t)(const char *buffer, size_t size);

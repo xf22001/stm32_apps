@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分44秒
- *   修改日期：2020年05月18日 星期一 09时10分52秒
+ *   修改日期：2020年05月18日 星期一 13时20分44秒
  *   描    述：
  *
  *================================================================*/
@@ -449,6 +449,19 @@ typedef struct {
 	uint8_t cmd;//173
 	uint8_t unused[7];
 } cmd_173_t;//辅板回复
+
+typedef int (*channel_com_request_callback_t)(channel_com_info_t *channel_com_info);
+typedef int (*channel_com_response_callback_t)(channel_com_info_t *channel_com_info);
+
+typedef struct {
+	channel_com_cmd_t cmd;
+	uint32_t request_period;
+	uint8_t request_code;
+	channel_com_request_callback_t request_callback;
+	uint8_t response_code;
+	channel_com_response_callback_t response_callback;
+} channel_com_command_item_t;
+
 
 static LIST_HEAD(channel_com_info_list);
 static osMutexId channel_com_info_list_mutex = NULL;
@@ -2213,6 +2226,8 @@ void task_channel_com_request(void const *argument)
 			if(channel_com_info->cmd_ctx[item->cmd].state != CHANNEL_COM_STATE_REQUEST) {
 				continue;
 			}
+
+			channel_com_info->can_tx_msg.DLC = 8;
 
 			_printf("request cmd %d, retry:%d\n",
 			        item->request_code,

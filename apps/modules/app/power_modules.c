@@ -6,7 +6,7 @@
  *   文件名称：power_modules.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时34分29秒
- *   修改日期：2020年05月16日 星期六 21时22分05秒
+ *   修改日期：2020年05月18日 星期一 13时04分27秒
  *   描    述：
  *
  *================================================================*/
@@ -273,46 +273,64 @@ void query_c_line_input_voltage(power_modules_info_t *power_modules_info, int mo
 
 void power_modules_init(power_modules_info_t *power_modules_info)
 {
+	int ret = -1;
 	power_modules_handler_t *power_modules_handler = (power_modules_handler_t *)power_modules_info->power_modules_handler;
 
 	if(power_modules_handler == NULL) {
-		return;
+		return ret;
 	}
 
 	if(power_modules_handler->power_modules_init == NULL) {
-		return;
+		return ret;
 	}
 
-	power_modules_handler->power_modules_init(power_modules_info);
+	power_modules_handler->power_modules_valid = 0;
+
+	ret = power_modules_handler->power_modules_init(power_modules_info);
+
+	return ret;
 }
 
 void power_modules_request(power_modules_info_t *power_modules_info)
 {
+	int ret = -1;
 	power_modules_handler_t *power_modules_handler = (power_modules_handler_t *)power_modules_info->power_modules_handler;
 
 	if(power_modules_handler == NULL) {
-		return;
+		return ret;
 	}
 
 	if(power_modules_handler->power_modules_request == NULL) {
-		return;
+		return ret;
 	}
 
-	power_modules_handler->power_modules_request(power_modules_info);
+	if(power_modules_handler->power_modules_valid == 0) {
+		return ret;
+	}
+
+	ret = power_modules_handler->power_modules_request(power_modules_info);
+	return ret;
 }
 
-void power_modules_decode(power_modules_info_t *power_modules_info)
+int power_modules_response(power_modules_info_t *power_modules_info)
 {
+	int ret = -1;
 	power_modules_handler_t *power_modules_handler = (power_modules_handler_t *)power_modules_info->power_modules_handler;
 
 	if(power_modules_handler == NULL) {
-		return;
+		return ret;
 	}
 
-	if(power_modules_handler->power_modules_decode == NULL) {
-		return;
+	if(power_modules_handler->power_modules_response == NULL) {
+		return ret;
 	}
 
-	power_modules_handler->power_modules_decode(power_modules_info);
+	if(power_modules_handler->power_modules_valid == 0) {
+		return ret;
+	}
+
+	ret = power_modules_handler->power_modules_response(power_modules_info);
+
+	return ret;
 }
 

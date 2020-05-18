@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.h
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分48秒
- *   修改日期：2020年05月18日 星期一 09时11分02秒
+ *   修改日期：2020年05月18日 星期一 11时11分22秒
  *   描    述：
  *
  *================================================================*/
@@ -131,18 +131,6 @@ typedef struct {
 	callback_item_t charger_info_report_status_cb;
 
 } channel_com_info_t;
-
-typedef int (*channel_com_request_callback_t)(channel_com_info_t *channel_com_info);
-typedef int (*channel_com_response_callback_t)(channel_com_info_t *channel_com_info);
-
-typedef struct {
-	channel_com_cmd_t cmd;
-	uint32_t request_period;
-	uint8_t request_code;
-	channel_com_request_callback_t request_callback;
-	uint8_t response_code;
-	channel_com_response_callback_t response_callback;
-} channel_com_command_item_t;
 
 void free_channel_com_info(channel_com_info_t *channel_com_info);
 channel_com_info_t *get_or_alloc_channel_com_info(channel_info_config_t *channel_info_config);

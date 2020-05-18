@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_increase.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 17时36分29秒
- *   修改日期：2020年05月16日 星期六 09时45分06秒
+ *   修改日期：2020年05月18日 星期一 11时23分47秒
  *   描    述：
  *
  *================================================================*/
@@ -22,5 +22,5 @@ power_modules_handler_t power_modules_handler_increase = {
 	.query_c_line_input_voltage = NULL,
 	.power_modules_init = NULL,
 	.power_modules_request = NULL,
-	.power_modules_decode = NULL,
+	.power_modules_response = NULL,
 };

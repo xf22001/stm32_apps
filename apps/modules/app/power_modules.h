@@ -6,7 +6,7 @@
  *   文件名称：power_modules.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时37分07秒
- *   修改日期：2020年05月16日 星期六 09时48分40秒
+ *   修改日期：2020年05月18日 星期一 13时30分50秒
  *   描    述：
  *
  *================================================================*/
@@ -28,7 +28,8 @@ extern "C"
 #endif
 
 #define POWER_MODULES_SIZE 20
-#define POWER_MODULES_CMD_STATE_SIZE 3
+#define POWER_MODULES_CMD_STATE_SIZE 10
+#define CONNECT_STATE_SIZE 10
 
 typedef enum {
 	POWER_MODULE_TYPE_UNKNOW = 0,
@@ -50,19 +51,37 @@ typedef struct {
           uint16_t setting_onoff : 1;//1:设置关机 0:设置开机
 } power_module_status_t;
 
+typedef enum {
+	MODULE_CMD_STATE_IDLE = 0,
+	MODULE_CMD_STATE_REQUEST,
+	MODULE_CMD_STATE_RESPONSE,
+	MODULE_CMD_STATE_ERROR,
+} module_cmd_state_t;
+
+typedef struct {
+	channel_com_state_t state;
+	uint32_t stamp;
+	uint32_t retry;
+} module_cmd_ctx_t;
+
 typedef struct {
 	uint16_t setting_voltage;//模块设置输出电压 0.1v
-	uint16_t output_voltage;//模块输出电压 0.1v
 	uint16_t setting_current;//模块设置输出电流 0.1a
+	uint16_t output_voltage;//模块输出电压 0.1v
 	uint16_t output_current;//模块输出电流 0.1a
+
 	power_module_status_t power_module_status;//模块状态
-	uint16_t connect_state;//连接状态
+
+	module_cmd_ctx_t module_cmd_ctx[POWER_MODULES_CMD_STATE_SIZE];
+	uint8_t connect_state[CONNECT_STATE_SIZE];//连接状态
+	uint8_t connect_state_index;//连接状态索引
 } power_module_info_t;
 
 typedef struct {
 	struct list_head list;
 	can_info_t *can_info;
 	channels_info_config_t *channels_info_config;
+	can_tx_msg_t can_tx_msg;
 
 	power_module_type_t power_module_type;
 	void *power_modules_handler;
@@ -76,9 +95,9 @@ typedef void (*query_status_t)(power_modules_info_t *power_modules_info, int mod
 typedef void (*query_a_line_input_voltage_t)(power_modules_info_t *power_modules_info, int module_id);
 typedef void (*query_b_line_input_voltage_t)(power_modules_info_t *power_modules_info, int module_id);
 typedef void (*query_c_line_input_voltage_t)(power_modules_info_t *power_modules_info, int module_id);
-typedef void (*power_modules_init_t)(power_modules_info_t *power_modules_info);
-typedef void (*power_modules_request_t)(power_modules_info_t *power_modules_info);
-typedef void (*power_modules_decode_t)(power_modules_info_t *power_modules_info);
+typedef int (*power_modules_init_t)(power_modules_info_t *power_modules_info);
+typedef int (*power_modules_request_t)(power_modules_info_t *power_modules_info);
+typedef int (*power_modules_response_t)(power_modules_info_t *power_modules_info);
 
 typedef struct {
 	power_module_type_t power_module_type;
@@ -90,7 +109,7 @@ typedef struct {
 	query_c_line_input_voltage_t query_c_line_input_voltage;
 	power_modules_init_t power_modules_init;
 	power_modules_request_t power_modules_request;
-	power_modules_decode_t power_modules_decode;
+	power_modules_response_t power_modules_response;
 } power_modules_handler_t;
 
 void free_power_modules_info(power_modules_info_t *power_modules_info);
@@ -102,7 +121,7 @@ void query_status(power_modules_info_t *power_modules_info, int module_id);
 void query_a_line_input_voltage(power_modules_info_t *power_modules_info, int module_id);
 void query_b_line_input_voltage(power_modules_info_t *power_modules_info, int module_id);
 void query_c_line_input_voltage(power_modules_info_t *power_modules_info, int module_id);
-void power_modules_init(power_modules_info_t *power_modules_info);
-void power_modules_request(power_modules_info_t *power_modules_info);
-void power_modules_decode(power_modules_info_t *power_modules_info);
+int power_modules_init(power_modules_info_t *power_modules_info);
+int power_modules_request(power_modules_info_t *power_modules_info);
+int power_modules_response(power_modules_info_t *power_modules_info);
 #endif //_POWER_MODULES_H
