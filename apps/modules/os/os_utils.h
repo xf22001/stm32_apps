@@ -6,7 +6,7 @@
  *   文件名称：os_utils.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分36秒
- *   修改日期：2020年03月20日 星期五 11时11分14秒
+ *   修改日期：2020年05月18日 星期一 09时12分05秒
  *   描    述：
  *
  *================================================================*/
@@ -49,6 +49,48 @@ typedef union
   uint16_bytes_t s;
   uint16_t v;
 } u_uint16_bytes_t;
+
+static inline uint16_t get_u16_from_u8_lh(uint8_t l, uint8_t h)
+{
+	u_uint16_bytes_t u_uint16_bytes;
+
+	u_uint16_bytes.v = 0;
+	u_uint16_bytes.s.byte0 = l;
+	u_uint16_bytes.s.byte1 = h;
+
+	return u_uint16_bytes.v;
+}
+
+static inline uint16_t get_u8_l_from_u16(uint16_t v)
+{
+	u_uint16_bytes_t u_uint16_bytes;
+
+	u_uint16_bytes.v = v;
+
+	return u_uint16_bytes.s.byte0;
+}
+
+static inline uint16_t get_u8_h_from_u16(uint16_t v)
+{
+	u_uint16_bytes_t u_uint16_bytes;
+
+	u_uint16_bytes.v = v;
+
+	return u_uint16_bytes.s.byte1;
+}
+
+static inline uint16_t get_u32_from_u8_b0123(uint8_t b0, uint8_t b1, uint8_t b2, uint8_t b3)
+{
+	u_uint32_bytes_t u_uint32_bytes;
+
+	u_uint32_bytes.v = 0;
+	u_uint32_bytes.s.byte0 = b0;
+	u_uint32_bytes.s.byte1 = b1;
+	u_uint32_bytes.s.byte2 = b2;
+	u_uint32_bytes.s.byte3 = b3;
+
+	return u_uint32_bytes.v;
+}
 
 typedef int (*log_fn_t)(const char *buffer, size_t size);
 
