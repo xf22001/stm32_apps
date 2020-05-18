@@ -6,7 +6,7 @@
  *   文件名称：charger.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分46秒
- *   修改日期：2020年05月11日 星期一 14时27分11秒
+ *   修改日期：2020年05月18日 星期一 17时12分34秒
  *   描    述：
  *
  *================================================================*/
@@ -44,6 +44,14 @@ typedef enum {
 	CHARGER_STATE_CST,
 	CHARGER_STATE_CSD_CEM,
 } charger_state_t;
+
+typedef enum {
+	IDLE_OP_STATE_NONE = 0,
+	IDLE_OP_STATE_GUN_UNLOCK,
+	IDLE_OP_STATE_IDLE,
+	IDLE_OP_STATE_GUN_LOCK,
+	IDLE_OP_STATE_AUXILLIARY_POWER_ON,
+} idle_op_state_t;
 
 typedef enum {
 	CHM_OP_STATE_NONE = 0,
@@ -114,8 +122,12 @@ typedef struct {
 	uint32_t send_stamp_1;
 	uint32_t start_send_cst_stamp;
 
-	charger_op_ctx_t charger_op_ctx;
+	uint8_t bms_start_enable;
 
+	charger_op_ctx_t charger_op_ctx;
+	charger_op_ctx_t charger_op_ctx_channel_com;
+
+	idle_op_state_t idle_op_state;
 	chm_op_state_t chm_op_state;
 	cro_op_state_t cro_op_state;
 	csd_cem_op_state_t csd_cem_op_state;
@@ -186,6 +198,7 @@ typedef enum {
 	CHARGER_INFO_STATUS_BCL_TIMEOUT,
 	CHARGER_INFO_STATUS_BCS_TIMEOUT,
 	CHARGER_INFO_STATUS_CSD_CEM_OP_STATE_DISCHARGE_TIMEOUT,
+	CHARGER_INFO_STATUS_CST,
 	CHARGER_INFO_STATUS_BRM_RECEIVED,
 	CHARGER_INFO_STATUS_BCP_RECEIVED,
 	CHARGER_INFO_STATUS_BCL_RECEIVED,
@@ -213,7 +226,7 @@ void set_charger_state_locked(charger_info_t *charger_info, charger_state_t stat
 void charger_handle_request(charger_info_t *charger_info);
 void charger_handle_response(charger_info_t *charger_info);
 void set_auxiliary_power_state(charger_info_t *charger_info, uint8_t state);
-void set_gun_lock_state(charger_info_t *charger_info, uint8_t state);
+int set_gun_lock_state(charger_info_t *charger_info, uint8_t state, charger_op_ctx_t *charger_op_ctx);
 void set_power_output_enable(charger_info_t *charger_info, uint8_t state);
 int discharge(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx);
 int precharge(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx);

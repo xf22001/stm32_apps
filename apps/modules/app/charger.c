@@ -6,7 +6,7 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年05月15日 星期五 15时47分43秒
+ *   修改日期：2020年05月18日 星期一 16时11分13秒
  *   描    述：
  *
  *================================================================*/
@@ -458,21 +458,43 @@ void set_auxiliary_power_state(charger_info_t *charger_info, uint8_t state)
 	_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
 }
 
-void set_gun_lock_state(charger_info_t *charger_info, uint8_t state)
+int set_gun_lock_state(charger_info_t *charger_info, uint8_t state, charger_op_ctx_t *charger_op_ctx)
 {
+	int ret = 1;
+	uint32_t ticks = osKernelSysTick();
+
+	GPIO_TypeDef *gpio_port = (state == 0) ? charger_info->channel_info_config->gpio_port_gun_lock :
+	                          charger_info->channel_info_config->gpio_port_gun_unlock;
+	uint16_t gpio_pin = (state == 0) ? charger_info->channel_info_config->gpio_pin_gun_lock :
+	                    charger_info->channel_info_config->gpio_pin_gun_unlock;
+
 	charger_info->gun_lock_state = state;
 
-	if(state == 0) {
-		HAL_GPIO_WritePin(charger_info->channel_info_config->gpio_port_gun_lock,
-		                  charger_info->channel_info_config->gpio_pin_gun_lock,
-		                  GPIO_PIN_RESET);
-	} else {
-		HAL_GPIO_WritePin(charger_info->channel_info_config->gpio_port_gun_lock,
-		                  charger_info->channel_info_config->gpio_pin_gun_lock,
-		                  GPIO_PIN_SET);
+
+	switch(charger_op_ctx->state) {
+		case 0: {
+			HAL_GPIO_WritePin(gpio_port, gpio_pin, GPIO_PIN_SET);
+			charger_op_ctx->state = 1;
+			charger_op_ctx->stamp = ticks;
+		}
+		break;
+
+		case 1: {
+			if(ticks - charger_op_ctx->stamp >= 200) {
+				HAL_GPIO_WritePin(gpio_port, gpio_pin, GPIO_PIN_RESET);
+				ret = 0;
+			}
+		}
+		break;
+
+		default:
+			break;
 	}
 
-	_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
+
+	_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
+
+	return ret;
 }
 
 void set_power_output_enable(charger_info_t *charger_info, uint8_t state)
@@ -484,12 +506,12 @@ void set_power_output_enable(charger_info_t *charger_info, uint8_t state)
 	}
 
 	if(state == 0) {
-		HAL_GPIO_WritePin(charger_info->channel_info_config->gpio_port_power_output,
-		                  charger_info->channel_info_config->gpio_pin_power_output,
+		HAL_GPIO_WritePin(charger_info->channel_info_config->gpio_port_power_output_enable,
+		                  charger_info->channel_info_config->gpio_pin_power_output_enable,
 		                  GPIO_PIN_RESET);
 	} else {
-		HAL_GPIO_WritePin(charger_info->channel_info_config->gpio_port_power_output,
-		                  charger_info->channel_info_config->gpio_pin_power_output,
+		HAL_GPIO_WritePin(charger_info->channel_info_config->gpio_port_power_output_enable,
+		                  charger_info->channel_info_config->gpio_pin_power_output_enable,
 		                  GPIO_PIN_SET);
 	}
 
@@ -758,8 +780,8 @@ static uint8_t get_gun_connect_state(charger_info_t *charger_info)
 		return 1;
 	}
 
-	GPIO_PinState state = HAL_GPIO_ReadPin(charger_info->channel_info_config->gpio_port_gun,
-	                                       charger_info->channel_info_config->gpio_pin_gun);
+	GPIO_PinState state = HAL_GPIO_ReadPin(charger_info->channel_info_config->gpio_port_gun_state,
+	                                       charger_info->channel_info_config->gpio_pin_gun_state);
 
 	//_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
 

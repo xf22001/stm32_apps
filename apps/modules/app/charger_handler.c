@@ -6,7 +6,7 @@
  *   文件名称：charger_handler.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时18分42秒
- *   修改日期：2020年05月15日 星期五 08时34分27秒
+ *   修改日期：2020年05月18日 星期一 17时32分40秒
  *   描    述：
  *
  *================================================================*/
@@ -77,10 +77,7 @@ static int prepare_state_idle(charger_info_t *charger_info)
 
 	charger_info->stamp = ticks;
 
-	set_auxiliary_power_state(charger_info, 0);
-	set_gun_lock_state(charger_info, 0);
-
-	charger_info->bms_connect_retry = 0;
+	charger_info->idle_op_state = IDLE_OP_STATE_NONE;
 
 	return ret;
 }
@@ -88,10 +85,63 @@ static int prepare_state_idle(charger_info_t *charger_info)
 static int handle_state_idle_request(charger_info_t *charger_info)
 {
 	int ret = 0;
-	uint32_t ticks = osKernelSysTick();
+	int op_ret = 0;
 
-	if(ticks - charger_info->stamp >= BMS_GENERIC_TIMEOUT) {
-		set_charger_state(charger_info, CHARGER_STATE_CHM);//?to be remove
+	switch(charger_info->idle_op_state) {
+		case IDLE_OP_STATE_NONE: {
+			charger_info->bms_connect_retry = 0;
+			set_auxiliary_power_state(charger_info, 0);
+
+			charger_info->charger_op_ctx.state = 0;
+			charger_info->idle_op_state = IDLE_OP_STATE_GUN_UNLOCK;
+			_printf("IDLE_OP_STATE_NONE done!\n");
+		}
+		break;
+
+		case IDLE_OP_STATE_GUN_UNLOCK: {
+			op_ret = set_gun_lock_state(charger_info, 0, &charger_info->charger_op_ctx);
+
+			if(op_ret == 0) {
+				charger_info->idle_op_state = IDLE_OP_STATE_IDLE;
+				_printf("IDLE_OP_STATE_GUN_UNLOCK done!\n");
+			}
+		}
+		break;
+
+		case IDLE_OP_STATE_IDLE: {
+			charger_info->charger_op_ctx.state = 0;
+
+			if((charger_info->gun_connect_state == 1) &&
+			   (charger_info->bms_start_enable == 1)) {
+				charger_info->idle_op_state = IDLE_OP_STATE_GUN_LOCK;
+				_printf("IDLE_OP_STATE_IDLE done!\n");
+			} else {
+				//_printf("IDLE_OP_STATE_IDLE!\n");
+			}
+		}
+		break;
+
+		case IDLE_OP_STATE_GUN_LOCK: {
+			op_ret = set_gun_lock_state(charger_info, 0, &charger_info->charger_op_ctx);
+
+			if(op_ret == 0) {
+				charger_info->idle_op_state = IDLE_OP_STATE_AUXILLIARY_POWER_ON;
+				_printf("IDLE_OP_STATE_GUN_LOCK done!\n");
+			}
+		}
+		break;
+
+		case IDLE_OP_STATE_AUXILLIARY_POWER_ON: {
+			set_auxiliary_power_state(charger_info, 1);
+			set_charger_state(charger_info, CHARGER_STATE_CHM);
+			_printf("IDLE_OP_STATE_AUXILLIARY_POWER_ON done!\n");
+		}
+		break;
+
+		default: {
+			_printf("%s:%s:%d!\n", __FILE__, __func__, __LINE__);
+		}
+		break;
 	}
 
 	return ret;
@@ -116,9 +166,6 @@ static int prepare_state_chm(charger_info_t *charger_info)
 	charger_info->bst_received = 0;
 
 	charger_info->chm_op_state = CHM_OP_STATE_NONE;
-
-	set_gun_lock_state(charger_info, 1);
-	set_auxiliary_power_state(charger_info, 1);
 
 	return ret;
 }
@@ -993,6 +1040,8 @@ static int prepare_state_cst(charger_info_t *charger_info)
 	charger_info->start_send_cst_stamp = ticks;
 
 	charger_info->bsd_received = 0;
+
+	charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_CST);
 
 	return ret;
 }

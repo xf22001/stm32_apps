@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分44秒
- *   修改日期：2020年05月18日 星期一 13时20分44秒
+ *   修改日期：2020年05月18日 星期一 17时22分53秒
  *   描    述：
  *
  *================================================================*/
@@ -306,7 +306,6 @@ typedef struct {
 	uint8_t cmd;//151
 	uint8_t unused[7];
 } cmd_151_t;//关闭辅板输出继电器
-
 
 typedef struct {
 	uint8_t cmd;//60
@@ -669,6 +668,11 @@ static void charger_info_report_status_cb(void *fn_ctx, void *chain_ctx)
 		}
 		break;
 
+		case CHARGER_INFO_STATUS_CST: {
+			channel_com_info->cmd_ctx[CHANNEL_COM_CMD_30_130].state = CHANNEL_COM_STATE_REQUEST;
+		}
+		break;
+
 		case CHARGER_INFO_STATUS_BRM_RECEIVED: {
 			channel_com_info->cmd_ctx[CHANNEL_COM_CMD_5_105].available = 1;
 			channel_com_info->cmd_ctx[CHANNEL_COM_CMD_7_107].available = 1;
@@ -940,7 +944,9 @@ static channel_com_command_item_t channel_com_command_item_1_101 = {
 static int request_2_102(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
 
+	charger_info->bms_start_enable = 1;
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_2_102].state = CHANNEL_COM_STATE_IDLE;
 
 	ret = 0;
@@ -1470,8 +1476,14 @@ static channel_com_command_item_t channel_com_command_item_21_121 = {
 static int request_22_122(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
+	int op_ret = 0;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
 
-	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_22_122].state = CHANNEL_COM_STATE_IDLE;
+	op_ret = set_gun_lock_state(charger_info, 0, &charger_info->charger_op_ctx_channel_com);
+
+	if(op_ret == 0) {
+		channel_com_info->cmd_ctx[CHANNEL_COM_CMD_22_122].state = CHANNEL_COM_STATE_IDLE;
+	}
 
 	ret = 0;
 
@@ -1481,11 +1493,17 @@ static int request_22_122(channel_com_info_t *channel_com_info)
 static int response_22_122(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
-
+	int op_ret = 0;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
 	//解除辅板电子锁
 
-	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_22_122].state = CHANNEL_COM_STATE_REQUEST;
-	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_22_122].retry = 0;
+	charger_info->charger_op_ctx_channel_com.state = 0;
+	op_ret = set_gun_lock_state(charger_info, 0, &charger_info->charger_op_ctx_channel_com);
+
+	if(op_ret == 1) {
+		channel_com_info->cmd_ctx[CHANNEL_COM_CMD_22_122].state = CHANNEL_COM_STATE_REQUEST;
+		channel_com_info->cmd_ctx[CHANNEL_COM_CMD_22_122].retry = 0;
+	}
 
 	ret = 0;
 	return ret;
@@ -1578,8 +1596,10 @@ static int request_50_150(channel_com_info_t *channel_com_info)
 static int response_50_150(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
 
 	//发送停机命令
+	charger_info->bms_start_enable = 0;
 
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_50_150].state = CHANNEL_COM_STATE_REQUEST;
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_50_150].retry = 0;
@@ -2229,7 +2249,8 @@ void task_channel_com_request(void const *argument)
 
 			channel_com_info->can_tx_msg.DLC = 8;
 
-			_printf("request cmd %d, retry:%d\n",
+			_printf("%s:%s:%d request cmd %d, retry:%d\n",
+			        __FILE__, __func__, __LINE__,
 			        item->request_code,
 			        channel_com_info->cmd_ctx[item->cmd].retry);
 
