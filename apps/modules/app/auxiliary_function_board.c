@@ -6,12 +6,13 @@
  *   文件名称：auxiliary_function_board.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月28日 星期二 11时34分17秒
- *   修改日期：2020年05月15日 星期五 15时50分02秒
+ *   修改日期：2020年05月19日 星期二 14时42分22秒
  *   描    述：
  *
  *================================================================*/
 #include "auxiliary_function_board.h"
 
+#define LOG_NONE
 #include "log.h"
 
 #include <string.h>

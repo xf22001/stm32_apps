@@ -6,7 +6,7 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年05月18日 星期一 16时11分13秒
+ *   修改日期：2020年05月19日 星期二 15时26分13秒
  *   描    述：
  *
  *================================================================*/
@@ -297,6 +297,16 @@ charger_info_t *get_or_alloc_charger_info(channel_info_config_t *channel_info_co
 		goto failed;
 	}
 
+	charger_info->gb = BMS_STARDARD_2011;
+	charger_info->test_mode = 0;
+	charger_info->precharge_enable = 1;
+	charger_info->charger_output_voltage = charger_info->settings->ccs_data.output_voltage;
+	charger_info->charger_output_current = charger_info->settings->ccs_data.output_current;
+	charger_info->auxiliary_power_type = 0;
+	charger_info->module_output_voltage = charger_info->charger_output_voltage;
+	charger_info->charnnel_max_output_power = 0;
+	charger_info->module_output_current = charger_info->charger_output_current;
+
 	return charger_info;
 
 failed:
@@ -463,24 +473,27 @@ int set_gun_lock_state(charger_info_t *charger_info, uint8_t state, charger_op_c
 	int ret = 1;
 	uint32_t ticks = osKernelSysTick();
 
-	GPIO_TypeDef *gpio_port = (state == 0) ? charger_info->channel_info_config->gpio_port_gun_lock :
+	GPIO_TypeDef *gpio_port = (state == 1) ? charger_info->channel_info_config->gpio_port_gun_lock :
 	                          charger_info->channel_info_config->gpio_port_gun_unlock;
-	uint16_t gpio_pin = (state == 0) ? charger_info->channel_info_config->gpio_pin_gun_lock :
+	uint16_t gpio_pin = (state == 1) ? charger_info->channel_info_config->gpio_pin_gun_lock :
 	                    charger_info->channel_info_config->gpio_pin_gun_unlock;
-
-	charger_info->gun_lock_state = state;
-
 
 	switch(charger_op_ctx->state) {
 		case 0: {
-			HAL_GPIO_WritePin(gpio_port, gpio_pin, GPIO_PIN_SET);
-			charger_op_ctx->state = 1;
-			charger_op_ctx->stamp = ticks;
+			if(ticks - charger_op_ctx->stamp >= 5 * 1000) {
+				charger_info->gun_lock_state = state;
+
+				HAL_GPIO_WritePin(gpio_port, gpio_pin, GPIO_PIN_SET);
+				charger_op_ctx->state = 1;
+				charger_op_ctx->stamp = ticks;
+			} else {
+				HAL_GPIO_WritePin(gpio_port, gpio_pin, GPIO_PIN_RESET);
+			}
 		}
 		break;
 
 		case 1: {
-			if(ticks - charger_op_ctx->stamp >= 200) {
+			if(ticks - charger_op_ctx->stamp >= 180) {
 				HAL_GPIO_WritePin(gpio_port, gpio_pin, GPIO_PIN_RESET);
 				ret = 0;
 			}
@@ -811,11 +824,13 @@ static void channel_update_gun_state(charger_info_t *charger_info)//100ms
 		if(charger_info->gun_connect_state_debounce_count >= 3) {
 			charger_info->gun_connect_state_debounce_count = 0;
 			charger_info->gun_connect_state = state;
-			_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
+			//_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
 		}
 	} else {
 		charger_info->gun_connect_state_debounce_count = 0;
 	}
+
+	charger_info->gun_connect_state = 1;//test
 }
 
 static void channel_update_error_stop_state(charger_info_t *charger_info)
@@ -837,4 +852,51 @@ void charger_periodic(charger_info_t *charger_info)//10ms
 	channel_update_gun_state(charger_info);
 	channel_update_door_state(charger_info);
 	channel_update_error_stop_state(charger_info);
+}
+
+int set_charger_control_state(charger_info_t *charger_info, bms_control_state_t bms_control_state)
+{
+	int ret = -1;
+
+	switch(bms_control_state) {
+		case BMS_CONTROL_STATE_WAIT_START: {
+			charger_info->bms_control_state = bms_control_state;
+			ret = 0;
+		}
+		break;
+
+		case BMS_CONTROL_STATE_START: {
+			if(charger_info->bms_control_state == BMS_CONTROL_STATE_WAIT_START) {
+				charger_info->bms_control_state = bms_control_state;
+				ret = 0;
+			}
+		}
+		break;
+
+		case BMS_CONTROL_STATE_WAIT_STOP: {
+			if(charger_info->bms_control_state == BMS_CONTROL_STATE_START) {
+				charger_info->bms_control_state = bms_control_state;
+				ret = 0;
+			}
+		}
+		break;
+
+		case BMS_CONTROL_STATE_STOP: {
+			if(charger_info->bms_control_state == BMS_CONTROL_STATE_WAIT_STOP) {
+				charger_info->bms_control_state = bms_control_state;
+				ret = 0;
+			}
+		}
+		break;
+
+		default:
+			break;
+	}
+
+	return ret;
+}
+
+bms_control_state_t get_charger_control_state(charger_info_t *charger_info)
+{
+	return charger_info->bms_control_state;
 }

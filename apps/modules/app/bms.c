@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年05月18日 星期一 13时40分18秒
+ *   修改日期：2020年05月19日 星期二 08时57分01秒
  *   描    述：
  *
  *================================================================*/
@@ -1361,8 +1361,8 @@ uint8_t is_bms_poweron_enable(bms_info_t *bms_info)
 	                                       bms_info->bms_info_config->gpio_pin_bms_power_enable_state);
 
 	if(state == GPIO_PIN_RESET) {
-		return 0;
-		//return 1;
+		//return 0;
+		return 1;
 	} else {
 		return 1;
 	}

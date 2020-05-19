@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分44秒
- *   修改日期：2020年05月18日 星期一 17时22分53秒
+ *   修改日期：2020年05月19日 星期二 14时42分37秒
  *   描    述：
  *
  *================================================================*/
@@ -17,6 +17,7 @@
 #include "auxiliary_function_board.h"
 #include "charger.h"
 
+#define LOG_NONE
 #include "log.h"
 
 typedef struct {
@@ -946,7 +947,7 @@ static int request_2_102(channel_com_info_t *channel_com_info)
 	int ret = -1;
 	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
 
-	charger_info->bms_start_enable = 1;
+	set_charger_control_state(charger_info, BMS_CONTROL_STATE_START);
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_2_102].state = CHANNEL_COM_STATE_IDLE;
 
 	ret = 0;
@@ -1443,8 +1444,14 @@ static channel_com_command_item_t channel_com_command_item_20_120 = {
 static int request_21_121(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
+	int op_ret = 0;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
 
-	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_21_121].state = CHANNEL_COM_STATE_IDLE;
+	op_ret = set_gun_lock_state(charger_info, 1, &charger_info->charger_op_ctx_gun_lock);
+
+	if(op_ret == 0) {
+		channel_com_info->cmd_ctx[CHANNEL_COM_CMD_21_121].state = CHANNEL_COM_STATE_IDLE;
+	}
 
 	ret = 0;
 
@@ -1454,11 +1461,18 @@ static int request_21_121(channel_com_info_t *channel_com_info)
 static int response_21_121(channel_com_info_t *channel_com_info)
 {
 	int ret = -1;
+	int op_ret = 0;
+	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
 
 	//锁定辅板电子锁
 
-	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_21_121].state = CHANNEL_COM_STATE_REQUEST;
-	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_21_121].retry = 0;
+	charger_info->charger_op_ctx_gun_lock.state = 0;
+	op_ret = set_gun_lock_state(charger_info, 1, &charger_info->charger_op_ctx_gun_lock);
+
+	if(op_ret == 1) {
+		channel_com_info->cmd_ctx[CHANNEL_COM_CMD_21_121].state = CHANNEL_COM_STATE_REQUEST;
+		channel_com_info->cmd_ctx[CHANNEL_COM_CMD_21_121].retry = 0;
+	}
 
 	ret = 0;
 	return ret;
@@ -1479,7 +1493,7 @@ static int request_22_122(channel_com_info_t *channel_com_info)
 	int op_ret = 0;
 	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
 
-	op_ret = set_gun_lock_state(charger_info, 0, &charger_info->charger_op_ctx_channel_com);
+	op_ret = set_gun_lock_state(charger_info, 0, &charger_info->charger_op_ctx_gun_lock);
 
 	if(op_ret == 0) {
 		channel_com_info->cmd_ctx[CHANNEL_COM_CMD_22_122].state = CHANNEL_COM_STATE_IDLE;
@@ -1495,10 +1509,11 @@ static int response_22_122(channel_com_info_t *channel_com_info)
 	int ret = -1;
 	int op_ret = 0;
 	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
+
 	//解除辅板电子锁
 
-	charger_info->charger_op_ctx_channel_com.state = 0;
-	op_ret = set_gun_lock_state(charger_info, 0, &charger_info->charger_op_ctx_channel_com);
+	charger_info->charger_op_ctx_gun_lock.state = 0;
+	op_ret = set_gun_lock_state(charger_info, 0, &charger_info->charger_op_ctx_gun_lock);
 
 	if(op_ret == 1) {
 		channel_com_info->cmd_ctx[CHANNEL_COM_CMD_22_122].state = CHANNEL_COM_STATE_REQUEST;
@@ -1599,7 +1614,7 @@ static int response_50_150(channel_com_info_t *channel_com_info)
 	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
 
 	//发送停机命令
-	charger_info->bms_start_enable = 0;
+	set_charger_control_state(charger_info, BMS_CONTROL_STATE_STOP);
 
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_50_150].state = CHANNEL_COM_STATE_REQUEST;
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_50_150].retry = 0;

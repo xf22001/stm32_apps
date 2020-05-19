@@ -6,7 +6,7 @@
  *   文件名称：channel_config.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月30日 星期四 09时37分37秒
- *   修改日期：2020年05月15日 星期五 08时39分34秒
+ *   修改日期：2020年05月19日 星期二 09时00分13秒
  *   描    述：
  *
  *================================================================*/
@@ -34,11 +34,14 @@ channel_info_config_t channel_info_config = {
 	.gpio_port_gun_lock = relay_6_GPIO_Port,
 	.gpio_pin_gun_lock = relay_6_Pin,
 
-	.gpio_port_power_output = relay_7_GPIO_Port,
-	.gpio_pin_power_output = relay_7_Pin,
+	.gpio_port_gun_unlock = relay_4_GPIO_Port,
+	.gpio_pin_gun_unlock = relay_4_Pin,
 
-	.gpio_port_gun = in_a_cc1_GPIO_Port,
-	.gpio_pin_gun = in_a_cc1_Pin,
+	.gpio_port_power_output_enable = relay_7_GPIO_Port,
+	.gpio_pin_power_output_enable = relay_7_Pin,
+
+	.gpio_port_gun_state = in_a_cc1_GPIO_Port,
+	.gpio_pin_gun_state = in_a_cc1_Pin,
 
 	.gpio_port_door = in_2_GPIO_Port,
 	.gpio_pin_door = in_2_Pin,

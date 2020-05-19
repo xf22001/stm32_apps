@@ -6,7 +6,7 @@
  *   文件名称：charger.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分46秒
- *   修改日期：2020年05月18日 星期一 17时12分34秒
+ *   修改日期：2020年05月19日 星期二 14时58分54秒
  *   描    述：
  *
  *================================================================*/
@@ -97,6 +97,13 @@ typedef enum {
 	PRECHARGE_ACTION_START_SINGLE_MODULE = 2,
 } precharge_action_t;
 
+typedef enum {
+	BMS_CONTROL_STATE_WAIT_START = 0,
+	BMS_CONTROL_STATE_START,
+	BMS_CONTROL_STATE_WAIT_STOP,
+	BMS_CONTROL_STATE_STOP,
+} bms_control_state_t;
+
 typedef struct {
 	struct list_head list;
 
@@ -122,10 +129,10 @@ typedef struct {
 	uint32_t send_stamp_1;
 	uint32_t start_send_cst_stamp;
 
-	uint8_t bms_start_enable;
+	bms_control_state_t bms_control_state;
 
 	charger_op_ctx_t charger_op_ctx;
-	charger_op_ctx_t charger_op_ctx_channel_com;
+	charger_op_ctx_t charger_op_ctx_gun_lock;
 
 	idle_op_state_t idle_op_state;
 	chm_op_state_t chm_op_state;
@@ -144,7 +151,7 @@ typedef struct {
 	uint16_t precharge_voltage;
 	uint8_t precharge_action;//0-停止预充, 1-开始预充, 2-单模块预充
 
-	uint8_t auxiliary_power_state;//辅助电源打开状态 unused
+	uint8_t auxiliary_power_state;//辅助电源打开状态
 	uint8_t gun_lock_state;//锁枪状态
 	uint8_t power_output_state;//当前输出继电器打开状态
 	uint8_t gun_connect_state;//插枪状态
@@ -235,4 +242,6 @@ int insulation_check(charger_info_t *charger_info, charger_op_ctx_t *charger_op_
 int battery_voltage_status(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx);
 int wait_no_current(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx);
 void charger_periodic(charger_info_t *charger_info);
+int set_charger_control_state(charger_info_t *charger_info, bms_control_state_t bms_control_state);
+bms_control_state_t get_charger_control_state(charger_info_t *charger_info);
 #endif //_CHARGER_H
