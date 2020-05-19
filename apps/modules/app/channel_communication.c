@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分44秒
- *   修改日期：2020年05月19日 星期二 14时42分37秒
+ *   修改日期：2020年05月19日 星期二 17时23分28秒
  *   描    述：
  *
  *================================================================*/
@@ -2310,6 +2310,8 @@ void task_channel_com_response(void const *argument)
 		if(ret != 0) {
 			continue;
 		}
+
+		channel_com_info->can_rx_msg = can_get_msg(channel_com_info->can_info);
 
 		for(i = 0; i < sizeof(channel_com_command_table) / sizeof(channel_com_command_item_t *); i++) {
 			channel_com_command_item_t *item = channel_com_command_table[i];

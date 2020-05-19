@@ -6,11 +6,13 @@
  *   文件名称：power_modules_handler_huawei.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 17时23分55秒
- *   修改日期：2020年05月18日 星期一 13时31分35秒
+ *   修改日期：2020年05月19日 星期二 17时35分35秒
  *   描    述：
  *
  *================================================================*/
 #include "power_modules_handler_huawei.h"
+#include "os_utils.h"
+#include <string.h>
 
 #define POWER_ID_TX_CAN1_CONTROL_HUAWEI 0x068081FC
 #define POWER_ID_RX_CAN1_CONTROL_HUAWEI 0x0680817C
@@ -239,7 +241,7 @@ typedef struct {
 	uint8_t current_b2;
 	uint8_t current_b1;
 	uint8_t current_b0;
-} cmd_0x101_t;
+} cmd_0x103_t;
 
 typedef struct {
 	u_module_cmd_t cmd;
@@ -342,7 +344,7 @@ typedef struct {
 
 typedef enum {
 	MODULE_CMD_TOTAL_0x100_0x100 = 0,
-	MODULE_CMD_TOTAL_0x101_0x103,
+	MODULE_CMD_TOTAL_0x103_0x103,
 	MODULE_CMD_TOTAL_0x132_0x132,
 	MODULE_CMD_TOTAL_0x14a_0x14a,
 	MODULE_CMD_TOTAL_0x191_0x191,
@@ -354,20 +356,20 @@ typedef enum {
 	MODULE_CMD_TOTAL,
 } module_cmd_t;
 
-typedef int (*module_request_callback_t)(power_modules_info_t *power_modules_info, uint8_t mod_id);
-typedef int (*module_response_callback_t)(power_modules_info_t *power_modules_info, uint8_t mod_id);
+typedef int (*module_request_callback_t)(power_modules_info_t *power_modules_info, int module_id);
+typedef int (*module_response_callback_t)(power_modules_info_t *power_modules_info, int module_id);
 
 typedef struct {
 	module_cmd_t cmd;
-	uint8_t request_ext_id;
-	uint8_t request_code;
+	uint32_t request_ext_id;
+	uint32_t request_code;
 	module_request_callback_t request_callback;
-	uint8_t response_ext_id;
-	uint8_t response_code;
+	uint32_t response_ext_id;
+	uint32_t response_code;
 	module_response_callback_t response_callback;
 } module_command_item_t;
 
-static int power_modules_init(power_modules_info_t *power_modules_info)
+static int power_modules_init_huawei(power_modules_info_t *power_modules_info)
 {
 	int ret = -1;
 	int i;
@@ -390,30 +392,30 @@ static int power_modules_init(power_modules_info_t *power_modules_info)
 
 static void set_out_voltage(power_modules_info_t *power_modules_info, int module_id, uint32_t voltage)//mv
 {
-	power_modules_info->power_module_info[mod_id].setting_voltage = voltage * 1024 / 1000;
-	power_modules_info->power_module_info[mod_id].module_cmd_ctx[MODULE_CMD_TOTAL_0x100_0x100].state = MODULE_CMD_STATE_REQUEST;
+	power_modules_info->power_module_info[module_id].setting_voltage = voltage * 1024 / 1000;
+	power_modules_info->power_module_info[module_id].module_cmd_ctx[MODULE_CMD_TOTAL_0x100_0x100].state = MODULE_CMD_STATE_REQUEST;
 }
 
-static int request_0x100(power_modules_info_t *power_modules_info, uint8_t mod_id)
+static int request_0x100(power_modules_info_t *power_modules_info, int module_id)
 {
 	int ret = -1;
 	cmd_0x100_t *cmd_0x100 = (cmd_0x100_t *)power_modules_info->can_tx_msg.Data;
 
-	cmd_0x100->voltage_b0 = get_u8_b0_from_u32(power_modules_info->power_module_info[mod_id].setting_voltage);
-	cmd_0x100->voltage_b1 = get_u8_b1_from_u32(power_modules_info->power_module_info[mod_id].setting_voltage);
-	cmd_0x100->voltage_b2 = get_u8_b2_from_u32(power_modules_info->power_module_info[mod_id].setting_voltage);
-	cmd_0x100->voltage_b3 = get_u8_b3_from_u32(power_modules_info->power_module_info[mod_id].setting_voltage);
+	cmd_0x100->voltage_b0 = get_u8_b0_from_u32(power_modules_info->power_module_info[module_id].setting_voltage);
+	cmd_0x100->voltage_b1 = get_u8_b1_from_u32(power_modules_info->power_module_info[module_id].setting_voltage);
+	cmd_0x100->voltage_b2 = get_u8_b2_from_u32(power_modules_info->power_module_info[module_id].setting_voltage);
+	cmd_0x100->voltage_b3 = get_u8_b3_from_u32(power_modules_info->power_module_info[module_id].setting_voltage);
 
-	power_modules_info->power_module_info[mod_id].module_cmd_ctx[MODULE_CMD_TOTAL_0x100_0x100].state = MODULE_CMD_STATE_RESPONSE;
+	power_modules_info->power_module_info[module_id].module_cmd_ctx[MODULE_CMD_TOTAL_0x100_0x100].state = MODULE_CMD_STATE_RESPONSE;
 	ret = 0;
 	return ret;
 }
 
-static int response_0x100(power_modules_info_t *power_modules_info, uint8_t mod_id)
+static int response_0x100(power_modules_info_t *power_modules_info, int module_id)
 {
 	int ret = -1;
 
-	power_modules_info->power_module_info[mod_id].module_cmd_ctx[MODULE_CMD_TOTAL_0x100_0x100].state = MODULE_CMD_STATE_IDLE;
+	power_modules_info->power_module_info[module_id].module_cmd_ctx[MODULE_CMD_TOTAL_0x100_0x100].state = MODULE_CMD_STATE_IDLE;
 	ret = 0;
 	return ret;
 }
@@ -428,15 +430,179 @@ static module_command_item_t module_command_item_0x100_0x100 = {
 	.response_callback = response_0x100,
 };
 
+static void set_out_current(power_modules_info_t *power_modules_info, int module_id, uint32_t current)//mv
+{
+	power_modules_info->power_module_info[module_id].setting_current = current * 1024 / (power_modules_info->rate_current * 1000);
+	power_modules_info->power_module_info[module_id].module_cmd_ctx[MODULE_CMD_TOTAL_0x103_0x103].state = MODULE_CMD_STATE_REQUEST;
+}
+
+static int request_0x103(power_modules_info_t *power_modules_info, int module_id)
+{
+	int ret = -1;
+	cmd_0x103_t *cmd_0x103 = (cmd_0x103_t *)power_modules_info->can_tx_msg.Data;
+
+	cmd_0x103->current_b0 = get_u8_b0_from_u32(power_modules_info->power_module_info[module_id].setting_current);
+	cmd_0x103->current_b1 = get_u8_b1_from_u32(power_modules_info->power_module_info[module_id].setting_current);
+	cmd_0x103->current_b2 = get_u8_b2_from_u32(power_modules_info->power_module_info[module_id].setting_current);
+	cmd_0x103->current_b3 = get_u8_b3_from_u32(power_modules_info->power_module_info[module_id].setting_current);
+
+	power_modules_info->power_module_info[module_id].module_cmd_ctx[MODULE_CMD_TOTAL_0x103_0x103].state = MODULE_CMD_STATE_RESPONSE;
+	ret = 0;
+	return ret;
+}
+
+static int response_0x103(power_modules_info_t *power_modules_info, int module_id)
+{
+	int ret = -1;
+
+	power_modules_info->power_module_info[module_id].module_cmd_ctx[MODULE_CMD_TOTAL_0x103_0x103].state = MODULE_CMD_STATE_IDLE;
+	ret = 0;
+	return ret;
+}
+
+static void set_out_voltage_current_huawei(power_modules_info_t *power_modules_info, int module_id, uint32_t voltage, uint32_t current)
+{
+	set_out_voltage(power_modules_info, module_id, voltage);
+	set_out_current(power_modules_info, module_id, current);
+}
+
+static module_command_item_t module_command_item_0x103_0x103 = {
+	.cmd = MODULE_CMD_TOTAL_0x103_0x103,
+	.request_ext_id = POWER_ID_TX_CAN1_CONTROL_HUAWEI,
+	.request_code = 0x103,
+	.request_callback = request_0x103,
+	.response_ext_id = POWER_ID_RX_CAN1_CONTROL_HUAWEI,
+	.response_code = 0x103,
+	.response_callback = response_0x103,
+};
+
+static int request_0x132(power_modules_info_t *power_modules_info, int module_id)
+{
+	int ret = -1;
+	cmd_0x132_t *cmd_0x132 = (cmd_0x132_t *)power_modules_info->can_tx_msg.Data;
+
+	cmd_0x132->poweroff = power_modules_info->power_module_info[module_id].poweroff;
+
+	power_modules_info->power_module_info[module_id].module_cmd_ctx[MODULE_CMD_TOTAL_0x132_0x132].state = MODULE_CMD_STATE_RESPONSE;
+	ret = 0;
+	return ret;
+}
+
+static int response_0x132(power_modules_info_t *power_modules_info, int module_id)
+{
+	int ret = -1;
+
+	power_modules_info->power_module_info[module_id].module_cmd_ctx[MODULE_CMD_TOTAL_0x132_0x132].state = MODULE_CMD_STATE_IDLE;
+	ret = 0;
+	return ret;
+}
+
+static module_command_item_t module_command_item_0x132_0x132 = {
+	.cmd = MODULE_CMD_TOTAL_0x132_0x132,
+	.request_ext_id = POWER_ID_TX_CAN1_CONTROL_HUAWEI,
+	.request_code = 0x132,
+	.request_callback = request_0x132,
+	.response_ext_id = POWER_ID_RX_CAN1_CONTROL_HUAWEI,
+	.response_code = 0x132,
+	.response_callback = response_0x132,
+};
+
+static void set_poweroff_huawei(power_modules_info_t *power_modules_info, int module_id, uint8_t poweroff)
+{
+	power_modules_info->power_module_info[module_id].poweroff = poweroff;
+	power_modules_info->power_module_info[module_id].module_cmd_ctx[MODULE_CMD_TOTAL_0x132_0x132].state = MODULE_CMD_STATE_REQUEST;
+
+	power_modules_info->power_module_info[module_id].automode = 1;
+	power_modules_info->power_module_info[module_id].module_cmd_ctx[MODULE_CMD_TOTAL_0x14a_0x14a].state = MODULE_CMD_STATE_REQUEST;
+}
+
+static int request_0x14a(power_modules_info_t *power_modules_info, int module_id)
+{
+	int ret = -1;
+	cmd_0x14a_t *cmd_0x14a = (cmd_0x14a_t *)power_modules_info->can_tx_msg.Data;
+
+	cmd_0x14a->output_voltage_auto_adapt = power_modules_info->power_module_info[module_id].automode;
+
+	power_modules_info->power_module_info[module_id].module_cmd_ctx[MODULE_CMD_TOTAL_0x14a_0x14a].state = MODULE_CMD_STATE_RESPONSE;
+	ret = 0;
+	return ret;
+}
+
+static int response_0x14a(power_modules_info_t *power_modules_info, int module_id)
+{
+	int ret = -1;
+
+	power_modules_info->power_module_info[module_id].module_cmd_ctx[MODULE_CMD_TOTAL_0x14a_0x14a].state = MODULE_CMD_STATE_IDLE;
+	ret = 0;
+	return ret;
+}
+
+static module_command_item_t module_command_item_0x14a_0x14a = {
+	.cmd = MODULE_CMD_TOTAL_0x14a_0x14a,
+	.request_ext_id = POWER_ID_TX_CAN1_CONTROL_HUAWEI,
+	.request_code = 0x14a,
+	.request_callback = request_0x14a,
+	.response_ext_id = POWER_ID_RX_CAN1_CONTROL_HUAWEI,
+	.response_code = 0x14a,
+	.response_callback = response_0x14a,
+};
+
+static void query_status_huawei(power_modules_info_t *power_modules_info, int module_id)
+{
+	power_modules_info->power_module_info[module_id].module_cmd_ctx[MODULE_CMD_TOTAL_0x191_0x191].state = MODULE_CMD_STATE_REQUEST;
+	power_modules_info->power_module_info[module_id].module_cmd_ctx[MODULE_CMD_TOTAL_0x183_0x183].state = MODULE_CMD_STATE_REQUEST;
+	power_modules_info->power_module_info[module_id].module_cmd_ctx[MODULE_CMD_TOTAL_0x190_0x190].state = MODULE_CMD_STATE_REQUEST;
+}
+
+static int request_0x191(power_modules_info_t *power_modules_info, int module_id)
+{
+	int ret = -1;
+	//cmd_0x191_t *cmd_0x191 = (cmd_0x191_t *)power_modules_info->can_tx_msg.Data;
+
+	power_modules_info->power_module_info[module_id].module_cmd_ctx[MODULE_CMD_TOTAL_0x191_0x191].state = MODULE_CMD_STATE_RESPONSE;
+	ret = 0;
+	return ret;
+}
+
+static int response_0x191(power_modules_info_t *power_modules_info, int module_id)
+{
+	int ret = -1;
+	cmd_0x191_response_t *cmd_0x191_response = (cmd_0x191_response_t *)power_modules_info->can_rx_msg->Data;
+
+	power_modules_info->power_module_info[module_id].output_voltage =
+	    get_u16_from_u8_lh(cmd_0x191_response->output_voltage_l, cmd_0x191_response->output_voltage_h);
+
+	power_modules_info->power_module_info[module_id].output_current =
+	    get_u16_from_u8_lh(cmd_0x191_response->output_current_l, cmd_0x191_response->output_current_h);
+
+	power_modules_info->power_module_info[module_id].power_module_status.poweroff = cmd_0x191_response->status.module_0191_status_bit0;
+	power_modules_info->power_module_info[module_id].power_module_status.fault = cmd_0x191_response->status.module_0191_status_bit2;
+	power_modules_info->power_module_info[module_id].power_module_status.output_state = cmd_0x191_response->status.module_0191_status_bit3;
+
+	power_modules_info->power_module_info[module_id].module_cmd_ctx[MODULE_CMD_TOTAL_0x191_0x191].state = MODULE_CMD_STATE_IDLE;
+	ret = 0;
+	return ret;
+}
+
+static module_command_item_t module_command_item_0x191_0x191 = {
+	.cmd = MODULE_CMD_TOTAL_0x191_0x191,
+	.request_ext_id = POWER_ID_TX_CAN1_CONTROL_HUAWEI,
+	.request_code = 0x191,
+	.request_callback = request_0x191,
+	.response_ext_id = POWER_ID_RX_CAN1_CONTROL_HUAWEI,
+	.response_code = 0x191,
+	.response_callback = response_0x191,
+};
+
 power_modules_handler_t power_modules_handler_huawei = {
 	.power_module_type = POWER_MODULE_TYPE_HUAWEI,
-	.set_out_voltage_current = NULL,
-	.set_power_on_off =  NULL,
-	.query_status =  NULL,
+	.set_out_voltage_current = set_out_voltage_current_huawei,
+	.set_poweroff = set_poweroff_huawei,
+	.query_status = query_status_huawei,
 	.query_a_line_input_voltage = NULL,
 	.query_b_line_input_voltage =  NULL,
 	.query_c_line_input_voltage = NULL,
-	.power_modules_init = power_modules_init,
+	.power_modules_init = power_modules_init_huawei,
 	.power_modules_request = NULL,
 	.power_modules_response = NULL,
 };

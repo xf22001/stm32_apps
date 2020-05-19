@@ -6,7 +6,7 @@
  *   文件名称：power_modules.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时34分29秒
- *   修改日期：2020年05月18日 星期一 13时04分27秒
+ *   修改日期：2020年05月19日 星期二 16时42分57秒
  *   描    述：
  *
  *================================================================*/
@@ -196,7 +196,7 @@ void set_out_voltage_current(power_modules_info_t *power_modules_info, int modul
 	power_modules_handler->set_out_voltage_current(power_modules_info, module_id, voltage, current);
 }
 
-void set_power_on_off(power_modules_info_t *power_modules_info, int module_id, uint8_t onoff)
+void set_poweroff(power_modules_info_t *power_modules_info, int module_id, uint8_t poweroff)
 {
 	power_modules_handler_t *power_modules_handler = (power_modules_handler_t *)power_modules_info->power_modules_handler;
 
@@ -204,11 +204,11 @@ void set_power_on_off(power_modules_info_t *power_modules_info, int module_id, u
 		return;
 	}
 
-	if(power_modules_handler->set_power_on_off == NULL) {
+	if(power_modules_handler->set_poweroff == NULL) {
 		return;
 	}
 
-	power_modules_handler->set_power_on_off(power_modules_info, module_id, onoff);
+	power_modules_handler->set_poweroff(power_modules_info, module_id, poweroff);
 }
 
 void query_status(power_modules_info_t *power_modules_info, int module_id)
@@ -271,7 +271,7 @@ void query_c_line_input_voltage(power_modules_info_t *power_modules_info, int mo
 	power_modules_handler->query_c_line_input_voltage(power_modules_info, module_id);
 }
 
-void power_modules_init(power_modules_info_t *power_modules_info)
+int power_modules_init(power_modules_info_t *power_modules_info)
 {
 	int ret = -1;
 	power_modules_handler_t *power_modules_handler = (power_modules_handler_t *)power_modules_info->power_modules_handler;
@@ -284,14 +284,14 @@ void power_modules_init(power_modules_info_t *power_modules_info)
 		return ret;
 	}
 
-	power_modules_handler->power_modules_valid = 0;
+	power_modules_info->power_modules_valid = 0;
 
 	ret = power_modules_handler->power_modules_init(power_modules_info);
 
 	return ret;
 }
 
-void power_modules_request(power_modules_info_t *power_modules_info)
+int power_modules_request(power_modules_info_t *power_modules_info)
 {
 	int ret = -1;
 	power_modules_handler_t *power_modules_handler = (power_modules_handler_t *)power_modules_info->power_modules_handler;
@@ -304,7 +304,7 @@ void power_modules_request(power_modules_info_t *power_modules_info)
 		return ret;
 	}
 
-	if(power_modules_handler->power_modules_valid == 0) {
+	if(power_modules_info->power_modules_valid == 0) {
 		return ret;
 	}
 
@@ -325,7 +325,7 @@ int power_modules_response(power_modules_info_t *power_modules_info)
 		return ret;
 	}
 
-	if(power_modules_handler->power_modules_valid == 0) {
+	if(power_modules_info->power_modules_valid == 0) {
 		return ret;
 	}
 
