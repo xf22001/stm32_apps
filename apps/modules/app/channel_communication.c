@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分44秒
- *   修改日期：2020年05月19日 星期二 17时23分28秒
+ *   修改日期：2020年05月20日 星期三 10时15分02秒
  *   描    述：
  *
  *================================================================*/
@@ -1451,9 +1451,8 @@ static int request_21_121(channel_com_info_t *channel_com_info)
 
 	if(op_ret == 0) {
 		channel_com_info->cmd_ctx[CHANNEL_COM_CMD_21_121].state = CHANNEL_COM_STATE_IDLE;
+		ret = 0;
 	}
-
-	ret = 0;
 
 	return ret;
 }
@@ -1497,9 +1496,9 @@ static int request_22_122(channel_com_info_t *channel_com_info)
 
 	if(op_ret == 0) {
 		channel_com_info->cmd_ctx[CHANNEL_COM_CMD_22_122].state = CHANNEL_COM_STATE_IDLE;
+		ret = 0;
 	}
 
-	ret = 0;
 
 	return ret;
 }
@@ -2275,8 +2274,11 @@ void task_channel_com_request(void const *argument)
 
 			ret = item->request_callback(channel_com_info);
 
-			channel_com_info->cmd_ctx[item->cmd].retry++;
+			if(ret != 0) {
+				continue;
+			}
 
+			channel_com_info->cmd_ctx[item->cmd].retry++;
 			ret = can_tx_data(channel_com_info->can_info, &channel_com_info->can_tx_msg, 10);
 
 			if(ret != 0) {

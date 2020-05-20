@@ -6,7 +6,7 @@
  *   文件名称：power_modules.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时34分29秒
- *   修改日期：2020年05月19日 星期二 16时42分57秒
+ *   修改日期：2020年05月20日 星期三 15时11分10秒
  *   描    述：
  *
  *================================================================*/
@@ -166,6 +166,8 @@ power_modules_info_t *get_or_alloc_power_modules_info(channels_info_config_t *ch
 		goto failed;
 	}
 
+	power_modules_info->rate_current = 21;
+
 	return power_modules_info;
 failed:
 
@@ -181,7 +183,7 @@ void power_modules_handler_update(power_modules_info_t *power_modules_info)
 	power_modules_info->power_modules_handler = power_modules_info->power_modules_handler;//test
 }
 
-void set_out_voltage_current(power_modules_info_t *power_modules_info, int module_id, uint32_t voltage, uint32_t current)
+void set_out_voltage_current(power_modules_info_t *power_modules_info, int module_id, uint32_t voltage, uint16_t current)
 {
 	power_modules_handler_t *power_modules_handler = (power_modules_handler_t *)power_modules_info->power_modules_handler;
 
@@ -291,28 +293,26 @@ int power_modules_init(power_modules_info_t *power_modules_info)
 	return ret;
 }
 
-int power_modules_request(power_modules_info_t *power_modules_info)
+void power_modules_request(power_modules_info_t *power_modules_info)
 {
-	int ret = -1;
 	power_modules_handler_t *power_modules_handler = (power_modules_handler_t *)power_modules_info->power_modules_handler;
 
 	if(power_modules_handler == NULL) {
-		return ret;
+		return;
 	}
 
 	if(power_modules_handler->power_modules_request == NULL) {
-		return ret;
+		return;
 	}
 
 	if(power_modules_info->power_modules_valid == 0) {
-		return ret;
+		return;
 	}
 
-	ret = power_modules_handler->power_modules_request(power_modules_info);
-	return ret;
+	power_modules_handler->power_modules_request(power_modules_info);
 }
 
-int power_modules_response(power_modules_info_t *power_modules_info)
+int power_modules_response(power_modules_info_t *power_modules_info, can_rx_msg_t *can_rx_msg)
 {
 	int ret = -1;
 	power_modules_handler_t *power_modules_handler = (power_modules_handler_t *)power_modules_info->power_modules_handler;
@@ -329,7 +329,7 @@ int power_modules_response(power_modules_info_t *power_modules_info)
 		return ret;
 	}
 
-	ret = power_modules_handler->power_modules_response(power_modules_info);
+	ret = power_modules_handler->power_modules_response(power_modules_info, can_rx_msg);
 
 	return ret;
 }

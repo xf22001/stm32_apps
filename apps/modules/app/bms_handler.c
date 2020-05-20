@@ -6,7 +6,7 @@
  *   文件名称：bms_handler.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时18分53秒
- *   修改日期：2020年05月15日 星期五 08时35分41秒
+ *   修改日期：2020年05月20日 星期三 08时16分08秒
  *   描    述：
  *
  *================================================================*/
@@ -65,8 +65,6 @@ static int prepare_state_idle(bms_info_t *bms_info)
 {
 	int ret = 0;
 	set_gun_on_off(bms_info, 0);
-	memset(&bms_info->settings->bst_data, 0, sizeof(bst_data_t));
-	memset(&bms_info->settings->bem_data, 0, sizeof(bem_data_t));
 	return ret;
 }
 
@@ -91,6 +89,8 @@ static int handle_state_idle_response(bms_info_t *bms_info)
 	switch(head.pdu.pf) {
 		case FN_CHM: {
 			//idle状态下，可以在界面操作继电器,所以退出idle再设定继电器为断开
+			memset(&bms_info->settings->bst_data, 0, sizeof(bst_data_t));
+			memset(&bms_info->settings->bem_data, 0, sizeof(bem_data_t));
 			set_gun_on_off(bms_info, 0);
 			set_bms_state(bms_info, BMS_STATE_BHM);
 			ret = 0;
@@ -99,6 +99,8 @@ static int handle_state_idle_response(bms_info_t *bms_info)
 
 		case FN_CRM: {
 			//idle状态下，可以在界面操作继电器,所以退出idle再设定继电器为断开
+			memset(&bms_info->settings->bst_data, 0, sizeof(bst_data_t));
+			memset(&bms_info->settings->bem_data, 0, sizeof(bem_data_t));
 			set_gun_on_off(bms_info, 0);
 			set_bms_state(bms_info, BMS_STATE_BRM);
 			ret = 0;
@@ -210,9 +212,6 @@ static int prepare_state_brm(bms_info_t *bms_info)
 {
 	int ret = 0;
 	uint32_t ticks = osKernelSysTick();
-
-	memset(&bms_info->settings->bst_data, 0, sizeof(bst_data_t));
-	memset(&bms_info->settings->bem_data, 0, sizeof(bem_data_t));
 
 	bms_info->send_stamp = ticks - FN_BRM_SEND_PERIOD;
 	bms_info->stamp = ticks;
