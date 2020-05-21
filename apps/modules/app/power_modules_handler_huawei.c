@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_huawei.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 17时23分55秒
- *   修改日期：2020年05月20日 星期三 14时58分21秒
+ *   修改日期：2020年05月21日 星期四 08时53分13秒
  *   描    述：
  *
  *================================================================*/
@@ -356,13 +356,13 @@ typedef enum {
 	MODULE_CMD_0x17a_0x17a,
 	MODULE_CMD_0x17b_0x17b,
 	MODULE_CMD_TOTAL,
-} module_cmd_t;
+} module_command_t;
 
 typedef int (*module_request_callback_t)(power_modules_info_t *power_modules_info, int module_id);
 typedef int (*module_response_callback_t)(power_modules_info_t *power_modules_info, int module_id);
 
 typedef struct {
-	module_cmd_t cmd;
+	module_command_t cmd;
 	uint32_t request_ext_id;
 	uint16_t request_code;
 	module_request_callback_t request_callback;
@@ -821,15 +821,15 @@ static module_command_item_t *module_command_item_table[] = {
 void power_modules_request_huawei(power_modules_info_t *power_modules_info)
 {
 	int module_id;
-	int cmd;
+	int i;
 	int ret;
 
 	for(module_id = 0; module_id < POWER_MODULES_SIZE; module_id++) {
-		for(cmd = 0; cmd < sizeof(module_command_item_table) / sizeof(module_command_item_t *); cmd++) {
-			module_command_item_t *item = module_command_item_table[cmd];
+		for(i = 0; i < sizeof(module_command_item_table) / sizeof(module_command_item_t *); i++) {
+			module_command_item_t *item = module_command_item_table[i];
 			int module_addr = module_id + 1;
 
-			if(power_modules_info->power_module_info[module_id].module_cmd_ctx[cmd].state == MODULE_CMD_STATE_REQUEST) {
+			if(power_modules_info->power_module_info[module_id].module_cmd_ctx[item->cmd].state == MODULE_CMD_STATE_REQUEST) {
 				u_module_cmd_t *u_module_cmd = (u_module_cmd_t *)power_modules_info->can_tx_msg.Data;
 				u_module_extid_t u_module_extid;
 
@@ -852,15 +852,15 @@ void power_modules_request_huawei(power_modules_info_t *power_modules_info)
 					continue;
 				}
 
-				power_modules_info->power_module_info[module_id].module_cmd_ctx[cmd].retry++;
+				power_modules_info->power_module_info[module_id].module_cmd_ctx[item->cmd].retry++;
 
 				ret = can_tx_data(power_modules_info->can_info, &power_modules_info->can_tx_msg, 10);
 
 				if(ret != 0) {
-					if(power_modules_info->power_module_info[module_id].module_cmd_ctx[cmd].retry <= 3) {
-						power_modules_info->power_module_info[module_id].module_cmd_ctx[cmd].state = MODULE_CMD_STATE_REQUEST;
+					if(power_modules_info->power_module_info[module_id].module_cmd_ctx[item->cmd].retry <= 3) {
+						power_modules_info->power_module_info[module_id].module_cmd_ctx[item->cmd].state = MODULE_CMD_STATE_REQUEST;
 					} else {
-						power_modules_info->power_module_info[module_id].module_cmd_ctx[cmd].state = MODULE_CMD_STATE_ERROR;
+						power_modules_info->power_module_info[module_id].module_cmd_ctx[item->cmd].state = MODULE_CMD_STATE_ERROR;
 					}
 				}
 			}
@@ -872,7 +872,7 @@ void power_modules_request_huawei(power_modules_info_t *power_modules_info)
 int power_modules_response_huawei(power_modules_info_t *power_modules_info, can_rx_msg_t *can_rx_msg)
 {
 	int ret = -1;
-	int cmd;
+	int i;
 	u_module_extid_t u_module_extid;
 	int module_addr;
 	int module_id;
@@ -898,8 +898,8 @@ int power_modules_response_huawei(power_modules_info_t *power_modules_info, can_
 	u_module_cmd->s.unused = 0;
 	response_code = get_u16_from_u8_lh(u_module_cmd->s.cmd_b0, u_module_cmd->s.cmd_b1);
 
-	for(cmd = 0; cmd < sizeof(module_command_item_table) / sizeof(module_command_item_t *); cmd++) {
-		module_command_item_t *item = module_command_item_table[cmd];
+	for(i = 0; i < sizeof(module_command_item_table) / sizeof(module_command_item_t *); i++) {
+		module_command_item_t *item = module_command_item_table[i];
 
 		if(response_ext_id != item->response_ext_id) {
 			continue;
