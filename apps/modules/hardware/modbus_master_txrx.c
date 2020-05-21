@@ -6,7 +6,7 @@
  *   文件名称：modbus_master_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月20日 星期一 15时28分52秒
- *   修改日期：2020年05月15日 星期五 08时40分11秒
+ *   修改日期：2020年05月21日 星期四 14时05分19秒
  *   描    述：
  *
  *================================================================*/
@@ -247,8 +247,8 @@ int modbus_master_write_one_item(modbus_master_info_t *modbus_master_info, uint8
 {
 	int ret = -1;
 	int rx_size;
-	modbus_master_request_0x06_t *request_0x06 = (modbus_master_request_0x06_t *)modbus_master_info->rx_buffer;
-	modbus_master_response_0x06_t *modbus_master_response_0x06 = (modbus_master_response_0x06_t *)modbus_master_info->tx_buffer;
+	modbus_master_request_0x06_t *request_0x06 = (modbus_master_request_0x06_t *)modbus_master_info->tx_buffer;
+	modbus_master_response_0x06_t *modbus_master_response_0x06 = (modbus_master_response_0x06_t *)modbus_master_info->rx_buffer;
 	modbus_crc_t *modbus_crc = NULL;
 	uint16_t crc;
 
@@ -280,7 +280,7 @@ int modbus_master_write_one_item(modbus_master_info_t *modbus_master_info, uint8
 		return ret;
 	}
 
-	//_hexdump("modbus_master_info->rx_buffer", (const char *)request_0x06, modbus_master_info->tx_size);
+	//_hexdump("modbus_master_info->tx_buffer", (const char *)request_0x06, modbus_master_info->tx_size);
 
 	if(modbus_master_response_0x06->head.station != station) {
 		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
@@ -334,8 +334,8 @@ int modbus_master_write_items(modbus_master_info_t *modbus_master_info, uint8_t 
 {
 	int ret = -1;
 	int rx_size;
-	modbus_master_request_0x10_head_t *modbus_master_request_0x10_head = (modbus_master_request_0x10_head_t *)modbus_master_info->rx_buffer;
-	modbus_master_response_0x10_t *modbus_master_response_0x10 = (modbus_master_response_0x10_t *)modbus_master_info->tx_buffer;
+	modbus_master_request_0x10_head_t *modbus_master_request_0x10_head = (modbus_master_request_0x10_head_t *)modbus_master_info->tx_buffer;
+	modbus_master_response_0x10_t *modbus_master_response_0x10 = (modbus_master_response_0x10_t *)modbus_master_info->rx_buffer;
 	modbus_data_item_t *data_item = NULL;
 	modbus_crc_t *modbus_crc = NULL;
 	uint16_t crc;

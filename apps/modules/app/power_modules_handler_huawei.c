@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_huawei.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 17时23分55秒
- *   修改日期：2020年05月21日 星期四 08时53分13秒
+ *   修改日期：2020年05月21日 星期四 11时13分09秒
  *   描    述：
  *
  *================================================================*/
@@ -433,7 +433,7 @@ static module_command_item_t module_command_item_0x100_0x100 = {
 	.response_callback = response_0x100,
 };
 
-static void set_out_current(power_modules_info_t *power_modules_info, int module_id, uint32_t current)//mv
+static void set_out_current(power_modules_info_t *power_modules_info, int module_id, uint16_t current)//mv
 {
 	power_modules_info->power_module_info[module_id].setting_current = current * 1024 / (power_modules_info->rate_current * 1000);
 	power_modules_info->power_module_info[module_id].module_cmd_ctx[MODULE_CMD_0x103_0x103].state = MODULE_CMD_STATE_REQUEST;
@@ -464,7 +464,7 @@ static int response_0x103(power_modules_info_t *power_modules_info, int module_i
 	return ret;
 }
 
-static void set_out_voltage_current_huawei(power_modules_info_t *power_modules_info, int module_id, uint32_t voltage, uint32_t current)
+static void set_out_voltage_current_huawei(power_modules_info_t *power_modules_info, int module_id, uint32_t voltage, uint16_t current)
 {
 	set_out_voltage(power_modules_info, module_id, voltage);
 	set_out_current(power_modules_info, module_id, current);

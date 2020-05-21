@@ -1,12 +1,12 @@
 
 
 /*================================================================
- *   
- *   
+ *
+ *
  *   文件名称：os_utils.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分36秒
- *   修改日期：2020年05月18日 星期一 13时25分16秒
+ *   修改日期：2020年05月21日 星期四 16时09分54秒
  *   描    述：
  *
  *================================================================*/
@@ -24,31 +24,72 @@ extern "C"
 #include <stddef.h>
 #include <stdint.h>
 
-typedef struct
-{
-  uint8_t byte0;
-  uint8_t byte1;
-  uint8_t byte2;
-  uint8_t byte3;
+typedef struct {
+	uint8_t byte0;
+	uint8_t byte1;
+	uint8_t byte2;
+	uint8_t byte3;
 } uint32_bytes_t;
 
-typedef union
-{
-  uint32_bytes_t s;
-  uint32_t v;
+typedef union {
+	uint32_bytes_t s;
+	uint32_t v;
 } u_uint32_bytes_t;
 
-typedef struct
-{
-  uint8_t byte0;
-  uint8_t byte1;
+typedef struct {
+	uint8_t byte0;
+	uint8_t byte1;
 } uint16_bytes_t;
 
-typedef union
-{
-  uint16_bytes_t s;
-  uint16_t v;
+typedef union {
+	uint16_bytes_t s;
+	uint16_t v;
 } u_uint16_bytes_t;
+
+typedef struct {
+	uint8_t l : 4;
+	uint8_t h : 4;
+} uint8_bcd_t;
+
+typedef union {
+	uint8_bcd_t s;
+	uint8_t v;
+} u_uint8_bcd_t;
+
+static inline uint8_t get_u8_from_bcd(uint8_t v) {
+	u_uint8_bcd_t u_uint8_bcd;
+
+	u_uint8_bcd.v = v;
+
+	return u_uint8_bcd.s.h * 10 + u_uint8_bcd.s.l;
+}
+
+static inline uint8_t get_bcd_from_u8(uint8_t v) {
+	u_uint8_bcd_t u_uint8_bcd;
+
+	u_uint8_bcd.s.h = v / 10;
+	u_uint8_bcd.s.l = v % 10;
+
+	return u_uint8_bcd.v;
+}
+
+static inline uint32_t get_u16_from_bcd_b01(uint8_t b0, uint8_t b1)
+{
+	uint8_t v0 = get_u8_from_bcd(b0);
+	uint8_t v1 = get_u8_from_bcd(b1);
+
+	return v0 + v1 * 100;
+}
+
+static inline uint32_t get_u32_from_bcd_b0123(uint8_t b0, uint8_t b1, uint8_t b2, uint8_t b3)
+{
+	uint8_t v0 = get_u8_from_bcd(b0);
+	uint8_t v1 = get_u8_from_bcd(b1);
+	uint8_t v2 = get_u8_from_bcd(b2);
+	uint8_t v3 = get_u8_from_bcd(b3);
+
+	return v0 + v1 * 100 + v2 * 10000 + v3 * 1000000;
+}
 
 static inline uint16_t get_u16_from_u8_lh(uint8_t l, uint8_t h)
 {
