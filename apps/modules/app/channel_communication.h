@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.h
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分48秒
- *   修改日期：2020年05月18日 星期一 11时11分22秒
+ *   修改日期：2020年05月22日 星期五 09时18分25秒
  *   描    述：
  *
  *================================================================*/
@@ -27,6 +27,8 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif
+
+#define CHANNEL_COM_CONNECT_STATE_SIZE 10
 
 typedef enum {
 	RETURN_ERROR = 0,         //无
@@ -108,7 +110,7 @@ typedef enum {
 typedef struct {
 	channel_com_state_t state;
 	uint32_t stamp;
-	uint32_t retry;
+	uint32_t send_stamp;
 	uint8_t available;
 } channel_com_cmd_ctx_t;
 
@@ -129,6 +131,9 @@ typedef struct {
 
 	bms_status_t bms_status;
 	callback_item_t charger_info_report_status_cb;
+
+	uint8_t connect_state[CHANNEL_COM_CONNECT_STATE_SIZE];
+	uint8_t connect_state_index;
 
 } channel_com_info_t;
 

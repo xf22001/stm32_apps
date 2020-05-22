@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分44秒
- *   修改日期：2020年05月20日 星期三 10时15分02秒
+ *   修改日期：2020年05月22日 星期五 09时46分06秒
  *   描    述：
  *
  *================================================================*/
@@ -926,7 +926,6 @@ static int response_1_101(channel_com_info_t *channel_com_info)
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_1_101].state = CHANNEL_COM_STATE_IDLE;
 
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_3_103].state = CHANNEL_COM_STATE_REQUEST;
-	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_3_103].retry = 0;
 
 
 	ret = 0;
@@ -973,7 +972,6 @@ static int response_2_102(channel_com_info_t *channel_com_info)
 	    get_u16_from_u8_lh(cmd_102->charger_max_output_current_l, cmd_102->charger_max_output_current_h);
 
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_2_102].state = CHANNEL_COM_STATE_REQUEST;
-	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_2_102].retry = 0;
 
 	ret = 0;
 	return ret;
@@ -1009,7 +1007,6 @@ static int response_13_113(channel_com_info_t *channel_com_info)
 	    get_u16_from_u8_lh(cmd_113->charger_min_output_current_l, cmd_113->charger_min_output_current_h);
 
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_13_113].state = CHANNEL_COM_STATE_REQUEST;
-	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_13_113].retry = 0;
 
 	ret = 0;
 	return ret;
@@ -1073,7 +1070,6 @@ static channel_com_command_item_t channel_com_command_item_3_103 = {
 void request_precharge(channel_com_info_t *channel_com_info)
 {
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_4_104].state = CHANNEL_COM_STATE_REQUEST;
-	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_4_104].retry = 0;
 }
 
 static int request_4_104(channel_com_info_t *channel_com_info)
@@ -1214,7 +1210,6 @@ static int response_7_107(channel_com_info_t *channel_com_info)
 
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_7_107].state = CHANNEL_COM_STATE_IDLE;
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_8_108].state = CHANNEL_COM_STATE_REQUEST;
-	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_8_108].retry = 0;
 
 	ret = 0;
 	return ret;
@@ -1251,7 +1246,6 @@ static int response_8_108(channel_com_info_t *channel_com_info)
 
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_8_108].state = CHANNEL_COM_STATE_IDLE;
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_9_109].state = CHANNEL_COM_STATE_REQUEST;
-	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_9_109].retry = 0;
 
 	ret = 0;
 	return ret;
@@ -1422,7 +1416,6 @@ static int response_20_120(channel_com_info_t *channel_com_info)
 	set_power_output_enable(charger_info, 1);
 
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_20_120].state = CHANNEL_COM_STATE_REQUEST;
-	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_20_120].retry = 0;
 
 	if(charger_info->manual == 1) {
 		channel_com_info->cmd_ctx[CHANNEL_COM_CMD_25_125].state = CHANNEL_COM_STATE_REQUEST;
@@ -1470,7 +1463,6 @@ static int response_21_121(channel_com_info_t *channel_com_info)
 
 	if(op_ret == 1) {
 		channel_com_info->cmd_ctx[CHANNEL_COM_CMD_21_121].state = CHANNEL_COM_STATE_REQUEST;
-		channel_com_info->cmd_ctx[CHANNEL_COM_CMD_21_121].retry = 0;
 	}
 
 	ret = 0;
@@ -1516,7 +1508,6 @@ static int response_22_122(channel_com_info_t *channel_com_info)
 
 	if(op_ret == 1) {
 		channel_com_info->cmd_ctx[CHANNEL_COM_CMD_22_122].state = CHANNEL_COM_STATE_REQUEST;
-		channel_com_info->cmd_ctx[CHANNEL_COM_CMD_22_122].retry = 0;
 	}
 
 	ret = 0;
@@ -1616,7 +1607,6 @@ static int response_50_150(channel_com_info_t *channel_com_info)
 	set_charger_control_state(charger_info, BMS_CONTROL_STATE_STOP);
 
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_50_150].state = CHANNEL_COM_STATE_REQUEST;
-	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_50_150].retry = 0;
 
 	ret = 0;
 	return ret;
@@ -1651,7 +1641,6 @@ static int response_51_151(channel_com_info_t *channel_com_info)
 	set_power_output_enable(charger_info, 0);
 
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_51_151].state = CHANNEL_COM_STATE_REQUEST;
-	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_51_151].retry = 0;
 
 	ret = 0;
 	return ret;
@@ -1689,7 +1678,6 @@ static int response_60_160(channel_com_info_t *channel_com_info)
 
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_60_160].state = CHANNEL_COM_STATE_IDLE;
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_61_161].state = CHANNEL_COM_STATE_REQUEST;
-	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_61_161].retry = 0;
 
 	ret = 0;
 	return ret;
@@ -1727,7 +1715,6 @@ static int response_61_161(channel_com_info_t *channel_com_info)
 
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_61_161].state = CHANNEL_COM_STATE_IDLE;
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_62_162].state = CHANNEL_COM_STATE_REQUEST;
-	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_62_162].retry = 0;
 
 	ret = 0;
 	return ret;
@@ -1764,7 +1751,6 @@ static int response_62_162(channel_com_info_t *channel_com_info)
 
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_62_162].state = CHANNEL_COM_STATE_IDLE;
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_63_163].state = CHANNEL_COM_STATE_REQUEST;
-	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_63_163].retry = 0;
 
 	ret = 0;
 	return ret;
@@ -1801,7 +1787,6 @@ static int response_63_163(channel_com_info_t *channel_com_info)
 
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_63_163].state = CHANNEL_COM_STATE_IDLE;
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_64_164].state = CHANNEL_COM_STATE_REQUEST;
-	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_64_164].retry = 0;
 
 	ret = 0;
 	return ret;
@@ -1838,7 +1823,6 @@ static int response_64_164(channel_com_info_t *channel_com_info)
 
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_64_164].state = CHANNEL_COM_STATE_IDLE;
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_65_165].state = CHANNEL_COM_STATE_REQUEST;
-	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_65_165].retry = 0;
 
 	ret = 0;
 	return ret;
@@ -1875,7 +1859,6 @@ static int response_65_165(channel_com_info_t *channel_com_info)
 
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_65_165].state = CHANNEL_COM_STATE_IDLE;
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_66_166].state = CHANNEL_COM_STATE_REQUEST;
-	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_66_166].retry = 0;
 
 	ret = 0;
 	return ret;
@@ -1947,7 +1930,6 @@ static int response_67_167(channel_com_info_t *channel_com_info)
 
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_67_167].state = CHANNEL_COM_STATE_IDLE;
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_68_168].state = CHANNEL_COM_STATE_REQUEST;
-	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_68_168].retry = 0;
 
 	ret = 0;
 	return ret;
@@ -1984,7 +1966,6 @@ static int response_68_168(channel_com_info_t *channel_com_info)
 
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_68_168].state = CHANNEL_COM_STATE_IDLE;
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_69_169].state = CHANNEL_COM_STATE_REQUEST;
-	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_69_169].retry = 0;
 
 	ret = 0;
 	return ret;
@@ -2021,7 +2002,6 @@ static int response_69_169(channel_com_info_t *channel_com_info)
 
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_69_169].state = CHANNEL_COM_STATE_IDLE;
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_70_170].state = CHANNEL_COM_STATE_REQUEST;
-	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_70_170].retry = 0;
 
 	ret = 0;
 	return ret;
@@ -2216,6 +2196,30 @@ static channel_com_command_item_t *channel_com_command_table[] = {
 	&channel_com_command_item_73_173,
 };
 
+static void update_connect_state(channel_com_info_t *channel_com_info, uint8_t state)
+{
+	channel_com_info->connect_state[channel_com_info->connect_state_index] = state;
+	channel_com_info->connect_state_index++;
+
+	if(channel_com_info->connect_state_index >= CHANNEL_COM_CONNECT_STATE_SIZE) {
+		channel_com_info->connect_state_index = 0;
+	}
+}
+
+uint8_t channel_com_get_connect_state(channel_com_info_t *channel_com_info)
+{
+	uint8_t count = 0;
+	int i;
+
+	for(i = 0; i < CHANNEL_COM_CONNECT_STATE_SIZE; i++) {
+		if(channel_com_info->connect_state[i] != 0) {
+			count++;
+		}
+	}
+
+	return count;
+}
+
 static void channel_com_request_periodic(channel_com_info_t *channel_com_info)
 {
 	int i;
@@ -2223,6 +2227,13 @@ static void channel_com_request_periodic(channel_com_info_t *channel_com_info)
 
 	for(i = 0; i < sizeof(channel_com_command_table) / sizeof(channel_com_command_item_t *); i++) {
 		channel_com_command_item_t *item = channel_com_command_table[i];
+
+		if(channel_com_info->cmd_ctx[item->cmd].state == CHANNEL_COM_STATE_RESPONSE) {
+			if(ticks - channel_com_info->cmd_ctx[item->cmd].send_stamp >= 100) {
+				update_connect_state(channel_com_info, 0);
+				channel_com_info->cmd_ctx[item->cmd].state = CHANNEL_COM_STATE_ERROR;
+			}
+		}
 
 		if(item->request_period == 0) {
 			continue;
@@ -2233,7 +2244,6 @@ static void channel_com_request_periodic(channel_com_info_t *channel_com_info)
 		}
 
 		if(ticks - channel_com_info->cmd_ctx[item->cmd].stamp >= item->request_period) {
-			channel_com_info->cmd_ctx[item->cmd].retry = 0;
 			channel_com_info->cmd_ctx[item->cmd].stamp = ticks;
 			channel_com_info->cmd_ctx[item->cmd].state = CHANNEL_COM_STATE_REQUEST;
 		}
@@ -2254,6 +2264,7 @@ void task_channel_com_request(void const *argument)
 
 	while(1) {
 		for(i = 0; i < sizeof(channel_com_command_table) / sizeof(channel_com_command_item_t *); i++) {
+			uint32_t ticks = osKernelSysTick();
 			channel_com_command_item_t *item = channel_com_command_table[i];
 			cmd_common_t *cmd_common = (cmd_common_t *)channel_com_info->can_tx_msg.Data;
 
@@ -2263,10 +2274,9 @@ void task_channel_com_request(void const *argument)
 
 			channel_com_info->can_tx_msg.DLC = 8;
 
-			_printf("%s:%s:%d request cmd %d, retry:%d\n",
+			_printf("%s:%s:%d request cmd %d\n",
 			        __FILE__, __func__, __LINE__,
-			        item->request_code,
-			        channel_com_info->cmd_ctx[item->cmd].retry);
+			        item->request_code);
 
 			memset(channel_com_info->can_tx_msg.Data, 0, 8);
 
@@ -2278,15 +2288,12 @@ void task_channel_com_request(void const *argument)
 				continue;
 			}
 
-			channel_com_info->cmd_ctx[item->cmd].retry++;
+			channel_com_info->cmd_ctx[item->cmd].send_stamp = ticks;
 			ret = can_tx_data(channel_com_info->can_info, &channel_com_info->can_tx_msg, 10);
 
 			if(ret != 0) {
-				if(channel_com_info->cmd_ctx[item->cmd].retry <= 3) {
-					channel_com_info->cmd_ctx[item->cmd].state = CHANNEL_COM_STATE_REQUEST;
-				} else {
-					channel_com_info->cmd_ctx[item->cmd].state = CHANNEL_COM_STATE_ERROR;
-				}
+				update_connect_state(channel_com_info, 0);
+				channel_com_info->cmd_ctx[item->cmd].state = CHANNEL_COM_STATE_ERROR;
 			}
 		}
 
@@ -2322,7 +2329,8 @@ void task_channel_com_response(void const *argument)
 			if(cmd_common->cmd == item->response_code) {
 				ret = item->response_callback(channel_com_info);
 
-				if(ret != 0) {
+				if(ret == 0) {
+					update_connect_state(channel_com_info, 1);
 				}
 
 				break;

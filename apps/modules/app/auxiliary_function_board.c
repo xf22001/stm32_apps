@@ -6,7 +6,7 @@
  *   文件名称：auxiliary_function_board.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月28日 星期二 11时34分17秒
- *   修改日期：2020年05月19日 星期二 14时42分22秒
+ *   修改日期：2020年05月22日 星期五 09时43分01秒
  *   描    述：
  *
  *================================================================*/
@@ -230,7 +230,7 @@ static a_f_b_command_item_t a_f_b_command_item_0x15_0x95 = {
 
 int request_discharge(a_f_b_info_t *a_f_b_info)
 {
-	int ret = 0;
+	int ret = -1;
 
 	if(a_f_b_info->cmd_ctx[A_F_B_CMD_0X15_0X95].state == A_F_B_STATE_REQUEST) {
 		return ret;
@@ -263,7 +263,7 @@ int response_discharge(a_f_b_info_t *a_f_b_info)
 
 int request_insulation_check(a_f_b_info_t *a_f_b_info)
 {
-	int ret = 0;
+	int ret = -1;
 
 	if(a_f_b_info->cmd_ctx[A_F_B_CMD_0X15_0X95].state == A_F_B_STATE_REQUEST) {
 		return ret;
@@ -334,7 +334,7 @@ static a_f_b_command_item_t a_f_b_command_item_0x11_0x91 = {
 
 int request_a_f_b_status_data(a_f_b_info_t *a_f_b_info)
 {
-	int ret = 0;
+	int ret = -1;
 
 	if(a_f_b_info->cmd_ctx[A_F_B_CMD_0X11_0X91].state == A_F_B_STATE_REQUEST) {
 		return ret;
@@ -354,7 +354,7 @@ int response_discharge_running_status(a_f_b_info_t *a_f_b_info)
 		return ret;
 	}
 
-	if(a_f_b_info->a_f_b_0x11_0x91_ctx.response_data.running_state.discharge_running == 1) {
+	if(a_f_b_info->a_f_b_0x11_0x91_ctx.response_data.running_state.discharge_running == 1) {//checking
 		return ret;
 	}
 
@@ -411,16 +411,75 @@ static a_f_b_command_item_t *a_f_b_command_table[] = {
 	&a_f_b_command_item_0x11_0x91,
 };
 
-void test_a_f_b(void)
+static void a_f_b_process_requesst(a_f_b_info_t *a_f_b_info)
 {
-	_printf("sizeof(a_f_b_response_91_t):%d\n", sizeof(a_f_b_response_91_t));
+	int ret = -1;
+	int i;
+
+	for(i = 0; i < sizeof(a_f_b_command_table) / sizeof(a_f_b_command_item_t *); i++) {
+		a_f_b_command_item_t *item = a_f_b_command_table[i];
+		a_f_b_head_t *tx_head = (a_f_b_head_t *)a_f_b_info->tx_buffer;
+		a_f_b_head_t *rx_head = (a_f_b_head_t *)a_f_b_info->rx_buffer;
+		uint8_t connect_state_index;
+
+
+		if(a_f_b_info->cmd_ctx[item->cmd].state == A_F_B_STATE_IDLE) {
+			continue;
+		}
+
+		connect_state_index = a_f_b_info->connect_state_index;
+
+		a_f_b_info->connect_state_index++;
+
+		if(a_f_b_info->connect_state_index >= A_F_B_CONNECT_STATE_SIZE) {
+			a_f_b_info->connect_state_index = 0;
+		}
+
+		a_f_b_info->connect_state[connect_state_index] = 0;
+
+		tx_head->magic.b0 = 0xa5;
+		tx_head->magic.b1 = 0x5a;
+		tx_head->device_id = 0x00;
+		tx_head->cmd = item->request_code;
+
+		memset(a_f_b_info->rx_buffer, 0, A_F_B_BUFFER_SIZE);
+
+		ret = item->request_callback(a_f_b_info);
+		ret = uart_tx_rx_data(a_f_b_info->uart_info, a_f_b_info->rx_buffer, a_f_b_info->tx_size, a_f_b_info->rx_buffer, a_f_b_info->rx_size, 1000);
+
+		if(ret != a_f_b_info->rx_size) {
+			a_f_b_info->cmd_ctx[item->cmd].state = A_F_B_STATE_ERROR;
+			continue;
+		}
+
+		if(rx_head->cmd != item->response_code) {
+			a_f_b_info->cmd_ctx[item->cmd].state = A_F_B_STATE_ERROR;
+			continue;
+		}
+
+		ret = item->response_callback(a_f_b_info);
+
+		if(ret == 0) {
+			a_f_b_info->cmd_ctx[item->cmd].state = A_F_B_STATE_IDLE;
+			a_f_b_info->connect_state[connect_state_index] = 1;
+		} else {
+			a_f_b_info->cmd_ctx[item->cmd].state = A_F_B_STATE_ERROR;
+		}
+
+	}
+}
+
+static void a_f_b_periodic(a_f_b_info_t *a_f_b_info)
+{
+	int ret;
+	ret = request_a_f_b_status_data(a_f_b_info);
+
+	if(ret != 0) {
+	}
 }
 
 void task_auxiliary_function_board_decode(void const *argument)
 {
-	int ret = 0;
-	int i;
-
 	a_f_b_info_t *a_f_b_info = (a_f_b_info_t *)argument;
 
 	if(a_f_b_info == NULL) {
@@ -428,60 +487,8 @@ void task_auxiliary_function_board_decode(void const *argument)
 	}
 
 	while(1) {
-		for(i = 0; i < sizeof(a_f_b_command_table) / sizeof(a_f_b_command_item_t *); i++) {
-			a_f_b_command_item_t *item = a_f_b_command_table[i];
-			a_f_b_head_t *tx_head = (a_f_b_head_t *)a_f_b_info->tx_buffer;
-			a_f_b_head_t *rx_head = (a_f_b_head_t *)a_f_b_info->rx_buffer;
-			uint8_t connect_state_index = a_f_b_info->connect_state_index;
-
-
-			if(a_f_b_info->cmd_ctx[item->cmd].state == A_F_B_STATE_IDLE) {
-				continue;
-			}
-
-			a_f_b_info->connect_state_index++;
-
-			if(a_f_b_info->connect_state_index >= A_F_B_CONNECT_STATE_SIZE) {
-				a_f_b_info->connect_state_index = 0;
-			}
-
-			a_f_b_info->connect_state[connect_state_index] = 0;
-
-			tx_head->magic.b0 = 0xa5;
-			tx_head->magic.b1 = 0x5a;
-			tx_head->device_id = 0x00;
-			tx_head->cmd = item->request_code;
-
-			memset(a_f_b_info->rx_buffer, 0, A_F_B_BUFFER_SIZE);
-
-			ret = item->request_callback(a_f_b_info);
-			ret = uart_tx_rx_data(a_f_b_info->uart_info, a_f_b_info->rx_buffer, a_f_b_info->tx_size, a_f_b_info->rx_buffer, a_f_b_info->rx_size, 1000);
-
-			_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
-
-			if(ret != a_f_b_info->rx_size) {
-				a_f_b_info->cmd_ctx[item->cmd].state = A_F_B_STATE_ERROR;
-				continue;
-			}
-
-			if(rx_head->cmd != item->response_code) {
-				a_f_b_info->cmd_ctx[item->cmd].state = A_F_B_STATE_ERROR;
-				continue;
-			}
-
-			ret = item->response_callback(a_f_b_info);
-
-			if(ret == 0) {
-				a_f_b_info->cmd_ctx[item->cmd].state = A_F_B_STATE_IDLE;
-				a_f_b_info->connect_state[connect_state_index] = 1;
-			} else {
-				a_f_b_info->cmd_ctx[item->cmd].state = A_F_B_STATE_ERROR;
-			}
-
-		}
-
+		a_f_b_process_requesst(a_f_b_info);
+		a_f_b_periodic(a_f_b_info);
 		osDelay(10);
-
-		request_a_f_b_status_data(a_f_b_info);
 	}
 }
