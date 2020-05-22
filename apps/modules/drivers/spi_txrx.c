@@ -6,13 +6,11 @@
  *   文件名称：spi_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 10时30分48秒
- *   修改日期：2020年04月04日 星期六 18时53分12秒
+ *   修改日期：2020年05月22日 星期五 14时10分42秒
  *   描    述：
  *
  *================================================================*/
 #include "spi_txrx.h"
-
-#include "os_utils.h"
 
 static LIST_HEAD(spi_info_list);
 static osMutexId spi_info_list_mutex = NULL;
