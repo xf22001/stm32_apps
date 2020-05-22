@@ -6,7 +6,7 @@
  *   文件名称：power_modules.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时37分07秒
- *   修改日期：2020年05月20日 星期三 15时11分00秒
+ *   修改日期：2020年05月22日 星期五 17时38分24秒
  *   描    述：
  *
  *================================================================*/
@@ -81,6 +81,12 @@ typedef struct {
 	uint8_t connect_state_index;//连接状态索引
 } power_module_info_t;
 
+typedef enum {
+	POWER_MODULES_STATE_NONE = 0,
+	POWER_MODULES_STATE_INIT,
+	POWER_MODULES_STATE_READY,
+} power_modules_state_t;
+
 typedef struct {
 	struct list_head list;
 	can_info_t *can_info;
@@ -88,9 +94,9 @@ typedef struct {
 	can_tx_msg_t can_tx_msg;
 	can_rx_msg_t *can_rx_msg;
 
+	power_modules_state_t power_modules_state;
 	power_module_type_t power_module_type;
 	void *power_modules_handler;
-	uint8_t power_modules_valid;//初始化是否成功
 	power_module_info_t power_module_info[POWER_MODULES_SIZE];
 	uint16_t rate_current;//华为模块参考电流 a
 } power_modules_info_t;
@@ -120,7 +126,7 @@ typedef struct {
 
 void free_power_modules_info(power_modules_info_t *power_modules_info);
 power_modules_info_t *get_or_alloc_power_modules_info(channels_info_config_t *channels_info_config);
-void power_modules_handler_update(power_modules_info_t *power_modules_info);
+void power_modules_set_type(power_modules_info_t *power_modules_info, power_module_type_t power_module_type);
 void set_out_voltage_current(power_modules_info_t *power_modules_info, int module_id, uint32_t voltage, uint16_t current);
 void set_poweroff(power_modules_info_t *power_modules_info, int module_id, uint8_t poweroff);
 void query_status(power_modules_info_t *power_modules_info, int module_id);

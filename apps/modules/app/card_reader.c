@@ -6,7 +6,7 @@
  *   文件名称：card_reader.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月22日 星期五 14时00分40秒
- *   修改日期：2020年05月22日 星期五 14时24分41秒
+ *   修改日期：2020年05月22日 星期五 16时29分49秒
  *   描    述：
  *
  *================================================================*/
@@ -78,7 +78,7 @@ int card_reader_set_channel_info_config(card_reader_info_t *card_reader_info, ch
 	int ret = -1;
 	uart_info_t *uart_info;
 
-	uart_info = get_or_alloc_uart_info(channel_info_config->huart_card_reader);
+	uart_info = get_or_alloc_uart_info(channels_info_config->huart_card_reader);
 
 	if(uart_info == NULL) {
 		return ret;
@@ -132,7 +132,7 @@ card_reader_info_t *get_or_alloc_card_reader_info(channels_info_config_t *channe
 	if(os_status != osOK) {
 	}
 
-	if(card_reader_set_channel_info_config(channels_info_config) != 0) {
+	if(card_reader_set_channel_info_config(card_reader_info, channels_info_config) != 0) {
 		goto failed;
 	}
 

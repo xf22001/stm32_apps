@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_huawei.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 17时23分55秒
- *   修改日期：2020年05月21日 星期四 11时13分09秒
+ *   修改日期：2020年05月22日 星期五 17时38分57秒
  *   描    述：
  *
  *================================================================*/
@@ -384,8 +384,6 @@ static int power_modules_init_huawei(power_modules_info_t *power_modules_info)
 		power_module_info_t *power_module_info = power_modules_info->power_module_info + i;
 		memset(power_module_info, 0, sizeof(power_module_info_t));
 	}
-
-	power_modules_info->power_modules_valid = 1;
 
 	ret = 0;
 

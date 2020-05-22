@@ -6,7 +6,7 @@
  *   文件名称：power_modules.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时34分29秒
- *   修改日期：2020年05月20日 星期三 15时11分10秒
+ *   修改日期：2020年05月22日 星期五 17时37分44秒
  *   描    述：
  *
  *================================================================*/
@@ -24,7 +24,7 @@ static power_modules_handler_t *power_modules_handler_sz[] = {
 	&power_modules_handler_increase,
 };
 
-power_modules_handler_t *get_power_modules_handler(power_module_type_t power_module_type)
+static power_modules_handler_t *get_power_modules_handler(power_module_type_t power_module_type)
 {
 	int i;
 	power_modules_handler_t *power_modules_handler = NULL;
@@ -178,9 +178,10 @@ failed:
 	return power_modules_info;
 }
 
-void power_modules_handler_update(power_modules_info_t *power_modules_info)
+void power_modules_set_type(power_modules_info_t *power_modules_info, power_module_type_t power_module_type)
 {
-	power_modules_info->power_modules_handler = power_modules_info->power_modules_handler;//test
+	power_modules_info->power_modules_state = POWER_MODULES_STATE_INIT;
+	power_modules_info->power_modules_handler = get_power_modules_handler(power_module_type);
 }
 
 void set_out_voltage_current(power_modules_info_t *power_modules_info, int module_id, uint32_t voltage, uint16_t current)
@@ -286,9 +287,15 @@ int power_modules_init(power_modules_info_t *power_modules_info)
 		return ret;
 	}
 
-	power_modules_info->power_modules_valid = 0;
+	if(power_modules_info->power_modules_state != POWER_MODULES_STATE_INIT) {
+		return ret;
+	}
 
 	ret = power_modules_handler->power_modules_init(power_modules_info);
+
+	if(ret == 0) {
+		power_modules_info->power_modules_state = POWER_MODULES_STATE_READY;
+	}
 
 	return ret;
 }
@@ -305,7 +312,7 @@ void power_modules_request(power_modules_info_t *power_modules_info)
 		return;
 	}
 
-	if(power_modules_info->power_modules_valid == 0) {
+	if(power_modules_info->power_modules_state != POWER_MODULES_STATE_READY) {
 		return;
 	}
 
@@ -325,8 +332,8 @@ int power_modules_response(power_modules_info_t *power_modules_info, can_rx_msg_
 		return ret;
 	}
 
-	if(power_modules_info->power_modules_valid == 0) {
-		return ret;
+	if(power_modules_info->power_modules_state != POWER_MODULES_STATE_READY) {
+		return;
 	}
 
 	ret = power_modules_handler->power_modules_response(power_modules_info, can_rx_msg);
