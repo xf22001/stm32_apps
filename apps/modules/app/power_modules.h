@@ -6,7 +6,7 @@
  *   文件名称：power_modules.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时37分07秒
- *   修改日期：2020年05月22日 星期五 17时38分24秒
+ *   修改日期：2020年05月25日 星期一 16时35分29秒
  *   描    述：
  *
  *================================================================*/
@@ -28,7 +28,6 @@ extern "C"
 #endif
 
 #define POWER_MODULES_SIZE 20
-#define POWER_MODULES_CMD_STATE_SIZE 10
 #define CONNECT_STATE_SIZE 10
 
 typedef enum {
@@ -76,16 +75,10 @@ typedef struct {
 
 	power_module_status_t power_module_status;//模块状态
 
-	module_cmd_ctx_t module_cmd_ctx[POWER_MODULES_CMD_STATE_SIZE];
+	module_cmd_ctx_t *module_cmd_ctx;
 	uint8_t connect_state[CONNECT_STATE_SIZE];//连接状态
 	uint8_t connect_state_index;//连接状态索引
 } power_module_info_t;
-
-typedef enum {
-	POWER_MODULES_STATE_NONE = 0,
-	POWER_MODULES_STATE_INIT,
-	POWER_MODULES_STATE_READY,
-} power_modules_state_t;
 
 typedef struct {
 	struct list_head list;
@@ -94,7 +87,6 @@ typedef struct {
 	can_tx_msg_t can_tx_msg;
 	can_rx_msg_t *can_rx_msg;
 
-	power_modules_state_t power_modules_state;
 	power_module_type_t power_module_type;
 	void *power_modules_handler;
 	power_module_info_t power_module_info[POWER_MODULES_SIZE];
@@ -113,27 +105,26 @@ typedef int (*power_modules_response_t)(power_modules_info_t *power_modules_info
 
 typedef struct {
 	power_module_type_t power_module_type;
+	uint8_t cmd_size;
 	set_out_voltage_current_t set_out_voltage_current;
 	set_poweroff_t set_poweroff;
 	query_status_t query_status;
 	query_a_line_input_voltage_t query_a_line_input_voltage;
 	query_b_line_input_voltage_t query_b_line_input_voltage;
 	query_c_line_input_voltage_t query_c_line_input_voltage;
-	power_modules_init_t power_modules_init;
 	power_modules_request_t power_modules_request;
 	power_modules_response_t power_modules_response;
 } power_modules_handler_t;
 
 void free_power_modules_info(power_modules_info_t *power_modules_info);
 power_modules_info_t *get_or_alloc_power_modules_info(channels_info_config_t *channels_info_config);
-void power_modules_set_type(power_modules_info_t *power_modules_info, power_module_type_t power_module_type);
+int power_modules_set_type(power_modules_info_t *power_modules_info, power_module_type_t power_module_type);
 void set_out_voltage_current(power_modules_info_t *power_modules_info, int module_id, uint32_t voltage, uint16_t current);
 void set_poweroff(power_modules_info_t *power_modules_info, int module_id, uint8_t poweroff);
 void query_status(power_modules_info_t *power_modules_info, int module_id);
 void query_a_line_input_voltage(power_modules_info_t *power_modules_info, int module_id);
 void query_b_line_input_voltage(power_modules_info_t *power_modules_info, int module_id);
 void query_c_line_input_voltage(power_modules_info_t *power_modules_info, int module_id);
-int power_modules_init(power_modules_info_t *power_modules_info);
 void power_modules_request(power_modules_info_t *power_modules_info);
 int power_modules_response(power_modules_info_t *power_modules_info, can_rx_msg_t *can_rx_msg);
 #endif //_POWER_MODULES_H

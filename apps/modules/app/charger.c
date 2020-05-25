@@ -6,7 +6,7 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年05月19日 星期二 15时26分13秒
+ *   修改日期：2020年05月25日 星期一 14时52分58秒
  *   描    述：
  *
  *================================================================*/
@@ -88,7 +88,7 @@ static charger_info_t *get_charger_info(channel_info_config_t *channel_info_conf
 	}
 
 	list_for_each_entry(charger_info_item, &charger_info_list, charger_info_t, list) {
-		if(charger_info_item->can_info->hcan == channel_info_config->hcan_charger) {
+		if(charger_info_item->channel_info_config == channel_info_config) {
 			charger_info = charger_info_item;
 			break;
 		}

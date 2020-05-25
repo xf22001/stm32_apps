@@ -6,40 +6,12 @@
  *   文件名称：callback_chain.c
  *   创 建 者：肖飞
  *   创建日期：2020年03月20日 星期五 08时20分36秒
- *   修改日期：2020年03月24日 星期二 10时13分45秒
+ *   修改日期：2020年05月25日 星期一 15时16分52秒
  *   描    述：
  *
  *================================================================*/
 #include "callback_chain.h"
 #include "os_utils.h"
-
-callback_chain_t *alloc_callback_chain(void)
-{
-	osMutexDef(mutex);
-	callback_chain_t *callback_chain = (callback_chain_t *)os_alloc(sizeof(callback_chain_t));
-
-	if(callback_chain == NULL) {
-		return callback_chain;
-	}
-
-	callback_chain->mutex = osMutexCreate(osMutex(mutex));
-
-	if(callback_chain->mutex == NULL) {
-		goto failed;
-	}
-
-	INIT_LIST_HEAD(&callback_chain->list_callback);
-
-	return callback_chain;
-failed:
-
-	if(callback_chain != NULL) {
-		os_free(callback_chain);
-	}
-
-	callback_chain = NULL;
-	return callback_chain;
-}
 
 void free_callback_chain(callback_chain_t *callback_chain)
 {
@@ -66,6 +38,31 @@ void free_callback_chain(callback_chain_t *callback_chain)
 	}
 
 	os_free(callback_chain);
+}
+
+callback_chain_t *alloc_callback_chain(void)
+{
+	osMutexDef(mutex);
+	callback_chain_t *callback_chain = (callback_chain_t *)os_alloc(sizeof(callback_chain_t));
+
+	if(callback_chain == NULL) {
+		return callback_chain;
+	}
+
+	callback_chain->mutex = osMutexCreate(osMutex(mutex));
+
+	if(callback_chain->mutex == NULL) {
+		goto failed;
+	}
+
+	INIT_LIST_HEAD(&callback_chain->list_callback);
+
+	return callback_chain;
+failed:
+	free_callback_chain(callback_chain);
+	callback_chain = NULL;
+
+	return callback_chain;
 }
 
 int register_callback(callback_chain_t *callback_chain, callback_item_t *callback_item)

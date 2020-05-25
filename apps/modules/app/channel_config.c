@@ -6,7 +6,7 @@
  *   文件名称：channel_config.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月30日 星期四 09时37分37秒
- *   修改日期：2020年05月19日 星期二 09时00分13秒
+ *   修改日期：2020年05月25日 星期一 16时46分12秒
  *   描    述：
  *
  *================================================================*/
@@ -60,7 +60,7 @@ channel_info_config_t *get_channel_info_config(uint8_t channel_id)
 	channel_info_config_t *channel_info_config = NULL;
 	channel_info_config_t *channel_info_config_item = NULL;
 
-	for(i = 0; i < sizeof(channel_info_config_sz) / sizeof(channel_info_config_t *); i++) {
+	for(i = 0; i < ARRAY_SIZE(channel_info_config_sz); i++) {
 		channel_info_config_item = channel_info_config_sz[i];
 
 		if(channel_info_config_item->channel_id == channel_id) {

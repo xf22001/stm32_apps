@@ -6,7 +6,7 @@
  *   文件名称：bms_handler.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时18分53秒
- *   修改日期：2020年05月20日 星期三 08时16分08秒
+ *   修改日期：2020年05月25日 星期一 16时45分54秒
  *   描    述：
  *
  *================================================================*/
@@ -1027,7 +1027,7 @@ bms_state_handler_t *bms_get_state_handler(bms_state_t state)
 	bms_state_handler_t *handler = NULL;
 	int i;
 
-	for(i = 0; i < (sizeof(state_handler_sz) / sizeof(bms_state_handler_t)); i++) {
+	for(i = 0; i < ARRAY_SIZE(state_handler_sz); i++) {
 		if(state_handler_sz[i].state == state) {
 			handler = &state_handler_sz[i];
 			break;

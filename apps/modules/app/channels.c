@@ -6,7 +6,7 @@
  *   文件名称：channels.c
  *   创 建 者：肖飞
  *   创建日期：2020年01月02日 星期四 08时53分35秒
- *   修改日期：2020年05月15日 星期五 15时41分41秒
+ *   修改日期：2020年05月25日 星期一 15时10分35秒
  *   描    述：
  *
  *================================================================*/
@@ -186,9 +186,8 @@ channels_info_t *get_or_alloc_channels_info(channels_info_config_t *channels_inf
 
 failed:
 
-	if(channels_info != NULL) {
-		free_channels_info(channels_info);
-	}
+	free_channels_info(channels_info);
+	channels_info = NULL;
 
 	return channels_info;
 }
@@ -232,13 +231,7 @@ void channels_process_event(channels_info_t *channels_info)
 
 void task_channels(void const *argument)
 {
-	channels_info_config_t *channels_info_config = (channels_info_config_t *)argument;
-
-	channels_info_t *channels_info = get_or_alloc_channels_info(channels_info_config);
-
-	if(channels_info_config == NULL) {
-		app_panic();
-	}
+	channels_info_t *channels_info = (channels_info_t *)argument;
 
 	if(channels_info == NULL) {
 		app_panic();
@@ -259,13 +252,8 @@ int send_channel_event(channels_info_t *channels_info, channel_event_t *channel_
 
 void task_channel_event(void const *argument)
 {
-	channels_info_config_t *channels_info_config = (channels_info_config_t *)argument;
-	channels_info_t *channels_info = get_or_alloc_channels_info(channels_info_config);
+	channels_info_t *channels_info = (channels_info_t *)argument;
 	uint8_t id = 0;
-
-	if(channels_info_config == NULL) {
-		app_panic();
-	}
 
 	if(channels_info == NULL) {
 		app_panic();

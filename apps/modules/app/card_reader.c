@@ -6,7 +6,7 @@
  *   文件名称：card_reader.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月22日 星期五 14时00分40秒
- *   修改日期：2020年05月22日 星期五 16时29分49秒
+ *   修改日期：2020年05月25日 星期一 15时11分19秒
  *   描    述：
  *
  *================================================================*/
@@ -139,10 +139,8 @@ card_reader_info_t *get_or_alloc_card_reader_info(channels_info_config_t *channe
 	return card_reader_info;
 failed:
 
-	if(card_reader_info != NULL) {
-		free_card_reader_info(card_reader_info);
-		card_reader_info = NULL;
-	}
+	free_card_reader_info(card_reader_info);
+	card_reader_info = NULL;
 
 	return card_reader_info;
 }

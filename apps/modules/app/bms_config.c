@@ -6,7 +6,7 @@
  *   文件名称：bms_config.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月18日 星期六 12时29分29秒
- *   修改日期：2020年05月01日 星期五 19时53分01秒
+ *   修改日期：2020年05月25日 星期一 16时40分24秒
  *   描    述：
  *
  *================================================================*/
@@ -51,7 +51,7 @@ bms_info_config_t *get_bms_info_config(uint8_t bms_id)
 	bms_info_config_t *bms_info_config = NULL;
 	bms_info_config_t *bms_info_config_item = NULL;
 
-	for(i = 0; i < sizeof(bms_info_config_sz) / sizeof(bms_info_config_t *); i++) {
+	for(i = 0; i < ARRAY_SIZE(bms_info_config_sz); i++) {
 		bms_info_config_item = bms_info_config_sz[i];
 
 		if(bms_info_config_item->bms_id == bms_id) {

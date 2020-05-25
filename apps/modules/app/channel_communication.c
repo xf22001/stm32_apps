@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分44秒
- *   修改日期：2020年05月22日 星期五 09时46分06秒
+ *   修改日期：2020年05月25日 星期一 16时46分03秒
  *   描    述：
  *
  *================================================================*/
@@ -19,6 +19,43 @@
 
 #define LOG_NONE
 #include "log.h"
+
+typedef enum {
+	CHANNEL_COM_CMD_1_101 = 0,
+	CHANNEL_COM_CMD_2_102,
+	CHANNEL_COM_CMD_13_113,
+	CHANNEL_COM_CMD_3_103,
+	CHANNEL_COM_CMD_4_104,
+	CHANNEL_COM_CMD_5_105,
+	CHANNEL_COM_CMD_6_106,
+	CHANNEL_COM_CMD_7_107,
+	CHANNEL_COM_CMD_8_108,
+	CHANNEL_COM_CMD_9_109,
+	CHANNEL_COM_CMD_10_110,
+	CHANNEL_COM_CMD_11_111,
+	CHANNEL_COM_CMD_20_120,
+	CHANNEL_COM_CMD_21_121,
+	CHANNEL_COM_CMD_22_122,
+	CHANNEL_COM_CMD_25_125,
+	CHANNEL_COM_CMD_30_130,
+	CHANNEL_COM_CMD_50_150,
+	CHANNEL_COM_CMD_51_151,
+	CHANNEL_COM_CMD_60_160,
+	CHANNEL_COM_CMD_61_161,
+	CHANNEL_COM_CMD_62_162,
+	CHANNEL_COM_CMD_63_163,
+	CHANNEL_COM_CMD_64_164,
+	CHANNEL_COM_CMD_65_165,
+	CHANNEL_COM_CMD_66_166,
+	CHANNEL_COM_CMD_67_167,
+	CHANNEL_COM_CMD_68_168,
+	CHANNEL_COM_CMD_69_169,
+	CHANNEL_COM_CMD_70_170,
+	CHANNEL_COM_CMD_71_171,
+	CHANNEL_COM_CMD_72_172,
+	CHANNEL_COM_CMD_73_173,
+	CHANNEL_COM_CMD_TOTAL,
+} channel_com_cmd_t;
 
 typedef struct {
 	uint8_t cmd;
@@ -482,7 +519,7 @@ static channel_com_info_t *get_channel_com_info(channel_info_config_t *channel_i
 	}
 
 	list_for_each_entry(channel_com_info_item, &channel_com_info_list, channel_com_info_t, list) {
-		if(channel_com_info_item->can_info->hcan == channel_info_config->hcan_com) {
+		if(channel_com_info_item->channel_info_config == channel_info_config) {
 			channel_com_info = channel_com_info_item;
 			break;
 		}
@@ -518,6 +555,10 @@ void free_channel_com_info(channel_com_info_t *channel_com_info)
 	os_status = osMutexRelease(channel_com_info_list_mutex);
 
 	if(os_status != osOK) {
+	}
+
+	if(channel_com_info->cmd_ctx != NULL) {
+		os_free(channel_com_info->cmd_ctx);
 	}
 
 	os_free(channel_com_info);
@@ -784,6 +825,14 @@ channel_com_info_t *get_or_alloc_channel_com_info(channel_info_config_t *channel
 	}
 
 	memset(channel_com_info, 0, sizeof(channel_com_info_t));
+
+	channel_com_info->cmd_ctx = (channel_com_cmd_ctx_t *)os_alloc(sizeof(channel_com_cmd_ctx_t) * CHANNEL_COM_CMD_TOTAL);
+
+	if(channel_com_info->cmd_ctx == NULL) {
+		goto failed;
+	}
+
+	memset(channel_com_info->cmd_ctx, 0, sizeof(channel_com_cmd_ctx_t) * CHANNEL_COM_CMD_TOTAL);
 
 	channel_com_info->channel_info_config = channel_info_config;
 
@@ -2225,7 +2274,7 @@ static void channel_com_request_periodic(channel_com_info_t *channel_com_info)
 	int i;
 	uint32_t ticks = osKernelSysTick();
 
-	for(i = 0; i < sizeof(channel_com_command_table) / sizeof(channel_com_command_item_t *); i++) {
+	for(i = 0; i < ARRAY_SIZE(channel_com_command_table); i++) {
 		channel_com_command_item_t *item = channel_com_command_table[i];
 
 		if(channel_com_info->cmd_ctx[item->cmd].state == CHANNEL_COM_STATE_RESPONSE) {
@@ -2263,7 +2312,7 @@ void task_channel_com_request(void const *argument)
 	}
 
 	while(1) {
-		for(i = 0; i < sizeof(channel_com_command_table) / sizeof(channel_com_command_item_t *); i++) {
+		for(i = 0; i < ARRAY_SIZE(channel_com_command_table); i++) {
 			uint32_t ticks = osKernelSysTick();
 			channel_com_command_item_t *item = channel_com_command_table[i];
 			cmd_common_t *cmd_common = (cmd_common_t *)channel_com_info->can_tx_msg.Data;
@@ -2322,7 +2371,7 @@ void task_channel_com_response(void const *argument)
 
 		channel_com_info->can_rx_msg = can_get_msg(channel_com_info->can_info);
 
-		for(i = 0; i < sizeof(channel_com_command_table) / sizeof(channel_com_command_item_t *); i++) {
+		for(i = 0; i < ARRAY_SIZE(channel_com_command_table); i++) {
 			channel_com_command_item_t *item = channel_com_command_table[i];
 			cmd_common_t *cmd_common = (cmd_common_t *)channel_com_info->can_rx_msg->Data;
 

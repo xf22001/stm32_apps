@@ -6,7 +6,7 @@
  *   文件名称：auxiliary_function_board.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月28日 星期二 11时34分17秒
- *   修改日期：2020年05月22日 星期五 09时43分01秒
+ *   修改日期：2020年05月25日 星期一 16时39分09秒
  *   描    述：
  *
  *================================================================*/
@@ -36,7 +36,7 @@ static a_f_b_info_t *get_a_f_b_info(channel_info_config_t *channel_info_config)
 	}
 
 	list_for_each_entry(a_f_b_info_item, &a_f_b_info_list, a_f_b_info_t, list) {
-		if(a_f_b_info_item->uart_info->huart == channel_info_config->huart_a_f_b) {
+		if(a_f_b_info_item->channel_info_config == channel_info_config) {
 			a_f_b_info = a_f_b_info_item;
 			break;
 		}
@@ -411,12 +411,12 @@ static a_f_b_command_item_t *a_f_b_command_table[] = {
 	&a_f_b_command_item_0x11_0x91,
 };
 
-static void a_f_b_process_requesst(a_f_b_info_t *a_f_b_info)
+static void a_f_b_process_request(a_f_b_info_t *a_f_b_info)
 {
 	int ret = -1;
 	int i;
 
-	for(i = 0; i < sizeof(a_f_b_command_table) / sizeof(a_f_b_command_item_t *); i++) {
+	for(i = 0; i < ARRAY_SIZE(a_f_b_command_table); i++) {
 		a_f_b_command_item_t *item = a_f_b_command_table[i];
 		a_f_b_head_t *tx_head = (a_f_b_head_t *)a_f_b_info->tx_buffer;
 		a_f_b_head_t *rx_head = (a_f_b_head_t *)a_f_b_info->rx_buffer;
@@ -487,7 +487,7 @@ void task_auxiliary_function_board_decode(void const *argument)
 	}
 
 	while(1) {
-		a_f_b_process_requesst(a_f_b_info);
+		a_f_b_process_request(a_f_b_info);
 		a_f_b_periodic(a_f_b_info);
 		osDelay(10);
 	}

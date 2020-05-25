@@ -6,7 +6,7 @@
  *   文件名称：os_utils.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分36秒
- *   修改日期：2020年05月21日 星期四 16时09分54秒
+ *   修改日期：2020年05月25日 星期一 15时57分09秒
  *   描    述：
  *
  *================================================================*/
@@ -168,6 +168,8 @@ static inline uint8_t get_u8_b3_from_u32(uint32_t v)
 
 	return u_uint32_bytes.s.byte3;
 }
+
+#define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
 
 typedef int (*log_fn_t)(const char *buffer, size_t size);
 

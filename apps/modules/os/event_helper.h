@@ -6,7 +6,7 @@
  *   文件名称：event_helper.h
  *   创 建 者：肖飞
  *   创建日期：2020年01月07日 星期二 09时56分07秒
- *   修改日期：2020年03月24日 星期二 10时45分13秒
+ *   修改日期：2020年05月25日 星期一 15时17分38秒
  *   描    述：
  *
  *================================================================*/
@@ -37,8 +37,8 @@ typedef struct {
 	struct list_head list_event;
 } event_pool_t;
 
-event_pool_t *alloc_event_pool(void);
 void free_event_pool(event_pool_t *event_pool);
+event_pool_t *alloc_event_pool(void);
 int event_pool_put_event(event_pool_t *event_pool, void *event, uint32_t timeout);
 int event_pool_wait_event(event_pool_t *event_pool, uint32_t timeout);
 void *event_pool_get_event(event_pool_t *event_pool);

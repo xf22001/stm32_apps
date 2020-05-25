@@ -6,68 +6,13 @@
  *   文件名称：event_helper.c
  *   创 建 者：肖飞
  *   创建日期：2020年01月07日 星期二 09时56分01秒
- *   修改日期：2020年05月15日 星期五 12时59分10秒
+ *   修改日期：2020年05月25日 星期一 15时59分53秒
  *   描    述：
  *
  *================================================================*/
 #include "event_helper.h"
 #include "os_utils.h"
 #include "log.h"
-
-event_pool_t *alloc_event_pool(void)
-{
-	event_pool_t *event_pool = NULL;
-	osStatus status;
-
-	osMessageQDef(queue, 10, uint16_t);
-	osMutexDef(mutex);
-
-	event_pool = (event_pool_t *)os_alloc(sizeof(event_pool_t));
-
-	if(event_pool == NULL) {
-		return event_pool;
-	}
-
-	event_pool->queue = osMessageCreate(osMessageQ(queue), NULL);
-
-	if(event_pool->queue == NULL) {
-		goto failed;
-	}
-
-	event_pool->mutex = osMutexCreate(osMutex(mutex));
-
-	if(event_pool->mutex == NULL) {
-		goto failed;
-	}
-
-	INIT_LIST_HEAD(&event_pool->list_event);
-
-	return event_pool;
-
-failed:
-
-	if(event_pool->queue != NULL) {
-		status = osMessageDelete(event_pool->queue);
-
-		if(status != osOK) {
-		}
-	}
-
-	if(event_pool->mutex != NULL) {
-		status = osMutexDelete(event_pool->mutex);
-
-		if(osOK != status) {
-		}
-	}
-
-	if(event_pool != NULL) {
-		os_free(event_pool);
-	}
-
-	event_pool = NULL;
-
-	return event_pool;
-}
 
 void free_event_pool(event_pool_t *event_pool)
 {
@@ -104,6 +49,42 @@ void free_event_pool(event_pool_t *event_pool)
 	}
 
 	os_free(event_pool);
+}
+
+event_pool_t *alloc_event_pool(void)
+{
+	event_pool_t *event_pool = NULL;
+
+	osMessageQDef(queue, 10, uint16_t);
+	osMutexDef(mutex);
+
+	event_pool = (event_pool_t *)os_alloc(sizeof(event_pool_t));
+
+	if(event_pool == NULL) {
+		return event_pool;
+	}
+
+	event_pool->queue = osMessageCreate(osMessageQ(queue), NULL);
+
+	if(event_pool->queue == NULL) {
+		goto failed;
+	}
+
+	event_pool->mutex = osMutexCreate(osMutex(mutex));
+
+	if(event_pool->mutex == NULL) {
+		goto failed;
+	}
+
+	INIT_LIST_HEAD(&event_pool->list_event);
+
+	return event_pool;
+
+failed:
+	free_event_pool(event_pool);
+	event_pool = NULL;
+
+	return event_pool;
 }
 
 int event_pool_put_event(event_pool_t *event_pool, void *event, uint32_t timeout)

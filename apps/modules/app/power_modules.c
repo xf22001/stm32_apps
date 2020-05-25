@@ -6,7 +6,7 @@
  *   文件名称：power_modules.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时34分29秒
- *   修改日期：2020年05月22日 星期五 17时37分44秒
+ *   修改日期：2020年05月25日 星期一 16时36分43秒
  *   描    述：
  *
  *================================================================*/
@@ -15,6 +15,7 @@
 #include "os_utils.h"
 #include "power_modules_handler_huawei.h"
 #include "power_modules_handler_increase.h"
+#include <string.h>
 
 static LIST_HEAD(power_modules_info_list);
 static osMutexId power_modules_info_list_mutex = NULL;
@@ -30,7 +31,7 @@ static power_modules_handler_t *get_power_modules_handler(power_module_type_t po
 	power_modules_handler_t *power_modules_handler = NULL;
 	power_modules_handler_t *power_modules_handler_item = NULL;
 
-	for(i = 0; i < sizeof(power_modules_handler_sz) / sizeof(power_modules_handler_t *); i++) {
+	for(i = 0; i < ARRAY_SIZE(power_modules_handler_sz); i++) {
 		power_modules_handler_item = power_modules_handler_sz[i];
 
 		if(power_modules_handler_item->power_module_type == power_module_type) {
@@ -40,6 +41,23 @@ static power_modules_handler_t *get_power_modules_handler(power_module_type_t po
 	}
 
 	return power_modules_handler;
+}
+
+static int get_power_modules_handler_max_cmd_size(void)
+{
+	int i;
+	int max_cmd_size = 0;
+	power_modules_handler_t *power_modules_handler_item = NULL;
+
+	for(i = 0; i < ARRAY_SIZE(power_modules_handler_sz); i++) {
+		power_modules_handler_item = power_modules_handler_sz[i];
+
+		if(power_modules_handler_item->cmd_size > max_cmd_size) {
+			max_cmd_size = power_modules_handler_item->cmd_size;
+		}
+	}
+
+	return max_cmd_size;
 }
 
 static power_modules_info_t *get_power_modules_info(channels_info_config_t *channels_info_config)
@@ -75,6 +93,7 @@ static power_modules_info_t *get_power_modules_info(channels_info_config_t *chan
 void free_power_modules_info(power_modules_info_t *power_modules_info)
 {
 	osStatus os_status;
+	int i;
 
 	if(power_modules_info == NULL) {
 		return;
@@ -96,23 +115,36 @@ void free_power_modules_info(power_modules_info_t *power_modules_info)
 	if(os_status != osOK) {
 	}
 
+	for(i = 0; i < POWER_MODULES_SIZE; i++) {
+		power_module_info_t *power_module_info = power_modules_info->power_module_info + i;
+
+		if(power_module_info->module_cmd_ctx != NULL) {
+			os_free(power_module_info->module_cmd_ctx);
+		}
+	}
+
 	os_free(power_modules_info);
 }
 
 static int power_modules_set_channels_info_config(power_modules_info_t *power_modules_info, channels_info_config_t *channels_info_config)
 {
 	int ret = -1;
+	int i;
+	int max_cmd_size = get_power_modules_handler_max_cmd_size();
 
-	power_modules_handler_t *power_modules_handler;
+	for(i = 0; i < POWER_MODULES_SIZE; i++) {
+		power_module_info_t *power_module_info = power_modules_info->power_module_info + i;
 
-	power_modules_info->power_module_type = POWER_MODULE_TYPE_INCREASE;//test
-	power_modules_handler = get_power_modules_handler(power_modules_info->power_module_type);
+		power_module_info->module_cmd_ctx = (module_cmd_ctx_t *)os_alloc(sizeof(module_cmd_ctx_t) * max_cmd_size);
 
-	if(power_modules_handler == NULL) {
-		return ret;
+		if(power_module_info->module_cmd_ctx == NULL) {
+			return ret;
+		}
 	}
 
-	power_modules_info->power_modules_handler = power_modules_handler;
+	if(power_modules_set_type(power_modules_info, POWER_MODULE_TYPE_INCREASE) != 0) {
+		return ret;
+	}
 
 	ret = 0;
 	return ret;
@@ -148,6 +180,8 @@ power_modules_info_t *get_or_alloc_power_modules_info(channels_info_config_t *ch
 		return power_modules_info;
 	}
 
+	memset(power_modules_info, 0, sizeof(power_modules_info_t));
+
 	power_modules_info->channels_info_config = channels_info_config;
 
 	os_status = osMutexWait(power_modules_info_list_mutex, osWaitForever);
@@ -171,17 +205,35 @@ power_modules_info_t *get_or_alloc_power_modules_info(channels_info_config_t *ch
 	return power_modules_info;
 failed:
 
-	if(power_modules_info) {
-		free_power_modules_info(power_modules_info);
-	}
+	free_power_modules_info(power_modules_info);
+	power_modules_info = NULL;
 
 	return power_modules_info;
 }
 
-void power_modules_set_type(power_modules_info_t *power_modules_info, power_module_type_t power_module_type)
+int power_modules_set_type(power_modules_info_t *power_modules_info, power_module_type_t power_module_type)
 {
-	power_modules_info->power_modules_state = POWER_MODULES_STATE_INIT;
-	power_modules_info->power_modules_handler = get_power_modules_handler(power_module_type);
+	int ret = -1;
+	int i;
+	power_modules_handler_t *power_modules_handler;
+
+	power_modules_handler = get_power_modules_handler(power_modules_info->power_module_type);
+
+	if(power_modules_handler == NULL) {
+		return ret;
+	}
+
+	for(i = 0; i < POWER_MODULES_SIZE; i++) {
+		power_module_info_t *power_module_info = power_modules_info->power_module_info + i;
+
+		memset(power_module_info->module_cmd_ctx, 0, sizeof(module_cmd_ctx_t) * power_modules_handler->cmd_size);
+	}
+
+	power_modules_info->power_module_type = power_module_type;
+	power_modules_info->power_modules_handler = power_modules_handler;
+	ret = 0;
+
+	return ret;
 }
 
 void set_out_voltage_current(power_modules_info_t *power_modules_info, int module_id, uint32_t voltage, uint16_t current)
@@ -274,32 +326,6 @@ void query_c_line_input_voltage(power_modules_info_t *power_modules_info, int mo
 	power_modules_handler->query_c_line_input_voltage(power_modules_info, module_id);
 }
 
-int power_modules_init(power_modules_info_t *power_modules_info)
-{
-	int ret = -1;
-	power_modules_handler_t *power_modules_handler = (power_modules_handler_t *)power_modules_info->power_modules_handler;
-
-	if(power_modules_handler == NULL) {
-		return ret;
-	}
-
-	if(power_modules_handler->power_modules_init == NULL) {
-		return ret;
-	}
-
-	if(power_modules_info->power_modules_state != POWER_MODULES_STATE_INIT) {
-		return ret;
-	}
-
-	ret = power_modules_handler->power_modules_init(power_modules_info);
-
-	if(ret == 0) {
-		power_modules_info->power_modules_state = POWER_MODULES_STATE_READY;
-	}
-
-	return ret;
-}
-
 void power_modules_request(power_modules_info_t *power_modules_info)
 {
 	power_modules_handler_t *power_modules_handler = (power_modules_handler_t *)power_modules_info->power_modules_handler;
@@ -309,10 +335,6 @@ void power_modules_request(power_modules_info_t *power_modules_info)
 	}
 
 	if(power_modules_handler->power_modules_request == NULL) {
-		return;
-	}
-
-	if(power_modules_info->power_modules_state != POWER_MODULES_STATE_READY) {
 		return;
 	}
 
@@ -330,10 +352,6 @@ int power_modules_response(power_modules_info_t *power_modules_info, can_rx_msg_
 
 	if(power_modules_handler->power_modules_response == NULL) {
 		return ret;
-	}
-
-	if(power_modules_info->power_modules_state != POWER_MODULES_STATE_READY) {
-		return;
 	}
 
 	ret = power_modules_handler->power_modules_response(power_modules_info, can_rx_msg);

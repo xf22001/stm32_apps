@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_huawei.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 17时23分55秒
- *   修改日期：2020年05月22日 星期五 17时38分57秒
+ *   修改日期：2020年05月25日 星期一 16时39分40秒
  *   描    述：
  *
  *================================================================*/
@@ -370,25 +370,6 @@ typedef struct {
 	uint16_t response_code;
 	module_response_callback_t response_callback;
 } module_command_item_t;
-
-static int power_modules_init_huawei(power_modules_info_t *power_modules_info)
-{
-	int ret = -1;
-	int i;
-
-	if(MODULE_CMD_TOTAL > POWER_MODULES_CMD_STATE_SIZE) {//命令状态缓冲区不够用
-		return ret;
-	}
-
-	for(i = 0; i < POWER_MODULES_SIZE; i++) {
-		power_module_info_t *power_module_info = power_modules_info->power_module_info + i;
-		memset(power_module_info, 0, sizeof(power_module_info_t));
-	}
-
-	ret = 0;
-
-	return ret;
-}
 
 static void set_out_voltage(power_modules_info_t *power_modules_info, int module_id, uint32_t voltage)//mv
 {
@@ -823,7 +804,7 @@ void power_modules_request_huawei(power_modules_info_t *power_modules_info)
 	int ret;
 
 	for(module_id = 0; module_id < POWER_MODULES_SIZE; module_id++) {
-		for(i = 0; i < sizeof(module_command_item_table) / sizeof(module_command_item_t *); i++) {
+		for(i = 0; i < ARRAY_SIZE(module_command_item_table); i++) {
 			module_command_item_t *item = module_command_item_table[i];
 			int module_addr = module_id + 1;
 
@@ -896,7 +877,7 @@ int power_modules_response_huawei(power_modules_info_t *power_modules_info, can_
 	u_module_cmd->s.unused = 0;
 	response_code = get_u16_from_u8_lh(u_module_cmd->s.cmd_b0, u_module_cmd->s.cmd_b1);
 
-	for(i = 0; i < sizeof(module_command_item_table) / sizeof(module_command_item_t *); i++) {
+	for(i = 0; i < ARRAY_SIZE(module_command_item_table); i++) {
 		module_command_item_t *item = module_command_item_table[i];
 
 		if(response_ext_id != item->response_ext_id) {
@@ -921,13 +902,13 @@ int power_modules_response_huawei(power_modules_info_t *power_modules_info, can_
 
 power_modules_handler_t power_modules_handler_huawei = {
 	.power_module_type = POWER_MODULE_TYPE_HUAWEI,
+	.cmd_size = ARRAY_SIZE(module_command_item_table),
 	.set_out_voltage_current = set_out_voltage_current_huawei,
 	.set_poweroff = set_poweroff_huawei,
 	.query_status = query_status_huawei,
 	.query_a_line_input_voltage = query_a_line_input_voltage_huawei,
 	.query_b_line_input_voltage = query_b_line_input_voltage_huawei,
 	.query_c_line_input_voltage = query_c_line_input_voltage_huawei,
-	.power_modules_init = power_modules_init_huawei,
 	.power_modules_request = power_modules_request_huawei,
 	.power_modules_response = power_modules_response_huawei,
 };

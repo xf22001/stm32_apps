@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_increase.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 17时36分29秒
- *   修改日期：2020年05月22日 星期五 17时39分09秒
+ *   修改日期：2020年05月25日 星期一 16时45分45秒
  *   描    述：
  *
  *================================================================*/
@@ -178,25 +178,6 @@ typedef struct {
 	uint8_t response_fn;
 	module_response_callback_t response_callback;
 } module_command_item_t;
-
-static int power_modules_init_huawei(power_modules_info_t *power_modules_info)
-{
-	int ret = -1;
-	int i;
-
-	if(MODULE_CMD_TOTAL > POWER_MODULES_CMD_STATE_SIZE) {//命令状态缓冲区不够用
-		return ret;
-	}
-
-	for(i = 0; i < POWER_MODULES_SIZE; i++) {
-		power_module_info_t *power_module_info = power_modules_info->power_module_info + i;
-		memset(power_module_info, 0, sizeof(power_module_info_t));
-	}
-
-	ret = 0;
-
-	return ret;
-}
 
 void set_out_voltage_current_increase(power_modules_info_t *power_modules_info, int module_id, uint32_t voltage, uint16_t current)
 {
@@ -499,7 +480,7 @@ static void power_modules_request_increase(power_modules_info_t *power_modules_i
 	int module_addr;
 
 	for(module_id = 0; module_id < POWER_MODULES_SIZE; module_id++) {
-		for(i = 0; i < sizeof(module_command_item_table) / sizeof(module_command_item_t *); i++) {
+		for(i = 0; i < ARRAY_SIZE(module_command_item_table); i++) {
 			module_command_item_t *item = module_command_item_table[i];
 
 			if(power_modules_info->power_module_info[module_id].module_cmd_ctx[item->cmd].state == MODULE_CMD_STATE_REQUEST) {
@@ -566,7 +547,7 @@ static int power_modules_response_increase(power_modules_info_t *power_modules_i
 	module_cmd = (module_cmd_t *)power_modules_info->can_rx_msg->Data;
 	response_code = module_cmd->cmd;
 
-	for(i = 0; i < sizeof(module_command_item_table) / sizeof(module_command_item_t *); i++) {
+	for(i = 0; i < ARRAY_SIZE(module_command_item_table); i++) {
 		module_command_item_t *item = module_command_item_table[i];
 
 		u_module_extid.v = power_modules_info->can_rx_msg->ExtId;
@@ -614,13 +595,13 @@ static int power_modules_response_increase(power_modules_info_t *power_modules_i
 
 power_modules_handler_t power_modules_handler_increase = {
 	.power_module_type = POWER_MODULE_TYPE_INCREASE,
+	.cmd_size = ARRAY_SIZE(module_command_item_table),
 	.set_out_voltage_current = set_out_voltage_current_increase,
 	.set_poweroff =  set_poweroff_increase,
 	.query_status =  query_status_increase,
 	.query_a_line_input_voltage = query_a_line_input_voltage_increase,
 	.query_b_line_input_voltage =  query_b_line_input_voltage_increase,
 	.query_c_line_input_voltage = query_c_line_input_voltage_increase,
-	.power_modules_init = power_modules_init_huawei,
 	.power_modules_request = power_modules_request_increase,
 	.power_modules_response = power_modules_response_increase,
 };

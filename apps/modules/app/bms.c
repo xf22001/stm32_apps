@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年05月22日 星期五 10时43分47秒
+ *   修改日期：2020年05月25日 星期一 15时11分09秒
  *   描    述：
  *
  *================================================================*/
@@ -167,7 +167,7 @@ static bms_info_t *get_bms_info(bms_info_config_t *bms_info_config)
 
 
 	list_for_each_entry(bms_info_item, &bms_info_list, bms_info_t, list) {
-		if(bms_info_item->can_info->hcan == bms_info_config->hcan) {
+		if(bms_info_item->bms_info_config == bms_info_config) {
 			bms_info = bms_info_item;
 			break;
 		}
@@ -1096,7 +1096,6 @@ bms_info_t *get_or_alloc_bms_info(bms_info_config_t *bms_info_config)
 	return bms_info;
 
 failed:
-
 	free_bms_info(bms_info);
 	bms_info = NULL;
 

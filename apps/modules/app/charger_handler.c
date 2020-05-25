@@ -6,7 +6,7 @@
  *   文件名称：charger_handler.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时18分42秒
- *   修改日期：2020年05月19日 星期二 14时10分48秒
+ *   修改日期：2020年05月25日 星期一 16时40分46秒
  *   描    述：
  *
  *================================================================*/
@@ -1461,7 +1461,7 @@ charger_state_handler_t *charger_get_state_handler(charger_state_t state)
 	charger_state_handler_t *handler = NULL;
 	int i;
 
-	for(i = 0; i < (sizeof(state_handler_sz) / sizeof(charger_state_handler_t)); i++) {
+	for(i = 0; i < ARRAY_SIZE(state_handler_sz); i++) {
 		if(state_handler_sz[i].state == state) {
 			handler = &state_handler_sz[i];
 			break;
