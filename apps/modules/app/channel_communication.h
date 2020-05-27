@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.h
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分48秒
- *   修改日期：2020年05月25日 星期一 15时32分41秒
+ *   修改日期：2020年05月26日 星期二 10时38分43秒
  *   描    述：
  *
  *================================================================*/
@@ -30,6 +30,32 @@ extern "C"
 #endif
 
 #define CHANNEL_COM_CONNECT_STATE_SIZE 10
+
+typedef struct {
+	uint32_t channel_id : 8;//src 
+	uint32_t main_board_id : 8;//dest 0xff
+	uint32_t unused : 8;
+	uint32_t flag : 5;//0x10
+	uint32_t unused1 : 3;
+} channel_com_can_tx_id_t;
+
+typedef union {
+	channel_com_can_tx_id_t s;
+	uint32_t v;
+} u_channel_com_can_tx_id_t;
+
+typedef struct {
+	uint32_t main_board_id : 8;//src 0xff
+	uint32_t channel_id : 8;//dest 
+	uint32_t unused : 8;
+	uint32_t flag : 5;//0x10
+	uint32_t unused1 : 3;
+} channel_com_can_rx_id_t;
+
+typedef union {
+	channel_com_can_rx_id_t s;
+	uint32_t v;
+} u_channel_com_can_rx_id_t;
 
 typedef enum {
 	CHANNEL_COM_STATE_IDLE = 0,

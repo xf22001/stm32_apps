@@ -6,7 +6,7 @@
  *   文件名称：channel_config.h
  *   创 建 者：肖飞
  *   创建日期：2020年04月30日 星期四 09时39分55秒
- *   修改日期：2020年05月18日 星期一 15时23分40秒
+ *   修改日期：2020年05月26日 星期二 10时01分32秒
  *   描    述：
  *
  *================================================================*/
@@ -31,7 +31,7 @@ typedef struct {
 } charger_op_ctx_t;
 
 typedef struct {
-	uint8_t channel_id;
+	uint8_t id;
 
 	CAN_HandleTypeDef *hcan_charger;
 	UART_HandleTypeDef *huart_a_f_b;
@@ -65,5 +65,5 @@ typedef struct {
 	uint16_t gpio_pin_error_stop;
 } channel_info_config_t;
 
-channel_info_config_t *get_channel_info_config(uint8_t channel_id);
+channel_info_config_t *get_channel_info_config(uint8_t config_id);
 #endif //_CHANNEL_CONFIG_H

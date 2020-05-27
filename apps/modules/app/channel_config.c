@@ -6,7 +6,7 @@
  *   文件名称：channel_config.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月30日 星期四 09时37分37秒
- *   修改日期：2020年05月25日 星期一 16时46分12秒
+ *   修改日期：2020年05月26日 星期二 10时01分54秒
  *   描    述：
  *
  *================================================================*/
@@ -22,7 +22,7 @@ extern CAN_HandleTypeDef hcan2;
 extern UART_HandleTypeDef huart3;
 
 channel_info_config_t channel_info_config = {
-	.channel_id = 0,
+	.id = 0,
 
 	.hcan_charger = &hcan1,
 	.huart_a_f_b = &huart3,
@@ -54,7 +54,7 @@ static channel_info_config_t *channel_info_config_sz[] = {
 	&channel_info_config,
 };
 
-channel_info_config_t *get_channel_info_config(uint8_t channel_id)
+channel_info_config_t *get_channel_info_config(uint8_t id)
 {
 	int i;
 	channel_info_config_t *channel_info_config = NULL;
@@ -63,7 +63,7 @@ channel_info_config_t *get_channel_info_config(uint8_t channel_id)
 	for(i = 0; i < ARRAY_SIZE(channel_info_config_sz); i++) {
 		channel_info_config_item = channel_info_config_sz[i];
 
-		if(channel_info_config_item->channel_id == channel_id) {
+		if(channel_info_config_item->id == id) {
 			channel_info_config = channel_info_config_item;
 			break;
 		}

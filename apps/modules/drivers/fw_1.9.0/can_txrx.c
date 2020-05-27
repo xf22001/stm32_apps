@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时07分55秒
- *   修改日期：2020年05月25日 星期一 16时44分29秒
+ *   修改日期：2020年05月26日 星期二 09时40分28秒
  *   描    述：
  *
  *================================================================*/
@@ -90,6 +90,9 @@ static void receive_init(CAN_HandleTypeDef *hcan)
 	} else {
 		app_panic();
 	}
+
+	id.v = 0;
+	id_mask.v = 0;
 
 	id.s.id = can_info->can_config->filter_id;
 	id_mask.s.id = can_info->can_config->filter_mask_id;

@@ -6,7 +6,7 @@
  *   文件名称：channels.c
  *   创 建 者：肖飞
  *   创建日期：2020年01月02日 星期四 08时53分35秒
- *   修改日期：2020年05月25日 星期一 15时10分35秒
+ *   修改日期：2020年05月27日 星期三 14时14分29秒
  *   描    述：
  *
  *================================================================*/
@@ -76,6 +76,7 @@ static channels_info_t *get_channels_info(channels_info_config_t *channels_info_
 void free_channels_info(channels_info_t *channels_info)
 {
 	osStatus os_status;
+	int i;
 
 	if(channels_info == NULL) {
 		return;
@@ -101,6 +102,15 @@ void free_channels_info(channels_info_t *channels_info)
 		free_event_pool(channels_info->event_pool);
 	}
 
+	for(i = 0; i < CHANNEL_INSTANCES_NUMBER; i++) {
+		channel_info_t *channel_info = channels_info->channel_info + i;
+
+		if(channel_info->settings != NULL) {
+			os_free(channel_info->settings);
+			channel_info->settings = NULL;
+		}
+	}
+
 	os_free(channels_info);
 
 	return;
@@ -121,10 +131,21 @@ static int channels_set_channels_info_config(channels_info_t *channels_info, cha
 	channels_info->event_pool = event_pool;
 
 	for(i = 0; i < CHANNEL_INSTANCES_NUMBER; i++) {
+		bms_data_settings_t *settings;
 		channel_info_t *channel_info = channels_info->channel_info + i;
 		channel_info->channel_id = i;
 		channel_info->state = CHANNEL_STATE_IDLE;
 		channel_info->handle_channel_event = default_handle_channel_event;
+
+		settings = (bms_data_settings_t *)os_alloc(sizeof(bms_data_settings_t));
+
+		if(settings == NULL) {
+			return ret;
+		}
+
+		memset(settings, 0, sizeof(bms_data_settings_t));
+
+		channel_info->settings = settings;
 	}
 
 	ret = 0;

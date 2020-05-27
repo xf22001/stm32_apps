@@ -172,7 +172,7 @@ typedef struct {
 	uint16_t charger_output_current;
 	uint8_t auxiliary_power_type;//12-24v选择 0:12v 1 24v
 	uint16_t module_output_voltage;//模块充电电压
-	uint16_t charnnel_max_output_power;//通道最大输出功率
+	uint16_t channel_max_output_power;//通道最大输出功率
 	uint16_t module_output_current;//模块充电电流
 	uint8_t bms_connect_retry;
 

@@ -6,7 +6,7 @@
  *   文件名称：can_config.h
  *   创 建 者：肖飞
  *   创建日期：2020年04月17日 星期五 09时20分02秒
- *   修改日期：2020年04月29日 星期三 11时03分01秒
+ *   修改日期：2020年05月26日 星期二 09时38分48秒
  *   描    述：
  *
  *================================================================*/
@@ -55,6 +55,7 @@ typedef struct {
 typedef union {
 	can_filter_id_t s;
 	can_filter_id_lh_t s_lh;
+	uint32_t v;
 } u_can_filter_id_t;
 
 extern can_config_t can_config_can1;

@@ -6,7 +6,7 @@
  *   文件名称：channels_communication.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月25日 星期一 14时24分10秒
- *   修改日期：2020年05月25日 星期一 16时56分10秒
+ *   修改日期：2020年05月27日 星期三 13时08分55秒
  *   描    述：
  *
  *================================================================*/
@@ -40,9 +40,7 @@ typedef enum {
 typedef struct {
 	uint8_t channel_id;
 	channels_com_state_t state;
-	uint32_t stamp;
 	uint32_t send_stamp;
-	uint8_t available;
 } channels_com_cmd_ctx_t;
 
 typedef struct {
@@ -54,8 +52,6 @@ typedef struct {
 	channels_com_cmd_ctx_t *cmd_ctx;
 
 	void *channels_info;
-	void *charger_info;
-	void *a_f_b_info;
 
 	can_tx_msg_t can_tx_msg;
 	can_rx_msg_t *can_rx_msg;

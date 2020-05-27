@@ -89,6 +89,9 @@ static void receive_init(CAN_HandleTypeDef *hcan)
 		app_panic();
 	}
 
+	id.v = 0;
+	id_mask.v = 0;
+
 	id.s.id = can_info->can_config->filter_id;
 	id_mask.s.id = can_info->can_config->filter_mask_id;
 
@@ -123,7 +126,21 @@ void free_can_info(can_info_t *can_info)
 		return;
 	}
 
+	if(can_info_list_mutex == NULL) {
+		return;
+	}
+
+	os_status = osMutexWait(can_info_list_mutex, osWaitForever);
+
+	if(os_status != osOK) {
+	}
+
 	list_del(&can_info->list);
+
+	os_status = osMutexRelease(can_info_list_mutex);
+
+	if(os_status != osOK) {
+	}
 
 	if(can_info->rx_msg_q) {
 		os_status = osMessageDelete(can_info->rx_msg_q);
