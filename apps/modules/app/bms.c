@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年05月29日 星期五 10时43分06秒
+ *   修改日期：2020年05月29日 星期五 12时43分52秒
  *   描    述：
  *
  *================================================================*/
@@ -1009,8 +1009,8 @@ static void bms_set_modbus_slave_info(bms_info_t *bms_info, modbus_slave_info_t 
 
 static void bms_can_info_init(bms_info_t *bms_info)
 {
-	if(bms_info->can_info_ccs->receive_init != NULL) {
-		bms_info->can_info_ccs->receive_init(bms_info->can_info_ccs->hcan);
+	if(bms_info->can_info_gb->receive_init != NULL) {
+		bms_info->can_info_gb->receive_init(bms_info->can_info_gb->hcan);
 	}
 
 	if(bms_info->can_info_ccs->receive_init != NULL) {
@@ -1417,8 +1417,8 @@ uint8_t is_gun_connected(bms_info_t *bms_info)
 		if(bms_info->configs.bms_type == BMS_TYPE_CCS) {
 			return 1;
 		} else {
-			return 0;
-			//return 1;
+			//目前bms调试柜没有枪检测能力,此处固定为1
+			return 1;
 		}
 	} else {
 		return 1;
@@ -1432,10 +1432,11 @@ uint8_t is_bms_poweron_enable(bms_info_t *bms_info)
 
 	if(state == GPIO_PIN_RESET) {
 		if(bms_info->configs.bms_type == BMS_TYPE_CCS) {
+			//欧标不检测辅助电源，固定为1
 			return 1;
 		} else {
-			return 0;
-			//return 1;
+			//return 0;
+			return 1;
 		}
 	} else {
 		return 1;

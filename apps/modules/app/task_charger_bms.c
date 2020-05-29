@@ -6,7 +6,7 @@
  *   文件名称：task_charger_bms.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 13时53分16秒
- *   修改日期：2020年05月29日 星期五 09时44分47秒
+ *   修改日期：2020年05月29日 星期五 12时39分24秒
  *   描    述：
  *
  *================================================================*/
@@ -105,25 +105,25 @@ static void task_bms_response(void const *argument)
 
 void task_charger_bms(void)
 {
-	{
-		channel_info_config_t *channel_info_config = get_channel_info_config(0);
-		osThreadDef(charger_request, task_charger_request, osPriorityNormal, 0, 256);
-		osThreadDef(charger_response, task_charger_response, osPriorityNormal, 0, 256);
-		charger_info_t *charger_info;
+	//{
+	//	channel_info_config_t *channel_info_config = get_channel_info_config(0);
+	//	osThreadDef(charger_request, task_charger_request, osPriorityNormal, 0, 256);
+	//	osThreadDef(charger_response, task_charger_response, osPriorityNormal, 0, 256);
+	//	charger_info_t *charger_info;
 
-		if(channel_info_config == NULL) {
-			app_panic();
-		}
+	//	if(channel_info_config == NULL) {
+	//		app_panic();
+	//	}
 
-		charger_info = get_or_alloc_charger_info(channel_info_config);
+	//	charger_info = get_or_alloc_charger_info(channel_info_config);
 
-		if(charger_info == NULL) {
-			app_panic();
-		}
+	//	if(charger_info == NULL) {
+	//		app_panic();
+	//	}
 
-		osThreadCreate(osThread(charger_request), charger_info);
-		osThreadCreate(osThread(charger_response), charger_info);
-	}
+	//	osThreadCreate(osThread(charger_request), charger_info);
+	//	osThreadCreate(osThread(charger_response), charger_info);
+	//}
 
 	{
 		bms_info_config_t *bms_info_config = get_bms_info_config(0);
