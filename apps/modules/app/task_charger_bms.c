@@ -6,7 +6,7 @@
  *   文件名称：task_charger_bms.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 13时53分16秒
- *   修改日期：2020年05月15日 星期五 13时53分49秒
+ *   修改日期：2020年05月29日 星期五 09时44分47秒
  *   描    述：
  *
  *================================================================*/
@@ -141,8 +141,6 @@ void task_charger_bms(void)
 		if(bms_info == NULL) {
 			app_panic();
 		}
-
-		bms_restore_data(bms_info);
 
 		osThreadCreate(osThread(bms_request), bms_info);
 		osThreadCreate(osThread(bms_response), bms_info);

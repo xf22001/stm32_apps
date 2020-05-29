@@ -6,7 +6,7 @@
  *   文件名称：bms_config.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月18日 星期六 12时29分29秒
- *   修改日期：2020年05月25日 星期一 16时40分24秒
+ *   修改日期：2020年05月29日 星期五 09时21分59秒
  *   描    述：
  *
  *================================================================*/
@@ -14,6 +14,7 @@
 #include "main.h"
 #include "os_utils.h"
 
+extern CAN_HandleTypeDef hcan1;
 extern CAN_HandleTypeDef hcan2;
 extern UART_HandleTypeDef huart1;
 extern SPI_HandleTypeDef hspi3;
@@ -22,6 +23,8 @@ static bms_info_config_t bms_info_config_can2 = {
 	.bms_id = 0,
 
 	.hcan = &hcan2,
+
+	.hcan_ccs = &hcan1,
 
 	.huart = &huart1,
 

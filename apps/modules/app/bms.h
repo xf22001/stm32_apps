@@ -6,7 +6,7 @@
  *   文件名称：bms.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分57秒
- *   修改日期：2020年05月14日 星期四 08时23分23秒
+ *   修改日期：2020年05月29日 星期五 09时26分48秒
  *   描    述：
  *
  *================================================================*/
@@ -155,6 +155,7 @@ typedef enum {
 	MODBUS_ADDR_VERSION_MAJOR = 111,
 	MODBUS_ADDR_VERSION_MINOR = 112,
 	MODBUS_ADDR_VERSION_REV = 113,
+	MODBUS_ADDR_BMS_TYPE = 114,
 	MODBUS_ADDR_INVALID,
 } modbus_slave_addr_t;
 
@@ -164,6 +165,11 @@ typedef struct {
 	uint32_t crc;
 	uint16_t payload_size;
 } eeprom_modbus_head_t;
+
+typedef enum {
+	BMS_TYPE_GB = 0,
+	BMS_TYPE_CCS,
+} bms_type_t;
 
 typedef struct {
 	uint8_t disable_bhm;
@@ -183,6 +189,7 @@ typedef struct {
 	uint8_t stop_bms;
 	uint8_t reset_bms_configure;
 	uint8_t toggle_gun_on_off;
+	uint8_t bms_type;
 } bms_data_configs_t;
 
 typedef struct {
@@ -197,6 +204,8 @@ typedef struct {
 	struct list_head list;
 
 	can_info_t *can_info;
+	can_info_t *can_info_gb;
+	can_info_t *can_info_ccs;
 	bms_state_t state;
 	osMutexId handle_mutex;
 

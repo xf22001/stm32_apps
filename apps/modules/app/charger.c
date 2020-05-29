@@ -6,7 +6,7 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年05月25日 星期一 14时52分58秒
+ *   修改日期：2020年05月29日 星期五 10时01分24秒
  *   描    述：
  *
  *================================================================*/
@@ -198,6 +198,13 @@ char *get_charger_state_des(charger_state_t state)
 	return des;
 }
 
+void charger_can_info_init(charger_info_t *charger_info)
+{
+	if(charger_info->can_info->receive_init != NULL) {
+		charger_info->can_info->receive_init(charger_info->can_info->hcan);
+	}
+}
+
 static int charger_info_set_channel_config(charger_info_t *charger_info, channel_info_config_t *channel_info_config)
 {
 	int ret = -1;
@@ -212,6 +219,8 @@ static int charger_info_set_channel_config(charger_info_t *charger_info, channel
 	}
 
 	charger_info->can_info = can_info;
+
+	charger_can_info_init(charger_info);
 
 	a_f_b_info = get_or_alloc_a_f_b_info(channel_info_config);
 
@@ -304,7 +313,7 @@ charger_info_t *get_or_alloc_charger_info(channel_info_config_t *channel_info_co
 	charger_info->charger_output_current = charger_info->settings->ccs_data.output_current;
 	charger_info->auxiliary_power_type = 0;
 	charger_info->module_output_voltage = charger_info->charger_output_voltage;
-	charger_info->charnnel_max_output_power = 0;
+	charger_info->channel_max_output_power = 0;
 	charger_info->module_output_current = charger_info->charger_output_current;
 
 	return charger_info;

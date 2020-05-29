@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年05月25日 星期一 15时11分09秒
+ *   修改日期：2020年05月29日 星期五 10时13分13秒
  *   描    述：
  *
  *================================================================*/
@@ -309,6 +309,35 @@ int save_eeprom_modbus_data(bms_info_t *bms_info)
 	offset += sizeof(bms_data_configs_t);
 
 	return 0;
+}
+
+static void try_to_set_bms_type(bms_info_t *bms_info, bms_type_t bms_type)
+{
+	if(bms_info->state != BMS_STATE_IDLE) {
+		return;
+	}
+
+	set_gun_on_off(bms_info, 0);
+	bms_info->configs.bms_type = bms_type;
+
+	_printf("%s:%s:%d set bms type:%d\n", __FILE__, __func__, __LINE__, bms_type);
+
+	switch(bms_info->configs.bms_type) {
+		case BMS_TYPE_GB: {
+			bms_info->can_info = bms_info->can_info_gb;
+		}
+		break;
+
+		case BMS_TYPE_CCS: {
+			bms_info->can_info = bms_info->can_info_ccs;
+		}
+		break;
+
+		default: {
+			bms_info->can_info = bms_info->can_info_gb;
+		}
+		break;
+	}
 }
 
 static void modbus_slave_data_changed(void *fn_ctx, void *chain_ctx)
@@ -924,6 +953,18 @@ static void modbus_data_get_set(bms_info_t *bms_info, uint16_t addr, uint16_t *v
 		}
 		break;
 
+		case MODBUS_ADDR_BMS_TYPE: {
+			uint8_t bms_type;
+
+			modbus_data_value_w(value, bms_type, op);
+			modbus_data_value_r(value, bms_info->configs.bms_type, op);
+
+			if(op == MODBUS_DATA_SET) {
+				try_to_set_bms_type(bms_info, bms_type);
+			}
+		}
+		break;
+
 		default:
 			_printf("error! op:%s, addr:%d\n",
 			        (op == MODBUS_DATA_GET) ? "get" :
@@ -966,6 +1007,19 @@ static void bms_set_modbus_slave_info(bms_info_t *bms_info, modbus_slave_info_t 
 	add_modbus_slave_data_changed_cb(bms_info->modbus_slave_info, &bms_info->modbus_slave_data_changed_cb);
 }
 
+static void bms_can_info_init(bms_info_t *bms_info)
+{
+	if(bms_info->can_info_ccs->receive_init != NULL) {
+		bms_info->can_info_ccs->receive_init(bms_info->can_info_ccs->hcan);
+	}
+
+	if(bms_info->can_info_ccs->receive_init != NULL) {
+		bms_info->can_info_ccs->receive_init(bms_info->can_info_ccs->hcan);
+	}
+
+	try_to_set_bms_type(bms_info, bms_info->configs.bms_type);
+}
+
 static int bms_info_set_bms_info_config(bms_info_t *bms_info, bms_info_config_t *bms_info_config)
 {
 	int ret = -1;
@@ -974,13 +1028,6 @@ static int bms_info_set_bms_info_config(bms_info_t *bms_info, bms_info_config_t 
 	modbus_slave_info_t *modbus_slave_info;
 	osThreadDef(task_modbus_slave, task_modbus_slave, osPriorityNormal, 0, 128 * 3);
 
-	can_info = get_or_alloc_can_info(bms_info_config->hcan);
-
-	if(can_info == NULL) {
-		return ret;
-	}
-
-	bms_info->can_info = can_info;
 
 	eeprom_info = get_or_alloc_eeprom_info(bms_info_config->hspi,
 	                                       bms_info_config->gpio_port_spi_cs,
@@ -993,6 +1040,26 @@ static int bms_info_set_bms_info_config(bms_info_t *bms_info, bms_info_config_t 
 	}
 
 	bms_info->eeprom_info = eeprom_info;
+
+	bms_restore_data(bms_info);
+
+	can_info = get_or_alloc_can_info(bms_info_config->hcan);
+
+	if(can_info == NULL) {
+		return ret;
+	}
+
+	bms_info->can_info_gb = can_info;
+
+	can_info = get_or_alloc_can_info(bms_info_config->hcan_ccs);
+
+	if(can_info == NULL) {
+		return ret;
+	}
+
+	bms_info->can_info_ccs = can_info;
+
+	bms_can_info_init(bms_info);
 
 	modbus_slave_info = get_or_alloc_modbus_slave_info(bms_info_config->huart);
 

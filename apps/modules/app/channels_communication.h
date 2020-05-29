@@ -6,7 +6,7 @@
  *   文件名称：channels_communication.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月25日 星期一 14时24分10秒
- *   修改日期：2020年05月27日 星期三 13时08分55秒
+ *   修改日期：2020年05月28日 星期四 11时28分34秒
  *   描    述：
  *
  *================================================================*/
@@ -65,5 +65,7 @@ typedef struct {
 
 void free_channels_com_info(channels_com_info_t *channels_com_info);
 channels_com_info_t *get_or_alloc_channels_com_info(channels_info_config_t *channels_info_config);
+void task_channels_com_request(void const *argument);
+void task_channels_com_response(void const *argument);
 
 #endif //_CHANNELS_COMMUNICATION_H
