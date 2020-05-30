@@ -6,7 +6,7 @@
  *   文件名称：bms.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分57秒
- *   修改日期：2020年05月29日 星期五 09时26分48秒
+ *   修改日期：2020年05月30日 星期六 09时31分03秒
  *   描    述：
  *
  *================================================================*/
@@ -159,17 +159,23 @@ typedef enum {
 	MODBUS_ADDR_INVALID,
 } modbus_slave_addr_t;
 
+typedef enum {
+	BMS_TYPE_GB = 0,
+	BMS_TYPE_CCS,
+} bms_type_t;
+
+typedef enum {
+	BMS_REQUEST_STATE_NONE = 0,
+	BMS_REQUEST_STATE_START,
+	BMS_REQUEST_STATE_STOP,
+} bms_request_state_t;
+
 #pragma pack(push, 1)
 
 typedef struct {
 	uint32_t crc;
 	uint16_t payload_size;
 } eeprom_modbus_head_t;
-
-typedef enum {
-	BMS_TYPE_GB = 0,
-	BMS_TYPE_CCS,
-} bms_type_t;
 
 typedef struct {
 	uint8_t disable_bhm;
@@ -189,7 +195,7 @@ typedef struct {
 	uint8_t stop_bms;
 	uint8_t reset_bms_configure;
 	uint8_t toggle_gun_on_off;
-	uint8_t bms_type;
+	bms_type_t bms_type;
 } bms_data_configs_t;
 
 typedef struct {
@@ -207,6 +213,7 @@ typedef struct {
 	can_info_t *can_info_gb;
 	can_info_t *can_info_ccs;
 	bms_state_t state;
+	bms_request_state_t bms_request_state;
 	osMutexId handle_mutex;
 
 	bms_info_config_t *bms_info_config;
@@ -260,7 +267,8 @@ int save_eeprom_modbus_data(bms_info_t *bms_info);
 void bms_restore_data(bms_info_t *bms_info);
 bms_state_t get_bms_state(bms_info_t *bms_info);
 void set_bms_state(bms_info_t *bms_info, bms_state_t state);
-void set_bms_state_locked(bms_info_t *bms_info, bms_state_t state);
+void set_bms_request_state(bms_info_t *bms_info, bms_request_state_t bms_request_state);
+bms_request_state_t get_bms_request_state(bms_info_t *bms_info);
 void bms_handle_request(bms_info_t *bms_info);
 void bms_handle_response(bms_info_t *bms_info);
 uint8_t is_gun_connected(bms_info_t *bms_info);

@@ -6,7 +6,7 @@
  *   文件名称：channel_command.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月26日 星期二 08时50分38秒
- *   修改日期：2020年05月27日 星期三 15时17分02秒
+ *   修改日期：2020年05月30日 星期六 15时07分18秒
  *   描    述：
  *
  *================================================================*/
@@ -35,7 +35,7 @@ typedef struct {
 	uint8_t adhesion_p : 1;//正继电器粘连---a-f-b
 	uint8_t adhesion_n : 1;//负继电器粘连---a-f-b
 	uint8_t gun_lock_state : 1;//枪上锁状态
-	uint8_t bms_charger_enable : 1;//bms充电允许状态
+	uint8_t bms_charge_enable : 1;//bms充电允许状态
 	uint8_t a_f_b_state : 1;//辅助功能板连接状态
 } cmd_1_b1_t;
 

@@ -6,7 +6,7 @@
  *   文件名称：charger.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分46秒
- *   修改日期：2020年05月19日 星期二 14时58分54秒
+ *   修改日期：2020年05月30日 星期六 09时25分52秒
  *   描    述：
  *
  *================================================================*/
@@ -98,17 +98,17 @@ typedef enum {
 } precharge_action_t;
 
 typedef enum {
-	BMS_CONTROL_STATE_WAIT_START = 0,
-	BMS_CONTROL_STATE_START,
-	BMS_CONTROL_STATE_WAIT_STOP,
-	BMS_CONTROL_STATE_STOP,
-} bms_control_state_t;
+	CHARGER_REQUEST_STATE_NONE = 0,
+	CHARGER_REQUEST_STATE_START,
+	CHARGER_REQUEST_STATE_STOP,
+} charger_request_state_t;
 
 typedef struct {
 	struct list_head list;
 
 	can_info_t *can_info;
 	charger_state_t state;
+	charger_request_state_t charger_request_state;
 	osMutexId handle_mutex;
 
 	channel_info_config_t *channel_info_config;
@@ -128,8 +128,6 @@ typedef struct {
 	uint32_t send_stamp;
 	uint32_t send_stamp_1;
 	uint32_t start_send_cst_stamp;
-
-	bms_control_state_t bms_control_state;
 
 	charger_op_ctx_t charger_op_ctx;
 	charger_op_ctx_t charger_op_ctx_gun_lock;
@@ -229,7 +227,6 @@ int remove_charger_info_report_status_cb(charger_info_t *charger_info, callback_
 void charger_info_report_status(charger_info_t *charger_info, charger_state_t state, charger_info_status_t status);
 charger_state_t get_charger_state(charger_info_t *charger_info);
 void set_charger_state(charger_info_t *charger_info, charger_state_t state);
-void set_charger_state_locked(charger_info_t *charger_info, charger_state_t state);
 void charger_handle_request(charger_info_t *charger_info);
 void charger_handle_response(charger_info_t *charger_info);
 void set_auxiliary_power_state(charger_info_t *charger_info, uint8_t state);
@@ -242,6 +239,6 @@ int insulation_check(charger_info_t *charger_info, charger_op_ctx_t *charger_op_
 int battery_voltage_status(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx);
 int wait_no_current(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx);
 void charger_periodic(charger_info_t *charger_info);
-int set_charger_control_state(charger_info_t *charger_info, bms_control_state_t bms_control_state);
-bms_control_state_t get_charger_control_state(charger_info_t *charger_info);
+void set_charger_request_state(charger_info_t *charger_info, charger_request_state_t charger_request_state);
+charger_request_state_t get_charger_request_state(charger_info_t *charger_info);
 #endif //_CHARGER_H

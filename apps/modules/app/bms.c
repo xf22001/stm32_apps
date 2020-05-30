@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年05月29日 星期五 12时43分52秒
+ *   修改日期：2020年05月30日 星期六 09时30分48秒
  *   描    述：
  *
  *================================================================*/
@@ -875,7 +875,7 @@ static void modbus_data_get_set(bms_info_t *bms_info, uint16_t addr, uint16_t *v
 					}
 
 					bms_info->settings->bst_data.u1.s.stop_reason_soc = 1;
-					set_bms_state_locked(bms_info, BMS_STATE_BST);
+					set_bms_request_state(bms_info, BMS_REQUEST_STATE_STOP);
 				}
 			}
 		}
@@ -1298,6 +1298,16 @@ char *get_bms_state_des(bms_state_t state)
 	return des;
 }
 
+void set_bms_request_state(bms_info_t *bms_info, bms_request_state_t bms_request_state)
+{
+	bms_info->bms_request_state = bms_request_state;
+}
+
+bms_request_state_t get_bms_request_state(bms_info_t *bms_info)
+{
+	return bms_info->bms_request_state;
+}
+
 void set_bms_state(bms_info_t *bms_info, bms_state_t state)
 {
 	bms_state_handler_t *handler = NULL;
@@ -1325,27 +1335,6 @@ void set_bms_state(bms_info_t *bms_info, bms_state_t state)
 	_printf("change to state:%s!\n", get_bms_state_des(state));
 
 	bms_info->state = state;
-}
-
-void set_bms_state_locked(bms_info_t *bms_info, bms_state_t state)
-{
-	osStatus os_status;
-
-	if(bms_info->handle_mutex) {
-		os_status = osMutexWait(bms_info->handle_mutex, osWaitForever);
-
-		if(os_status != osOK) {
-		}
-	}
-
-	set_bms_state(bms_info, state);
-
-	if(bms_info->handle_mutex) {
-		os_status = osMutexRelease(bms_info->handle_mutex);
-
-		if(os_status != osOK) {
-		}
-	}
 }
 
 void bms_handle_request(bms_info_t *bms_info)

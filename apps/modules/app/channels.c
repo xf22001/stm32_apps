@@ -6,7 +6,7 @@
  *   文件名称：channels.c
  *   创 建 者：肖飞
  *   创建日期：2020年01月02日 星期四 08时53分35秒
- *   修改日期：2020年05月27日 星期三 14时14分29秒
+ *   修改日期：2020年05月30日 星期六 18时12分42秒
  *   描    述：
  *
  *================================================================*/
@@ -14,32 +14,43 @@
 #include "os_utils.h"
 #include <string.h>
 
+#include "channel.h"
 #include "log.h"
 
 static LIST_HEAD(channels_info_list);
 osMutexId channels_info_list_mutex = NULL;
 
-static void default_periodic(channels_info_t *channels_info)
+static int default_handle_channel_event(void *channel_info, channel_event_t *channel_event)
 {
-	//_printf("%s\n", __func__);
+	int ret = 0;
+	_printf("%s:%s:%d channel %d process event!\n", __FILE__, __func__, __LINE__, channel_event->channel_id);
+	return ret;
 }
+
+static void default_handle_channel_periodic(void *channel_info)
+{
+	//_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+}
+
+static channel_callback_t default_channel_callback = {
+	.handle_channel_event = default_handle_channel_event,
+	.handle_channel_periodic = default_handle_channel_periodic,
+};
 
 static void channels_periodic(channels_info_t *channels_info)
 {
-	static uint32_t expire = 0;
 	uint32_t ticks = osKernelSysTick();
+	int i;
 
-	if(ticks >= expire) {
-		expire = ticks + CHANNEL_TASK_PERIODIC;
-		default_periodic(channels_info);
+	if(ticks >= channels_info->periodic_expire) {
+		channels_info->periodic_expire = ticks + CHANNEL_TASK_PERIODIC;
+
+		for(i = 0; i < CHANNEL_INSTANCES_NUMBER; i++) {
+			channel_info_t *channel_info = channels_info->channel_info + i;
+
+			channel_info->callback->handle_channel_periodic(channel_info);
+		}
 	}
-}
-
-static int default_handle_channel_event(channel_event_t *channel_event)
-{
-	int ret = 0;
-	_printf("channel %d process event!\n", channel_event->channel_id);
-	return ret;
 }
 
 static channels_info_t *get_channels_info(channels_info_config_t *channels_info_config)
@@ -102,14 +113,9 @@ void free_channels_info(channels_info_t *channels_info)
 		free_event_pool(channels_info->event_pool);
 	}
 
-	for(i = 0; i < CHANNEL_INSTANCES_NUMBER; i++) {
-		channel_info_t *channel_info = channels_info->channel_info + i;
-
-		if(channel_info->settings != NULL) {
-			os_free(channel_info->settings);
-			channel_info->settings = NULL;
-		}
-	}
+	//for(i = 0; i < CHANNEL_INSTANCES_NUMBER; i++) {
+	//	channel_info_t *channel_info = channels_info->channel_info + i;
+	//}
 
 	os_free(channels_info);
 
@@ -131,21 +137,13 @@ static int channels_set_channels_info_config(channels_info_t *channels_info, cha
 	channels_info->event_pool = event_pool;
 
 	for(i = 0; i < CHANNEL_INSTANCES_NUMBER; i++) {
-		bms_data_settings_t *settings;
+		channel_callback_t *channel_callback;
 		channel_info_t *channel_info = channels_info->channel_info + i;
 		channel_info->channel_id = i;
-		channel_info->state = CHANNEL_STATE_IDLE;
-		channel_info->handle_channel_event = default_handle_channel_event;
-
-		settings = (bms_data_settings_t *)os_alloc(sizeof(bms_data_settings_t));
-
-		if(settings == NULL) {
-			return ret;
-		}
-
-		memset(settings, 0, sizeof(bms_data_settings_t));
-
-		channel_info->settings = settings;
+		channel_info->channel_state = CHANNEL_STATE_IDLE;
+		channel_callback = get_channel_callback(i);
+		channel_info->callback = (channel_callback != NULL) ? channel_callback : &default_channel_callback;
+		channel_info->channels_info = channels_info;
 	}
 
 	ret = 0;
@@ -236,13 +234,13 @@ void channels_process_event(channels_info_t *channels_info)
 		if(channel_event->channel_id == 0xff) { //broadcast
 			for(i = 0; i < CHANNEL_INSTANCES_NUMBER; i++) {
 				channel_info = channels_info->channel_info + i;
-				channel_info->handle_channel_event(channel_event);
+				channel_info->callback->handle_channel_event(channel_info, channel_event);
 			}
 		} else {
 			if(channel_event->channel_id < CHANNEL_INSTANCES_NUMBER) {
 				channel_info = channels_info->channel_info + channel_event->channel_id;
-				channel_info->handle_channel_event(channel_event);
-			} else { //id error
+				channel_info->callback->handle_channel_event(channel_info, channel_event);
+			} else { //channel_id error
 			}
 		}
 

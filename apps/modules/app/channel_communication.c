@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分44秒
- *   修改日期：2020年05月27日 星期三 15时20分24秒
+ *   修改日期：2020年05月30日 星期六 09时24分05秒
  *   描    述：
  *
  *================================================================*/
@@ -567,7 +567,7 @@ static int request_2_102(channel_com_info_t *channel_com_info)
 	int ret = -1;
 	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
 
-	set_charger_control_state(charger_info, BMS_CONTROL_STATE_START);
+	set_charger_request_state(charger_info, CHARGER_REQUEST_STATE_START);
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_2_102].state = CHANNEL_COM_STATE_IDLE;
 
 	ret = 0;
@@ -1228,7 +1228,7 @@ static int response_50_150(channel_com_info_t *channel_com_info)
 	charger_info_t *charger_info = (charger_info_t *)channel_com_info->charger_info;
 
 	//发送停机命令
-	set_charger_control_state(charger_info, BMS_CONTROL_STATE_STOP);
+	set_charger_request_state(charger_info, CHARGER_REQUEST_STATE_STOP);
 
 	channel_com_info->cmd_ctx[CHANNEL_COM_CMD_50_150].state = CHANNEL_COM_STATE_REQUEST;
 

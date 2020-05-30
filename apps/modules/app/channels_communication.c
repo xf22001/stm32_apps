@@ -6,7 +6,7 @@
  *   文件名称：channels_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月25日 星期一 14时24分07秒
- :   修改日期：2020年05月27日 星期三 15时20分57秒
+ :   修改日期：2020年05月30日 星期六 18时17分56秒
  *   描    述：
  *
  *================================================================*/
@@ -303,7 +303,7 @@ static int response_1_101(channels_com_info_t *channels_com_info)//500ms
 	channel_info->adhesion_p = cmd_1->b1.adhesion_p;
 	channel_info->adhesion_n = cmd_1->b1.adhesion_n;
 	channel_info->gun_lock_state = cmd_1->b1.gun_lock_state;
-	channel_info->bms_charger_enable = cmd_1->b1.bms_charger_enable;
+	channel_info->bms_charge_enable = cmd_1->b1.bms_charge_enable;
 	channel_info->a_f_b_state = cmd_1->b1.a_f_b_state;
 
 	channel_info->bms_state = cmd_1->bms_state;
@@ -330,16 +330,16 @@ static int request_1_101(channels_com_info_t *channels_com_info)
 		return ret;
 	}
 
-	cmd_101->charger_sn = channel_info->charger_sn;
-	cmd_101->gb = channel_info->gb;
-	cmd_101->b3.test_mode = channel_info->test_mode;
-	cmd_101->b3.precharge_enable = channel_info->precharge_enable;
+	cmd_101->charger_sn = channel_info->channel_settings.charger_sn;
+	cmd_101->gb = channel_info->channel_settings.gb;
+	cmd_101->b3.test_mode = channel_info->channel_settings.test_mode;
+	cmd_101->b3.precharge_enable = channel_info->channel_settings.precharge_enable;
+	cmd_101->b3.manual = channel_info->channel_settings.manual;
+	cmd_101->b3.adhesion_test = channel_info->channel_settings.adhesion_test;
+	cmd_101->b3.double_gun_one_car = channel_info->channel_settings.double_gun_one_car;
 	cmd_101->b3.fault = channel_info->fault;
 	cmd_101->b3.charger_power_on = channel_info->charger_power_on;
-	cmd_101->b3.manual = channel_info->manual;
-	cmd_101->b3.adhesion_test = channel_info->adhesion_test;
-	cmd_101->b3.double_gun_one_car = channel_info->double_gun_one_car;
-	cmd_101->b3.cp_ad = channel_info->cp_ad;
+	cmd_101->b3.cp_ad = channel_info->channel_settings.cp_ad;
 	cmd_101->charger_output_voltage_l = get_u8_l_from_u16(channel_info->charger_output_voltage);
 	cmd_101->charger_output_voltage_h = get_u8_h_from_u16(channel_info->charger_output_voltage);
 	cmd_101->charger_output_current_l = get_u8_l_from_u16(channel_info->charger_output_current);
@@ -385,16 +385,16 @@ static int request_2_102(channels_com_info_t *channels_com_info)
 		return ret;
 	}
 
-	cmd_102->auxiliary_power_type = channel_info->auxiliary_power_type;
+	cmd_102->auxiliary_power_type = channel_info->channel_settings.auxiliary_power_type;
 
-	cmd_102->charger_max_output_voltage_l = get_u8_l_from_u16(channel_info->max_output_voltage);
-	cmd_102->charger_max_output_voltage_h = get_u8_h_from_u16(channel_info->max_output_voltage);
+	cmd_102->charger_max_output_voltage_l = get_u8_l_from_u16(channel_info->channel_settings.max_output_voltage);
+	cmd_102->charger_max_output_voltage_h = get_u8_h_from_u16(channel_info->channel_settings.max_output_voltage);
 
-	cmd_102->charger_min_output_voltage_l = get_u8_l_from_u16(channel_info->min_output_voltage);
-	cmd_102->charger_min_output_voltage_h = get_u8_h_from_u16(channel_info->min_output_voltage);
+	cmd_102->charger_min_output_voltage_l = get_u8_l_from_u16(channel_info->channel_settings.min_output_voltage);
+	cmd_102->charger_min_output_voltage_h = get_u8_h_from_u16(channel_info->channel_settings.min_output_voltage);
 
-	cmd_102->charger_max_output_current_l = get_u8_l_from_u16(channel_info->max_output_current);
-	cmd_102->charger_max_output_current_h = get_u8_h_from_u16(channel_info->max_output_current);
+	cmd_102->charger_max_output_current_l = get_u8_l_from_u16(channel_info->channel_settings.max_output_current);
+	cmd_102->charger_max_output_current_h = get_u8_h_from_u16(channel_info->channel_settings.max_output_current);
 
 	channels_com_info->cmd_ctx[CMD_CTX_OFFSET(CHANNELS_COM_CMD_2_102)].state = CHANNELS_COM_STATE_RESPONSE;
 
@@ -435,8 +435,8 @@ static int request_13_113(channels_com_info_t *channels_com_info)
 		return ret;
 	}
 
-	cmd_113->charger_min_output_current_l = get_u8_l_from_u16(channel_info->min_output_current);
-	cmd_113->charger_min_output_current_h = get_u8_h_from_u16(channel_info->min_output_current);
+	cmd_113->charger_min_output_current_l = get_u8_l_from_u16(channel_info->channel_settings.min_output_current);
+	cmd_113->charger_min_output_current_h = get_u8_h_from_u16(channel_info->channel_settings.min_output_current);
 
 	channels_com_info->cmd_ctx[CMD_CTX_OFFSET(CHANNELS_COM_CMD_13_113)].state = CHANNELS_COM_STATE_RESPONSE;
 
@@ -462,8 +462,7 @@ static int response_3_103(channels_com_info_t *channels_com_info)
 		return ret;
 	}
 
-	channel_info->a_f_b_ver_h = cmd_3->a_f_b_ver_h;
-	channel_info->a_f_b_ver_l = cmd_3->a_f_b_ver_l;
+	channel_info->a_f_b_ver = get_u16_from_u8_lh(cmd_3->a_f_b_ver_l, cmd_3->a_f_b_ver_h);
 	channel_info->bms_status = cmd_3->bms_status;
 	channel_info->door_state = cmd_3->b4.door;
 	channel_info->error_stop_state = cmd_3->b4.stop;
@@ -485,14 +484,14 @@ static int request_3_103(channels_com_info_t *channels_com_info)
 		return ret;
 	}
 
-	cmd_103->module_output_voltage_l = get_u8_l_from_u16(channel_info->module_output_voltage);
-	cmd_103->module_output_voltage_h = get_u8_h_from_u16(channel_info->module_output_voltage);
+	cmd_103->module_output_voltage_l = get_u8_l_from_u16(channel_info->channel_settings.module_output_voltage);
+	cmd_103->module_output_voltage_h = get_u8_h_from_u16(channel_info->channel_settings.module_output_voltage);
 
-	cmd_103->channel_max_output_power_l = get_u8_l_from_u16(channel_info->channel_max_output_power);
-	cmd_103->channel_max_output_power_l = get_u8_h_from_u16(channel_info->channel_max_output_power);
+	cmd_103->channel_max_output_power_l = get_u8_l_from_u16(channel_info->channel_settings.channel_max_output_power);
+	cmd_103->channel_max_output_power_l = get_u8_h_from_u16(channel_info->channel_settings.channel_max_output_power);
 
-	cmd_103->module_output_current_l = get_u8_l_from_u16(channel_info->module_output_current);
-	cmd_103->module_output_current_h = get_u8_h_from_u16(channel_info->module_output_current);
+	cmd_103->module_output_current_l = get_u8_l_from_u16(channel_info->channel_settings.module_output_current);
+	cmd_103->module_output_current_h = get_u8_h_from_u16(channel_info->channel_settings.module_output_current);
 
 	channels_com_info->cmd_ctx[CMD_CTX_OFFSET(CHANNELS_COM_CMD_3_103)].state = CHANNELS_COM_STATE_IDLE;
 
@@ -652,7 +651,7 @@ static int response_7_107(channels_com_info_t *channels_com_info)//200ms CHARGER
 		return ret;
 	}
 
-	memcpy(channel_info->settings->brm_data.vin + 0, cmd_7->vin, 7);
+	memcpy(channel_info->bms_data_settings.brm_data.vin + 0, cmd_7->vin, 7);
 
 	channels_com_info->cmd_ctx[CMD_CTX_OFFSET(CHANNELS_COM_CMD_7_107)].state = CHANNELS_COM_STATE_REQUEST;
 
@@ -695,7 +694,7 @@ static int response_8_108(channels_com_info_t *channels_com_info)
 		return ret;
 	}
 
-	memcpy(channel_info->settings->brm_data.vin + 7, cmd_8->vin, 7);
+	memcpy(channel_info->bms_data_settings.brm_data.vin + 7, cmd_8->vin, 7);
 
 	channels_com_info->cmd_ctx[CMD_CTX_OFFSET(CHANNELS_COM_CMD_8_108)].state = CHANNELS_COM_STATE_REQUEST;
 
@@ -738,7 +737,7 @@ static int response_9_109(channels_com_info_t *channels_com_info)
 		return ret;
 	}
 
-	memcpy(channel_info->settings->brm_data.vin + 14, cmd_9->vin, 3);
+	memcpy(channel_info->bms_data_settings.brm_data.vin + 14, cmd_9->vin, 3);
 
 	channels_com_info->cmd_ctx[CMD_CTX_OFFSET(CHANNELS_COM_CMD_9_109)].state = CHANNELS_COM_STATE_REQUEST;
 
@@ -1169,7 +1168,7 @@ static int response_60_160(channels_com_info_t *channels_com_info)//200ms CHARGE
 		return ret;
 	}
 
-	brm_data = (uint8_t *)&channel_info->settings->brm_data;
+	brm_data = (uint8_t *)&channel_info->bms_data_settings.brm_data;
 
 	memcpy(brm_data + 0, cmd_60->brm_data, 7);
 
@@ -1215,7 +1214,7 @@ static int response_61_161(channels_com_info_t *channels_com_info)
 		return ret;
 	}
 
-	brm_data = (uint8_t *)&channel_info->settings->brm_data;
+	brm_data = (uint8_t *)&channel_info->bms_data_settings.brm_data;
 
 	memcpy(brm_data + 7, cmd_61->brm_data, 7);
 
@@ -1260,7 +1259,7 @@ static int response_62_162(channels_com_info_t *channels_com_info)
 		return ret;
 	}
 
-	brm_data = (uint8_t *)&channel_info->settings->brm_data;
+	brm_data = (uint8_t *)&channel_info->bms_data_settings.brm_data;
 
 	memcpy(brm_data + 14, cmd_62->brm_data, 7);
 
@@ -1305,7 +1304,7 @@ static int response_63_163(channels_com_info_t *channels_com_info)
 		return ret;
 	}
 
-	brm_data = (uint8_t *)&channel_info->settings->brm_data;
+	brm_data = (uint8_t *)&channel_info->bms_data_settings.brm_data;
 
 	memcpy(brm_data + 21, cmd_63->brm_data, 7);
 
@@ -1350,7 +1349,7 @@ static int response_64_164(channels_com_info_t *channels_com_info)
 		return ret;
 	}
 
-	brm_data = (uint8_t *)&channel_info->settings->brm_data;
+	brm_data = (uint8_t *)&channel_info->bms_data_settings.brm_data;
 
 	memcpy(brm_data + 28, cmd_64->brm_data, 7);
 
@@ -1395,7 +1394,7 @@ static int response_65_165(channels_com_info_t *channels_com_info)
 		return ret;
 	}
 
-	brm_data = (uint8_t *)&channel_info->settings->brm_data;
+	brm_data = (uint8_t *)&channel_info->bms_data_settings.brm_data;
 
 	memcpy(brm_data + 35, cmd_65->brm_data, 7);
 
@@ -1440,7 +1439,7 @@ static int response_66_166(channels_com_info_t *channels_com_info)
 		return ret;
 	}
 
-	brm_data = (uint8_t *)&channel_info->settings->brm_data;
+	brm_data = (uint8_t *)&channel_info->bms_data_settings.brm_data;
 
 	memcpy(brm_data + 42, cmd_66->brm_data, 7);
 
@@ -1485,7 +1484,7 @@ static int response_67_167(channels_com_info_t *channels_com_info)//200ms CHARGE
 		return ret;
 	}
 
-	bcp_data = (uint8_t *)&channel_info->settings->bcp_data;
+	bcp_data = (uint8_t *)&channel_info->bms_data_settings.bcp_data;
 
 	memcpy(bcp_data + 0, cmd_67->bcp_data, 7);
 
@@ -1530,7 +1529,7 @@ static int response_68_168(channels_com_info_t *channels_com_info)
 		return ret;
 	}
 
-	bcp_data = (uint8_t *)&channel_info->settings->bcp_data;
+	bcp_data = (uint8_t *)&channel_info->bms_data_settings.bcp_data;
 
 	memcpy(bcp_data + 7, cmd_68->bcp_data, 7);
 
@@ -1575,7 +1574,7 @@ static int response_69_169(channels_com_info_t *channels_com_info)
 		return ret;
 	}
 
-	bcs_data = (uint8_t *)&channel_info->settings->bcs_data;
+	bcs_data = (uint8_t *)&channel_info->bms_data_settings.bcs_data;
 
 	memcpy(bcs_data + 0, cmd_69->bcs_data, 7);
 
@@ -1622,8 +1621,8 @@ static int response_70_170(channels_com_info_t *channels_com_info)
 		return ret;
 	}
 
-	bcs_data = (uint8_t *)&channel_info->settings->bcs_data;
-	bcl_data = (uint8_t *)&channel_info->settings->bcl_data;
+	bcs_data = (uint8_t *)&channel_info->bms_data_settings.bcs_data;
+	bcl_data = (uint8_t *)&channel_info->bms_data_settings.bcl_data;
 
 	memcpy(bcs_data + 7, cmd_70->bcs_data, 2);
 	memcpy(bcl_data + 0, cmd_70->bcl_data, 5);
@@ -1669,7 +1668,7 @@ static int response_71_171(channels_com_info_t *channels_com_info)//200ms CHARGE
 		return ret;
 	}
 
-	bsm_data = (uint8_t *)&channel_info->settings->bsm_data;
+	bsm_data = (uint8_t *)&channel_info->bms_data_settings.bsm_data;
 
 	memcpy(bsm_data + 0, cmd_71->bsm_data, 7);
 
@@ -1714,7 +1713,7 @@ static int response_72_172(channels_com_info_t *channels_com_info)//200ms CHARGE
 		return ret;
 	}
 
-	bst_data = (uint8_t *)&channel_info->settings->bst_data;
+	bst_data = (uint8_t *)&channel_info->bms_data_settings.bst_data;
 
 	memcpy(bst_data + 0, cmd_72->bst_data, 4);
 
@@ -1759,7 +1758,7 @@ static int response_73_173(channels_com_info_t *channels_com_info)//200ms CHARGE
 		return ret;
 	}
 
-	bsd_data = (uint8_t *)&channel_info->settings->bsd_data;
+	bsd_data = (uint8_t *)&channel_info->bms_data_settings.bsd_data;
 
 	memcpy(bsd_data + 0, cmd_73->bsd_data, 7);
 

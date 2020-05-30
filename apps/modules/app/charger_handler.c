@@ -6,7 +6,7 @@
  *   文件名称：charger_handler.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时18分42秒
- *   修改日期：2020年05月25日 星期一 16时40分46秒
+ *   修改日期：2020年05月30日 星期六 09时22分31秒
  *   描    述：
  *
  *================================================================*/
@@ -79,6 +79,8 @@ static int prepare_state_idle(charger_info_t *charger_info)
 
 	charger_info->idle_op_state = IDLE_OP_STATE_NONE;
 
+	charger_info->charger_request_state = CHARGER_REQUEST_STATE_NONE;
+
 	return ret;
 }
 
@@ -104,15 +106,14 @@ static int handle_state_idle_request(charger_info_t *charger_info)
 			if(op_ret == 0) {
 				charger_info->idle_op_state = IDLE_OP_STATE_IDLE;
 				_printf("IDLE_OP_STATE_GUN_UNLOCK done!\n");
-				set_charger_control_state(charger_info, BMS_CONTROL_STATE_WAIT_START);
 			}
 		}
 		break;
 
 		case IDLE_OP_STATE_IDLE: {
 			if((charger_info->gun_connect_state == 1) &&
-			   (get_charger_control_state(charger_info) == BMS_CONTROL_STATE_START)) {
-				set_charger_control_state(charger_info, BMS_CONTROL_STATE_WAIT_STOP);
+			   (charger_info->charger_request_state == CHARGER_REQUEST_STATE_START)) {
+				charger_info->charger_request_state = CHARGER_REQUEST_STATE_NONE;
 				charger_info->charger_op_ctx_gun_lock.state = 0;
 				charger_info->idle_op_state = IDLE_OP_STATE_GUN_LOCK;
 				_printf("IDLE_OP_STATE_IDLE done!\n");
@@ -203,7 +204,8 @@ static int handle_state_chm_request(charger_info_t *charger_info)
 		set_charger_state(charger_info, CHARGER_STATE_CRM);
 	}
 
-	if(get_charger_control_state(charger_info) == BMS_CONTROL_STATE_STOP) {
+	if(charger_info->charger_request_state == CHARGER_REQUEST_STATE_STOP) {
+		charger_info->charger_request_state = CHARGER_REQUEST_STATE_NONE;
 		set_charger_state(charger_info, CHARGER_STATE_CST);
 	}
 
@@ -508,7 +510,8 @@ static int handle_state_crm_request(charger_info_t *charger_info)
 		set_charger_state(charger_info, CHARGER_STATE_CSD_CEM);
 	}
 
-	if(get_charger_control_state(charger_info) == BMS_CONTROL_STATE_STOP) {
+	if(charger_info->charger_request_state == CHARGER_REQUEST_STATE_STOP) {
+		charger_info->charger_request_state = CHARGER_REQUEST_STATE_NONE;
 		set_charger_state(charger_info, CHARGER_STATE_CST);
 	}
 
@@ -643,7 +646,8 @@ static int handle_state_cts_cml_request(charger_info_t *charger_info)
 		set_charger_state(charger_info, CHARGER_STATE_CSD_CEM);
 	}
 
-	if(get_charger_control_state(charger_info) == BMS_CONTROL_STATE_STOP) {
+	if(charger_info->charger_request_state == CHARGER_REQUEST_STATE_STOP) {
+		charger_info->charger_request_state = CHARGER_REQUEST_STATE_NONE;
 		set_charger_state(charger_info, CHARGER_STATE_CST);
 	}
 
@@ -758,7 +762,8 @@ static int handle_state_cro_request(charger_info_t *charger_info)
 		}
 	}
 
-	if(get_charger_control_state(charger_info) == BMS_CONTROL_STATE_STOP) {
+	if(charger_info->charger_request_state == CHARGER_REQUEST_STATE_STOP) {
+		charger_info->charger_request_state = CHARGER_REQUEST_STATE_NONE;
 		set_charger_state(charger_info, CHARGER_STATE_CST);
 	}
 
@@ -973,7 +978,8 @@ static int handle_state_ccs_request(charger_info_t *charger_info)
 		charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_BCS_TIMEOUT);
 	}
 
-	if(get_charger_control_state(charger_info) == BMS_CONTROL_STATE_STOP) {
+	if(charger_info->charger_request_state == CHARGER_REQUEST_STATE_STOP) {
+		charger_info->charger_request_state = CHARGER_REQUEST_STATE_NONE;
 		set_charger_state(charger_info, CHARGER_STATE_CST);
 	}
 

@@ -6,7 +6,7 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年05月29日 星期五 10时01分24秒
+ *   修改日期：2020年05月30日 星期六 09时13分41秒
  *   描    述：
  *
  *================================================================*/
@@ -373,27 +373,6 @@ void set_charger_state(charger_info_t *charger_info, charger_state_t state)
 	}
 
 	charger_info->state = state;
-}
-
-void set_charger_state_locked(charger_info_t *charger_info, charger_state_t state)
-{
-	osStatus os_status;
-
-	if(charger_info->handle_mutex) {
-		os_status = osMutexWait(charger_info->handle_mutex, osWaitForever);
-
-		if(os_status != osOK) {
-		}
-	}
-
-	set_charger_state(charger_info, state);
-
-	if(charger_info->handle_mutex) {
-		os_status = osMutexRelease(charger_info->handle_mutex);
-
-		if(os_status != osOK) {
-		}
-	}
 }
 
 void charger_handle_request(charger_info_t *charger_info)
@@ -863,49 +842,12 @@ void charger_periodic(charger_info_t *charger_info)//10ms
 	channel_update_error_stop_state(charger_info);
 }
 
-int set_charger_control_state(charger_info_t *charger_info, bms_control_state_t bms_control_state)
+void set_charger_request_state(charger_info_t *charger_info, charger_request_state_t charger_request_state)
 {
-	int ret = -1;
-
-	switch(bms_control_state) {
-		case BMS_CONTROL_STATE_WAIT_START: {
-			charger_info->bms_control_state = bms_control_state;
-			ret = 0;
-		}
-		break;
-
-		case BMS_CONTROL_STATE_START: {
-			if(charger_info->bms_control_state == BMS_CONTROL_STATE_WAIT_START) {
-				charger_info->bms_control_state = bms_control_state;
-				ret = 0;
-			}
-		}
-		break;
-
-		case BMS_CONTROL_STATE_WAIT_STOP: {
-			if(charger_info->bms_control_state == BMS_CONTROL_STATE_START) {
-				charger_info->bms_control_state = bms_control_state;
-				ret = 0;
-			}
-		}
-		break;
-
-		case BMS_CONTROL_STATE_STOP: {
-			if(charger_info->bms_control_state == BMS_CONTROL_STATE_WAIT_STOP) {
-				charger_info->bms_control_state = bms_control_state;
-				ret = 0;
-			}
-		}
-		break;
-
-		default:
-			break;
-	}
-
-	return ret;
+	charger_info->charger_request_state = charger_request_state;
 }
 
-bms_control_state_t get_charger_control_state(charger_info_t *charger_info)
+charger_request_state_t get_charger_request_state(charger_info_t *charger_info)
 {
-	return charger_info->bms_control_state;
+	return charger_info->charger_request_state;
 }

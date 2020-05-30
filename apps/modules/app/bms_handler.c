@@ -6,7 +6,7 @@
  *   文件名称：bms_handler.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时18分53秒
- *   修改日期：2020年05月25日 星期一 16时45分54秒
+ *   修改日期：2020年05月30日 星期六 09时04分08秒
  *   描    述：
  *
  *================================================================*/
@@ -621,6 +621,11 @@ static int handle_state_bcl_bcs_bsm_bmv_bmt_bsp_request(bms_info_t *bms_info)
 				}
 			}
 		}
+	}
+
+	if(bms_info->bms_request_state == BMS_REQUEST_STATE_STOP) {
+		bms_info->bms_request_state = BMS_REQUEST_STATE_NONE;
+		set_bms_state(bms_info, BMS_STATE_BST);
 	}
 
 	return ret;
