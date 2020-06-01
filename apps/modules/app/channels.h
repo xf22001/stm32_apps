@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2020年01月02日 星期四 08时53分41秒
- *   修改日期：2020年05月30日 星期六 18时11分57秒
+ *   修改日期：2020年05月31日 星期日 14时28分52秒
  *   描    述：
  *
  *================================================================*/
@@ -30,9 +30,9 @@ extern "C"
 #define CHANNEL_TASK_PERIODIC (50)
 
 typedef union {
-	uint8_t id[32];
-	uint32_t card_id;
-} account_id_t;
+	    uint8_t id[32];
+	    uint32_t card_id;
+	} account_id_t;
 
 typedef struct {
 	uint8_t channel_id;//枪口号
@@ -143,6 +143,7 @@ typedef struct {
 	channel_request_state_t channel_request_state;
 	channel_callback_t *callback;
 	void *channels_info;
+	struct list_head list;//running list
 
 	//输入状态
 	uint8_t gun_connect_state;//是否插枪
@@ -197,9 +198,22 @@ typedef struct {
 	bms_data_settings_t bms_data_settings;
 } channel_info_t;
 
+//请求切换
+typedef enum {
+	CHANNELS_OUTPUT_SWITCH_STATE_NONE = 0,//正常输出
+	CHANNELS_OUTPUT_SWITCH_STATE_DISABLE_PWM,//清所有辅板PWM配置，关辅板所有脉冲
+	CHANNELS_OUTPUT_SWITCH_STATE__WAIT_NO_PWM,//等待所有辅板请求关电源
+	CHANNELS_OUTPUT_SWITCH_STATE_DISABLE_POWER_OUTPUT,//关电源模块输出;
+	CHANNELS_OUTPUT_SWITCH_STATE_WAIT_NO_POWER_OUTPUT,//等输出电压为0
+	CHANNELS_OUTPUT_SWITCH_STATE_START,//重新分配模块,打开已分配好的模块
+	CHANNELS_OUTPUT_SWITCH_STATE_ENABLE_PWM,//更新分配好的PWM配置,恢复辅板PWM输出
+	CHANNELS_OUTPUT_SWITCH_STATE_WAIT_PWM_READY,//等待所有辅板pwm配置更新完毕,辅板自己根据需求完成预充,并打开相应pwm
+} channels_output_switch_state_t;//处理模块输出指令
+
 typedef struct {
 	struct list_head list;
 	event_pool_t *event_pool;
+	channels_output_switch_state_t channels_output_switch_state;
 	channel_info_t channel_info[CHANNEL_INSTANCES_NUMBER];
 	channels_info_config_t *channels_info_config;
 	uint32_t periodic_expire;

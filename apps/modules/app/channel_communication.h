@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.h
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分48秒
- *   修改日期：2020年05月26日 星期二 10时38分43秒
+ *   修改日期：2020年06月01日 星期一 17时46分59秒
  *   描    述：
  *
  *================================================================*/
@@ -69,6 +69,7 @@ typedef struct {
 	uint32_t stamp;
 	uint32_t send_stamp;
 	uint8_t available;
+	uint8_t index;
 } channel_com_cmd_ctx_t;
 
 typedef struct {
@@ -86,8 +87,9 @@ typedef struct {
 	can_tx_msg_t can_tx_msg;
 	can_rx_msg_t *can_rx_msg;
 
-	bms_status_t bms_status;
 	callback_item_t charger_info_report_status_cb;
+
+	void *channel_com_data_ctx;
 
 	uint8_t connect_state[CHANNEL_COM_CONNECT_STATE_SIZE];
 	uint8_t connect_state_index;

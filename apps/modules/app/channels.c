@@ -6,7 +6,7 @@
  *   文件名称：channels.c
  *   创 建 者：肖飞
  *   创建日期：2020年01月02日 星期四 08时53分35秒
- *   修改日期：2020年05月30日 星期六 18时12分42秒
+ *   修改日期：2020年05月31日 星期日 09时34分53秒
  *   描    述：
  *
  *================================================================*/
@@ -37,6 +37,10 @@ static channel_callback_t default_channel_callback = {
 	.handle_channel_periodic = default_handle_channel_periodic,
 };
 
+static void handle_common_periodic(channels_info_t *channels_info)
+{
+}
+
 static void channels_periodic(channels_info_t *channels_info)
 {
 	uint32_t ticks = osKernelSysTick();
@@ -44,6 +48,8 @@ static void channels_periodic(channels_info_t *channels_info)
 
 	if(ticks >= channels_info->periodic_expire) {
 		channels_info->periodic_expire = ticks + CHANNEL_TASK_PERIODIC;
+
+		handle_common_periodic(channels_info);
 
 		for(i = 0; i < CHANNEL_INSTANCES_NUMBER; i++) {
 			channel_info_t *channel_info = channels_info->channel_info + i;

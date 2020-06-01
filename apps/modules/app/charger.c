@@ -6,7 +6,7 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年05月30日 星期六 09时13分41秒
+ *   修改日期：2020年06月01日 星期一 17时55分35秒
  *   描    述：
  *
  *================================================================*/
@@ -582,7 +582,7 @@ int precharge(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)
 	   && (charger_info->test_mode == 0)) {
 		switch(charger_op_ctx->state) {
 			case 0: {
-				request_precharge(channel_com_info);
+				//request_precharge(channel_com_info);//test
 				charger_op_ctx->stamp = ticks;
 
 				if(charger_info->precharge_action == PRECHARGE_ACTION_START) {
