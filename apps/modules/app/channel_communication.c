@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分44秒
- *   修改日期：2020年06月02日 星期二 12时19分01秒
+ *   修改日期：2020年06月02日 星期二 13时15分27秒
  *   描    述：
  *
  *================================================================*/
@@ -118,10 +118,9 @@ static void charger_info_report_status_cb(void *fn_ctx, void *chain_ctx)
 	channel_com_info_t *channel_com_info = (channel_com_info_t *)fn_ctx;
 	charger_report_status_t *charger_report_status = (charger_report_status_t *)chain_ctx;
 
-	_printf("%s:%s:%d state:%s, status:%d\n",
-	        __FILE__, __func__, __LINE__,
+	debug("state:%s, status:%s\n",
 	        get_charger_state_des(charger_report_status->state),
-	        charger_report_status->status);
+	        get_charger_status_des(charger_report_status->status));
 
 	switch(charger_report_status->state) {
 		case CHARGER_STATE_IDLE: {
@@ -171,7 +170,7 @@ static void charger_info_report_status_cb(void *fn_ctx, void *chain_ctx)
 	}
 
 	switch(charger_report_status->status) {
-		case CHARGER_INFO_STATUS_NONE: {
+		case CHARGER_INFO_STATUS_CHANGE: {
 		}
 		break;
 
@@ -614,15 +613,15 @@ static void update_channel_heartbeat_request(channel_com_info_t *channel_com_inf
 	channel_status_data->adhesion_n = (a_f_b_reponse_91_data != NULL) ? a_f_b_reponse_91_data->running_state.adhesion_n : 0;
 	channel_status_data->gun_lock_state = charger_info->gun_lock_state;
 	channel_status_data->bms_charge_enable = charger_info->settings->ccs_data.u1.s.charge_enable;
-	_printf("bms_charge_enable:%d\n", channel_status_data->bms_charge_enable);
+	//debug("bms_charge_enable:%d\n", channel_status_data->bms_charge_enable);
 	channel_status_data->a_f_b_state = get_a_f_b_connect_state(channel_com_info->a_f_b_info);
 	channel_status_data->dc_p_temperature = (a_f_b_reponse_91_data != NULL) ? a_f_b_reponse_91_data->dc_p_temperature : 0;
 	channel_status_data->dc_n_temperature = (a_f_b_reponse_91_data != NULL) ? a_f_b_reponse_91_data->dc_n_temperature : 0;
 	channel_status_data->insulation_resistor_value = (a_f_b_reponse_91_data != NULL) ? a_f_b_reponse_91_data->insulation_resistor_value : 0;
 	channel_status_data->charger_state = channel_com_get_charger_state(charger_info);
-	_printf("charger_state:%d\n", channel_status_data->charger_state);
+	//debug("charger_state:%d\n", channel_status_data->charger_state);
 	channel_status_data->charger_status = 0;//test
-	_printf("charger_status:%d\n", channel_status_data->charger_status);
+	//debug("charger_status:%d\n", channel_status_data->charger_status);
 }
 
 static int request_channel_heartbeat(channel_com_info_t *channel_com_info)
@@ -732,12 +731,9 @@ static int request_main_output_config(channel_com_info_t *channel_com_info)
 
 		//输出配置
 		if(main_output_config->pwm_enable == 0) {//关掉所有的pwm
-			_printf("%s:%s:%d close all pwm\n",
-			        __FILE__, __func__, __LINE__);
+			debug("close all pwm\n");
 		} else if(main_output_config->pwm_enable == 1) {//打开对应的pwm
-			_printf("%s:%s:%d bitmask:%x\n",
-			        __FILE__, __func__, __LINE__,
-			        main_output_config->bitmask);
+			debug("bitmask:%x\n", main_output_config->bitmask);
 		}
 	}
 
@@ -800,10 +796,10 @@ void update_channel_output_request(channel_com_info_t *channel_com_info)
 		break;
 	}
 
-	_printf("charger_output_enable:%d\n", channel_output_request->charger_output_enable);
-	_printf("use_single_module:%d\n", channel_output_request->use_single_module);
-	_printf("charger_require_output_voltage:%d\n", channel_output_request->charger_require_output_voltage);
-	_printf("charger_require_output_current:%d\n", channel_output_request->charger_require_output_current);
+	//debug("charger_output_enable:%d\n", channel_output_request->charger_output_enable);
+	//debug("use_single_module:%d\n", channel_output_request->use_single_module);
+	//debug("charger_require_output_voltage:%d\n", channel_output_request->charger_require_output_voltage);
+	//debug("charger_require_output_current:%d\n", channel_output_request->charger_require_output_current);
 }
 
 static int request_channel_output_request(channel_com_info_t *channel_com_info)
@@ -1332,9 +1328,7 @@ static void channel_com_request_periodic(channel_com_info_t *channel_com_info)
 			if(ticks - channel_com_info->cmd_ctx[item->cmd].send_stamp >= RESPONSE_TIMEOUT) {//超时
 				channel_com_set_connect_state(channel_com_info, 0);
 				channel_com_info->cmd_ctx[item->cmd].state = CHANNEL_COM_STATE_ERROR;
-				_printf("%s:%s:%d cmd %d timeout\n",
-				        __FILE__, __func__, __LINE__,
-				        item->cmd);
+				debug("cmd %d timeout\n", item->cmd);
 			}
 		}
 
@@ -1379,9 +1373,7 @@ void task_channel_com_request(void const *argument)
 
 			channel_com_info->can_tx_msg.DLC = 8;
 
-			_printf("%s:%s:%d request cmd %d\n",
-			        __FILE__, __func__, __LINE__,
-			        item->cmd);
+			//debug("request cmd %d\n", item->cmd);
 
 			memset(channel_com_info->can_tx_msg.Data, 0, 8);
 

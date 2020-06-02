@@ -6,7 +6,7 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年06月02日 星期二 11时22分56秒
+ *   修改日期：2020年06月02日 星期二 13时12分19秒
  *   描    述：
  *
  *================================================================*/
@@ -198,6 +198,160 @@ char *get_charger_state_des(charger_state_t state)
 	return des;
 }
 
+char *get_charger_status_des(charger_info_status_t status)
+{
+	char *des = NULL;
+
+	switch(status) {
+		case CHARGER_INFO_STATUS_CHANGE: {
+			des = "CHARGER_INFO_STATUS_CHANGE";
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_CHM_OUTPUT_VOLTAGE_UNMATCH: {
+			des = "CHARGER_INFO_STATUS_CHM_OUTPUT_VOLTAGE_UNMATCH";
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_CHM_OP_STATE_DISCHARGE_TIMEOUT: {
+			des = "CHARGER_INFO_STATUS_CHM_OP_STATE_DISCHARGE_TIMEOUT";
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_CHM_OP_STATE_RELAY_ENDPOINT_OVERVOLTAGE_CHECK_TIMEOUT: {
+			des = "CHARGER_INFO_STATUS_CHM_OP_STATE_RELAY_ENDPOINT_OVERVOLTAGE_CHECK_TIMEOUT";
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_CHM_OP_STATE_INSULATION_CHECK_PRECHARGE_TIMEOUT: {
+			des = "CHARGER_INFO_STATUS_CHM_OP_STATE_INSULATION_CHECK_PRECHARGE_TIMEOUT";
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_CHM_OP_STATE_INSULATION_CHECK_TIMEOUT: {
+			des = "CHARGER_INFO_STATUS_CHM_OP_STATE_INSULATION_CHECK_TIMEOUT";
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_CHM_OP_STATE_INSULATION_CHECK_STOP_PRECHARGE_TIMEOUT: {
+			des = "CHARGER_INFO_STATUS_CHM_OP_STATE_INSULATION_CHECK_STOP_PRECHARGE_TIMEOUT";
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_CHM_OP_STATE_INSULATION_CHECK_DISCHARGE_TIMEOUT: {
+			des = "CHARGER_INFO_STATUS_CHM_OP_STATE_INSULATION_CHECK_DISCHARGE_TIMEOUT";
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_CRO_OP_STATE_GET_BATTERY_STATUS_TIMEOUT: {
+			des = "CHARGER_INFO_STATUS_CRO_OP_STATE_GET_BATTERY_STATUS_TIMEOUT";
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_BRM_TIMEOUT: {
+			des = "CHARGER_INFO_STATUS_BRM_TIMEOUT";
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_BCP_TIMEOUT: {
+			des = "CHARGER_INFO_STATUS_BCP_TIMEOUT";
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_BRO_TIMEOUT: {
+			des = "CHARGER_INFO_STATUS_BRO_TIMEOUT";
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_CRO_OUTPUT_VOLTAGE_UNMATCH: {
+			des = "CHARGER_INFO_STATUS_CRO_OUTPUT_VOLTAGE_UNMATCH";
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_CRO_OP_STATE_PRECHARGE_TIMEOUT: {
+			des = "CHARGER_INFO_STATUS_CRO_OP_STATE_PRECHARGE_TIMEOUT";
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_BCL_TIMEOUT: {
+			des = "CHARGER_INFO_STATUS_BCL_TIMEOUT";
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_BCS_TIMEOUT: {
+			des = "CHARGER_INFO_STATUS_BCS_TIMEOUT";
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_CSD_CEM_OP_STATE_DISCHARGE_TIMEOUT: {
+			des = "CHARGER_INFO_STATUS_CSD_CEM_OP_STATE_DISCHARGE_TIMEOUT";
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_CST: {
+			des = "CHARGER_INFO_STATUS_CST";
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_BHM_RECEIVED: {
+			des = "CHARGER_INFO_STATUS_BHM_RECEIVED";
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_BRM_RECEIVED: {
+			des = "CHARGER_INFO_STATUS_BRM_RECEIVED";
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_BCP_RECEIVED: {
+			des = "CHARGER_INFO_STATUS_BCP_RECEIVED";
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_BRO_RECEIVED: {
+			des = "CHARGER_INFO_STATUS_BRO_RECEIVED";
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_BCL_RECEIVED: {
+			des = "CHARGER_INFO_STATUS_BCL_RECEIVED";
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_BCS_RECEIVED: {
+			des = "CHARGER_INFO_STATUS_BCS_RECEIVED";
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_BSM_RECEIVED: {
+			des = "CHARGER_INFO_STATUS_BSM_RECEIVED";
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_BST_RECEIVED: {
+			des = "CHARGER_INFO_STATUS_BST_RECEIVED";
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_BSD_RECEIVED: {
+			des = "CHARGER_INFO_STATUS_BSD_RECEIVED";
+		}
+		break;
+
+		case CHARGER_INFO_STATUS_BEM_RECEIVED: {
+			des = "CHARGER_INFO_STATUS_BEM_RECEIVED";
+		}
+		break;
+
+		default: {
+			des = "unknow status";
+		}
+		break;
+	}
+
+	return des;
+}
+
 void charger_can_info_init(charger_info_t *charger_info)
 {
 	if(charger_info->can_info->receive_init != NULL) {
@@ -346,7 +500,7 @@ void charger_info_report_status(charger_info_t *charger_info, charger_state_t st
 	charger_report_status.state = state;
 	charger_report_status.status = status;
 
-	_printf("%s:%s:%d state:%s, status:%d\n", __FILE__, __func__, __LINE__, get_charger_state_des(state), status);
+	debug("state:%s, status:%s\n", get_charger_state_des(state), get_charger_status_des(status));
 
 	do_callback_chain(charger_info->report_status_chain, &charger_report_status);
 }
@@ -364,9 +518,9 @@ void set_charger_state(charger_info_t *charger_info, charger_state_t state)
 		return;
 	}
 
-	_printf("change to state:%s!\n", get_charger_state_des(state));
+	debug("change to state:%s!\n", get_charger_state_des(state));
 
-	charger_info_report_status(charger_info, state, CHARGER_INFO_STATUS_NONE);
+	charger_info_report_status(charger_info, state, CHARGER_INFO_STATUS_CHANGE);
 
 	if((handler != NULL) && (handler->prepare != NULL)) {
 		handler->prepare(charger_info);
@@ -453,7 +607,7 @@ void set_auxiliary_power_state(charger_info_t *charger_info, uint8_t state)
 		                  GPIO_PIN_SET);
 	}
 
-	_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
+	debug("state:%d\n", state);
 }
 
 int set_gun_lock_state(charger_info_t *charger_info, uint8_t state, charger_op_ctx_t *charger_op_ctx)
@@ -475,7 +629,7 @@ int set_gun_lock_state(charger_info_t *charger_info, uint8_t state, charger_op_c
 				charger_op_ctx->state = 1;
 				charger_op_ctx->stamp = ticks;
 
-				_printf("%s:%s:%d state:%d, gun state(0:unlock, 1:lock):%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, state);
+				debug("state:%d, gun state(0:unlock, 1:lock):%d\n", charger_op_ctx->state, state);
 			} else {
 				HAL_GPIO_WritePin(gpio_port, gpio_pin, GPIO_PIN_RESET);
 			}
@@ -485,7 +639,7 @@ int set_gun_lock_state(charger_info_t *charger_info, uint8_t state, charger_op_c
 		case 1: {
 			if(ticks - charger_op_ctx->stamp >= 180) {
 				HAL_GPIO_WritePin(gpio_port, gpio_pin, GPIO_PIN_RESET);
-				_printf("%s:%s:%d state:%d, gun state(0:unlock, 1:lock):%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, state);
+				debug("state:%d, gun state(0:unlock, 1:lock):%d\n", charger_op_ctx->state, state);
 				ret = 0;
 			}
 		}
@@ -496,7 +650,7 @@ int set_gun_lock_state(charger_info_t *charger_info, uint8_t state, charger_op_c
 	}
 
 
-	//_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
+	//debug("state:%d, ret:%d\n", charger_op_ctx->state, ret);
 
 	return ret;
 }
@@ -519,7 +673,7 @@ void set_power_output_enable(charger_info_t *charger_info, uint8_t state)
 		                  GPIO_PIN_SET);
 	}
 
-	_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
+	debug("state:%d\n", state);
 }
 
 int discharge(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)
@@ -569,7 +723,7 @@ int discharge(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)
 	}
 
 	ret = 0;
-	_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
+	debug("state:%d, ret:%d\n", charger_op_ctx->state, ret);
 	return ret;
 }
 
@@ -613,7 +767,7 @@ int precharge(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)
 	}
 
 	ret = 0;
-	_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
+	debug("state:%d, ret:%d\n", charger_op_ctx->state, ret);
 	return ret;
 }
 
@@ -649,7 +803,7 @@ int relay_endpoint_overvoltage_status(charger_info_t *charger_info, charger_op_c
 	}
 
 	ret = 0;
-	_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
+	debug("state:%d, ret:%d\n", charger_op_ctx->state, ret);
 	return ret;
 }
 
@@ -709,7 +863,7 @@ int insulation_check(charger_info_t *charger_info, charger_op_ctx_t *charger_op_
 	}
 
 	ret = 0;
-	_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
+	debug("state:%d, ret:%d\n", charger_op_ctx->state, ret);
 	return ret;
 }
 
@@ -745,7 +899,7 @@ int battery_voltage_status(charger_info_t *charger_info, charger_op_ctx_t *charg
 	}
 
 	ret = 0;
-	_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
+	debug("state:%d, ret:%d\n", charger_op_ctx->state, ret);
 	return ret;
 }
 
@@ -758,7 +912,7 @@ int wait_no_current(charger_info_t *charger_info, charger_op_ctx_t *charger_op_c
 	}
 
 	ret = 0;
-	_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
+	debug("state:%d, ret:%d\n", charger_op_ctx->state, ret);
 	return ret;
 }
 
@@ -767,7 +921,7 @@ static void channel_update_door_state(charger_info_t *charger_info)
 	GPIO_PinState state = HAL_GPIO_ReadPin(charger_info->channel_info_config->gpio_port_door,
 	                                       charger_info->channel_info_config->gpio_pin_door);
 
-	//_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
+	//debug("state:%d\n", state);
 
 	if(state == GPIO_PIN_RESET) {
 		charger_info->door_state = 0;
@@ -785,7 +939,7 @@ static uint8_t get_gun_connect_state(charger_info_t *charger_info)
 	GPIO_PinState state = HAL_GPIO_ReadPin(charger_info->channel_info_config->gpio_port_gun_state,
 	                                       charger_info->channel_info_config->gpio_pin_gun_state);
 
-	//_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
+	//debug("state:%d\n", state);
 
 	if(state == GPIO_PIN_RESET) {
 		return 0;
@@ -813,7 +967,7 @@ static void channel_update_gun_state(charger_info_t *charger_info)//100ms
 		if(charger_info->gun_connect_state_debounce_count >= 3) {
 			charger_info->gun_connect_state_debounce_count = 0;
 			charger_info->gun_connect_state = state;
-			//_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
+			//debug("state:%d\n", state);
 		}
 	} else {
 		charger_info->gun_connect_state_debounce_count = 0;
@@ -827,7 +981,7 @@ static void channel_update_error_stop_state(charger_info_t *charger_info)
 	GPIO_PinState state = HAL_GPIO_ReadPin(charger_info->channel_info_config->gpio_port_error_stop,
 	                                       charger_info->channel_info_config->gpio_pin_error_stop);
 
-	//_printf("%s:%s:%d state:%d\n", __FILE__, __func__, __LINE__, state);
+	//debug("state:%d\n", state);
 
 	if(state == GPIO_PIN_RESET) {
 		charger_info->error_stop_state = 0;

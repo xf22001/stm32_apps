@@ -6,7 +6,7 @@
  *   文件名称：charger_handler.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时18分42秒
- *   修改日期：2020年06月02日 星期二 11时39分59秒
+ *   修改日期：2020年06月02日 星期二 13时14分28秒
  *   描    述：
  *
  *================================================================*/
@@ -96,7 +96,7 @@ static int handle_state_idle_request(charger_info_t *charger_info)
 
 			charger_info->charger_op_ctx_gun_lock.state = 0;
 			charger_info->idle_op_state = IDLE_OP_STATE_GUN_UNLOCK;
-			_printf("IDLE_OP_STATE_NONE done!\n");
+			debug("IDLE_OP_STATE_NONE done!\n");
 		}
 		break;
 
@@ -105,7 +105,7 @@ static int handle_state_idle_request(charger_info_t *charger_info)
 
 			if(op_ret == 0) {
 				charger_info->idle_op_state = IDLE_OP_STATE_IDLE;
-				_printf("IDLE_OP_STATE_GUN_UNLOCK done!\n");
+				debug("IDLE_OP_STATE_GUN_UNLOCK done!\n");
 			}
 		}
 		break;
@@ -116,9 +116,9 @@ static int handle_state_idle_request(charger_info_t *charger_info)
 				charger_info->charger_request_state = CHARGER_REQUEST_STATE_NONE;
 				charger_info->charger_op_ctx_gun_lock.state = 0;
 				charger_info->idle_op_state = IDLE_OP_STATE_GUN_LOCK;
-				_printf("IDLE_OP_STATE_IDLE done!\n");
+				debug("IDLE_OP_STATE_IDLE done!\n");
 			} else {
-				//_printf("IDLE_OP_STATE_IDLE!\n");
+				//debug("IDLE_OP_STATE_IDLE!\n");
 			}
 		}
 		break;
@@ -128,7 +128,7 @@ static int handle_state_idle_request(charger_info_t *charger_info)
 
 			if(op_ret == 0) {
 				charger_info->idle_op_state = IDLE_OP_STATE_AUXILLIARY_POWER_ON;
-				_printf("IDLE_OP_STATE_GUN_LOCK done!\n");
+				debug("IDLE_OP_STATE_GUN_LOCK done!\n");
 			}
 		}
 		break;
@@ -136,12 +136,12 @@ static int handle_state_idle_request(charger_info_t *charger_info)
 		case IDLE_OP_STATE_AUXILLIARY_POWER_ON: {
 			set_auxiliary_power_state(charger_info, 1);
 			set_charger_state(charger_info, CHARGER_STATE_CHM);
-			_printf("IDLE_OP_STATE_AUXILLIARY_POWER_ON done!\n");
+			debug("IDLE_OP_STATE_AUXILLIARY_POWER_ON done!\n");
 		}
 		break;
 
 		default: {
-			_printf("%s:%s:%d!\n", __FILE__, __func__, __LINE__);
+			debug("%s:%s:%d!\n", __FILE__, __func__, __LINE__);
 		}
 		break;
 	}
@@ -224,13 +224,13 @@ static int handle_state_chm_request(charger_info_t *charger_info)
 
 				charger_info->chm_op_state = CHM_OP_STATE_RELAY_ENDPOINT_OVERVOLTAGE_CHECK;
 
-				_printf("CHM_OP_STATE_DISCHARGE done!\n");
+				debug("CHM_OP_STATE_DISCHARGE done!\n");
 			} else if(op_ret == -1) {
 				charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_CHM_OP_STATE_DISCHARGE_TIMEOUT);
 
 				set_charger_state(charger_info, CHARGER_STATE_IDLE);
 
-				_printf("CHM_OP_STATE_DISCHARGE timeout\n");
+				debug("CHM_OP_STATE_DISCHARGE timeout\n");
 			}
 		}
 		break;
@@ -254,14 +254,14 @@ static int handle_state_chm_request(charger_info_t *charger_info)
 
 				charger_info->chm_op_state = CHM_OP_STATE_INSULATION_CHECK_PRECHARGE;
 
-				_printf("CHM_OP_STATE_RELAY_ENDPOINT_OVERVOLTAGE_CHECK done!\n");
+				debug("CHM_OP_STATE_RELAY_ENDPOINT_OVERVOLTAGE_CHECK done!\n");
 
 			} else if(op_ret == -1) {
 				charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_CHM_OP_STATE_RELAY_ENDPOINT_OVERVOLTAGE_CHECK_TIMEOUT);
 
 				set_charger_state(charger_info, CHARGER_STATE_IDLE);
 
-				_printf("CHM_OP_STATE_RELAY_ENDPOINT_OVERVOLTAGE_CHECK timeout!\n");
+				debug("CHM_OP_STATE_RELAY_ENDPOINT_OVERVOLTAGE_CHECK timeout!\n");
 			}
 		}
 		break;
@@ -279,14 +279,14 @@ static int handle_state_chm_request(charger_info_t *charger_info)
 
 				charger_info->chm_op_state = CHM_OP_STATE_INSULATION_CHECK_DELAY_1;
 
-				_printf("CHM_OP_STATE_INSULATION_CHECK_PRECHARGE done!\n");
+				debug("CHM_OP_STATE_INSULATION_CHECK_PRECHARGE done!\n");
 			} else if(op_ret == -1) {
 				charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_CHM_OP_STATE_INSULATION_CHECK_PRECHARGE_TIMEOUT);
 				charger_info->charger_op_ctx.state = 0;
 
 				charger_info->chm_op_state = CHM_OP_STATE_ABORT_DISCHARGE;
 
-				_printf("CHM_OP_STATE_INSULATION_CHECK_PRECHARGE timeout!\n");
+				debug("CHM_OP_STATE_INSULATION_CHECK_PRECHARGE timeout!\n");
 			}
 		}
 		break;
@@ -298,7 +298,7 @@ static int handle_state_chm_request(charger_info_t *charger_info)
 
 				charger_info->chm_op_state = CHM_OP_STATE_INSULATION_CHECK_STOP_PRECHARGE;
 
-				_printf("CHM_OP_STATE_INSULATION_CHECK_DELAY_1 done!\n");
+				debug("CHM_OP_STATE_INSULATION_CHECK_DELAY_1 done!\n");
 			}
 		}
 		break;
@@ -314,14 +314,14 @@ static int handle_state_chm_request(charger_info_t *charger_info)
 
 				charger_info->chm_op_state = CHM_OP_STATE_INSULATION_CHECK_DELAY_2;
 
-				_printf("CHM_OP_STATE_INSULATION_CHECK_STOP_PRECHARGE done!\n");
+				debug("CHM_OP_STATE_INSULATION_CHECK_STOP_PRECHARGE done!\n");
 			} else if(op_ret == -1) {
 				charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_CHM_OP_STATE_INSULATION_CHECK_STOP_PRECHARGE_TIMEOUT);
 				charger_info->charger_op_ctx.state = 0;
 
 				charger_info->chm_op_state = CHM_OP_STATE_ABORT_DISCHARGE;
 
-				_printf("CHM_OP_STATE_INSULATION_CHECK_STOP_PRECHARGE timeout!\n");
+				debug("CHM_OP_STATE_INSULATION_CHECK_STOP_PRECHARGE timeout!\n");
 			}
 		}
 		break;
@@ -333,7 +333,7 @@ static int handle_state_chm_request(charger_info_t *charger_info)
 
 				charger_info->chm_op_state = CHM_OP_STATE_INSULATION_CHECK_DISCHARGE;
 
-				_printf("CHM_OP_STATE_INSULATION_CHECK_DELAY_2 done!\n");
+				debug("CHM_OP_STATE_INSULATION_CHECK_DELAY_2 done!\n");
 			}
 		}
 		break;
@@ -347,13 +347,13 @@ static int handle_state_chm_request(charger_info_t *charger_info)
 
 				charger_info->chm_op_state = CHM_OP_STATE_INSULATION_CHECK;
 
-				_printf("CHM_OP_STATE_INSULATION_CHECK_DISCHARGE done!\n");
+				debug("CHM_OP_STATE_INSULATION_CHECK_DISCHARGE done!\n");
 
 			} else if(op_ret == -1) {
 				charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_CHM_OP_STATE_INSULATION_CHECK_DISCHARGE_TIMEOUT);
 				set_charger_state(charger_info, CHARGER_STATE_IDLE);
 
-				_printf("CHM_OP_STATE_INSULATION_CHECK_DISCHARGE timeout\n");
+				debug("CHM_OP_STATE_INSULATION_CHECK_DISCHARGE timeout\n");
 			}
 		}
 		break;
@@ -371,14 +371,14 @@ static int handle_state_chm_request(charger_info_t *charger_info)
 
 				set_charger_state(charger_info, CHARGER_STATE_CRM);
 
-				_printf("CHM_OP_STATE_INSULATION_CHECK done!\n");
+				debug("CHM_OP_STATE_INSULATION_CHECK done!\n");
 
 			} else if(op_ret == -1) {
 				charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_CHM_OP_STATE_INSULATION_CHECK_TIMEOUT);
 
 				set_charger_state(charger_info, CHARGER_STATE_IDLE);
 
-				_printf("CHM_OP_STATE_INSULATION_CHECK timeout!\n");
+				debug("CHM_OP_STATE_INSULATION_CHECK timeout!\n");
 			}
 		}
 		break;
@@ -391,12 +391,12 @@ static int handle_state_chm_request(charger_info_t *charger_info)
 				set_power_output_enable(charger_info, 0);//关闭输出
 				set_charger_state(charger_info, CHARGER_STATE_IDLE);
 
-				_printf("CHM_OP_STATE_ABORT_DISCHARGE done!\n");
+				debug("CHM_OP_STATE_ABORT_DISCHARGE done!\n");
 			} else if(op_ret == -1) {
 				set_power_output_enable(charger_info, 0);//关闭输出
 				set_charger_state(charger_info, CHARGER_STATE_IDLE);
 
-				_printf("CHM_OP_STATE_ABORT_DISCHARGE timeout\n");
+				debug("CHM_OP_STATE_ABORT_DISCHARGE timeout\n");
 			}
 		}
 		break;
@@ -794,7 +794,7 @@ static int handle_state_cro_request(charger_info_t *charger_info)
 				charger_info->cro_op_state = CRO_OP_STATE_GET_BATTERY_STATUS;
 			}
 
-			_printf("CRO_OP_STATE_START_PRECHARGE done!\n");
+			debug("CRO_OP_STATE_START_PRECHARGE done!\n");
 		}
 		break;
 
@@ -810,13 +810,13 @@ static int handle_state_cro_request(charger_info_t *charger_info)
 
 				charger_info->cro_op_state = CRO_OP_STATE_PRECHARGE;
 
-				_printf("CRO_OP_STATE_GET_BATTERY_STATUS done\n");
+				debug("CRO_OP_STATE_GET_BATTERY_STATUS done\n");
 			} else if(op_ret == -1) {
 				charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_CRO_OP_STATE_GET_BATTERY_STATUS_TIMEOUT);
 
 				set_charger_state(charger_info, CHARGER_STATE_CST);
 
-				_printf("CRO_OP_STATE_GET_BATTERY_STATUS timeout\n");
+				debug("CRO_OP_STATE_GET_BATTERY_STATUS timeout\n");
 			}
 		}
 		break;
@@ -830,13 +830,13 @@ static int handle_state_cro_request(charger_info_t *charger_info)
 
 				charger_info->cro_op_state = CRO_OP_STATE_PRECHARGE_DELAY_1;
 
-				_printf("CRO_OP_STATE_PRECHARGE done\n");
+				debug("CRO_OP_STATE_PRECHARGE done\n");
 			} else if(op_ret == -1) {
 				charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_CRO_OP_STATE_PRECHARGE_TIMEOUT);
 
 				set_charger_state(charger_info, CHARGER_STATE_CST);
 
-				_printf("CRO_OP_STATE_PRECHARGE timeout\n");
+				debug("CRO_OP_STATE_PRECHARGE timeout\n");
 			}
 		}
 		break;
@@ -851,7 +851,7 @@ static int handle_state_cro_request(charger_info_t *charger_info)
 
 				charger_info->cro_op_state = CRO_OP_STATE_PRECHARGE_DELAY_2;
 
-				_printf("CRO_OP_STATE_PRECHARGE_DELAY_1 done!\n");
+				debug("CRO_OP_STATE_PRECHARGE_DELAY_1 done!\n");
 			}
 		}
 		break;
@@ -867,7 +867,7 @@ static int handle_state_cro_request(charger_info_t *charger_info)
 
 				charger_info->cro_op_state = CRO_OP_STATE_NONE;
 
-				_printf("CRO_OP_STATE_PRECHARGE_DELAY_2 done!\n");
+				debug("CRO_OP_STATE_PRECHARGE_DELAY_2 done!\n");
 			}
 		}
 		break;
@@ -1322,14 +1322,14 @@ static int handle_state_csd_cem_request(charger_info_t *charger_info)
 
 				charger_info->csd_cem_op_state = CSD_CEM_OP_STATE_DISABLE_OUTPUT_DELAY;
 
-				_printf("CSD_CEM_OP_STATE_WAIT_NO_CURRENT done!\n");
+				debug("CSD_CEM_OP_STATE_WAIT_NO_CURRENT done!\n");
 
 			} else if(op_ret == -1) {
 				charger_info->stamp_1 = ticks;
 
 				charger_info->csd_cem_op_state = CSD_CEM_OP_STATE_DISABLE_OUTPUT_DELAY;
 
-				_printf("CSD_CEM_OP_STATE_WAIT_NO_CURRENT timeout\n");
+				debug("CSD_CEM_OP_STATE_WAIT_NO_CURRENT timeout\n");
 			}
 		}
 		break;
@@ -1342,7 +1342,7 @@ static int handle_state_csd_cem_request(charger_info_t *charger_info)
 
 				charger_info->csd_cem_op_state = CSD_CEM_OP_STATE_DISCHARGE;
 
-				_printf("CSD_CEM_OP_STATE_DISABLE_OUTPUT_DELAY done!\n");
+				debug("CSD_CEM_OP_STATE_DISABLE_OUTPUT_DELAY done!\n");
 			}
 		}
 		break;
@@ -1356,7 +1356,7 @@ static int handle_state_csd_cem_request(charger_info_t *charger_info)
 
 				set_charger_state(charger_info, CHARGER_STATE_IDLE);
 
-				_printf("CSD_CEM_OP_STATE_DISCHARGE done!\n");
+				debug("CSD_CEM_OP_STATE_DISCHARGE done!\n");
 			} else if(op_ret == -1) {
 				charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_CSD_CEM_OP_STATE_DISCHARGE_TIMEOUT);
 
@@ -1364,7 +1364,7 @@ static int handle_state_csd_cem_request(charger_info_t *charger_info)
 
 				set_charger_state(charger_info, CHARGER_STATE_IDLE);
 
-				_printf("CSD_CEM_OP_STATE_DISCHARGE timeout\n");
+				debug("CSD_CEM_OP_STATE_DISCHARGE timeout\n");
 
 			}
 		}

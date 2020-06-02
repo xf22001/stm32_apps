@@ -6,7 +6,7 @@
  *   文件名称：charger.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分46秒
- *   修改日期：2020年06月02日 星期二 11时41分18秒
+ *   修改日期：2020年06月02日 星期二 13时03分55秒
  *   描    述：
  *
  *================================================================*/
@@ -188,7 +188,7 @@ typedef struct {
 } charger_state_handler_t;
 
 typedef enum {
-	CHARGER_INFO_STATUS_NONE = 0,
+	CHARGER_INFO_STATUS_CHANGE = 0,
 	CHARGER_INFO_STATUS_CHM_OUTPUT_VOLTAGE_UNMATCH,
 	CHARGER_INFO_STATUS_CHM_OP_STATE_DISCHARGE_TIMEOUT,
 	CHARGER_INFO_STATUS_CHM_OP_STATE_RELAY_ENDPOINT_OVERVOLTAGE_CHECK_TIMEOUT,
@@ -226,6 +226,7 @@ typedef struct {
 void free_charger_info(charger_info_t *charger_info);
 charger_info_t *get_or_alloc_charger_info(channel_info_config_t *channel_info_config);
 char *get_charger_state_des(charger_state_t state);
+char *get_charger_status_des(charger_info_status_t status);
 
 int add_charger_info_report_status_cb(charger_info_t *charger_info, callback_item_t *callback_item);
 int remove_charger_info_report_status_cb(charger_info_t *charger_info, callback_item_t *callback_item);
