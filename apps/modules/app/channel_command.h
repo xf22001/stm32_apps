@@ -6,7 +6,7 @@
  *   文件名称：channel_command.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月26日 星期二 08时50分38秒
- *   修改日期：2020年06月01日 星期一 17时45分19秒
+ *   修改日期：2020年06月02日 星期二 11时51分59秒
  *   描    述：
  *
  *================================================================*/
@@ -26,33 +26,35 @@ extern "C"
 
 
 typedef enum {
-	CMD_CHANNEL_HEARTBEAT = 0,
-	CMD_MAIN_SETTTINGS,
-	CMD_MAIN_OUTPUT_CONFIG,
-	CMD_CHANNEL_OUTPUT_REQUEST,
-	CMD_MAIN_OUTPUT_STATUS,
-	CMD_MAIN_CONTROL,
-	CMD_CHANNEL_REQUEST,
-	CMD_CHANNEL_BHM,
-	CMD_CHANNEL_BRM,
-	CMD_CHANNEL_BCP,
-	CMD_CHANNEL_BRO,
-	CMD_CHANNEL_BCL,
-	CMD_CHANNEL_BCS,
-	CMD_CHANNEL_BSM,
-	CMD_CHANNEL_BST,
-	CMD_CHANNEL_BSD,
-	CMD_CHANNEL_BEM,
-	CHANNEL_COM_CMD_TOTAL,
+	COM_CMD_CHANNEL_HEARTBEAT = 0,
+	COM_CMD_MAIN_SETTTINGS,
+	COM_CMD_MAIN_OUTPUT_CONFIG,
+	COM_CMD_CHANNEL_OUTPUT_REQUEST,
+	COM_CMD_MAIN_OUTPUT_STATUS,
+	COM_CMD_MAIN_CONTROL,
+	COM_CMD_CHANNEL_REQUEST,
+	COM_CMD_CHANNEL_BHM,
+	COM_CMD_CHANNEL_BRM,
+	COM_CMD_CHANNEL_BCP,
+	COM_CMD_CHANNEL_BRO,
+	COM_CMD_CHANNEL_BCL,
+	COM_CMD_CHANNEL_BCS,
+	COM_CMD_CHANNEL_BSM,
+	COM_CMD_CHANNEL_BST,
+	COM_CMD_CHANNEL_BSD,
+	COM_CMD_CHANNEL_BEM,
+	COM_CMD_TOTAL,
 } cmd_t;
 
 typedef enum {
-	CHANNEL_CONTROL_STATUS_WAIT = 0,
-	CHANNEL_CONTROL_STATUS_DONE,
+	CHANNEL_STATUS_WAIT = 0,
+	CHANNEL_STATUS_DONE,
 } cmd_status_t;//channel
 
 typedef enum {
-	MAIN_CONTROL_TYPE_GUN_NONE = 0,
+	MAIN_CONTROL_TYPE_NONE = 0,
+	MAIN_CONTROL_TYPE_START_BMS,
+	MAIN_CONTROL_TYPE_STOP_BMS,
 	MAIN_CONTROL_TYPE_GUN_LOCK,
 	MAIN_CONTROL_TYPE_GUN_UNLOCK,
 } main_control_type_t;//main
@@ -95,10 +97,7 @@ typedef struct {
 	uint8_t insulation_resistor_value;//0.1M欧每位
 
 	uint8_t charger_state;//bms阶段
-	uint8_t charger_info_status;//工作状态码
-
-	uint8_t door : 1;//门禁报警
-	uint8_t stop : 1;//急停
+	uint8_t charger_status;//工作状态码
 } channel_status_data_t;//channel heartbeat
 
 typedef struct {
@@ -120,20 +119,19 @@ typedef struct {
 	uint16_t charger_max_output_current;//最大输出电流
 	uint16_t charger_min_output_current;//最小输出电流
 	//uint16_t channel_max_output_power;//通道最大输出功率
+
 } main_settings_t;//main
 
 typedef struct {
-	//0:关掉所有pwm
-	//1:如果charger_output_enable为1,预充后打开相应pwm.
-	uint8_t state;//0:disable output, 1:enable output
-	uint32_t bitmask;
+	uint8_t pwm_enable;//0:禁用pwm, 清pwm配置 1:允许pwm,配置pwm
+	uint32_t bitmask;//pwm输出位码配置
 } main_output_config_t;//main
 
 typedef struct {
 	uint8_t charger_output_enable;
+	uint8_t use_single_module;
 	uint16_t charger_require_output_voltage;//模块充电电压
 	uint16_t charger_require_output_current;//模块充电电流
-	uint8_t use_single_module;
 } channel_output_request_t;//channel
 
 typedef struct {

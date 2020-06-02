@@ -6,7 +6,7 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年06月01日 星期一 17时55分35秒
+ *   修改日期：2020年06月02日 星期二 11时22分56秒
  *   描    述：
  *
  *================================================================*/
@@ -474,6 +474,8 @@ int set_gun_lock_state(charger_info_t *charger_info, uint8_t state, charger_op_c
 				HAL_GPIO_WritePin(gpio_port, gpio_pin, GPIO_PIN_SET);
 				charger_op_ctx->state = 1;
 				charger_op_ctx->stamp = ticks;
+
+				_printf("%s:%s:%d state:%d, gun state(0:unlock, 1:lock):%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, state);
 			} else {
 				HAL_GPIO_WritePin(gpio_port, gpio_pin, GPIO_PIN_RESET);
 			}
@@ -483,6 +485,7 @@ int set_gun_lock_state(charger_info_t *charger_info, uint8_t state, charger_op_c
 		case 1: {
 			if(ticks - charger_op_ctx->stamp >= 180) {
 				HAL_GPIO_WritePin(gpio_port, gpio_pin, GPIO_PIN_RESET);
+				_printf("%s:%s:%d state:%d, gun state(0:unlock, 1:lock):%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, state);
 				ret = 0;
 			}
 		}
@@ -493,7 +496,7 @@ int set_gun_lock_state(charger_info_t *charger_info, uint8_t state, charger_op_c
 	}
 
 
-	_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
+	//_printf("%s:%s:%d state:%d, ret:%d\n", __FILE__, __func__, __LINE__, charger_op_ctx->state, ret);
 
 	return ret;
 }
@@ -575,14 +578,12 @@ int precharge(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)
 {
 	uint32_t ticks = osKernelSysTick();
 	int ret = 1;
-	channel_com_info_t *channel_com_info = (channel_com_info_t *)charger_info->channel_com_info;
 
 	if((charger_info->precharge_enable == 1)
 	   && (charger_info->gb == BMS_STARDARD_2015)
 	   && (charger_info->test_mode == 0)) {
 		switch(charger_op_ctx->state) {
 			case 0: {
-				//request_precharge(channel_com_info);//test
 				charger_op_ctx->stamp = ticks;
 
 				if(charger_info->precharge_action == PRECHARGE_ACTION_START) {

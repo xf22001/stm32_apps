@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.h
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分48秒
- *   修改日期：2020年06月01日 星期一 17时46分59秒
+ *   修改日期：2020年06月02日 星期二 10时33分33秒
  *   描    述：
  *
  *================================================================*/
@@ -24,6 +24,7 @@ extern "C"
 #include "channel_config.h"
 #include "callback_chain.h"
 #include "bms_status.h"
+#include "channel_command.h"
 
 #ifdef __cplusplus
 }
@@ -98,7 +99,7 @@ typedef struct {
 
 void free_channel_com_info(channel_com_info_t *channel_com_info);
 channel_com_info_t *get_or_alloc_channel_com_info(channel_info_config_t *channel_info_config);
-void request_precharge(channel_com_info_t *channel_com_info);
+void channel_request(channel_com_info_t *channel_com_info, channel_request_type_t channel_request_type, uint8_t reason);
 void task_channel_com_request(void const *argument);
 void task_channel_com_response(void const *argument);
 

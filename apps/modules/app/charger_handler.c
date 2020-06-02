@@ -6,7 +6,7 @@
  *   文件名称：charger_handler.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时18分42秒
- *   修改日期：2020年05月30日 星期六 09时22分31秒
+ *   修改日期：2020年06月02日 星期二 11时39分59秒
  *   描    述：
  *
  *================================================================*/
@@ -440,6 +440,7 @@ static int handle_state_chm_response(charger_info_t *charger_info)
 			} else {
 				if(charger_info->bhm_received == 0) {
 					charger_info->bhm_received = 1;
+					charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_BHM_RECEIVED);
 
 					charger_info->charger_op_ctx.state = 0;
 
@@ -588,6 +589,8 @@ static int prepare_state_cts_cml(charger_info_t *charger_info)
 	charger_info->stamp = ticks;
 	charger_info->stamp_1 = ticks;
 
+	charger_info->bro_received = 0;
+
 	return ret;
 }
 
@@ -691,6 +694,11 @@ static int handle_state_cts_cml_response(charger_info_t *charger_info)
 
 			if(data->bro_result == 0xaa) {
 				set_charger_state(charger_info, CHARGER_STATE_CRO);
+			}
+
+			if(charger_info->bro_received == 0) {
+				charger_info->bro_received = 1;
+				charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_BRO_RECEIVED);
 			}
 
 			ret = 0;
@@ -836,6 +844,8 @@ static int handle_state_cro_request(charger_info_t *charger_info)
 		case CRO_OP_STATE_PRECHARGE_DELAY_1: {//预充后等待2s,打开输出继电器
 			if(ticks - charger_info->stamp_2 >= (2 * 1000)) {
 				set_power_output_enable(charger_info, 1);//打开输出
+
+				charger_info->precharge_action = PRECHARGE_ACTION_STOP;//打开继电器后，停止预充
 
 				charger_info->stamp_2 = ticks;
 
@@ -1184,6 +1194,8 @@ static int prepare_state_csd_cem(charger_info_t *charger_info)
 	charger_info->stamp = ticks;
 	charger_info->stamp_1 = ticks;
 
+	charger_info->bem_received = 0;
+
 	charger_info->csd_cem_op_state = CSD_CEM_OP_STATE_NONE;
 
 	return ret;
@@ -1399,6 +1411,11 @@ static int handle_state_csd_cem_response(charger_info_t *charger_info)
 			bem_data_t *data = (bem_data_t *)rx_msg->Data;
 
 			charger_info->settings->bem_data = *data;
+
+			if(charger_info->bem_received == 0) {
+				charger_info->bem_received = 1;
+				charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_BEM_RECEIVED);
+			}
 
 			ret = 0;
 		}

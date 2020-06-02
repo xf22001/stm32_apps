@@ -6,7 +6,7 @@
  *   文件名称：charger.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分46秒
- *   修改日期：2020年05月30日 星期六 09时25分52秒
+ *   修改日期：2020年06月02日 星期二 11时41分18秒
  *   描    述：
  *
  *================================================================*/
@@ -93,8 +93,8 @@ typedef enum {
 
 typedef enum {
 	PRECHARGE_ACTION_STOP = 0,
-	PRECHARGE_ACTION_START = 1,
-	PRECHARGE_ACTION_START_SINGLE_MODULE = 2,
+	PRECHARGE_ACTION_START,
+	PRECHARGE_ACTION_START_SINGLE_MODULE,
 } precharge_action_t;
 
 typedef enum {
@@ -140,14 +140,16 @@ typedef struct {
 	uint8_t bhm_received;
 	uint8_t brm_received;
 	uint8_t bcp_received;
+	uint8_t bro_received;
 	uint8_t bcl_received;
-	uint8_t bsm_received;
 	uint8_t bcs_received;
+	uint8_t bsm_received;
 	uint8_t bst_received;
 	uint8_t bsd_received;
+	uint8_t bem_received;
 
 	uint16_t precharge_voltage;
-	uint8_t precharge_action;//0-停止预充, 1-开始预充, 2-单模块预充
+	uint8_t precharge_action;//precharge_action_t
 
 	uint8_t auxiliary_power_state;//辅助电源打开状态
 	uint8_t gun_lock_state;//锁枪状态
@@ -204,13 +206,16 @@ typedef enum {
 	CHARGER_INFO_STATUS_BCS_TIMEOUT,
 	CHARGER_INFO_STATUS_CSD_CEM_OP_STATE_DISCHARGE_TIMEOUT,
 	CHARGER_INFO_STATUS_CST,
+	CHARGER_INFO_STATUS_BHM_RECEIVED,
 	CHARGER_INFO_STATUS_BRM_RECEIVED,
 	CHARGER_INFO_STATUS_BCP_RECEIVED,
+	CHARGER_INFO_STATUS_BRO_RECEIVED,
 	CHARGER_INFO_STATUS_BCL_RECEIVED,
-	CHARGER_INFO_STATUS_BSM_RECEIVED,
 	CHARGER_INFO_STATUS_BCS_RECEIVED,
+	CHARGER_INFO_STATUS_BSM_RECEIVED,
 	CHARGER_INFO_STATUS_BST_RECEIVED,
 	CHARGER_INFO_STATUS_BSD_RECEIVED,
+	CHARGER_INFO_STATUS_BEM_RECEIVED,
 } charger_info_status_t;
 
 typedef struct {
