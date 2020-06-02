@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时07分55秒
- *   修改日期：2020年05月26日 星期二 09时40分28秒
+ *   修改日期：2020年06月02日 星期二 16时59分58秒
  *   描    述：
  *
  *================================================================*/
@@ -233,6 +233,8 @@ can_info_t *get_or_alloc_can_info(CAN_HandleTypeDef *hcan)
 
 	if(os_status != osOK) {
 	}
+
+	can_info->receive_init(hcan);
 
 	return can_info;
 }

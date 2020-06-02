@@ -6,7 +6,7 @@
  *   文件名称：channel_command.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月26日 星期二 08时50分38秒
- *   修改日期：2020年06月02日 星期二 11时51分59秒
+ *   修改日期：2020年06月02日 星期二 13时30分15秒
  *   描    述：
  *
  *================================================================*/
@@ -64,6 +64,13 @@ typedef enum {
 	CHANNEL_REPORT_TYPE_START,//通道请求开机
 	CHANNEL_REPORT_TYPE_STOP,//通道请求停机
 } channel_request_type_t;//channel
+
+typedef enum {
+	CHANNEL_COM_STATE_IDLE = 0,
+	CHANNEL_COM_STATE_REQUEST,
+	CHANNEL_COM_STATE_RESPONSE,
+	CHANNEL_COM_STATE_ERROR,
+} channel_com_state_t;
 
 #pragma pack(push, 1)
 

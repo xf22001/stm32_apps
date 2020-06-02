@@ -6,7 +6,7 @@
  *   文件名称：channels_communication.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月25日 星期一 14时24分10秒
- *   修改日期：2020年05月28日 星期四 11时28分34秒
+ *   修改日期：2020年06月02日 星期二 14时26分46秒
  *   描    述：
  *
  *================================================================*/
@@ -23,6 +23,7 @@ extern "C"
 #include "os_utils.h"
 #include "channels_config.h"
 #include "bms_status.h"
+#include "channel_command.h"
 
 #ifdef __cplusplus
 }
@@ -30,17 +31,39 @@ extern "C"
 
 #define CHANNELS_COM_CONNECT_STATE_SIZE 10
 
-typedef enum {
-	CHANNELS_COM_STATE_IDLE = 0,
-	CHANNELS_COM_STATE_REQUEST,
-	CHANNELS_COM_STATE_RESPONSE,
-	CHANNELS_COM_STATE_ERROR,
-} channels_com_state_t;
+typedef struct {
+	uint32_t main_board_id : 8;//src 0xff
+	uint32_t channel_id : 8;//dest
+	uint32_t unused : 8;
+	uint32_t flag : 5;//0x10
+	uint32_t unused1 : 3;
+} channels_com_can_tx_id_t;
+
+typedef union {
+	channels_com_can_tx_id_t s;
+	uint32_t v;
+} u_channels_com_can_tx_id_t;
+
+typedef struct {
+	uint32_t channel_id : 8;//src
+	uint32_t main_board_id : 8;//dest 0xff
+	uint32_t unused : 8;
+	uint32_t flag : 5;//0x10
+	uint32_t unused1 : 3;
+} channels_com_can_rx_id_t;
+
+typedef union {
+	channels_com_can_rx_id_t s;
+	uint32_t v;
+} u_channels_com_can_rx_id_t;
 
 typedef struct {
 	uint8_t channel_id;
-	channels_com_state_t state;
+	channel_com_state_t state;
+	uint32_t stamp;
 	uint32_t send_stamp;
+	uint8_t available;
+	uint8_t index;
 } channels_com_cmd_ctx_t;
 
 typedef struct {
@@ -56,7 +79,7 @@ typedef struct {
 	can_tx_msg_t can_tx_msg;
 	can_rx_msg_t *can_rx_msg;
 
-	bms_status_t bms_status;
+	void *channels_com_data_ctx;
 
 	uint8_t connect_state[CHANNELS_COM_CONNECT_STATE_SIZE];
 	uint8_t connect_state_index;

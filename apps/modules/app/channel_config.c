@@ -24,7 +24,7 @@ extern UART_HandleTypeDef huart3;
 channel_info_config_t channel_info_config = {
 	.id = 0,
 
-	.hcan_charger = &hcan1,
+	.hcan_charger = &hcan2,
 	.huart_a_f_b = &huart3,
 	.hcan_com = &hcan1,
 

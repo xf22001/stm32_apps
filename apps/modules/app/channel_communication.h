@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.h
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分48秒
- *   修改日期：2020年06月02日 星期二 10时33分33秒
+ *   修改日期：2020年06月02日 星期二 13时30分04秒
  *   描    述：
  *
  *================================================================*/
@@ -57,13 +57,6 @@ typedef union {
 	channel_com_can_rx_id_t s;
 	uint32_t v;
 } u_channel_com_can_rx_id_t;
-
-typedef enum {
-	CHANNEL_COM_STATE_IDLE = 0,
-	CHANNEL_COM_STATE_REQUEST,
-	CHANNEL_COM_STATE_RESPONSE,
-	CHANNEL_COM_STATE_ERROR,
-} channel_com_state_t;
 
 typedef struct {
 	channel_com_state_t state;

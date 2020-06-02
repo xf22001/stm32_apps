@@ -6,7 +6,7 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年06月02日 星期二 13时12分19秒
+ *   修改日期：2020年06月02日 星期二 17时54分00秒
  *   描    述：
  *
  *================================================================*/
@@ -352,13 +352,6 @@ char *get_charger_status_des(charger_info_status_t status)
 	return des;
 }
 
-void charger_can_info_init(charger_info_t *charger_info)
-{
-	if(charger_info->can_info->receive_init != NULL) {
-		charger_info->can_info->receive_init(charger_info->can_info->hcan);
-	}
-}
-
 static int charger_info_set_channel_config(charger_info_t *charger_info, channel_info_config_t *channel_info_config)
 {
 	int ret = -1;
@@ -373,8 +366,6 @@ static int charger_info_set_channel_config(charger_info_t *charger_info, channel
 	}
 
 	charger_info->can_info = can_info;
-
-	charger_can_info_init(charger_info);
 
 	a_f_b_info = get_or_alloc_a_f_b_info(channel_info_config);
 

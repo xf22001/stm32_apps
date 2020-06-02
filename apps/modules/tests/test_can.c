@@ -6,7 +6,7 @@
  *   文件名称：test_can.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 16时45分27秒
- *   修改日期：2020年05月01日 星期五 21时10分47秒
+ *   修改日期：2020年06月02日 星期二 17时02分18秒
  *   描    述：
  *
  *================================================================*/
@@ -67,10 +67,6 @@ static void task_can_receive(void const *argument)
 
 	if(can_info == NULL) {
 		app_panic();
-	}
-
-	if(can_info->receive_init) {
-		can_info->receive_init(can_info->hcan);
 	}
 
 	for(;;) {

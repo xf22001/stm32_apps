@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分44秒
- *   修改日期：2020年06月02日 星期二 13时15分27秒
+ *   修改日期：2020年06月02日 星期二 16时22分22秒
  *   描    述：
  *
  *================================================================*/
@@ -23,8 +23,6 @@
 #define RESPONSE_TIMEOUT 100
 
 typedef struct {
-	uint8_t power_module_switching;//模块切换中
-
 	//data buffer
 	channel_status_data_t channel_status_data;
 	main_settings_t main_settings;
@@ -119,8 +117,8 @@ static void charger_info_report_status_cb(void *fn_ctx, void *chain_ctx)
 	charger_report_status_t *charger_report_status = (charger_report_status_t *)chain_ctx;
 
 	debug("state:%s, status:%s\n",
-	        get_charger_state_des(charger_report_status->state),
-	        get_charger_status_des(charger_report_status->status));
+	      get_charger_state_des(charger_report_status->state),
+	      get_charger_status_des(charger_report_status->status));
 
 	switch(charger_report_status->state) {
 		case CHARGER_STATE_IDLE: {
@@ -526,7 +524,7 @@ static int process_main_response(channel_com_info_t *channel_com_info, uint8_t c
 	if(index * sizeof(cmd_common->data) < data_size) {
 		if(cmd_response->cmd_status == CHANNEL_STATUS_WAIT) {
 			channel_com_info->cmd_ctx[cmd].index++;
-			channel_com_info->cmd_ctx[cmd].state = CHANNEL_COM_STATE_REQUEST;//继续发
+			channel_com_info->cmd_ctx[cmd].state = CHANNEL_COM_STATE_REQUEST;//切换到 辅板状态数据 发
 		} else {
 			return ret;
 		}
@@ -537,6 +535,8 @@ static int process_main_response(channel_com_info_t *channel_com_info, uint8_t c
 			channel_com_info->cmd_ctx[cmd].state = CHANNEL_COM_STATE_IDLE;
 		}
 	}
+
+	ret = 0;
 
 	return ret;
 }
@@ -589,6 +589,7 @@ static int process_main_request(channel_com_info_t *channel_com_info, uint8_t cm
 
 	memcpy(data + received, buffer, receive);
 
+	channel_com_info->cmd_ctx[cmd].index = index;
 	channel_com_info->cmd_ctx[cmd].state = CHANNEL_COM_STATE_REQUEST;
 
 	ret = 0;
@@ -758,11 +759,6 @@ static channel_com_command_item_t channel_com_command_item_main_output_config = 
 	.request_callback = request_main_output_config,
 	.response_callback = response_main_output_config,
 };
-
-void request_precharge(channel_com_info_t *channel_com_info)
-{
-
-}
 
 void update_channel_output_request(channel_com_info_t *channel_com_info)
 {
@@ -948,7 +944,6 @@ static int response_channel_request(channel_com_info_t *channel_com_info)
 	                            COM_CMD_CHANNEL_REQUEST,
 	                            sizeof(channel_request_t));
 
-	ret = 0;
 	return ret;
 }
 
@@ -980,7 +975,6 @@ static int response_channel_bhm(channel_com_info_t *channel_com_info)
 	                            COM_CMD_CHANNEL_BHM,
 	                            sizeof(bhm_data_t));
 
-	ret = 0;
 	return ret;
 }
 
@@ -1012,7 +1006,6 @@ static int response_channel_brm(channel_com_info_t *channel_com_info)
 	                            COM_CMD_CHANNEL_BRM,
 	                            sizeof(brm_data_multi_t));
 
-	ret = 0;
 	return ret;
 }
 
@@ -1044,7 +1037,6 @@ static int response_channel_bcp(channel_com_info_t *channel_com_info)
 	                            COM_CMD_CHANNEL_BCP,
 	                            sizeof(bcp_data_multi_t));
 
-	ret = 0;
 	return ret;
 }
 
@@ -1366,10 +1358,16 @@ void task_channel_com_request(void const *argument)
 			uint32_t ticks = osKernelSysTick();
 			channel_com_command_item_t *item = channel_com_command_table[i];
 			cmd_common_t *cmd_common = (cmd_common_t *)channel_com_info->can_tx_msg.Data;
+			u_channel_com_can_tx_id_t *u_channel_com_can_tx_id = (u_channel_com_can_tx_id_t *)&channel_com_info->can_tx_msg.ExtId;
 
 			if(channel_com_info->cmd_ctx[item->cmd].state != CHANNEL_COM_STATE_REQUEST) {
 				continue;
 			}
+
+			u_channel_com_can_tx_id->v = 0;
+			u_channel_com_can_tx_id->s.flag = 0x10;
+			u_channel_com_can_tx_id->s.main_board_id = 0xff;
+			u_channel_com_can_tx_id->s.channel_id = 0;
 
 			channel_com_info->can_tx_msg.DLC = 8;
 

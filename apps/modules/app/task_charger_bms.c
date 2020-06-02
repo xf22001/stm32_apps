@@ -6,7 +6,7 @@
  *   文件名称：task_charger_bms.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 13时53分16秒
- *   修改日期：2020年05月29日 星期五 12时39分24秒
+ *   修改日期：2020年06月02日 星期二 17时02分07秒
  *   描    述：
  *
  *================================================================*/
@@ -50,10 +50,6 @@ static void task_charger_response(void const *argument)
 		app_panic();
 	}
 
-	if(charger_info->can_info->receive_init) {
-		charger_info->can_info->receive_init(charger_info->can_info->hcan);
-	}
-
 	for(;;) {
 		int ret = can_rx_data(charger_info->can_info, 1000);
 
@@ -88,10 +84,6 @@ static void task_bms_response(void const *argument)
 
 	if(bms_info->settings == NULL) {
 		app_panic();
-	}
-
-	if(bms_info->can_info->receive_init) {
-		bms_info->can_info->receive_init(bms_info->can_info->hcan);
 	}
 
 	for(;;) {

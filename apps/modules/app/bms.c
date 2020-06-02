@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年05月30日 星期六 09时30分48秒
+ *   修改日期：2020年06月02日 星期二 17时53分40秒
  *   描    述：
  *
  *================================================================*/
@@ -1009,14 +1009,6 @@ static void bms_set_modbus_slave_info(bms_info_t *bms_info, modbus_slave_info_t 
 
 static void bms_can_info_init(bms_info_t *bms_info)
 {
-	if(bms_info->can_info_gb->receive_init != NULL) {
-		bms_info->can_info_gb->receive_init(bms_info->can_info_gb->hcan);
-	}
-
-	if(bms_info->can_info_ccs->receive_init != NULL) {
-		bms_info->can_info_ccs->receive_init(bms_info->can_info_ccs->hcan);
-	}
-
 	try_to_set_bms_type(bms_info, bms_info->configs.bms_type);
 }
 
