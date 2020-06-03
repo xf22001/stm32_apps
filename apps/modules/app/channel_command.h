@@ -6,7 +6,7 @@
  *   文件名称：channel_command.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月26日 星期二 08时50分38秒
- *   修改日期：2020年06月02日 星期二 13时30分15秒
+ *   修改日期：2020年06月03日 星期三 14时43分41秒
  *   描    述：
  *
  *================================================================*/
@@ -88,7 +88,7 @@ typedef struct {
 
 typedef struct {
 
-	uint16_t channel_ver;//辅助功能板版本号
+	uint16_t channel_ver;//辅板版本号
 	uint16_t a_f_b_ver;//辅助功能板版本号
 
 	uint8_t gun_state : 1;//有无插枪
@@ -103,12 +103,13 @@ typedef struct {
 	uint8_t dc_n_temperature;//-20-220 +20偏移
 	uint8_t insulation_resistor_value;//0.1M欧每位
 
-	uint8_t charger_state;//bms阶段
-	uint8_t charger_status;//工作状态码
+	uint8_t charger_state;//充电机bms阶段
+	uint8_t charger_status;//充电机实时状态码
 } channel_status_data_t;//channel heartbeat
 
 typedef struct {
 	uint8_t charger_sn;//充电机编号
+
 	uint8_t gb;//标准
 
 	uint8_t test_mode : 1;//测试模式
@@ -121,11 +122,11 @@ typedef struct {
 	uint8_t cp_ad : 1;//cp-ad采样
 
 	uint8_t auxiliary_power_type;//12-24v选择
-	uint16_t charger_max_output_voltage;//最大输出电压
-	uint16_t charger_min_output_voltage;//最小输出电压
-	uint16_t charger_max_output_current;//最大输出电流
-	uint16_t charger_min_output_current;//最小输出电流
-	//uint16_t channel_max_output_power;//通道最大输出功率
+	uint16_t channel_max_output_voltage;//最大输出电压
+	uint16_t channel_min_output_voltage;//最小输出电压
+	uint16_t channel_max_output_current;//最大输出电流
+	uint16_t channel_min_output_current;//最小输出电流
+	uint16_t channel_max_output_power;//通道最大输出功率
 
 } main_settings_t;//main
 
@@ -135,10 +136,10 @@ typedef struct {
 } main_output_config_t;//main
 
 typedef struct {
-	uint8_t charger_output_enable;
-	uint8_t use_single_module;
-	uint16_t charger_require_output_voltage;//模块充电电压
-	uint16_t charger_require_output_current;//模块充电电流
+	uint8_t charger_output_enable;//是否正在输出状态
+	uint8_t use_single_module;//是否单模块充电
+	uint16_t charger_require_output_voltage;//需求电压
+	uint16_t charger_require_output_current;//需求电流
 } channel_output_request_t;//channel
 
 typedef struct {

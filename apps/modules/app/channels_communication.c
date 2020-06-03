@@ -6,7 +6,7 @@
  *   文件名称：channels_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月25日 星期一 14时24分07秒
- :   修改日期：2020年06月03日 星期三 13时25分43秒
+ :   修改日期：2020年06月03日 星期三 15时53分37秒
  *   描    述：
  *
  *================================================================*/
@@ -20,7 +20,7 @@
 #define RESPONSE_TIMEOUT 200
 
 typedef struct {
-	//data buffer
+	uint8_t channel_id;
 	channel_status_data_t channel_status_data;
 	main_settings_t main_settings;
 	main_output_config_t main_output_config;
@@ -142,8 +142,11 @@ static int channels_com_info_set_channels_config(channels_com_info_t *channels_c
 
 	memset(channels_com_data_ctx, 0, sizeof(channel_com_data_ctx_t) * CHANNEL_INSTANCES_NUMBER);
 
-	channels_com_info->channels_com_data_ctx = channels_com_data_ctx;
+	for(i = 0; i < CHANNEL_INSTANCES_NUMBER; i++) {
+		channels_com_data_ctx[i].channel_id = i;
+	}
 
+	channels_com_info->channels_com_data_ctx = channels_com_data_ctx;
 
 	connect_state = (connect_state_t *)os_alloc(sizeof(connect_state_t) * CHANNEL_INSTANCES_NUMBER);
 
@@ -478,13 +481,43 @@ static channel_com_command_item_t channel_com_command_item_channel_heartbeat = {
 	.response_callback = response_channel_heartbeat,
 };
 
+static void update_main_settings(channels_com_info_t *channels_com_info)
+{
+	channel_com_data_ctx_t *channel_com_data_ctx = channels_com_response_get_channel_com_data_ctx(channels_com_info);
+	channels_info_t *channels_info = (channels_info_t *)channels_com_info->channels_info;
+	channel_info_t *channel_info = channels_com_request_get_channel_info(channels_com_info);
+	main_settings_t *main_settings = &channel_com_data_ctx->main_settings;
+
+	main_settings->charger_sn = channels_info->charger_sn;
+	main_settings->gb = channel_info->channel_settings.gb;
+	main_settings->test_mode = channel_info->channel_settings.test_mode;
+	main_settings->precharge_enable = channel_info->channel_settings.precharge_enable;
+	main_settings->fault = channel_info->channel_settings.fault;
+	main_settings->charger_power_on = channel_info->channel_settings.charger_power_on;
+	main_settings->manual = channel_info->channel_settings.manual;
+	main_settings->adhesion_test = channel_info->channel_settings.adhesion_test;
+	main_settings->double_gun_one_car = channel_info->channel_settings.double_gun_one_car;
+	main_settings->cp_ad = channel_info->channel_settings.cp_ad;
+	main_settings->auxiliary_power_type = channel_info->channel_settings.auxiliary_power_type;
+	main_settings->channel_max_output_voltage = channel_info->channel_settings.channel_max_output_voltage;
+	main_settings->channel_min_output_voltage = channel_info->channel_settings.channel_min_output_voltage;
+	main_settings->channel_max_output_current = channel_info->channel_settings.channel_max_output_current;
+	main_settings->channel_min_output_current = channel_info->channel_settings.channel_min_output_current;
+	main_settings->channel_max_output_power = channel_info->channel_settings.channel_max_output_power;
+}
+
 static int request_main_setttings(channels_com_info_t *channels_com_info)
 {
 	int ret = -1;
 	channel_com_data_ctx_t *channel_com_data_ctx = channels_com_response_get_channel_com_data_ctx(channels_com_info);
+	channel_info_t *channel_info = channels_com_request_get_channel_info(channels_com_info);
 
 	if(channel_com_data_ctx == NULL) {
 		return ret;
+	}
+
+	if(channels_com_info->cmd_ctx[CMD_CTX_OFFSET(COM_CMD_MAIN_SETTTINGS)].index == 0) {
+		update_main_settings(channels_com_info);
 	}
 
 	ret = prepare_main_request(channels_com_info, COM_CMD_MAIN_SETTTINGS, (uint8_t *)&channel_com_data_ctx->main_settings, sizeof(main_settings_t));

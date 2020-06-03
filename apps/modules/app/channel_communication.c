@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分44秒
- *   修改日期：2020年06月03日 星期三 13时26分17秒
+ *   修改日期：2020年06月03日 星期三 15时55分58秒
  *   描    述：
  *
  *================================================================*/
@@ -701,10 +701,10 @@ static int request_main_setttings(channel_com_info_t *channel_com_info)
 
 		charger_info->auxiliary_power_type = main_settings->auxiliary_power_type;//12-24v选择
 
-		charger_info->settings->cml_data.max_output_voltage = main_settings->charger_max_output_voltage;//最大输出电压
-		charger_info->settings->cml_data.min_output_voltage = main_settings->charger_min_output_voltage;//最小输出电压
-		charger_info->settings->cml_data.max_output_current = main_settings->charger_max_output_current;//最大输出电流
-		charger_info->settings->cml_data.min_output_current = main_settings->charger_min_output_current;//最小输出电流
+		charger_info->settings->cml_data.max_output_voltage = main_settings->channel_max_output_voltage;//最大输出电压
+		charger_info->settings->cml_data.min_output_voltage = main_settings->channel_min_output_voltage;//最小输出电压
+		charger_info->settings->cml_data.max_output_current = main_settings->channel_max_output_current;//最大输出电流
+		charger_info->settings->cml_data.min_output_current = main_settings->channel_min_output_current;//最小输出电流
 
 		//main_settings->channel_max_output_power;//通道最大输出功率
 	}

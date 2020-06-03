@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2020年01月02日 星期四 08时53分41秒
- *   修改日期：2020年05月31日 星期日 14时28分52秒
+ *   修改日期：2020年06月03日 星期三 14时49分23秒
  *   描    述：
  *
  *================================================================*/
@@ -71,6 +71,8 @@ typedef struct {
 
 #define EEPROM_CHANNEL_RECORDS_NUMBER 500
 
+#pragma pack(push, 1)
+
 typedef struct {
 	uint16_t index;
 	channel_record_t channel_record;
@@ -88,23 +90,65 @@ typedef struct {
 } eeprom_channel_records_t;
 
 typedef struct {
-	uint8_t charger_sn;//充电机编号
-	uint8_t gb;//标准 参考bms_standard_t
-	uint8_t test_mode;//测试模式
-	uint8_t precharge_enable;//允许预充
-	uint8_t manual;//手动模式
-	uint8_t adhesion_test;//粘连检测//?
-	uint8_t double_gun_one_car;//双枪充一车
-	uint8_t cp_ad;//cp-ad采样
-	uint16_t module_output_voltage;//0.1v 模块充电电压
-	uint16_t module_output_current;//0.1a -400 模块充电电流
-	uint16_t channel_max_output_power;//w 通道最大输出功率
-	uint16_t max_output_voltage;//0.1v
-	uint16_t min_output_voltage;//0.1v
-	uint16_t max_output_current;//0.1a -400
-	uint16_t min_output_current;//0.1a -400
-	uint8_t auxiliary_power_type;//12-24v选择 0:12v 1 24v
+	uint8_t gb;//bms_standard_t
+
+	uint8_t test_mode : 1;//测试模式
+	uint8_t precharge_enable : 1;//允许预充
+	uint8_t fault : 1;//充电机故障
+	uint8_t charger_power_on : 1;//充电机通道开机状态
+	uint8_t manual : 1;//手动模式
+	uint8_t adhesion_test : 1;//粘连检测
+	uint8_t double_gun_one_car : 1;//双枪充一车
+	uint8_t cp_ad : 1;//cp-ad采样
+
+	uint8_t auxiliary_power_type;//12-24v选择
+	uint16_t channel_max_output_voltage;//最大输出电压
+	uint16_t channel_min_output_voltage;//最小输出电压
+	uint16_t channel_max_output_current;//最大输出电流
+	uint16_t channel_min_output_current;//最小输出电流
+	uint16_t channel_max_output_power;//通道最大输出功率
 } channel_settings_t;
+
+typedef struct {
+	//输入状态
+	uint16_t channel_ver;//辅板版本号
+	uint16_t a_f_b_ver;//辅助功能板版本号
+
+	uint8_t channel_com_connect_state;//通道连接状态
+
+	uint8_t gun_state : 1;//有无插枪
+	uint8_t battery_available : 1;//车上电池继电器吸合状态，通过电池电压判断---a-f-b
+	uint8_t adhesion_p : 1;//正继电器粘连---a-f-b
+	uint8_t adhesion_n : 1;//负继电器粘连---a-f-b
+	uint8_t gun_lock_state : 1;//枪上锁状态
+	uint8_t bms_charge_enable : 1;//bms充电允许状态
+	uint8_t a_f_b_state : 1;//辅助功能板连接状态
+
+	uint8_t dc_p_temperature;//-20-220 +20偏移
+	uint8_t dc_n_temperature;//-20-220 +20偏移
+	uint8_t insulation_resistor_value;//0.1M欧每位
+
+	uint8_t charger_state;//充电机bms阶段
+	uint8_t charger_status;//充电机实时状态码
+
+	uint8_t charger_output_enable;//是否正在输出状态
+	uint8_t use_single_module;//是否单模块充电
+	uint16_t charger_require_output_voltage;//需求电压
+	uint16_t charger_require_output_current;//需求电流
+
+	//实时输出状态
+	uint16_t charger_output_voltage;//0.1v
+	uint16_t charger_output_current;//0.1a -400
+	uint16_t output_voltage;//0.1v
+	uint16_t output_current;//0.1a -400
+	uint16_t total_charge_time;//1min 0-600
+	uint16_t charge_voltage;//0.1v
+	uint16_t charge_current;//0.1a -400
+	uint16_t remain_min;//0-600min
+	uint16_t total_charge_energy;//0.1kwh 0-1000
+} channel_status_t;
+
+#pragma pack(pop)
 
 typedef enum {
 	CHANNEL_STATE_IDLE = 0,
@@ -145,56 +189,8 @@ typedef struct {
 	void *channels_info;
 	struct list_head list;//running list
 
-	//输入状态
-	uint8_t gun_connect_state;//是否插枪
-	uint8_t battery_available;//电池是否存在
-	uint8_t output_state;//输出继电器有没有吸合
-	uint8_t adhesion_p;//p粘连
-	uint8_t adhesion_n;//n粘连
-	uint8_t gun_lock_state;//枪是否上锁
-	uint8_t bms_charge_enable;//允许充电
-	uint8_t a_f_b_state;//辅助功能板连接状态
-	uint8_t bms_state;//bms 状态
-	uint8_t dc_p_temperature;//p端温度报警
-	uint8_t dc_n_temperature;//n端温度报警
-	uint8_t insulation_resistor_value;//绝缘电阻值
-	uint8_t ver_h;//版本号h 辅板程序版本
-	uint8_t ver_l;//版本号l 辅板程序版本
-	uint16_t a_f_b_ver;//辅助功能板版本
-	uint8_t bms_status;//bms工作状态码
-	uint8_t door_state;//门禁报警
-	uint8_t error_stop_state;//急停报警
-	uint16_t precharge_voltage;//0.1v
-	uint8_t precharge_action;//0-停止预充, 1-开始预充, 2-单模块预充
-	uint16_t bms_version;//bms 版本
-	uint8_t battery_type;//0x01 : '铅酸电池', 0x02 : '镍氢电池', 0x03 : '磷酸电池', 0x04 : '锰酸锂电池', 0x05 : '钴酸锂电池', 0x06 : '三元材料电池', 0x07 : '聚合物电池', 0x08 : '钛酸锂电池', 0xff : '其他电池'
-	uint16_t total_battery_rate_capicity;//0.1ah
-	uint16_t total_battery_rate_voltage;//0.1v
-	uint16_t max_charge_voltage_single_battery;//0.01v 0-24v
-	uint8_t max_temperature;// -50
-	uint16_t max_charge_voltage;//0.1v 最高允许充电总电压
-	uint16_t total_voltage;//0.1v
-	uint16_t require_voltage;//0.1v
-	uint16_t require_current;//0.1a -400
-	uint8_t soc;//0-100%
-	uint16_t single_battery_max_voltage;
-	uint8_t battery_max_temperature;
-
-	uint8_t fault;//充电机故障 unused
-	uint8_t charger_power_on;//充电机主板开机状态
-
-	//输出状态
-	uint16_t charger_output_voltage;//0.1v
-	uint16_t charger_output_current;//0.1a -400
-	uint16_t output_voltage;//0.1v
-	uint16_t output_current;//0.1a -400
-	uint16_t total_charge_time;//1min 0-600
-	uint16_t charge_voltage;//0.1v
-	uint16_t charge_current;//0.1a -400
-	uint16_t remain_min;//0-600min
-	uint16_t total_charge_energy;//0.1kwh 0-1000
-
 	channel_settings_t channel_settings;
+	channel_status_t channel_status;
 	bms_data_settings_t bms_data_settings;
 } channel_info_t;
 
@@ -217,6 +213,12 @@ typedef struct {
 	channel_info_t channel_info[CHANNEL_INSTANCES_NUMBER];
 	channels_info_config_t *channels_info_config;
 	uint32_t periodic_expire;
+
+	uint8_t charger_sn;//充电机编号
+	uint8_t fault;//充电机故障 unused
+	uint8_t charger_power_on;//充电机主板开机状态
+	uint8_t door_state;//门禁报警
+	uint8_t error_stop_state;//急停报警
 } channels_info_t;
 
 void free_channels_info(channels_info_t *channels_info);
