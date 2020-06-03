@@ -1,12 +1,12 @@
 
 
 /*================================================================
- *   
- *   
+ *
+ *
  *   文件名称：channels_communication.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月25日 星期一 14时24分10秒
- *   修改日期：2020年06月02日 星期二 14时26分46秒
+ *   修改日期：2020年06月03日 星期三 12时40分54秒
  *   描    述：
  *
  *================================================================*/
@@ -67,6 +67,11 @@ typedef struct {
 } channels_com_cmd_ctx_t;
 
 typedef struct {
+	uint8_t state[CHANNELS_COM_CONNECT_STATE_SIZE];
+	uint8_t index;
+} connect_state_t;
+
+typedef struct {
 	struct list_head list;
 	can_info_t *can_info;
 	osMutexId handle_mutex;
@@ -81,8 +86,7 @@ typedef struct {
 
 	void *channels_com_data_ctx;
 
-	uint8_t connect_state[CHANNELS_COM_CONNECT_STATE_SIZE];
-	uint8_t connect_state_index;
+	connect_state_t *connect_state;
 
 } channels_com_info_t;
 

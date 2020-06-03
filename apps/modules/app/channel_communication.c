@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分44秒
- *   修改日期：2020年06月02日 星期二 16时22分22秒
+ *   修改日期：2020年06月03日 星期三 13时26分17秒
  *   描    述：
  *
  *================================================================*/
@@ -20,7 +20,7 @@
 //#define LOG_NONE
 #include "log.h"
 
-#define RESPONSE_TIMEOUT 100
+#define RESPONSE_TIMEOUT 200
 
 typedef struct {
 	//data buffer
@@ -489,6 +489,7 @@ static int prepare_channel_request(channel_com_info_t *channel_com_info, uint8_t
 	cmd_common->index = index;
 
 	if(sent >= data_size) {
+		debug("\n");
 		return ret;
 	}
 
@@ -517,19 +518,26 @@ static int process_main_response(channel_com_info_t *channel_com_info, uint8_t c
 
 	//检查index
 	if(index != cmd_response->index) {
+		debug("index:%d, cmd_response->index:%d\n", index, cmd_response->index);
 		return ret;
 	}
 
+	index++;
+
 	//检查数据尺寸
+	//debug("next index:%d, cmd_response->cmd_status:%d\n", index, cmd_response->cmd_status);
+
 	if(index * sizeof(cmd_common->data) < data_size) {
 		if(cmd_response->cmd_status == CHANNEL_STATUS_WAIT) {
 			channel_com_info->cmd_ctx[cmd].index++;
 			channel_com_info->cmd_ctx[cmd].state = CHANNEL_COM_STATE_REQUEST;//切换到 辅板状态数据 发
 		} else {
+			debug("\n");
 			return ret;
 		}
 	} else {
 		if(cmd_response->cmd_status == CHANNEL_STATUS_WAIT) {
+			debug("\n");
 			return ret;
 		} else {
 			channel_com_info->cmd_ctx[cmd].state = CHANNEL_COM_STATE_IDLE;
@@ -546,13 +554,17 @@ static int prepare_channel_response(channel_com_info_t *channel_com_info, uint8_
 	int ret = -1;
 
 	uint8_t index = channel_com_info->cmd_ctx[cmd].index;
-	cmd_response_t *cmd_response = (cmd_response_t *)channel_com_info->can_rx_msg->Data;
+	cmd_response_t *cmd_response = (cmd_response_t *)channel_com_info->can_tx_msg.Data;
 	cmd_common_t *cmd_common = (cmd_common_t *)channel_com_info->can_tx_msg.Data;
 
 	//填index
 	cmd_response->index = index;
 
+	index++;
+
 	//填状态
+	//debug("next index:%d, total_size:%d\n", index, data_size);
+
 	if(index * sizeof(cmd_common->data) < data_size) {
 		cmd_response->cmd_status = CHANNEL_STATUS_WAIT;
 	} else {
@@ -578,6 +590,7 @@ static int process_main_request(channel_com_info_t *channel_com_info, uint8_t cm
 	uint8_t receive;
 
 	if(received >= data_size) {
+		debug("\n");
 		return ret;
 	}
 
@@ -1286,11 +1299,11 @@ static channel_com_command_item_t *channel_com_command_table[] = {
 
 static void channel_com_set_connect_state(channel_com_info_t *channel_com_info, uint8_t state)
 {
-	channel_com_info->connect_state[channel_com_info->connect_state_index] = state;
-	channel_com_info->connect_state_index++;
+	channel_com_info->connect_state.state[channel_com_info->connect_state.index] = state;
+	channel_com_info->connect_state.index++;
 
-	if(channel_com_info->connect_state_index >= CHANNEL_COM_CONNECT_STATE_SIZE) {
-		channel_com_info->connect_state_index = 0;
+	if(channel_com_info->connect_state.index >= CHANNEL_COM_CONNECT_STATE_SIZE) {
+		channel_com_info->connect_state.index = 0;
 	}
 }
 
@@ -1300,7 +1313,7 @@ uint8_t channel_com_get_connect_state(channel_com_info_t *channel_com_info)
 	int i;
 
 	for(i = 0; i < CHANNEL_COM_CONNECT_STATE_SIZE; i++) {
-		if(channel_com_info->connect_state[i] != 0) {
+		if(channel_com_info->connect_state.state[i] != 0) {
 			count++;
 		}
 	}
@@ -1369,9 +1382,11 @@ void task_channel_com_request(void const *argument)
 			u_channel_com_can_tx_id->s.main_board_id = 0xff;
 			u_channel_com_can_tx_id->s.channel_id = 0;
 
+			channel_com_info->can_tx_msg.IDE = CAN_ID_EXT;
+			channel_com_info->can_tx_msg.RTR = CAN_RTR_DATA;
 			channel_com_info->can_tx_msg.DLC = 8;
 
-			//debug("request cmd %d\n", item->cmd);
+			//debug("request cmd %d, index:%d\n", item->cmd, cmd_common->index);
 
 			memset(channel_com_info->can_tx_msg.Data, 0, 8);
 
@@ -1380,10 +1395,12 @@ void task_channel_com_request(void const *argument)
 			ret = item->request_callback(channel_com_info);
 
 			if(ret != 0) {
+				debug("process request cmd %d error!\n", item->cmd);
 				continue;
 			}
 
 			channel_com_info->cmd_ctx[item->cmd].send_stamp = ticks;
+
 			ret = can_tx_data(channel_com_info->can_info, &channel_com_info->can_tx_msg, 10);
 
 			if(ret != 0) {//发送失败
@@ -1393,7 +1410,7 @@ void task_channel_com_request(void const *argument)
 		}
 
 		channel_com_request_periodic(channel_com_info);
-		osDelay(50);
+		osDelay(10);
 	}
 }
 
@@ -1401,6 +1418,7 @@ void task_channel_com_response(void const *argument)
 {
 	int ret = 0;
 	int i;
+	uint8_t channel_id = get_channel_id();
 
 	channel_com_info_t *channel_com_info = (channel_com_info_t *)argument;
 
@@ -1409,6 +1427,8 @@ void task_channel_com_response(void const *argument)
 	}
 
 	while(1) {
+		u_channel_com_can_rx_id_t *u_channel_com_can_rx_id;
+
 		ret = can_rx_data(channel_com_info->can_info, 1000);
 
 		if(ret != 0) {
@@ -1417,15 +1437,26 @@ void task_channel_com_response(void const *argument)
 
 		channel_com_info->can_rx_msg = can_get_msg(channel_com_info->can_info);
 
+		u_channel_com_can_rx_id = (u_channel_com_can_rx_id_t *)&channel_com_info->can_rx_msg->ExtId;
+
+		if(channel_id != u_channel_com_can_rx_id->s.channel_id) {
+			debug("channel_id:%d, u_channel_com_can_rx_id->s.channel_id:%d\n", channel_id, u_channel_com_can_rx_id->s.channel_id);
+			continue;
+		}
+
 		for(i = 0; i < ARRAY_SIZE(channel_com_command_table); i++) {
 			channel_com_command_item_t *item = channel_com_command_table[i];
 			cmd_common_t *cmd_common = (cmd_common_t *)channel_com_info->can_rx_msg->Data;
 
 			if(cmd_common->cmd == item->cmd) {
+				//debug("response cmd %d, index:%d\n", item->cmd, cmd_common->index);
+
 				ret = item->response_callback(channel_com_info);
 
 				if(ret == 0) {//收到响应
 					channel_com_set_connect_state(channel_com_info, 1);
+				} else {
+					debug("process response cmd %d error!\n", item->cmd);
 				}
 
 				break;

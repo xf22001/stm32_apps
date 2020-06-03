@@ -6,7 +6,7 @@
  *   文件名称：channels_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月25日 星期一 14时24分07秒
- :   修改日期：2020年06月02日 星期二 16时30分30秒
+ :   修改日期：2020年06月03日 星期三 13时25分43秒
  *   描    述：
  *
  *================================================================*/
@@ -17,7 +17,7 @@
 
 #include "log.h"
 
-#define RESPONSE_TIMEOUT 100
+#define RESPONSE_TIMEOUT 200
 
 typedef struct {
 	//data buffer
@@ -105,6 +105,11 @@ void free_channels_com_info(channels_com_info_t *channels_com_info)
 	os_free(channels_com_info);
 }
 
+static uint32_t cmd_ctx_offset(uint8_t cmd, uint8_t channel_id)
+{
+	return cmd * CHANNEL_INSTANCES_NUMBER + channel_id;
+}
+
 static int channels_com_info_set_channels_config(channels_com_info_t *channels_com_info, channels_info_config_t *channels_info_config)
 {
 	int ret = -1;
@@ -112,6 +117,8 @@ static int channels_com_info_set_channels_config(channels_com_info_t *channels_c
 	channels_info_t *channels_info;
 	channels_com_cmd_ctx_t *channels_com_cmd_ctx;
 	channel_com_data_ctx_t *channels_com_data_ctx;
+	connect_state_t *connect_state;
+	int i;
 
 	channels_com_cmd_ctx = (channels_com_cmd_ctx_t *)os_alloc(sizeof(channels_com_cmd_ctx_t) * CHANNEL_INSTANCES_NUMBER * COM_CMD_TOTAL);
 
@@ -119,9 +126,13 @@ static int channels_com_info_set_channels_config(channels_com_info_t *channels_c
 		return ret;
 	}
 
-	memset(channels_com_cmd_ctx, 0, sizeof(channel_com_command_item_t) * COM_CMD_TOTAL);
+	memset(channels_com_cmd_ctx, 0, sizeof(channels_com_cmd_ctx_t) * CHANNEL_INSTANCES_NUMBER * COM_CMD_TOTAL);
 
 	channels_com_info->cmd_ctx = channels_com_cmd_ctx;
+
+	for(i = 0; i < CHANNEL_INSTANCES_NUMBER; i++) {
+		channels_com_info->cmd_ctx[cmd_ctx_offset(COM_CMD_MAIN_SETTTINGS, i)].available = 1;
+	}
 
 	channels_com_data_ctx = (channel_com_data_ctx_t *)os_alloc(sizeof(channel_com_data_ctx_t) * CHANNEL_INSTANCES_NUMBER);
 
@@ -132,6 +143,17 @@ static int channels_com_info_set_channels_config(channels_com_info_t *channels_c
 	memset(channels_com_data_ctx, 0, sizeof(channel_com_data_ctx_t) * CHANNEL_INSTANCES_NUMBER);
 
 	channels_com_info->channels_com_data_ctx = channels_com_data_ctx;
+
+
+	connect_state = (connect_state_t *)os_alloc(sizeof(connect_state_t) * CHANNEL_INSTANCES_NUMBER);
+
+	if(connect_state == NULL) {
+		return ret;
+	}
+
+	memset(connect_state, 0, sizeof(connect_state_t) * CHANNEL_INSTANCES_NUMBER);
+
+	channels_com_info->connect_state = connect_state;
 
 	can_info = get_or_alloc_can_info(channels_info_config->hcan_com);
 
@@ -273,11 +295,6 @@ static channel_com_data_ctx_t *channels_com_response_get_channel_com_data_ctx(ch
 //	return channel_com_data_ctx;
 //}
 
-static uint32_t cmd_ctx_offset(uint8_t cmd, uint8_t channel_id)
-{
-	return cmd * CHANNEL_INSTANCES_NUMBER + channel_id;
-}
-
 #define CMD_CTX_OFFSET(cmd) cmd_ctx_offset(cmd, channel_info->channel_id)
 
 static int prepare_main_request(channels_com_info_t *channels_com_info, uint8_t cmd, uint8_t *data, uint8_t data_size)//主板状态数据 发
@@ -298,6 +315,7 @@ static int prepare_main_request(channels_com_info_t *channels_com_info, uint8_t 
 		cmd_common->index = index;
 
 		if(sent >= data_size) {
+			debug("\n");
 			return ret;
 		}
 
@@ -333,16 +351,20 @@ static int process_channel_response(channels_com_info_t *channels_com_info, uint
 			return ret;
 		}
 
+		index++;
+
 		//检查数据尺寸
 		if(index * sizeof(cmd_common->data) < data_size) {
 			if(cmd_response->cmd_status == CHANNEL_STATUS_WAIT) {
 				channels_com_info->cmd_ctx[CMD_CTX_OFFSET(cmd)].index++;
 				channels_com_info->cmd_ctx[CMD_CTX_OFFSET(cmd)].state = CHANNEL_COM_STATE_REQUEST;//切换到 主板状态数据 发
 			} else {
+				debug("\n");
 				return ret;
 			}
 		} else {
 			if(cmd_response->cmd_status == CHANNEL_STATUS_WAIT) {
+				debug("\n");
 				return ret;
 			} else {
 				channels_com_info->cmd_ctx[CMD_CTX_OFFSET(cmd)].state = CHANNEL_COM_STATE_IDLE;
@@ -363,13 +385,17 @@ static int prepare_main_response(channels_com_info_t *channels_com_info, uint8_t
 
 	if(channel_info != NULL) {
 		uint8_t index = channels_com_info->cmd_ctx[CMD_CTX_OFFSET(cmd)].index;
-		cmd_response_t *cmd_response = (cmd_response_t *)channels_com_info->can_rx_msg->Data;
+		cmd_response_t *cmd_response = (cmd_response_t *)channels_com_info->can_tx_msg.Data;
 		cmd_common_t *cmd_common = (cmd_common_t *)channels_com_info->can_tx_msg.Data;
 
 		//填index
 		cmd_response->index = index;
 
+		index++;
+
 		//填状态
+		//debug("next index:%d, index * sizeof(cmd_common->data):%d, data_size:%d\n", index, index * sizeof(cmd_common->data), data_size);
+
 		if(index * sizeof(cmd_common->data) < data_size) {
 			cmd_response->cmd_status = CHANNEL_STATUS_WAIT;
 		} else {
@@ -398,6 +424,7 @@ static int process_channel_request(channels_com_info_t *channels_com_info, uint8
 		uint8_t receive;
 
 		if(received >= data_size) {
+			debug("\n");
 			return ret;
 		}
 
@@ -476,7 +503,7 @@ static int response_main_setttings(channels_com_info_t *channels_com_info)
 
 static channel_com_command_item_t channel_com_command_item_main_settings = {
 	.cmd = COM_CMD_MAIN_SETTTINGS,
-	.request_period = 0,
+	.request_period = 300,
 	.request_callback = request_main_setttings,
 	.response_callback = response_main_setttings,
 };
@@ -506,7 +533,7 @@ static int response_main_output_config(channels_com_info_t *channels_com_info)
 
 static channel_com_command_item_t channel_com_command_item_main_output_config = {
 	.cmd = COM_CMD_MAIN_OUTPUT_CONFIG,
-	.request_period = 0,
+	.request_period = 300,
 	.request_callback = request_main_output_config,
 	.response_callback = response_main_output_config,
 };
@@ -989,23 +1016,23 @@ static channel_com_command_item_t *channels_com_command_table[] = {
 	&channel_com_command_item_channel_bem,
 };
 
-static void channels_com_set_connect_state(channels_com_info_t *channels_com_info, uint8_t state)
+static void channels_com_set_connect_state(channels_com_info_t *channels_com_info, uint8_t channel_id, uint8_t state)
 {
-	channels_com_info->connect_state[channels_com_info->connect_state_index] = state;
-	channels_com_info->connect_state_index++;
+	channels_com_info->connect_state[channel_id].state[channels_com_info->connect_state[channel_id].index] = state;
+	channels_com_info->connect_state[channel_id].index++;
 
-	if(channels_com_info->connect_state_index >= CHANNELS_COM_CONNECT_STATE_SIZE) {
-		channels_com_info->connect_state_index = 0;
+	if(channels_com_info->connect_state[channel_id].index >= CHANNELS_COM_CONNECT_STATE_SIZE) {
+		channels_com_info->connect_state[channel_id].index = 0;
 	}
 }
 
-uint8_t channels_com_get_connect_state(channels_com_info_t *channels_com_info)
+uint8_t channels_com_get_connect_state(channels_com_info_t *channels_com_info, uint8_t channel_id)
 {
 	uint8_t count = 0;
 	int i;
 
 	for(i = 0; i < CHANNELS_COM_CONNECT_STATE_SIZE; i++) {
-		if(channels_com_info->connect_state[i] != 0) {
+		if(channels_com_info->connect_state[channel_id].state[i] != 0) {
 			count++;
 		}
 	}
@@ -1025,11 +1052,28 @@ static void channels_com_request_periodic(channels_com_info_t *channels_com_info
 		for(j = 0; j < CHANNEL_INSTANCES_NUMBER; j++) {
 			if(channels_com_info->cmd_ctx[cmd_ctx_offset(item->cmd, j)].state == CHANNEL_COM_STATE_RESPONSE) {//超时
 				if(ticks - channels_com_info->cmd_ctx[cmd_ctx_offset(item->cmd, j)].send_stamp >= RESPONSE_TIMEOUT) {
-					channels_com_set_connect_state(channels_com_info, 0);
+					channels_com_set_connect_state(channels_com_info, j, 0);
 					channels_com_info->cmd_ctx[cmd_ctx_offset(item->cmd, j)].state = CHANNEL_COM_STATE_ERROR;
+					debug("cmd %d, channel %d timeout\n", item->cmd, j);
 				}
 			}
+
+			if(item->request_period == 0) {
+				continue;
+			}
+
+			if(channels_com_info->cmd_ctx[cmd_ctx_offset(item->cmd, j)].available == 0) {
+				continue;
+			}
+
+			if(ticks - channels_com_info->cmd_ctx[cmd_ctx_offset(item->cmd, j)].stamp >= item->request_period) {
+				channels_com_info->cmd_ctx[cmd_ctx_offset(item->cmd, j)].stamp = ticks;
+
+				channels_com_info->cmd_ctx[cmd_ctx_offset(item->cmd, j)].index = 0;
+				channels_com_info->cmd_ctx[cmd_ctx_offset(item->cmd, j)].state = CHANNEL_COM_STATE_REQUEST;
+			}
 		}
+
 	}
 }
 
@@ -1063,9 +1107,11 @@ void task_channels_com_request(void const *argument)
 				u_channels_com_can_tx_id->s.main_board_id = 0xff;
 				u_channels_com_can_tx_id->s.channel_id = j;
 
+				channels_com_info->can_tx_msg.IDE = CAN_ID_EXT;
+				channels_com_info->can_tx_msg.RTR = CAN_RTR_DATA;
 				channels_com_info->can_tx_msg.DLC = 8;
 
-				debug("request cmd %d\n", item->cmd);
+				//debug("request cmd %d, channel:%d, index:%d\n", item->cmd, j, cmd_common->index);
 
 				memset(channels_com_info->can_tx_msg.Data, 0, 8);
 
@@ -1082,7 +1128,7 @@ void task_channels_com_request(void const *argument)
 				ret = can_tx_data(channels_com_info->can_info, &channels_com_info->can_tx_msg, 10);
 
 				if(ret != 0) {//发送失败
-					channels_com_set_connect_state(channels_com_info, 0);
+					channels_com_set_connect_state(channels_com_info, j, 0);
 					channels_com_info->cmd_ctx[cmd_ctx_offset(item->cmd, j)].state = CHANNEL_COM_STATE_ERROR;
 				}
 			}
@@ -1107,15 +1153,13 @@ void task_channels_com_response(void const *argument)
 
 	while(1) {
 		u_channels_com_can_rx_id_t *u_channels_com_can_rx_id;
-		ret = can_rx_data(channels_com_info->can_info, 1000);
+		uint8_t channel_id;
 
-		debug("\n");
+		ret = can_rx_data(channels_com_info->can_info, 1000);
 
 		if(ret != 0) {
 			continue;
 		}
-
-		debug("\n");
 
 		channels_com_info->can_rx_msg = can_get_msg(channels_com_info->can_info);
 		u_channels_com_can_rx_id = (u_channels_com_can_rx_id_t *)&channels_com_info->can_rx_msg->ExtId;
@@ -1130,17 +1174,26 @@ void task_channels_com_response(void const *argument)
 			continue;
 		}
 
+		channel_id = u_channels_com_can_rx_id->s.channel_id;
+
+		if(channel_id >= CHANNEL_INSTANCES_NUMBER) {
+			debug("channel_id:%d!\n", channel_id);
+			continue;
+		}
+
 		for(i = 0; i < ARRAY_SIZE(channels_com_command_table); i++) {
 			channel_com_command_item_t *item = channels_com_command_table[i];
 			cmd_common_t *cmd_common = (cmd_common_t *)channels_com_info->can_rx_msg->Data;
 
 			if(cmd_common->cmd == item->cmd) {
-				debug("response cmd %d\n", item->cmd);
+				//debug("response cmd %d, channel:%d, index:%d\n", item->cmd, channel_id, cmd_common->index);
 
 				ret = item->response_callback(channels_com_info);
 
 				if(ret == 0) {//收到响应
-					channels_com_set_connect_state(channels_com_info, 1);
+					channels_com_set_connect_state(channels_com_info, channel_id, 1);
+				} else {
+					debug("process response cmd %d error!\n", item->cmd);
 				}
 
 				break;
