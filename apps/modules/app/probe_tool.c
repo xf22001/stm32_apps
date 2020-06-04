@@ -6,7 +6,7 @@
  *   文件名称：probe_tool.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 08时02分35秒
- *   修改日期：2020年05月15日 星期五 08时42分51秒
+ *   修改日期：2020年06月04日 星期四 16时45分08秒
  *   描    述：
  *
  *================================================================*/
@@ -175,7 +175,7 @@ static void p_select_timeout_statistic(void)
 	uint32_t duration = osKernelSysTick() - select_timeout_count_stamp;
 
 	if(duration != 0) {
-		_printf("select_timeout_count per second:%d\n", (select_timeout_count * 1000) / duration);
+		debug("duration:%u, count:%d\n", duration, select_timeout_count);
 	}
 
 	select_timeout_count = 0;

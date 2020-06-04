@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月29日 星期五 16时34分48秒
- *   修改日期：2020年05月30日 星期六 09时32分11秒
+ *   修改日期：2020年06月04日 星期四 14时03分56秒
  *   描    述：
  *
  *================================================================*/
@@ -19,7 +19,7 @@
 static int default_handle_channel_event(void *channel_info, channel_event_t *channel_event)
 {
 	int ret = 0;
-	_printf("%s:%s:%d channel %d process event!\n", __FILE__, __func__, __LINE__, channel_event->channel_id);
+	//debug("channel %d process event!\n", channel_event->channel_id);
 	return ret;
 }
 

@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分44秒
- *   修改日期：2020年06月03日 星期三 15时55分58秒
+ *   修改日期：2020年06月04日 星期四 16时35分00秒
  *   描    述：
  *
  *================================================================*/
@@ -304,6 +304,8 @@ static int channel_com_info_set_channel_config(channel_com_info_t *channel_com_i
 	charger_info_t *charger_info;
 	channel_com_cmd_ctx_t *cmd_ctx;
 	channel_com_data_ctx_t *channel_com_data_ctx;
+	channel_com_can_rx_id_t *channel_com_can_rx_id;
+	channel_com_can_rx_id_t *channel_com_can_rx_mask_id;
 
 	cmd_ctx = (channel_com_cmd_ctx_t *)os_alloc(sizeof(channel_com_cmd_ctx_t) * COM_CMD_TOTAL);
 
@@ -333,6 +335,23 @@ static int channel_com_info_set_channel_config(channel_com_info_t *channel_com_i
 	if(can_info == NULL) {
 		return ret;
 	}
+
+	channel_com_can_rx_id = (channel_com_can_rx_id_t *)&can_info->can_config->filter_id;
+	channel_com_can_rx_mask_id = (channel_com_can_rx_id_t *)&can_info->can_config->filter_mask_id;
+
+	channel_com_can_rx_id->channel_id = get_channel_id();
+	channel_com_can_rx_mask_id->channel_id = 0xff;
+
+	channel_com_can_rx_id->main_board_id = 0xff;
+	channel_com_can_rx_mask_id->main_board_id = 0xff;
+
+	channel_com_can_rx_id->flag = 0x10;
+	channel_com_can_rx_mask_id->flag = 0x1f;
+
+	debug("can_info->can_config->filter_id:%08x\n", can_info->can_config->filter_id);
+	debug("can_info->can_config->filter_mask_id:%08x\n", can_info->can_config->filter_mask_id);
+
+	can_info->receive_init(can_info->hcan);
 
 	channel_com_info->can_info = can_info;
 
@@ -626,7 +645,7 @@ static void update_channel_heartbeat_request(channel_com_info_t *channel_com_inf
 	channel_status_data->adhesion_p = (a_f_b_reponse_91_data != NULL) ? a_f_b_reponse_91_data->running_state.adhesion_p : 0;
 	channel_status_data->adhesion_n = (a_f_b_reponse_91_data != NULL) ? a_f_b_reponse_91_data->running_state.adhesion_n : 0;
 	channel_status_data->gun_lock_state = charger_info->gun_lock_state;
-	channel_status_data->bms_charge_enable = charger_info->settings->ccs_data.u1.s.charge_enable;
+	channel_status_data->bms_charge_enable = charger_info->settings->bsm_data.u2.s.battery_charge_enable;
 	//debug("bms_charge_enable:%d\n", channel_status_data->bms_charge_enable);
 	channel_status_data->a_f_b_state = get_a_f_b_connect_state(channel_com_info->a_f_b_info);
 	channel_status_data->dc_p_temperature = (a_f_b_reponse_91_data != NULL) ? a_f_b_reponse_91_data->dc_p_temperature : 0;
@@ -646,6 +665,9 @@ static int request_channel_heartbeat(channel_com_info_t *channel_com_info)
 
 	if(channel_com_info->cmd_ctx[COM_CMD_CHANNEL_HEARTBEAT].index == 0) {
 		update_channel_heartbeat_request(channel_com_info);
+		//_hexdump("channel_status_data",
+		//         (const char *)&channel_com_data_ctx->channel_status_data,
+		//         sizeof(channel_status_data_t));
 	}
 
 	ret = prepare_channel_request(channel_com_info,
@@ -993,7 +1015,7 @@ static int response_channel_bhm(channel_com_info_t *channel_com_info)
 
 static channel_com_command_item_t channel_com_command_item_channel_bhm = {
 	.cmd = COM_CMD_CHANNEL_BHM,
-	.request_period = 300,
+	.request_period = 500,
 	.request_callback = request_channel_bhm,
 	.response_callback = response_channel_bhm,
 };
@@ -1024,7 +1046,7 @@ static int response_channel_brm(channel_com_info_t *channel_com_info)
 
 static channel_com_command_item_t channel_com_command_item_channel_brm = {
 	.cmd = COM_CMD_CHANNEL_BRM,
-	.request_period = 300,
+	.request_period = 500,
 	.request_callback = request_channel_brm,
 	.response_callback = response_channel_brm,
 };
@@ -1055,7 +1077,7 @@ static int response_channel_bcp(channel_com_info_t *channel_com_info)
 
 static channel_com_command_item_t channel_com_command_item_channel_bcp = {
 	.cmd = COM_CMD_CHANNEL_BCP,
-	.request_period = 300,
+	.request_period = 500,
 	.request_callback = request_channel_bcp,
 	.response_callback = response_channel_bcp,
 };
@@ -1086,7 +1108,7 @@ static int response_channel_bro(channel_com_info_t *channel_com_info)
 
 static channel_com_command_item_t channel_com_command_item_channel_bro = {
 	.cmd = COM_CMD_CHANNEL_BRO,
-	.request_period = 300,
+	.request_period = 500,
 	.request_callback = request_channel_bro,
 	.response_callback = response_channel_bro,
 };
@@ -1117,7 +1139,7 @@ static int response_channel_bcl(channel_com_info_t *channel_com_info)
 
 static channel_com_command_item_t channel_com_command_item_channel_bcl = {
 	.cmd = COM_CMD_CHANNEL_BCL,
-	.request_period = 300,
+	.request_period = 500,
 	.request_callback = request_channel_bcl,
 	.response_callback = response_channel_bcl,
 };
@@ -1148,7 +1170,7 @@ static int response_channel_bcs(channel_com_info_t *channel_com_info)
 
 static channel_com_command_item_t channel_com_command_item_channel_bcs = {
 	.cmd = COM_CMD_CHANNEL_BCS,
-	.request_period = 300,
+	.request_period = 500,
 	.request_callback = request_channel_bcs,
 	.response_callback = response_channel_bcs,
 };
@@ -1179,7 +1201,7 @@ static int response_channel_bsm(channel_com_info_t *channel_com_info)
 
 static channel_com_command_item_t channel_com_command_item_channel_bsm = {
 	.cmd = COM_CMD_CHANNEL_BSM,
-	.request_period = 300,
+	.request_period = 500,
 	.request_callback = request_channel_bsm,
 	.response_callback = response_channel_bsm,
 };
@@ -1210,7 +1232,7 @@ static int response_channel_bst(channel_com_info_t *channel_com_info)
 
 static channel_com_command_item_t channel_com_command_item_channel_bst = {
 	.cmd = COM_CMD_CHANNEL_BST,
-	.request_period = 300,
+	.request_period = 500,
 	.request_callback = request_channel_bst,
 	.response_callback = response_channel_bst,
 };
@@ -1241,7 +1263,7 @@ static int response_channel_bsd(channel_com_info_t *channel_com_info)
 
 static channel_com_command_item_t channel_com_command_item_channel_bsd = {
 	.cmd = COM_CMD_CHANNEL_BSD,
-	.request_period = 300,
+	.request_period = 500,
 	.request_callback = request_channel_bsd,
 	.response_callback = response_channel_bsd,
 };
@@ -1272,7 +1294,7 @@ static int response_channel_bem(channel_com_info_t *channel_com_info)
 
 static channel_com_command_item_t channel_com_command_item_channel_bem = {
 	.cmd = COM_CMD_CHANNEL_BEM,
-	.request_period = 300,
+	.request_period = 500,
 	.request_callback = request_channel_bem,
 	.response_callback = response_channel_bem,
 };
@@ -1332,8 +1354,9 @@ static void channel_com_request_periodic(channel_com_info_t *channel_com_info)
 		if(channel_com_info->cmd_ctx[item->cmd].state == CHANNEL_COM_STATE_RESPONSE) {
 			if(ticks - channel_com_info->cmd_ctx[item->cmd].send_stamp >= RESPONSE_TIMEOUT) {//超时
 				channel_com_set_connect_state(channel_com_info, 0);
-				channel_com_info->cmd_ctx[item->cmd].state = CHANNEL_COM_STATE_ERROR;
-				debug("cmd %d timeout\n", item->cmd);
+				debug("cmd %d timeout, connect state:%d\n", item->cmd, channel_com_get_connect_state(channel_com_info));
+				channel_com_info->cmd_ctx[item->cmd].index = 0;
+				channel_com_info->cmd_ctx[item->cmd].state = CHANNEL_COM_STATE_REQUEST;
 			}
 		}
 
@@ -1348,6 +1371,7 @@ static void channel_com_request_periodic(channel_com_info_t *channel_com_info)
 		if(ticks - channel_com_info->cmd_ctx[item->cmd].stamp >= item->request_period) {
 			channel_com_info->cmd_ctx[item->cmd].stamp = ticks;
 
+			//debug("start cmd %d\n", item->cmd);
 			channel_com_info->cmd_ctx[item->cmd].index = 0;
 			channel_com_info->cmd_ctx[item->cmd].state = CHANNEL_COM_STATE_REQUEST;
 		}
@@ -1404,8 +1428,9 @@ void task_channel_com_request(void const *argument)
 			ret = can_tx_data(channel_com_info->can_info, &channel_com_info->can_tx_msg, 10);
 
 			if(ret != 0) {//发送失败
+				debug("send request cmd %d error!\n", item->cmd);
 				channel_com_set_connect_state(channel_com_info, 0);
-				channel_com_info->cmd_ctx[item->cmd].state = CHANNEL_COM_STATE_ERROR;
+				channel_com_info->cmd_ctx[item->cmd].state = CHANNEL_COM_STATE_REQUEST;
 			}
 		}
 

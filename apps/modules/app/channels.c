@@ -6,7 +6,7 @@
  *   文件名称：channels.c
  *   创 建 者：肖飞
  *   创建日期：2020年01月02日 星期四 08时53分35秒
- *   修改日期：2020年05月31日 星期日 09时34分53秒
+ *   修改日期：2020年06月04日 星期四 14时00分15秒
  *   描    述：
  *
  *================================================================*/
@@ -93,7 +93,7 @@ static channels_info_t *get_channels_info(channels_info_config_t *channels_info_
 void free_channels_info(channels_info_t *channels_info)
 {
 	osStatus os_status;
-	int i;
+	//int i;
 
 	if(channels_info == NULL) {
 		return;

@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2020年01月02日 星期四 08时53分41秒
- *   修改日期：2020年06月03日 星期三 14时49分23秒
+ *   修改日期：2020年06月04日 星期四 14时45分58秒
  *   描    述：
  *
  *================================================================*/
@@ -26,7 +26,7 @@ extern "C"
 }
 #endif
 
-#define CHANNEL_INSTANCES_NUMBER 4
+#define CHANNEL_INSTANCES_NUMBER 16
 #define CHANNEL_TASK_PERIODIC (50)
 
 typedef union {
