@@ -6,7 +6,7 @@
  *   文件名称：channel_command.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月26日 星期二 08时50分38秒
- *   修改日期：2020年06月03日 星期三 14时43分41秒
+ *   修改日期：2020年06月05日 星期五 09时10分46秒
  *   描    述：
  *
  *================================================================*/
@@ -158,5 +158,98 @@ typedef struct {
 } channel_request_t;
 
 #pragma pack(pop)
+
+static inline char *get_channel_cmd_des(cmd_t cmd)
+{
+	char *des = "unknow";
+
+	switch(cmd) {
+		case COM_CMD_CHANNEL_HEARTBEAT: {
+			des = "COM_CMD_CHANNEL_HEARTBEAT";
+		}
+		break;
+
+		case COM_CMD_MAIN_SETTTINGS: {
+			des = "COM_CMD_MAIN_SETTTINGS";
+		}
+		break;
+
+		case COM_CMD_MAIN_OUTPUT_CONFIG: {
+			des = "COM_CMD_MAIN_OUTPUT_CONFIG";
+		}
+		break;
+
+		case COM_CMD_CHANNEL_OUTPUT_REQUEST: {
+			des = "COM_CMD_CHANNEL_OUTPUT_REQUEST";
+		}
+		break;
+
+		case COM_CMD_MAIN_CONTROL: {
+			des = "COM_CMD_MAIN_CONTROL";
+		}
+		break;
+
+		case COM_CMD_CHANNEL_REQUEST: {
+			des = "COM_CMD_CHANNEL_REQUEST";
+		}
+		break;
+
+		case COM_CMD_CHANNEL_BHM: {
+			des = "COM_CMD_CHANNEL_BHM";
+		}
+		break;
+
+		case COM_CMD_CHANNEL_BRM: {
+			des = "COM_CMD_CHANNEL_BRM";
+		}
+		break;
+
+		case COM_CMD_CHANNEL_BCP: {
+			des = "COM_CMD_CHANNEL_BCP";
+		}
+		break;
+
+		case COM_CMD_CHANNEL_BRO: {
+			des = "COM_CMD_CHANNEL_BRO";
+		}
+		break;
+
+		case COM_CMD_CHANNEL_BCL: {
+			des = "COM_CMD_CHANNEL_BCL";
+		}
+		break;
+
+		case COM_CMD_CHANNEL_BCS: {
+			des = "COM_CMD_CHANNEL_BCS";
+		}
+		break;
+
+		case COM_CMD_CHANNEL_BSM: {
+			des = "COM_CMD_CHANNEL_BSM";
+		}
+		break;
+
+		case COM_CMD_CHANNEL_BST: {
+			des = "COM_CMD_CHANNEL_BST";
+		}
+		break;
+
+		case COM_CMD_CHANNEL_BSD: {
+			des = "COM_CMD_CHANNEL_BSD";
+		}
+		break;
+
+		case COM_CMD_CHANNEL_BEM: {
+			des = "COM_CMD_CHANNEL_BEM";
+		}
+		break;
+
+		default: {
+		}
+		break;
+	}
+
+	return des;
+}
 
 #endif //_CHANNEL_COMMAND_H

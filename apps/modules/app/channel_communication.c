@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分44秒
- *   修改日期：2020年06月05日 星期五 08时51分48秒
+ *   修改日期：2020年06月05日 星期五 09时14分55秒
  *   描    述：
  *
  *================================================================*/
@@ -1365,7 +1365,7 @@ static void channel_com_request_periodic(channel_com_info_t *channel_com_info)
 		if(channel_com_info->cmd_ctx[item->cmd].state == CHANNEL_COM_STATE_RESPONSE) {
 			if(ticks - channel_com_info->cmd_ctx[item->cmd].send_stamp >= RESPONSE_TIMEOUT) {//超时
 				channel_com_set_connect_state(channel_com_info, 0);
-				debug("cmd %d timeout, connect state:%d\n", item->cmd, channel_com_get_connect_state(channel_com_info));
+				debug("cmd %d(%s) timeout, connect state:%d\n", item->cmd, get_channel_cmd_des(item->cmd), channel_com_get_connect_state(channel_com_info));
 				channel_com_info->cmd_ctx[item->cmd].index = 0;
 				channel_com_info->cmd_ctx[item->cmd].state = CHANNEL_COM_STATE_REQUEST;
 			}
@@ -1382,7 +1382,7 @@ static void channel_com_request_periodic(channel_com_info_t *channel_com_info)
 		if(ticks - channel_com_info->cmd_ctx[item->cmd].stamp >= item->request_period) {
 			channel_com_info->cmd_ctx[item->cmd].stamp = ticks;
 
-			//debug("start cmd %d\n", item->cmd);
+			//debug("start cmd %d(%s)\n", item->cmd, get_channel_cmd_des(item->cmd));
 			channel_com_info->cmd_ctx[item->cmd].index = 0;
 			channel_com_info->cmd_ctx[item->cmd].state = CHANNEL_COM_STATE_REQUEST;
 		}
@@ -1421,7 +1421,7 @@ void task_channel_com_request(void const *argument)
 			channel_com_info->can_tx_msg.RTR = CAN_RTR_DATA;
 			channel_com_info->can_tx_msg.DLC = 8;
 
-			//debug("request cmd %d, index:%d\n", item->cmd, cmd_common->index);
+			//debug("request cmd %d(%s), index:%d\n", item->cmd, get_channel_cmd_des(item->cmd), cmd_common->index);
 
 			memset(channel_com_info->can_tx_msg.Data, 0, 8);
 
@@ -1430,7 +1430,7 @@ void task_channel_com_request(void const *argument)
 			ret = item->request_callback(channel_com_info);
 
 			if(ret != 0) {
-				debug("process request cmd %d error!\n", item->cmd);
+				debug("process request cmd %d(%s) error!\n", item->cmd, get_channel_cmd_des(item->cmd));
 				continue;
 			}
 
@@ -1439,7 +1439,7 @@ void task_channel_com_request(void const *argument)
 			ret = can_tx_data(channel_com_info->can_info, &channel_com_info->can_tx_msg, 10);
 
 			if(ret != 0) {//发送失败
-				debug("send request cmd %d error!\n", item->cmd);
+				debug("send request cmd %d(%s) error!\n", item->cmd, get_channel_cmd_des(item->cmd));
 				channel_com_set_connect_state(channel_com_info, 0);
 				channel_com_info->cmd_ctx[item->cmd].state = CHANNEL_COM_STATE_REQUEST;
 			}
@@ -1487,14 +1487,14 @@ void task_channel_com_response(void const *argument)
 			cmd_common_t *cmd_common = (cmd_common_t *)channel_com_info->can_rx_msg->Data;
 
 			if(cmd_common->cmd == item->cmd) {
-				//debug("response cmd %d, index:%d\n", item->cmd, cmd_common->index);
+				//debug("response cmd %d(%s), index:%d\n", item->cmd, get_channel_cmd_des(item->cmd), cmd_common->index);
 
 				ret = item->response_callback(channel_com_info);
 
 				if(ret == 0) {//收到响应
 					channel_com_set_connect_state(channel_com_info, 1);
 				} else {
-					debug("process response cmd %d error!\n", item->cmd);
+					debug("process response cmd %d(%s) error!\n", item->cmd, get_channel_cmd_des(item->cmd));
 				}
 
 				break;
