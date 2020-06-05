@@ -6,7 +6,7 @@
  *   文件名称：channels_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月25日 星期一 14时24分07秒
- :   修改日期：2020年06月04日 星期四 15时54分07秒
+ :   修改日期：2020年06月05日 星期五 08时52分58秒
  *   描    述：
  *
  *================================================================*/
@@ -1180,7 +1180,7 @@ void task_channels_com_request(void const *argument)
 					channels_com_info->cmd_ctx[cmd_ctx_offset(item->cmd, j)].state = CHANNEL_COM_STATE_REQUEST;
 				}
 
-				osDelay(1);
+				osDelay(3);
 			}
 		}
 

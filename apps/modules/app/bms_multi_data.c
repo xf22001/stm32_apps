@@ -6,7 +6,7 @@
  *   文件名称：bms_multi_data.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月09日 星期四 13时04分55秒
- *   修改日期：2020年05月15日 星期五 09时09分39秒
+ *   修改日期：2020年06月05日 星期五 08时57分54秒
  *   描    述：
  *
  *================================================================*/
@@ -282,6 +282,8 @@ static int send_multi_data(can_info_t *can_info, multi_packets_des_t *multi_pack
 		}
 
 		ret = can_tx_data(can_info, &tx_msg, 10);
+
+		osDelay(3);
 
 		_printf("%s send fn:%02x, index:%d, ret:%d\n",
 		               (can_info->hcan == &hcan1) ? "hcan1" : "hcan2",

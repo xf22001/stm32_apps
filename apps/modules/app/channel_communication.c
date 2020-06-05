@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分44秒
- *   修改日期：2020年06月04日 星期四 16时35分00秒
+ *   修改日期：2020年06月05日 星期五 08时51分48秒
  *   描    述：
  *
  *================================================================*/
@@ -319,6 +319,17 @@ static int channel_com_info_set_channel_config(channel_com_info_t *channel_com_i
 
 	channel_com_info->cmd_ctx[COM_CMD_CHANNEL_HEARTBEAT].available = 1;
 	channel_com_info->cmd_ctx[COM_CMD_CHANNEL_OUTPUT_REQUEST].available = 1;
+
+	channel_com_info->cmd_ctx[COM_CMD_CHANNEL_BHM].available = 1;
+	channel_com_info->cmd_ctx[COM_CMD_CHANNEL_BRM].available = 1;
+	channel_com_info->cmd_ctx[COM_CMD_CHANNEL_BCP].available = 1;
+	channel_com_info->cmd_ctx[COM_CMD_CHANNEL_BRO].available = 1;
+	channel_com_info->cmd_ctx[COM_CMD_CHANNEL_BCL].available = 1;
+	channel_com_info->cmd_ctx[COM_CMD_CHANNEL_BCS].available = 1;
+	channel_com_info->cmd_ctx[COM_CMD_CHANNEL_BSM].available = 1;
+	channel_com_info->cmd_ctx[COM_CMD_CHANNEL_BST].available = 1;
+	channel_com_info->cmd_ctx[COM_CMD_CHANNEL_BSD].available = 1;
+	channel_com_info->cmd_ctx[COM_CMD_CHANNEL_BEM].available = 1;
 
 	channel_com_data_ctx = (channel_com_data_ctx_t *)os_alloc(sizeof(channel_com_data_ctx_t));
 
@@ -1432,6 +1443,8 @@ void task_channel_com_request(void const *argument)
 				channel_com_set_connect_state(channel_com_info, 0);
 				channel_com_info->cmd_ctx[item->cmd].state = CHANNEL_COM_STATE_REQUEST;
 			}
+
+			osDelay(3);
 		}
 
 		channel_com_request_periodic(channel_com_info);
