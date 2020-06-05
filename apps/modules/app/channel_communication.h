@@ -6,7 +6,7 @@
  *   文件名称：channel_communication.h
  *   创 建 者：肖飞
  *   创建日期：2020年04月29日 星期三 12时22分48秒
- *   修改日期：2020年06月03日 星期三 12时38分06秒
+ *   修改日期：2020年06月05日 星期五 09时38分55秒
  *   描    述：
  *
  *================================================================*/
@@ -91,6 +91,8 @@ typedef struct {
 	void *channel_com_data_ctx;
 
 	connect_state_t connect_state;
+
+	uint32_t periodic_stamp;
 
 } channel_com_info_t;
 

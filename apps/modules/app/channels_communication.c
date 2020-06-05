@@ -6,7 +6,7 @@
  *   文件名称：channels_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月25日 星期一 14时24分07秒
- :   修改日期：2020年06月05日 星期五 09时16分57秒
+ :   修改日期：2020年06月05日 星期五 10时02分53秒
  *   描    述：
  *
  *================================================================*/
@@ -1092,6 +1092,12 @@ static void channels_com_request_periodic(channels_com_info_t *channels_com_info
 	int j;
 	uint32_t ticks = osKernelSysTick();
 
+	if(ticks - channels_com_info->periodic_stamp < 50) {
+		return;
+	}
+
+	channels_com_info->periodic_stamp = ticks;
+
 	for(i = 0; i < ARRAY_SIZE(channels_com_command_table); i++) {
 		channel_com_command_item_t *item = channels_com_command_table[i];
 
@@ -1180,12 +1186,12 @@ void task_channels_com_request(void const *argument)
 					channels_com_info->cmd_ctx[cmd_ctx_offset(item->cmd, j)].state = CHANNEL_COM_STATE_REQUEST;
 				}
 
-				osDelay(3);
+				osDelay(2);
 			}
 		}
 
 		channels_com_request_periodic(channels_com_info);
-		osDelay(10);
+		osDelay(5);
 	}
 }
 
