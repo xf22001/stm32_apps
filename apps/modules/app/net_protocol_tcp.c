@@ -6,7 +6,7 @@
  *   文件名称：net_protocol_tcp.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月17日 星期一 14时39分04秒
- *   修改日期：2020年05月15日 星期五 08时43分34秒
+ *   修改日期：2020年06月05日 星期五 15时42分01秒
  *   描    述：
  *
  *================================================================*/
@@ -64,6 +64,7 @@ static int tcp_client_close(void *ctx)
 }
 
 protocol_if_t protocol_if_tcp = {
+	.name = "tcp",
 	.net_connect = tcp_client_connect,
 	.net_recv = tcp_client_recv,
 	.net_send = tcp_client_send,

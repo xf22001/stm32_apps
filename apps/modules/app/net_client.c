@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2020年05月15日 星期五 08时43分51秒
+ *   修改日期：2020年06月05日 星期五 15时57分24秒
  *   描    述：
  *
  *================================================================*/
@@ -24,6 +24,8 @@
 
 #include <string.h>
 
+extern request_callback_t request_callback_default;
+
 static net_client_info_t net_client_info = {
 	.sock_fd = -1,
 	.retry_count = 0,
@@ -34,11 +36,18 @@ static net_client_info_t net_client_info = {
 
 static net_message_buffer_t recv_message_buffer = {0};
 static net_message_buffer_t send_message_buffer = {0};
-static trans_protocol_type_t trans_protocol_type = TRANS_PROTOCOL_WS;
 
-extern request_callback_t request_callback_ws;
+request_callback_t *request_callback = &request_callback_default;
 
-request_callback_t *request_callback = &request_callback_ws;
+void set_net_client_request_callback(request_callback_t *callback)
+{
+	if(callback != NULL) {
+		debug("select net callback %s\n", callback->name);
+		request_callback = callback;
+	}
+}
+
+static trans_protocol_type_t trans_protocol_type = TRANS_PROTOCOL_TCP;
 
 trans_protocol_type_t get_net_client_protocol(void)
 {
@@ -72,6 +81,8 @@ static protocol_if_t *get_protocol_if(trans_protocol_type_t type)
 			break;
 	}
 
+	debug("select protocol %s\n", protocol_if->name);
+
 	return protocol_if;
 }
 
@@ -104,12 +115,10 @@ static void get_host_port(char **phost, char **pport, struct sockaddr_in *addr_i
 
 static void set_system_net_info(uint16_t info)
 {
-	//pModBus_Data->System.Data_Info.Net_Status = info;
 }
 
 static uint8_t is_display_connected(void)
 {
-	//return (Channel_A_Charger.Modbus_System->Data_Info.time_year != 0);
 	return 1;
 }
 
@@ -130,7 +139,7 @@ static void default_init(void)
 	if(request_callback->init != NULL) {
 		request_callback->init();
 	} else {
-		_printf("%s:%s\n", __FILE__, __func__);
+		debug("\n");
 	}
 }
 
@@ -147,10 +156,16 @@ static void blink_led_lan(uint32_t periodic)
 
 	led_lan_stamp = ticks;
 
+	if(led_lan_state == 0) {
+		led_lan_state = 1;
+	} else {
+		led_lan_state = 0;
+	}
+
 	if(request_callback->set_lan_led_state != NULL) {
 		request_callback->set_lan_led_state(led_lan_state);
 	} else {
-		_printf("%s:%s\n", __FILE__, __func__);
+		//debug("\n");
 	}
 }
 
@@ -159,7 +174,7 @@ static void default_before_create_server_connect(void)
 	if(request_callback->before_connect != NULL) {
 		request_callback->before_connect();
 	} else {
-		_printf("%s:%s\n", __FILE__, __func__);
+		debug("\n");
 	}
 }
 
@@ -168,7 +183,7 @@ static void default_after_create_server_connect(void)
 	if(request_callback->after_connect != NULL) {
 		request_callback->after_connect();
 	} else {
-		_printf("%s:%s\n", __FILE__, __func__);
+		debug("\n");
 	}
 }
 
@@ -177,7 +192,7 @@ static void default_before_close_server_connect(void)
 	if(request_callback->before_close != NULL) {
 		request_callback->before_close();
 	} else {
-		_printf("%s:%s\n", __FILE__, __func__);
+		debug("\n");
 	}
 }
 
@@ -186,7 +201,7 @@ static void default_after_close_server_connect(void)
 	if(request_callback->after_close != NULL) {
 		request_callback->after_close();
 	} else {
-		_printf("%s:%s\n", __FILE__, __func__);
+		debug("\n");
 	}
 }
 
@@ -195,20 +210,18 @@ static void default_parse(char *buffer, size_t size, size_t max_request_size, ch
 	if(request_callback->parse != NULL) {
 		request_callback->parse(buffer, size, max_request_size, prequest, request_size);
 	} else {
-		_printf("%s:%s\n", __FILE__, __func__);
 		*prequest = buffer;
 		*request_size = size;
+		debug("\n");
 	}
 }
 
 static void default_process(uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
-	blink_led_lan(0);
-
 	if(request_callback->process != NULL) {
 		request_callback->process(request, request_size, send_buffer, send_buffer_size);
 	} else {
-		_printf("%s:%s\n", __FILE__, __func__);
+		debug("\n");
 	}
 }
 
@@ -217,7 +230,7 @@ static void default_periodic(uint8_t *send_buffer, uint16_t send_buffer_size)
 	if(request_callback->periodic != NULL) {
 		request_callback->periodic(send_buffer, send_buffer_size);
 	} else {
-		_printf("%s:%s\n", __FILE__, __func__);
+		debug("\n");
 	}
 }
 
@@ -304,14 +317,14 @@ static int create_connect(void)
 	ret = before_create_server_connect();
 
 	if(ret != 0) {
-		_printf("[%s] before_create_server_connect error!\n", __func__);
+		//debug("\n");
 		return ret;
 	}
 
 	ret = create_server_connect();
 
 	if(ret != 0) {
-		_printf("[%s] create_server_connect error!\n", __func__);
+		debug("\n");
 		return ret;
 	}
 
@@ -360,7 +373,7 @@ static void process_server_message(net_message_buffer_t *recv, net_message_buffe
 	size_t left = recv->used;
 	uint8_t *buffer = recv->buffer;
 
-	_printf("net client got %d bytes\n", recv->used);
+	debug("net client got %d bytes\n", recv->used);
 	_hexdump(NULL, (const char *)buffer, left);
 
 	while(left >= sizeof(request_t)) {
@@ -368,6 +381,7 @@ static void process_server_message(net_message_buffer_t *recv, net_message_buffe
 
 		if(request != NULL) {//可能有效包
 			if(request_size != 0) {//有效包
+				blink_led_lan(0);
 				default_process((uint8_t *)request, (uint16_t)request_size, send->buffer, NET_MESSAGE_BUFFER_SIZE);
 				buffer += request_size;
 				left -= request_size;
@@ -379,8 +393,8 @@ static void process_server_message(net_message_buffer_t *recv, net_message_buffe
 			left -= 1;
 		}
 
-		_printf("net client request_size %d bytes\n", request_size);
-		_printf("net client left %d bytes\n", left);
+		debug("net client request_size %d bytes\n", request_size);
+		debug("net client left %d bytes\n", left);
 	}
 
 	if(left > 0) {
@@ -416,7 +430,7 @@ static int recv_from_server(void)
 			        NET_MESSAGE_BUFFER_SIZE - recv_message_buffer.used);
 
 			if(ret <= 0) {
-				_printf("[%s] close connect.\n", __func__);
+				debug("close connect.\n");
 				close_connect();
 			} else {
 				recv_message_buffer.used += ret;
@@ -436,7 +450,7 @@ int send_to_server(uint8_t *buffer, size_t len)
 	int max_fd = 0;
 
 	if(net_client_info.sock_fd == -1) {
-		_printf("[%s] socket fd is not valid!\n", __func__);
+		debug("socket fd is not valid!\n");
 		return ret;
 	}
 
@@ -455,7 +469,7 @@ int send_to_server(uint8_t *buffer, size_t len)
 			ret = net_client_info.protocol_if->net_send(&net_client_info, buffer, len);
 
 			if(ret <= 0) {
-				_printf("[%s] net_send error!\n", __func__);
+				debug("net_send error!\n");
 			}
 		} else {
 			ret = -1;
@@ -481,11 +495,6 @@ static void task_net_client_periodic(void)
 
 static uint8_t is_server_enable(void)
 {
-	//if(Channel_A_Charger.Modbus_System->Setting_Info.Back_Stage == BACK_STAGE_NO) {
-	//	return 0;
-	//} else {
-	//	return 1;
-	//}
 	return 1;
 }
 

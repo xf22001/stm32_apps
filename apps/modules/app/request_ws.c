@@ -6,7 +6,7 @@
  *   文件名称：request_ws.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月23日 星期日 15时44分51秒
- *   修改日期：2020年05月15日 星期五 08时37分49秒
+ *   修改日期：2020年06月05日 星期五 15时10分38秒
  *   描    述：
  *
  *================================================================*/
@@ -19,27 +19,27 @@
 
 static void request_init(void)
 {
-	_printf("%s:%s\n", __FILE__, __func__);
+	debug("\n");
 }
 
 static void request_before_create_server_connect(void)
 {
-	_printf("%s:%s\n", __FILE__, __func__);
+	debug("\n");
 }
 
 static void request_after_create_server_connect(void)
 {
-	_printf("%s:%s\n", __FILE__, __func__);
+	debug("\n");
 }
 
 static void request_before_close_server_connect(void)
 {
-	_printf("%s:%s\n", __FILE__, __func__);
+	debug("\n");
 }
 
 static void request_after_close_server_connect(void)
 {
-	_printf("%s:%s\n", __FILE__, __func__);
+	debug("\n");
 }
 
 static void request_parse(char *buffer, size_t size, size_t max_request_size, char **prequest, size_t *request_size)
@@ -55,7 +55,7 @@ static void request_process(uint8_t *request, uint16_t request_size, uint8_t *se
 
 static void request_periodic(uint8_t *send_buffer, uint16_t send_buffer_size)
 {
-	_printf("%s:%s\n", __FILE__, __func__);
+	//debug("\n");
 }
 
 request_callback_t request_callback_ws = {

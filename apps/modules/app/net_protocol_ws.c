@@ -6,7 +6,7 @@
  *   文件名称：net_protocol_ws.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月23日 星期日 12时23分31秒
- *   修改日期：2020年05月15日 星期五 08时39分16秒
+ *   修改日期：2020年06月05日 星期五 15时41分42秒
  *   描    述：
  *
  *================================================================*/
@@ -143,6 +143,7 @@ static int ws_client_close(void *ctx)
 }
 
 protocol_if_t protocol_if_ws = {
+	.name = "websocket",
 	.net_connect = ws_client_connect,
 	.net_recv = ws_client_recv,
 	.net_send = ws_client_send,

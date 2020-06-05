@@ -6,7 +6,7 @@
  *   文件名称：request_monitor.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月09日 星期六 10时49分40秒
- *   修改日期：2020年05月15日 星期五 09时15分00秒
+ *   修改日期：2020年06月05日 星期五 15时50分27秒
  *   描    述：
  *
  *================================================================*/
@@ -61,27 +61,27 @@ static void request_set_lan_led_state(uint32_t state)
 
 static void request_init(void)
 {
-	_printf("%s:%s\n", __FILE__, __func__);
+	debug("\n");
 }
 
 static void request_before_create_server_connect(void)
 {
-	_printf("%s:%s\n", __FILE__, __func__);
+	debug("\n");
 }
 
 static void request_after_create_server_connect(void)
 {
-	_printf("%s:%s\n", __FILE__, __func__);
+	debug("\n");
 }
 
 static void request_before_close_server_connect(void)
 {
-	_printf("%s:%s\n", __FILE__, __func__);
+	debug("\n");
 }
 
 static void request_after_close_server_connect(void)
 {
-	_printf("%s:%s\n", __FILE__, __func__);
+	debug("\n");
 }
 
 static void request_parse(char *buffer, size_t size, size_t max_request_size, char **prequest, size_t *request_size)
@@ -96,7 +96,7 @@ static void request_process(uint8_t *request, uint16_t request_size, uint8_t *se
 
 static void request_periodic(uint8_t *send_buffer, uint16_t send_buffer_size)
 {
-	_printf("%s:%s\n", __FILE__, __func__);
+	debug("\n");
 
 	if(get_client_state() == CLIENT_CONNECTED) {
 		chunk_sendto(1, 0, (void *)0x8000000, 128, (char *)send_buffer, send_buffer_size);
