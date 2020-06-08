@@ -6,7 +6,7 @@
  *   文件名称：request_monitor.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月09日 星期六 10时49分40秒
- *   修改日期：2020年06月05日 星期五 15时50分27秒
+ *   修改日期：2020年06月08日 星期一 16时35分47秒
  *   描    述：
  *
  *================================================================*/
@@ -16,6 +16,7 @@
 #include "request.h"
 #include "main.h"
 
+#define LOG_UDP
 #include "log.h"
 
 static int chunk_sendto(uint32_t fn, uint32_t stage, void *data, size_t size, char *send_buffer, size_t send_buffer_size)

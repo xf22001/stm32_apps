@@ -6,7 +6,7 @@
  *   文件名称：net_protocol_ws.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月23日 星期日 12时23分31秒
- *   修改日期：2020年06月05日 星期五 15时41分42秒
+ *   修改日期：2020年06月08日 星期一 16时36分16秒
  *   描    述：
  *
  *================================================================*/
@@ -24,6 +24,7 @@
 #include "https.h"
 #include "mbedtls/platform.h"
 
+#define LOG_NONE
 #include "log.h"
 
 //static HTTP_INFO hi_instance;

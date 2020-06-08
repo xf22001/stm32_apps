@@ -6,7 +6,7 @@
  *   文件名称：net_protocol_udp.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月17日 星期一 14时41分21秒
- *   修改日期：2020年06月05日 星期五 15时41分51秒
+ *   修改日期：2020年06月08日 星期一 16时35分00秒
  *   描    述：
  *
  *================================================================*/
@@ -21,14 +21,16 @@
 #include "net_client.h"
 #include "net_protocol.h"
 
+#define LOG_NONE
 #include "log.h"
 
 static int udp_client_connect(void *ctx)
 {
 	int ret = -1;
 	net_client_info_t *net_client_info = (net_client_info_t *)ctx;
+	socket_addr_info_t *socket_addr_info = net_client_info->net_client_addr_info.socket_addr_info;
 
-	net_client_info->sock_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	net_client_info->sock_fd = socket(socket_addr_info->ai_family, socket_addr_info->ai_socktype, socket_addr_info->ai_protocol);
 
 	if(net_client_info->sock_fd != -1) {
 		ret = 0;
@@ -40,16 +42,17 @@ static int udp_client_connect(void *ctx)
 static int udp_client_recv(void *ctx, void *buf, size_t len)
 {
 	net_client_info_t *net_client_info = (net_client_info_t *)ctx;
-	socklen_t socklen = sizeof(struct sockaddr_in);
+	socket_addr_info_t *socket_addr_info = net_client_info->net_client_addr_info.socket_addr_info;
 
-	return recvfrom(net_client_info->sock_fd, buf, len, 0, (struct sockaddr *)(&net_client_info->addr_in), &socklen);
+	return recvfrom(net_client_info->sock_fd, buf, len, 0, (struct sockaddr *)&socket_addr_info->addr, &socket_addr_info->addr_size);
 }
 
 static int udp_client_send(void *ctx, const void *buf, size_t len)
 {
 	net_client_info_t *net_client_info = (net_client_info_t *)ctx;
+	socket_addr_info_t *socket_addr_info = net_client_info->net_client_addr_info.socket_addr_info;
 
-	return sendto(net_client_info->sock_fd, buf, len, 0, (struct sockaddr *)(&net_client_info->addr_in), sizeof(struct sockaddr_in));
+	return sendto(net_client_info->sock_fd, buf, len, 0, (struct sockaddr *)&socket_addr_info->addr, socket_addr_info->addr_size);
 }
 
 static int udp_client_close(void *ctx)

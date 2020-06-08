@@ -6,7 +6,7 @@
  *   文件名称：net_client.h
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时38分02秒
- *   修改日期：2020年06月05日 星期五 15时32分01秒
+ *   修改日期：2020年06月08日 星期一 15时49分43秒
  *   描    述：
  *
  *================================================================*/
@@ -27,6 +27,7 @@ extern "C"
 #include "lwip/sockets.h"
 
 #include "net_protocol.h"
+#include "list_utils.h"
 
 #define TASK_NET_CLIENT_PERIODIC (100) //ms
 #define TASK_NET_CLIENT_CONNECT_PERIODIC (1000 * 1) //ms
@@ -40,16 +41,20 @@ typedef enum {
 } client_state_t;
 
 typedef struct {
-	char *host;
-	char *port;
-	struct sockaddr_in addr_in;
-	int sock_fd;
-	uint32_t retry_count;
-	uint32_t connect_stamp;
-	uint8_t reset_connect;
-	client_state_t state;
-	protocol_if_t *protocol_if;
-} net_client_info_t;
+	struct list_head list;
+	int ai_family;/* Address family of socket. */
+	int ai_socktype;/* Socket type. */
+	int ai_protocol;/* Protocol of socket. */
+	struct sockaddr_storage addr;
+	socklen_t addr_size;
+} socket_addr_info_t;
+
+typedef struct {
+	char host[256];
+	char port[8];
+	struct list_head socket_addr_info_list;
+	socket_addr_info_t *socket_addr_info;
+} net_client_addr_info_t;
 
 typedef struct {
 	uint16_t used;
@@ -77,6 +82,20 @@ typedef struct {
 	process_t process;
 	periodic_t periodic;
 } request_callback_t;
+
+typedef struct {
+	int sock_fd;
+	uint32_t retry_count;
+	uint32_t connect_stamp;
+	uint8_t reset_connect;
+	client_state_t state;
+	trans_protocol_type_t trans_protocol_type;
+	protocol_if_t *protocol_if;
+	net_client_addr_info_t net_client_addr_info;
+	request_callback_t *request_callback;
+	net_message_buffer_t recv_message_buffer;
+	net_message_buffer_t send_message_buffer;
+} net_client_info_t;
 
 trans_protocol_type_t get_net_client_protocol(void);
 void set_net_client_protocol(trans_protocol_type_t type);

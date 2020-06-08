@@ -6,7 +6,7 @@
  *   文件名称：modbus_master_txrx.h
  *   创 建 者：肖飞
  *   创建日期：2020年04月20日 星期一 15时28分59秒
- *   修改日期：2020年05月14日 星期四 08时14分09秒
+ *   修改日期：2020年06月08日 星期一 12时49分48秒
  *   描    述：
  *
  *================================================================*/
@@ -41,4 +41,55 @@ modbus_master_info_t *get_or_alloc_modbus_master_info(UART_HandleTypeDef *huart)
 int modbus_master_read_items(modbus_master_info_t *modbus_master_info, uint8_t station, uint16_t addr, uint16_t number, uint16_t *values);
 int modbus_master_write_one_item(modbus_master_info_t *modbus_master_info, uint8_t station, uint16_t addr, uint16_t value);
 int modbus_master_write_items(modbus_master_info_t *modbus_master_info, uint8_t station, uint16_t addr, uint16_t number, uint16_t *values);
+
+static inline int modbus_master_read_items_retry(modbus_master_info_t *modbus_master_info, uint8_t station, uint16_t addr, uint16_t number, uint16_t *values, uint8_t retry)
+{
+	int ret = -1;
+
+	while(retry > 0) {
+		ret = modbus_master_read_items(modbus_master_info, station, addr, number, values);
+
+		if(ret == 0) {
+			break;
+		}
+
+		retry--;
+	}
+
+	return ret;
+}
+
+static inline int modbus_master_write_one_item_retry(modbus_master_info_t *modbus_master_info, uint8_t station, uint16_t addr, uint16_t value, uint8_t retry)
+{
+	int ret = -1;
+
+	while(retry > 0) {
+		ret = modbus_master_write_one_item(modbus_master_info, station, addr, value);
+
+		if(ret == 0) {
+			break;
+		}
+
+		retry--;
+	}
+
+	return ret;
+}
+
+static inline int modbus_master_write_items_retry(modbus_master_info_t *modbus_master_info, uint8_t station, uint16_t addr, uint16_t number, uint16_t *values, int retry)
+{
+	int ret = -1;
+
+	while(retry > 0) {
+		ret = modbus_master_write_items(modbus_master_info, station, addr, number, values);
+
+		if(ret == 0) {
+			break;
+		}
+
+		retry--;
+	}
+
+	return ret;
+}
 #endif //_MODBUS_MASTER_TXRX_H
