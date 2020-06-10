@@ -6,7 +6,7 @@
  *   文件名称：net_protocol_tcp.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月17日 星期一 14时39分04秒
- *   修改日期：2020年06月08日 星期一 17时19分07秒
+ *   修改日期：2020年06月10日 星期三 10时49分32秒
  *   描    述：
  *
  *================================================================*/
@@ -29,7 +29,7 @@ static int tcp_client_connect(void *ctx)
 	int ret = -1;
 	net_client_info_t *net_client_info = (net_client_info_t *)ctx;
 	socket_addr_info_t *socket_addr_info = net_client_info->net_client_addr_info.socket_addr_info;
-	int flags = 0;
+	//int flags = 0;
 
 	net_client_info->sock_fd = socket(socket_addr_info->ai_family, socket_addr_info->ai_socktype, socket_addr_info->ai_protocol);
 
@@ -73,6 +73,7 @@ static int tcp_client_close(void *ctx)
 
 protocol_if_t protocol_if_tcp = {
 	.name = "tcp",
+	.type = TRANS_PROTOCOL_TCP,
 	.net_connect = tcp_client_connect,
 	.net_recv = tcp_client_recv,
 	.net_send = tcp_client_send,

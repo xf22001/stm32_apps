@@ -6,7 +6,7 @@
  *   文件名称：net_protocol.h
  *   创 建 者：肖飞
  *   创建日期：2020年02月17日 星期一 14时36分47秒
- *   修改日期：2020年06月05日 星期五 15时41分18秒
+ *   修改日期：2020年06月10日 星期三 10时41分33秒
  *   描    述：
  *
  *================================================================*/
@@ -33,14 +33,11 @@ typedef int (*send_t)(void *ctx, const void *buf, size_t len);
 typedef int (*close_t)(void *ctx);
 typedef struct {
 	char *name;
+	trans_protocol_type_t type;
 	connect_t net_connect;
 	recv_t net_recv;
 	send_t net_send;
 	close_t net_close;
 } protocol_if_t;
-
-extern protocol_if_t protocol_if_tcp;
-extern protocol_if_t protocol_if_udp;
-extern protocol_if_t protocol_if_ws;
 
 #endif //_NET_PROTOCOL_H

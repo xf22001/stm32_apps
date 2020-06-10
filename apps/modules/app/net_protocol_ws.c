@@ -6,7 +6,7 @@
  *   文件名称：net_protocol_ws.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月23日 星期日 12时23分31秒
- *   修改日期：2020年06月08日 星期一 16时36分16秒
+ *   修改日期：2020年06月10日 星期三 13时24分33秒
  *   描    述：
  *
  *================================================================*/
@@ -24,7 +24,6 @@
 #include "https.h"
 #include "mbedtls/platform.h"
 
-#define LOG_NONE
 #include "log.h"
 
 //static HTTP_INFO hi_instance;
@@ -32,9 +31,22 @@ static BOOL verify_cert = FALSE;
 //static HTTP_INFO *hi = &hi_instance;
 static HTTP_INFO *hi = NULL;
 
+void *malloc_1(size_t size);
+void free_1(void *p);
+
+static void *os_alloc_1(size_t size)
+{
+	return malloc_1(size);
+}
+
+static void os_free_1(void *p)
+{
+	free_1(p);
+}
+
 static void *os_calloc(size_t nmemb, size_t size)
 {
-	void *ptr = os_alloc(nmemb * size);
+	void *ptr = os_alloc_1(nmemb * size);
 
 	if(ptr == NULL) {
 		while(1);
@@ -62,9 +74,10 @@ static int ws_client_connect(void *ctx)
 {
 	int ret = -1;
 	net_client_info_t *net_client_info = (net_client_info_t *)ctx;
-	//char *url = "https://httpbin.org/get";
+	char *url = "https://httpbin.org/get";
 	//char *url = "ws://192.168.41.2:8080/ocpp/";
-	char *url = "ws://47.244.218.210:8080/OCPP/echoSocket/13623";
+	//char *url = "ws://47.244.218.210:8080/OCPP/echoSocket/13623";
+	//char *url = "wss://35.201.125.176:433/SSECHINAEVSE";
 
 	if(get_connect_enable() != 1) {
 		return ret;
@@ -82,11 +95,13 @@ static int ws_client_connect(void *ctx)
 
 	http_init(hi, verify_cert);
 
-	mbedtls_platform_set_calloc_free(os_calloc, os_free);
+	mbedtls_platform_set_calloc_free(os_calloc, os_free_1);
 
 	ret = http_open(hi, url);
 
 	if(ret != 0) {
+		debug("\n");
+		set_connect_enable(0);
 		return ret;
 	}
 
@@ -97,16 +112,21 @@ static int ws_client_connect(void *ctx)
 	ret = http_write_ws_header(hi);
 
 	if(ret != 0) {
+		debug("\n");
+		set_connect_enable(0);
 		return ret;
 	}
 
 	net_client_info->sock_fd = hi->tls.ssl_fd.fd;
 
 	if(net_client_info->sock_fd == -1) {
+		debug("\n");
+		set_connect_enable(0);
 		return ret;
 	}
 
 	ret = net_client_info->sock_fd;
+	set_connect_enable(0);
 
 	return ret;
 }
@@ -134,17 +154,18 @@ static int ws_client_close(void *ctx)
 
 	if(hi != NULL) {
 		ret = http_close(hi);
-		os_free(hi);
+		os_free_1(hi);
 		hi = NULL;
 	}
+
 	net_client_info->sock_fd = -1;
-	set_connect_enable(0);
 
 	return ret;
 }
 
 protocol_if_t protocol_if_ws = {
 	.name = "websocket",
+	.type = TRANS_PROTOCOL_WS,
 	.net_connect = ws_client_connect,
 	.net_recv = ws_client_recv,
 	.net_send = ws_client_send,

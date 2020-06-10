@@ -6,7 +6,7 @@
  *   文件名称：net_client.h
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时38分02秒
- *   修改日期：2020年06月08日 星期一 15时49分43秒
+ *   修改日期：2020年06月10日 星期三 10时42分58秒
  *   描    述：
  *
  *================================================================*/
@@ -90,11 +90,11 @@ typedef struct {
 	uint8_t reset_connect;
 	client_state_t state;
 	trans_protocol_type_t trans_protocol_type;
-	protocol_if_t *protocol_if;
 	net_client_addr_info_t net_client_addr_info;
-	request_callback_t *request_callback;
 	net_message_buffer_t recv_message_buffer;
 	net_message_buffer_t send_message_buffer;
+	request_callback_t *request_callback;
+	protocol_if_t *protocol_if;
 } net_client_info_t;
 
 trans_protocol_type_t get_net_client_protocol(void);

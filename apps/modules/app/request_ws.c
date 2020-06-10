@@ -6,7 +6,7 @@
  *   文件名称：request_ws.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月23日 星期日 15时44分51秒
- *   修改日期：2020年06月08日 星期一 16时36分51秒
+ *   修改日期：2020年06月10日 星期三 11时09分55秒
  *   描    述：
  *
  *================================================================*/
@@ -15,7 +15,6 @@
 #include "net_client.h"
 #include "request.h"
 
-#define LOG_NONE
 #include "log.h"
 
 static void request_init(void)
@@ -60,7 +59,7 @@ static void request_periodic(uint8_t *send_buffer, uint16_t send_buffer_size)
 }
 
 request_callback_t request_callback_ws = {
-	.name = "zr",
+	.name = "websocket request",
 	.init = request_init,
 	.before_connect = request_before_create_server_connect,
 	.after_connect = request_after_create_server_connect,

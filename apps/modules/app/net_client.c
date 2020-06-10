@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2020年06月08日 星期一 17时16分20秒
+ *   修改日期：2020年06月10日 星期三 12时50分19秒
  *   描    述：
  *
  *================================================================*/
@@ -20,76 +20,45 @@
 
 #include "os_utils.h"
 #include "net_client.h"
+#include "net_client_callback.h"
 
 #include "log.h"
 
 #include <string.h>
 
-extern request_callback_t request_callback_default;
-
 static net_client_info_t *net_client_info = NULL;
 
-static protocol_if_t *get_protocol_if(trans_protocol_type_t type)
-{
-	protocol_if_t *protocol_if = &protocol_if_tcp;
-
-	switch(type) {
-		case TRANS_PROTOCOL_TCP:
-			protocol_if = &protocol_if_tcp;
-			break;
-
-		case TRANS_PROTOCOL_UDP:
-			protocol_if = &protocol_if_udp;
-			break;
-
-		case TRANS_PROTOCOL_WS:
-			protocol_if = &protocol_if_ws;
-			break;
-
-		default:
-			protocol_if = &protocol_if_tcp;
-			break;
-	}
-
-	//debug("select protocol %s\n", protocol_if->name);
-
-	return protocol_if;
-}
-
-trans_protocol_type_t get_net_client_protocol(void)
-{
-	if(net_client_info == NULL) {
-		return TRANS_PROTOCOL_TCP;
-	}
-
-	return net_client_info->trans_protocol_type;
-}
-
-void set_net_client_protocol(trans_protocol_type_t type)
-{
-	if(net_client_info == NULL) {
-		return;
-	}
-
-	net_client_info->trans_protocol_type = type;
-
-	net_client_info->protocol_if = get_protocol_if(type);
-}
-
-void set_net_client_request_callback(request_callback_t *callback)
+void set_net_client_protocol_if(protocol_if_t *protocol_if)
 {
 	if(net_client_info == NULL) {
 		debug("\n");
 		return;
 	}
 
-	if(callback == NULL) {
+	if(protocol_if == NULL) {
 		debug("\n");
 		return;
 	}
 
-	debug("select net callback %s\n", callback->name);
-	net_client_info->request_callback = callback;
+	debug("select protocol %s\n", protocol_if->name);
+
+	net_client_info->protocol_if = protocol_if;
+}
+
+void set_net_client_request_callback(request_callback_t *request_callback)
+{
+	if(net_client_info == NULL) {
+		debug("\n");
+		return;
+	}
+
+	if(request_callback == NULL) {
+		debug("\n");
+		return;
+	}
+
+	debug("select net request_callback %s\n", request_callback->name);
+	net_client_info->request_callback = request_callback;
 }
 
 static int update_net_client_addr(void)
@@ -102,6 +71,12 @@ static int update_net_client_addr(void)
 	struct list_head *n;
 
 	if(net_client_info == NULL) {
+		debug("\n");
+		return ret;
+	}
+
+	if(net_client_info->protocol_if == NULL) {
+		debug("\n");
 		return ret;
 	}
 
@@ -118,10 +93,11 @@ static int update_net_client_addr(void)
 	/* Do name resolution with both IPv6 and IPv4 */
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = (net_client_info->trans_protocol_type == TRANS_PROTOCOL_UDP) ? SOCK_DGRAM : SOCK_STREAM;
-	hints.ai_protocol = (net_client_info->trans_protocol_type == TRANS_PROTOCOL_UDP) ? IPPROTO_UDP : IPPROTO_TCP;
+	hints.ai_socktype = (net_client_info->protocol_if->type == TRANS_PROTOCOL_UDP) ? SOCK_DGRAM : SOCK_STREAM;
+	hints.ai_protocol = (net_client_info->protocol_if->type == TRANS_PROTOCOL_UDP) ? IPPROTO_UDP : IPPROTO_TCP;
 
 	if(getaddrinfo(net_client_info->net_client_addr_info.host, net_client_info->net_client_addr_info.port, &hints, &addr_list) != 0) {
+		debug("\n");
 		return ret;
 	}
 
@@ -129,6 +105,7 @@ static int update_net_client_addr(void)
 		socket_addr_info_t *socket_addr_info = (socket_addr_info_t *)os_alloc(sizeof(socket_addr_info_t));
 
 		if(socket_addr_info == NULL) {
+			debug("\n");
 			goto failed;
 		}
 
@@ -156,7 +133,7 @@ static int update_net_client_addr(void)
 			//     );
 		}
 
-		list_add_tail(&net_client_info->net_client_addr_info.socket_addr_info_list, &socket_addr_info->list);
+		list_add_tail(&socket_addr_info->list, &net_client_info->net_client_addr_info.socket_addr_info_list);
 	}
 
 	freeaddrinfo(addr_list);
@@ -187,6 +164,7 @@ static void get_host_port(void)
 {
 	//u_uint32_bytes_t backstage_ip;
 	if(net_client_info == NULL) {
+		debug("\n");
 		return;
 	}
 
@@ -196,7 +174,7 @@ static void get_host_port(void)
 	//backstage_ip.s.byte3 = 128;
 
 	//snprintf(net_client_info->net_client_addr_info.host, sizeof(net_client_info->net_client_addr_info.host), "%d.%d.%d.%d", 192, 168, 1, 128);
-	snprintf(net_client_info->net_client_addr_info.host, sizeof(net_client_info->net_client_addr_info.host), "%s", "www.baidu.com");
+	snprintf(net_client_info->net_client_addr_info.host, sizeof(net_client_info->net_client_addr_info.host), "%s", "192.168.1.128");
 	snprintf(net_client_info->net_client_addr_info.port, sizeof(net_client_info->net_client_addr_info.port), "%hd", 6003);
 	update_net_client_addr();
 }
@@ -240,14 +218,14 @@ static void default_init(void)
 		}
 
 		memset(net_client_info, 0, sizeof(net_client_info_t));
+		net_client_info->sock_fd = -1;
+		INIT_LIST_HEAD(&net_client_info->net_client_addr_info.socket_addr_info_list);
 	}
 
-	net_client_info->sock_fd = -1;
-	INIT_LIST_HEAD(&net_client_info->net_client_addr_info.socket_addr_info_list);
-	get_host_port();
+	set_net_client_protocol_if(get_protocol_if());
+	set_net_client_request_callback(get_request_callback());
 
-	set_net_client_protocol(TRANS_PROTOCOL_TCP);
-	set_net_client_request_callback(&request_callback_default);
+	get_host_port();
 
 	if(net_client_info->request_callback->init != NULL) {
 		net_client_info->request_callback->init();
@@ -395,13 +373,12 @@ static int create_server_connect(void)
 
 	set_client_state(CLIENT_CONNECTING);
 
-	if(net_client_info->sock_fd != -1) {
-		ret = net_client_info->protocol_if->net_close(net_client_info);
-	}
-
 	ret = net_client_info->protocol_if->net_connect(net_client_info);
 
 	if(ret == 0) {
+		set_net_client_protocol_if(get_protocol_if());
+		set_net_client_request_callback(get_request_callback());
+
 		flags = fcntl(net_client_info->sock_fd, F_GETFL, 0);
 		flags |= O_NONBLOCK;
 		fcntl(net_client_info->sock_fd, F_SETFL, flags);
@@ -430,12 +407,11 @@ static int close_server_connect(void)
 	net_client_info->recv_message_buffer.used = 0;
 	set_client_state(CLIENT_DISCONNECT);
 
-	if(net_client_info->sock_fd == -1) {
-		ret = -1;
-		return ret;
-	}
-
 	ret = net_client_info->protocol_if->net_close(net_client_info);
+
+	if(net_client_info->sock_fd != -1) {
+		debug("bug!!!\n");
+	}
 
 	return ret;
 }
@@ -601,7 +577,7 @@ static int recv_from_server(void)
 
 			if(ret <= 0) {
 				debug("close connect.\n");
-				close_connect();
+				set_client_state(CLIENT_RESET);
 			} else {
 				net_client_info->recv_message_buffer.used += ret;
 				process_server_message(&net_client_info->recv_message_buffer, &net_client_info->send_message_buffer);
@@ -694,7 +670,8 @@ void task_net_client(void const *argument)
 
 		if(is_server_enable() == 0) { //无后台
 			if(get_client_state() == CLIENT_CONNECTED) {
-				close_connect();
+				debug("close connect.\n");
+				set_client_state(CLIENT_RESET);
 			}
 
 			blink_led_lan(3 * 1000);
@@ -719,6 +696,7 @@ void task_net_client(void const *argument)
 
 		if(get_client_state() == CLIENT_RESET) {
 			close_connect();
+			default_init();
 		}
 	}
 }

@@ -6,7 +6,7 @@
  *   文件名称：net_protocol_udp.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月17日 星期一 14时41分21秒
- *   修改日期：2020年06月08日 星期一 16时35分00秒
+ *   修改日期：2020年06月10日 星期三 10时49分46秒
  *   描    述：
  *
  *================================================================*/
@@ -68,6 +68,7 @@ static int udp_client_close(void *ctx)
 
 protocol_if_t protocol_if_udp = {
 	.name = "udp",
+	.type = TRANS_PROTOCOL_UDP,
 	.net_connect = udp_client_connect,
 	.net_recv = udp_client_recv,
 	.net_send = udp_client_send,
