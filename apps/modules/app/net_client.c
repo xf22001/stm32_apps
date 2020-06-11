@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2020年06月10日 星期三 12时50分19秒
+ *   修改日期：2020年06月11日 星期四 12时29分04秒
  *   描    述：
  *
  *================================================================*/
@@ -160,10 +160,22 @@ failed:
 	return ret;
 }
 
-static void get_host_port(void)
+static void get_addr_info()
 {
+	int ret;
+	char *host;
+	char *port;
+	char *path;
+
 	//u_uint32_bytes_t backstage_ip;
 	if(net_client_info == NULL) {
+		debug("\n");
+		return;
+	}
+
+	ret = get_addr_host_port_service(&host, &port, &path);
+
+	if(ret != 0) {
 		debug("\n");
 		return;
 	}
@@ -174,8 +186,10 @@ static void get_host_port(void)
 	//backstage_ip.s.byte3 = 128;
 
 	//snprintf(net_client_info->net_client_addr_info.host, sizeof(net_client_info->net_client_addr_info.host), "%d.%d.%d.%d", 192, 168, 1, 128);
-	snprintf(net_client_info->net_client_addr_info.host, sizeof(net_client_info->net_client_addr_info.host), "%s", "192.168.1.128");
-	snprintf(net_client_info->net_client_addr_info.port, sizeof(net_client_info->net_client_addr_info.port), "%hd", 6003);
+
+	snprintf(net_client_info->net_client_addr_info.host, sizeof(net_client_info->net_client_addr_info.host), "%s", host);
+	snprintf(net_client_info->net_client_addr_info.port, sizeof(net_client_info->net_client_addr_info.port), "%s", port);
+	snprintf(net_client_info->net_client_addr_info.path, sizeof(net_client_info->net_client_addr_info.path), "%s", path);
 	update_net_client_addr();
 }
 
@@ -191,6 +205,7 @@ static uint8_t is_display_connected(void)
 void set_client_state(client_state_t state)
 {
 	if(net_client_info == NULL) {
+		debug("\n");
 		return;
 	}
 
@@ -200,6 +215,7 @@ void set_client_state(client_state_t state)
 client_state_t get_client_state(void)
 {
 	if(net_client_info == NULL) {
+		debug("\n");
 		return CLIENT_DISCONNECT;
 	}
 
@@ -224,8 +240,6 @@ static void default_init(void)
 
 	set_net_client_protocol_if(get_protocol_if());
 	set_net_client_request_callback(get_request_callback());
-
-	get_host_port();
 
 	if(net_client_info->request_callback->init != NULL) {
 		net_client_info->request_callback->init();
@@ -266,6 +280,7 @@ static void blink_led_lan(uint32_t periodic)
 static void default_before_create_server_connect(void)
 {
 	if(net_client_info == NULL) {
+		debug("\n");
 		return;
 	}
 
@@ -279,6 +294,7 @@ static void default_before_create_server_connect(void)
 static void default_after_create_server_connect(void)
 {
 	if(net_client_info == NULL) {
+		debug("\n");
 		return;
 	}
 
@@ -292,6 +308,7 @@ static void default_after_create_server_connect(void)
 static void default_before_close_server_connect(void)
 {
 	if(net_client_info == NULL) {
+		debug("\n");
 		return;
 	}
 
@@ -305,6 +322,7 @@ static void default_before_close_server_connect(void)
 static void default_after_close_server_connect(void)
 {
 	if(net_client_info == NULL) {
+		debug("\n");
 		return;
 	}
 
@@ -318,6 +336,7 @@ static void default_after_close_server_connect(void)
 static void default_parse(char *buffer, size_t size, size_t max_request_size, char **prequest, size_t *request_size)
 {
 	if(net_client_info == NULL) {
+		debug("\n");
 		return;
 	}
 
@@ -333,6 +352,7 @@ static void default_parse(char *buffer, size_t size, size_t max_request_size, ch
 static void default_process(uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
 	if(net_client_info == NULL) {
+		debug("\n");
 		return;
 	}
 
@@ -346,6 +366,7 @@ static void default_process(uint8_t *request, uint16_t request_size, uint8_t *se
 static void default_periodic(uint8_t *send_buffer, uint16_t send_buffer_size)
 {
 	if(net_client_info == NULL) {
+		debug("\n");
 		return;
 	}
 
@@ -356,40 +377,55 @@ static void default_periodic(uint8_t *send_buffer, uint16_t send_buffer_size)
 	}
 }
 
+uint32_t get_net_client_connect_id(void)
+{
+	if(net_client_info == NULL) {
+		debug("\n");
+		return 0;
+	}
+
+	return net_client_info->connect_id;
+}
+
 static int create_server_connect(void)
 {
 	int ret = -1;
 	int flags = 0;
+	uint32_t ticks = osKernelSysTick();
 
 	if(net_client_info == NULL) {
+		debug("\n");
 		return ret;
 	}
 
 	net_client_info->retry_count++;
 
+	net_client_info->connect_id = ticks;
+
 	if(net_client_info->retry_count > 15) {
 		net_client_info->retry_count = 0;
 	}
 
-	set_client_state(CLIENT_CONNECTING);
+	if(net_client_info->net_client_addr_info.socket_addr_info == NULL) {
+		debug("init addr info\n");
+		get_addr_info();
+	}
 
 	ret = net_client_info->protocol_if->net_connect(net_client_info);
 
 	if(ret == 0) {
-		set_net_client_protocol_if(get_protocol_if());
-		set_net_client_request_callback(get_request_callback());
-
 		flags = fcntl(net_client_info->sock_fd, F_GETFL, 0);
 		flags |= O_NONBLOCK;
 		fcntl(net_client_info->sock_fd, F_SETFL, flags);
 
 		net_client_info->retry_count = 0;
-		set_client_state(CLIENT_CONNECTED);
 	} else {
+		debug("connect failed! try to get addr info!\n");
+
 		if(net_client_info->net_client_addr_info.socket_addr_info != list_last_entry(&net_client_info->net_client_addr_info.socket_addr_info_list, socket_addr_info_t, list)) {
 			net_client_info->net_client_addr_info.socket_addr_info = list_next_entry(net_client_info->net_client_addr_info.socket_addr_info, socket_addr_info_t, list);
 		} else {
-			get_host_port();
+			get_addr_info();
 		}
 	}
 
@@ -401,11 +437,11 @@ static int close_server_connect(void)
 	int ret = -1;
 
 	if(net_client_info == NULL) {
+		debug("\n");
 		return ret;
 	}
 
 	net_client_info->recv_message_buffer.used = 0;
-	set_client_state(CLIENT_DISCONNECT);
 
 	ret = net_client_info->protocol_if->net_close(net_client_info);
 
@@ -422,6 +458,7 @@ static int before_create_server_connect(void)
 	uint32_t ticks = osKernelSysTick();
 
 	if(net_client_info == NULL) {
+		debug("\n");
 		return ret;
 	}
 
@@ -440,7 +477,7 @@ static int before_create_server_connect(void)
 
 static int after_create_server_connect(void)
 {
-	int ret = -1;
+	int ret = 0;
 	default_after_create_server_connect();
 	return ret;
 }
@@ -464,6 +501,11 @@ static int create_connect(void)
 	}
 
 	ret = after_create_server_connect();
+
+	if(ret != 0) {
+		debug("\n");
+	}
+
 	return ret;
 }
 
@@ -596,6 +638,7 @@ int send_to_server(uint8_t *buffer, size_t len)
 	int max_fd = 0;
 
 	if(net_client_info == NULL) {
+		debug("\n");
 		return ret;
 	}
 
@@ -668,35 +711,50 @@ void task_net_client(void const *argument)
 		//这个函数中，不能保证net client已经连接到服务端，需要用get_client_state()来确认
 		task_net_client_periodic();
 
-		if(is_server_enable() == 0) { //无后台
-			if(get_client_state() == CLIENT_CONNECTED) {
-				debug("close connect.\n");
-				set_client_state(CLIENT_RESET);
-			}
-
-			blink_led_lan(3 * 1000);
-
-			osDelay(TASK_NET_CLIENT_PERIODIC);
-			continue;
-		}
-
-		if(get_client_state() != CLIENT_CONNECTED) { //如果未连接到服务端，尝试进行一次连接，连接重试的频率控制在约1秒一次
-			ret = create_connect();
-
-			if(ret != 0) { //未连接到服务端，延时100ms,处理周期性事件
-				blink_led_lan(1 * 1000);
+		switch(net_client_info->state) {
+			case CLIENT_DISCONNECT: {
 				osDelay(TASK_NET_CLIENT_PERIODIC);
-				continue;
+				blink_led_lan(3 * 1000);
+
+				if(is_server_enable() == 1) {
+					set_client_state(CLIENT_CONNECTING);
+				}
 			}
-		}
+			break;
 
-		blink_led_lan(0);
-		//处理从服务端收到的消息
-		recv_from_server();
+			case CLIENT_CONNECTING: {
+				ret = create_connect();
 
-		if(get_client_state() == CLIENT_RESET) {
-			close_connect();
-			default_init();
+				if(ret == 0) { //未连接到服务端，延时100ms,处理周期性事件
+					set_client_state(CLIENT_CONNECTED);
+				} else {
+					osDelay(TASK_NET_CLIENT_CONNECT_PERIODIC);
+				}
+			}
+			break;
+
+			case CLIENT_CONNECTED: {
+				blink_led_lan(0);
+
+				//处理从服务端收到的消息
+				recv_from_server();
+
+				if(is_server_enable() == 0) {
+					set_client_state(CLIENT_RESET);
+				}
+			}
+			break;
+
+			case CLIENT_RESET: {
+				close_connect();
+				default_init();
+				set_client_state(CLIENT_DISCONNECT);
+			}
+			break;
+
+			default: {
+			}
+			break;
 		}
 	}
 }

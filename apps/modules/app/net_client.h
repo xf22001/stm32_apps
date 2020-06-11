@@ -6,7 +6,7 @@
  *   文件名称：net_client.h
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时38分02秒
- *   修改日期：2020年06月10日 星期三 10时42分58秒
+ *   修改日期：2020年06月11日 星期四 09时50分00秒
  *   描    述：
  *
  *================================================================*/
@@ -52,6 +52,7 @@ typedef struct {
 typedef struct {
 	char host[256];
 	char port[8];
+	char path[256];
 	struct list_head socket_addr_info_list;
 	socket_addr_info_t *socket_addr_info;
 } net_client_addr_info_t;
@@ -85,6 +86,7 @@ typedef struct {
 
 typedef struct {
 	int sock_fd;
+	uint32_t connect_id;
 	uint32_t retry_count;
 	uint32_t connect_stamp;
 	uint8_t reset_connect;
@@ -101,6 +103,7 @@ trans_protocol_type_t get_net_client_protocol(void);
 void set_net_client_protocol(trans_protocol_type_t type);
 void set_client_state(client_state_t state);
 client_state_t get_client_state(void);
+uint32_t get_net_client_connect_id(void);
 int send_to_server(uint8_t *buffer, size_t len);
 void task_net_client(void const *argument);
 #endif //_NET_CLIENT_H

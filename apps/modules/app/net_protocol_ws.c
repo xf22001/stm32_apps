@@ -6,7 +6,7 @@
  *   文件名称：net_protocol_ws.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月23日 星期日 12时23分31秒
- *   修改日期：2020年06月10日 星期三 13时24分33秒
+ *   修改日期：2020年06月11日 星期四 12时24分52秒
  *   描    述：
  *
  *================================================================*/
@@ -70,6 +70,21 @@ uint8_t get_connect_enable(void)
 }
 
 #include "test_https.h"
+
+static int ws_client_close(void *ctx)
+{
+	int ret = -1;
+	net_client_info_t *net_client_info = (net_client_info_t *)ctx;
+
+	if(hi != NULL) {
+		ret = http_close(hi);
+		os_free_1(hi);
+		hi = NULL;
+	}
+
+	return ret;
+}
+
 static int ws_client_connect(void *ctx)
 {
 	int ret = -1;
@@ -101,6 +116,7 @@ static int ws_client_connect(void *ctx)
 
 	if(ret != 0) {
 		debug("\n");
+		ws_client_close(ctx);
 		set_connect_enable(0);
 		return ret;
 	}
@@ -113,6 +129,7 @@ static int ws_client_connect(void *ctx)
 
 	if(ret != 0) {
 		debug("\n");
+		ws_client_close(ctx);
 		set_connect_enable(0);
 		return ret;
 	}
@@ -121,6 +138,7 @@ static int ws_client_connect(void *ctx)
 
 	if(net_client_info->sock_fd == -1) {
 		debug("\n");
+		ws_client_close(ctx);
 		set_connect_enable(0);
 		return ret;
 	}
@@ -145,22 +163,6 @@ static int ws_client_send(void *ctx, const void *buf, size_t len)
 
 	net_client_info = net_client_info;
 	return https_write(hi, (char *)buf, len);
-}
-
-static int ws_client_close(void *ctx)
-{
-	int ret = -1;
-	net_client_info_t *net_client_info = (net_client_info_t *)ctx;
-
-	if(hi != NULL) {
-		ret = http_close(hi);
-		os_free_1(hi);
-		hi = NULL;
-	}
-
-	net_client_info->sock_fd = -1;
-
-	return ret;
 }
 
 protocol_if_t protocol_if_ws = {
