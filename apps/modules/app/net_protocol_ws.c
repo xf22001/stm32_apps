@@ -6,7 +6,7 @@
  *   文件名称：net_protocol_ws.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月23日 星期日 12时23分31秒
- *   修改日期：2020年06月11日 星期四 12时24分52秒
+ *   修改日期：2020年06月11日 星期四 13时19分12秒
  *   描    述：
  *
  *================================================================*/
@@ -37,11 +37,13 @@ void free_1(void *p);
 static void *os_alloc_1(size_t size)
 {
 	return malloc_1(size);
+	//return os_alloc(size);
 }
 
 static void os_free_1(void *p)
 {
 	free_1(p);
+	//os_free(p);
 }
 
 static void *os_calloc(size_t nmemb, size_t size)
@@ -70,20 +72,6 @@ uint8_t get_connect_enable(void)
 }
 
 #include "test_https.h"
-
-static int ws_client_close(void *ctx)
-{
-	int ret = -1;
-	net_client_info_t *net_client_info = (net_client_info_t *)ctx;
-
-	if(hi != NULL) {
-		ret = http_close(hi);
-		os_free_1(hi);
-		hi = NULL;
-	}
-
-	return ret;
-}
 
 static int ws_client_connect(void *ctx)
 {
@@ -115,8 +103,8 @@ static int ws_client_connect(void *ctx)
 	ret = http_open(hi, url);
 
 	if(ret != 0) {
-		debug("\n");
-		ws_client_close(ctx);
+		http_close(hi);
+		net_client_info->sock_fd = -1;
 		set_connect_enable(0);
 		return ret;
 	}
@@ -128,8 +116,8 @@ static int ws_client_connect(void *ctx)
 	ret = http_write_ws_header(hi);
 
 	if(ret != 0) {
-		debug("\n");
-		ws_client_close(ctx);
+		http_close(hi);
+		net_client_info->sock_fd = -1;
 		set_connect_enable(0);
 		return ret;
 	}
@@ -137,8 +125,8 @@ static int ws_client_connect(void *ctx)
 	net_client_info->sock_fd = hi->tls.ssl_fd.fd;
 
 	if(net_client_info->sock_fd == -1) {
-		debug("\n");
-		ws_client_close(ctx);
+		http_close(hi);
+		net_client_info->sock_fd = -1;
 		set_connect_enable(0);
 		return ret;
 	}
@@ -163,6 +151,21 @@ static int ws_client_send(void *ctx, const void *buf, size_t len)
 
 	net_client_info = net_client_info;
 	return https_write(hi, (char *)buf, len);
+}
+
+static int ws_client_close(void *ctx)
+{
+	int ret = -1;
+	net_client_info_t *net_client_info = (net_client_info_t *)ctx;
+
+	if(hi != NULL) {
+		ret = http_close(hi);
+		net_client_info->sock_fd = -1;
+		os_free_1(hi);
+		hi = NULL;
+	}
+
+	return ret;
 }
 
 protocol_if_t protocol_if_ws = {

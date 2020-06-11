@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2020年06月11日 星期四 12时29分04秒
+ *   修改日期：2020年06月11日 星期四 13时09分42秒
  *   描    述：
  *
  *================================================================*/
@@ -446,7 +446,7 @@ static int close_server_connect(void)
 	ret = net_client_info->protocol_if->net_close(net_client_info);
 
 	if(net_client_info->sock_fd != -1) {
-		debug("bug!!!\n");
+		debug("bug!!! net_client_info->sock_fd:%d\n", net_client_info->sock_fd);
 	}
 
 	return ret;
