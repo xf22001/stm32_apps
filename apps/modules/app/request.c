@@ -6,7 +6,7 @@
  *   文件名称：request.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月16日 星期日 11时05分58秒
- *   修改日期：2020年05月09日 星期六 10时35分16秒
+ *   修改日期：2020年06月11日 星期四 16时27分27秒
  *   描    述：
  *
  *================================================================*/
@@ -110,9 +110,9 @@ void request_encode(request_info_t *request_info)
 	request->payload.fn = request_info->fn;
 	request->payload.stage = request_info->stage;
 	memcpy(request + 1, (const char *)request_info->data + request_info->consumed, payload_size);
-	request_info->consumed += payload_size;
 	request->header.data_offset = request_info->consumed;
 	request->header.crc = request_calc_crc8(((header_info_t *)&request->header) + 1, payload_size + sizeof(payload_info_t));
+	request_info->consumed += payload_size;
 
 	//l->printf("request_size:%d!\n", request_info->request_size);
 }

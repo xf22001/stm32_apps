@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2020年06月11日 星期四 13时09分42秒
+ *   修改日期：2020年06月11日 星期四 16时34分11秒
  *   描    述：
  *
  *================================================================*/
@@ -557,7 +557,7 @@ static void process_server_message(net_message_buffer_t *recv, net_message_buffe
 	size_t left = recv->used;
 	uint8_t *buffer = recv->buffer;
 
-	debug("net client got %d bytes\n", recv->used);
+	debug("net client got %d bytes\n", left);
 	_hexdump(NULL, (const char *)buffer, left);
 
 	while(left >= sizeof(request_t)) {
