@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2020年06月11日 星期四 16时34分11秒
+ *   修改日期：2020年06月12日 星期五 09时39分48秒
  *   描    述：
  *
  *================================================================*/
@@ -557,7 +557,7 @@ static void process_server_message(net_message_buffer_t *recv, net_message_buffe
 	size_t left = recv->used;
 	uint8_t *buffer = recv->buffer;
 
-	debug("net client got %d bytes\n", left);
+	debug("net client left %d bytes\n", left);
 	_hexdump(NULL, (const char *)buffer, left);
 
 	while(left >= sizeof(request_t)) {
@@ -565,6 +565,7 @@ static void process_server_message(net_message_buffer_t *recv, net_message_buffe
 
 		if(request != NULL) {//可能有效包
 			if(request_size != 0) {//有效包
+				debug("net client request_size %d bytes\n", request_size);
 				blink_led_lan(0);
 				default_process((uint8_t *)request, (uint16_t)request_size, send->buffer, NET_MESSAGE_BUFFER_SIZE);
 				buffer += request_size;
@@ -577,9 +578,9 @@ static void process_server_message(net_message_buffer_t *recv, net_message_buffe
 			left -= 1;
 		}
 
-		debug("net client request_size %d bytes\n", request_size);
-		debug("net client left %d bytes\n", left);
 	}
+
+	debug("net client left %d bytes\n", left);
 
 	if(left > 0) {
 		if(recv->buffer != buffer) {
