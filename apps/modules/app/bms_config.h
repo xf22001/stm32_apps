@@ -6,7 +6,7 @@
  *   文件名称：bms_config.h
  *   创 建 者：肖飞
  *   创建日期：2020年04月18日 星期六 12时29分38秒
- *   修改日期：2020年05月29日 星期五 09时20分49秒
+ *   修改日期：2020年06月15日 星期一 14时25分13秒
  *   描    述：
  *
  *================================================================*/
@@ -31,7 +31,9 @@ typedef struct {
 	CAN_HandleTypeDef *hcan;
 	CAN_HandleTypeDef *hcan_ccs;
 
-	UART_HandleTypeDef *huart;
+	UART_HandleTypeDef *huart_modbus;
+
+	UART_HandleTypeDef *huart_telemeter;
 
 	SPI_HandleTypeDef *hspi;
 	GPIO_TypeDef *gpio_port_spi_cs;

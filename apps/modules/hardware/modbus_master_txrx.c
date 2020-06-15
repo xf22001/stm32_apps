@@ -6,7 +6,7 @@
  *   文件名称：modbus_master_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月20日 星期一 15时28分52秒
- *   修改日期：2020年05月21日 星期四 14时05分19秒
+ *   修改日期：2020年06月15日 星期一 14时53分48秒
  *   描    述：
  *
  *================================================================*/
@@ -157,7 +157,7 @@ int modbus_master_read_items(modbus_master_info_t *modbus_master_info, uint8_t s
 	int i;
 
 	if(number == 0) {
-		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		debug("\n");
 		return ret;
 	}
 
@@ -174,35 +174,34 @@ int modbus_master_read_items(modbus_master_info_t *modbus_master_info, uint8_t s
 	modbus_master_info->rx_size = sizeof(modbus_master_response_0x03_head_t) + number * sizeof(modbus_data_item_t) + sizeof(modbus_crc_t);
 
 	if(modbus_master_info->rx_size > MODBUS_BUFFER_SIZE) {
-		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		debug("\n");
 		return ret;
 	}
 
 	rx_size = uart_tx_rx_data(modbus_master_info->uart_info,
-	                      (uint8_t *)request_0x03, modbus_master_info->tx_size,
-	                      (uint8_t *)modbus_master_response_0x03_head, modbus_master_info->rx_size,
-	                      modbus_master_info->rx_timeout);
+	                          (uint8_t *)request_0x03, modbus_master_info->tx_size,
+	                          (uint8_t *)modbus_master_response_0x03_head, modbus_master_info->rx_size,
+	                          modbus_master_info->rx_timeout);
 
 	if(rx_size != modbus_master_info->rx_size) {
-		_printf("rx_size:%d\n", rx_size);
-		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		debug("\n");
 		return ret;
 	}
 
 	//_hexdump("modbus_master_info->rx_buffer", (const char *)modbus_master_response_0x03_head, modbus_master_info->rx_size);
 
 	if(modbus_master_response_0x03_head->head.station != station) {
-		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		debug("\n");
 		return ret;
 	}
 
 	if(modbus_master_response_0x03_head->head.fn != 0x03) {
-		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		debug("\n");
 		return ret;
 	}
 
 	if(modbus_master_response_0x03_head->bytes_size != number * sizeof(modbus_data_item_t)) {
-		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		debug("\n");
 		return ret;
 	}
 
@@ -214,7 +213,7 @@ int modbus_master_read_items(modbus_master_info_t *modbus_master_info, uint8_t s
 	modbus_crc = (modbus_crc_t *)(data_item + number);
 
 	if(crc != get_modbus_crc(modbus_crc)) {
-		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		debug("\n");
 		return ret;
 	}
 
@@ -222,7 +221,7 @@ int modbus_master_read_items(modbus_master_info_t *modbus_master_info, uint8_t s
 
 	for(i = 0; i < number; i++) {
 		uint16_t value = get_modbus_data_item(data_item + i);
-		_printf("read addr:%d, data:%d(%x)\n", addr + i, value, value);
+		debug("read addr:%d, data:%d(%x)\n", addr + i, value, value);
 		values[i] = value;
 	}
 
@@ -256,7 +255,7 @@ int modbus_master_write_one_item(modbus_master_info_t *modbus_master_info, uint8
 	request_0x06->head.fn = 0x06;
 	set_modbus_addr(&request_0x06->addr, addr);
 	set_modbus_data_item(&request_0x06->data, value);
-	_printf("write addr:%d, data:%d(%x)\n", addr, value, value);
+	debug("write addr:%d, data:%d(%x)\n", addr, value, value);
 	modbus_crc = &request_0x06->crc;
 	crc = modbus_calc_crc((uint8_t *)request_0x06,
 	                      (uint8_t *)modbus_crc - (uint8_t *)request_0x06);
@@ -266,39 +265,39 @@ int modbus_master_write_one_item(modbus_master_info_t *modbus_master_info, uint8
 	modbus_master_info->rx_size = sizeof(modbus_master_response_0x06_t);
 
 	if(modbus_master_info->rx_size > MODBUS_BUFFER_SIZE) {
-		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		debug("\n");
 		return ret;
 	}
 
 	rx_size = uart_tx_rx_data(modbus_master_info->uart_info,
-	                      (uint8_t *)request_0x06, modbus_master_info->tx_size,
-	                      (uint8_t *)modbus_master_response_0x06, modbus_master_info->rx_size,
-	                      modbus_master_info->rx_timeout);
+	                          (uint8_t *)request_0x06, modbus_master_info->tx_size,
+	                          (uint8_t *)modbus_master_response_0x06, modbus_master_info->rx_size,
+	                          modbus_master_info->rx_timeout);
 
 	if(rx_size != modbus_master_info->rx_size) {
-		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		debug("\n");
 		return ret;
 	}
 
 	//_hexdump("modbus_master_info->tx_buffer", (const char *)request_0x06, modbus_master_info->tx_size);
 
 	if(modbus_master_response_0x06->head.station != station) {
-		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		debug("\n");
 		return ret;
 	}
 
 	if(modbus_master_response_0x06->head.fn != 0x06) {
-		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		debug("\n");
 		return ret;
 	}
 
 	if(addr != get_modbus_addr(&modbus_master_response_0x06->addr)) {
-		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		debug("\n");
 		return ret;
 	}
 
 	if(value != get_modbus_data_item(&modbus_master_response_0x06->data)) {
-		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		debug("\n");
 		return ret;
 	}
 
@@ -308,7 +307,7 @@ int modbus_master_write_one_item(modbus_master_info_t *modbus_master_info, uint8
 	modbus_crc = (modbus_crc_t *)&modbus_master_response_0x06->crc;
 
 	if(crc != get_modbus_crc(modbus_crc)) {
-		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		debug("\n");
 		return ret;
 	}
 
@@ -342,7 +341,7 @@ int modbus_master_write_items(modbus_master_info_t *modbus_master_info, uint8_t 
 	int i;
 
 	if(number == 0) {
-		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		debug("\n");
 		return ret;
 	}
 
@@ -355,7 +354,7 @@ int modbus_master_write_items(modbus_master_info_t *modbus_master_info, uint8_t 
 
 	for(i = 0; i < number; i++) {
 		uint16_t value = values[i];
-		_printf("multi-write addr:%d, data:%d(%x)\n", addr + i, value, value);
+		debug("multi-write addr:%d, data:%d(%x)\n", addr + i, value, value);
 		set_modbus_data_item(data_item + i, value);
 	}
 
@@ -369,39 +368,39 @@ int modbus_master_write_items(modbus_master_info_t *modbus_master_info, uint8_t 
 	modbus_master_info->rx_size = sizeof(modbus_master_response_0x10_t);
 
 	if(modbus_master_info->rx_size > MODBUS_BUFFER_SIZE) {
-		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		debug("\n");
 		return ret;
 	}
 
 	rx_size = uart_tx_rx_data(modbus_master_info->uart_info,
-	                      (uint8_t *)modbus_master_request_0x10_head, modbus_master_info->tx_size,
-	                      (uint8_t *)modbus_master_response_0x10, modbus_master_info->rx_size,
-	                      modbus_master_info->rx_timeout);
+	                          (uint8_t *)modbus_master_request_0x10_head, modbus_master_info->tx_size,
+	                          (uint8_t *)modbus_master_response_0x10, modbus_master_info->rx_size,
+	                          modbus_master_info->rx_timeout);
 
 	if(rx_size != modbus_master_info->rx_size) {
-		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		debug("\n");
 		return ret;
 	}
 
 	//_hexdump("modbus_master_info->rx_buffer", (const char *)modbus_master_response_0x10, modbus_master_info->rx_size);
 
 	if(modbus_master_response_0x10->head.station != station) {
-		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		debug("\n");
 		return ret;
 	}
 
 	if(modbus_master_response_0x10->head.fn != 0x10) {
-		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		debug("\n");
 		return ret;
 	}
 
 	if(addr != get_modbus_addr(&modbus_master_response_0x10->addr)) {
-		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		debug("\n");
 		return ret;
 	}
 
 	if(number != get_modbus_number(&modbus_master_response_0x10->number)) {
-		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		debug("\n");
 		return ret;
 	}
 
@@ -411,7 +410,7 @@ int modbus_master_write_items(modbus_master_info_t *modbus_master_info, uint8_t 
 	modbus_crc = &modbus_master_response_0x10->crc;
 
 	if(crc != get_modbus_crc(modbus_crc)) {
-		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		debug("\n");
 		return ret;
 	}
 

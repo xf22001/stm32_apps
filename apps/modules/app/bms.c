@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年06月02日 星期二 17时53分40秒
+ *   修改日期：2020年06月15日 星期一 14时25分47秒
  *   描    述：
  *
  *================================================================*/
@@ -1053,7 +1053,7 @@ static int bms_info_set_bms_info_config(bms_info_t *bms_info, bms_info_config_t 
 
 	bms_can_info_init(bms_info);
 
-	modbus_slave_info = get_or_alloc_modbus_slave_info(bms_info_config->huart);
+	modbus_slave_info = get_or_alloc_modbus_slave_info(bms_info_config->huart_modbus);
 
 	if(modbus_slave_info == NULL) {
 		return ret;
