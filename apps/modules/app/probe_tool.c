@@ -1,12 +1,12 @@
 
 
 /*================================================================
- *   
- *   
+ *
+ *
  *   文件名称：probe_tool.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 08时02分35秒
- *   修改日期：2020年06月08日 星期一 17时02分55秒
+ *   修改日期：2020年06月17日 星期三 14时45分53秒
  *   描    述：
  *
  *================================================================*/
@@ -33,6 +33,7 @@ static int probe_server_sock = -1;
 static struct sockaddr_in probe_client_address_in;
 static struct sockaddr_in log_client_address_in;
 static uint8_t log_client_address_valid = 0;
+static uint32_t log_client_active_stamp = 0;
 
 static char probe_recv_buffer[RECV_BUFFER_SIZE];
 static char probe_send_buffer[SEND_BUFFER_SIZE];
@@ -226,6 +227,7 @@ static void probe_server_recv(void)
 	struct fd_set fds;
 	struct timeval tv = {1, 0};
 	int max_fd = 0;
+	uint32_t ticks;
 
 	FD_ZERO(&fds);
 	FD_SET(probe_server_sock, &fds);
@@ -242,6 +244,8 @@ static void probe_server_recv(void)
 
 	select_timeout_count++;
 
+	ticks = osKernelSysTick();
+
 	if(ret > 0) {
 		if(FD_ISSET(probe_server_sock, &fds)) {
 			socklen_t socklen = sizeof(probe_client_address_in);
@@ -249,12 +253,17 @@ static void probe_server_recv(void)
 			log_client_address_in = probe_client_address_in;
 			log_client_address_in.sin_port = htons(LOG_TOOL_PORT);
 
+			log_client_active_stamp = ticks;
 			log_client_address_valid = 1;
 
 			if(ret > 0) {
 				probe_server_process_message(ret);
 			}
 
+		}
+	} else {
+		if(ticks - log_client_active_stamp >= (3 * 1000)) {
+			log_client_address_valid = 0;
 		}
 	}
 }
