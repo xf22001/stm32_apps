@@ -6,7 +6,7 @@
  *   文件名称：power_modules.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时34分29秒
- *   修改日期：2020年05月25日 星期一 16时36分43秒
+ *   修改日期：2020年06月18日 星期四 09时04分12秒
  *   描    述：
  *
  *================================================================*/
@@ -131,6 +131,14 @@ static int power_modules_set_channels_info_config(power_modules_info_t *power_mo
 	int ret = -1;
 	int i;
 	int max_cmd_size = get_power_modules_handler_max_cmd_size();
+
+	can_info_t *can_info = get_or_alloc_can_info(channels_info_config->hcan_power);
+
+	if(can_info == NULL) {
+		return ret;
+	}
+
+	power_modules_info->can_info = can_info;
 
 	for(i = 0; i < POWER_MODULES_SIZE; i++) {
 		power_module_info_t *power_module_info = power_modules_info->power_module_info + i;
