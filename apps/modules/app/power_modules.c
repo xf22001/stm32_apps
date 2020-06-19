@@ -6,7 +6,7 @@
  *   文件名称：power_modules.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时34分29秒
- *   修改日期：2020年06月18日 星期四 09时04分12秒
+ *   修改日期：2020年06月19日 星期五 13时16分04秒
  *   描    述：
  *
  *================================================================*/
@@ -16,6 +16,8 @@
 #include "power_modules_handler_huawei.h"
 #include "power_modules_handler_increase.h"
 #include <string.h>
+
+#include "log.h"
 
 static LIST_HEAD(power_modules_info_list);
 static osMutexId power_modules_info_list_mutex = NULL;
@@ -135,6 +137,7 @@ static int power_modules_set_channels_info_config(power_modules_info_t *power_mo
 	can_info_t *can_info = get_or_alloc_can_info(channels_info_config->hcan_power);
 
 	if(can_info == NULL) {
+		debug("\n");
 		return ret;
 	}
 
@@ -146,11 +149,13 @@ static int power_modules_set_channels_info_config(power_modules_info_t *power_mo
 		power_module_info->module_cmd_ctx = (module_cmd_ctx_t *)os_alloc(sizeof(module_cmd_ctx_t) * max_cmd_size);
 
 		if(power_module_info->module_cmd_ctx == NULL) {
+			debug("\n");
 			return ret;
 		}
 	}
 
 	if(power_modules_set_type(power_modules_info, POWER_MODULE_TYPE_INCREASE) != 0) {
+		debug("\n");
 		return ret;
 	}
 
@@ -163,10 +168,6 @@ power_modules_info_t *get_or_alloc_power_modules_info(channels_info_config_t *ch
 	power_modules_info_t *power_modules_info = NULL;
 	osStatus os_status;
 
-	if(channels_info_config == NULL) {
-		return power_modules_info;
-	}
-
 	power_modules_info = get_power_modules_info(channels_info_config);
 
 	if(power_modules_info != NULL) {
@@ -178,6 +179,7 @@ power_modules_info_t *get_or_alloc_power_modules_info(channels_info_config_t *ch
 		power_modules_info_list_mutex = osMutexCreate(osMutex(power_modules_info_list_mutex));
 
 		if(power_modules_info_list_mutex == NULL) {
+			debug("\n");
 			return power_modules_info;
 		}
 	}
@@ -185,6 +187,7 @@ power_modules_info_t *get_or_alloc_power_modules_info(channels_info_config_t *ch
 	power_modules_info = (power_modules_info_t *)os_alloc(sizeof(power_modules_info_t));
 
 	if(power_modules_info == NULL) {
+		debug("\n");
 		return power_modules_info;
 	}
 
@@ -205,6 +208,7 @@ power_modules_info_t *get_or_alloc_power_modules_info(channels_info_config_t *ch
 	}
 
 	if(power_modules_set_channels_info_config(power_modules_info, channels_info_config) != 0) {
+		debug("\n");
 		goto failed;
 	}
 
@@ -225,9 +229,10 @@ int power_modules_set_type(power_modules_info_t *power_modules_info, power_modul
 	int i;
 	power_modules_handler_t *power_modules_handler;
 
-	power_modules_handler = get_power_modules_handler(power_modules_info->power_module_type);
+	power_modules_handler = get_power_modules_handler(power_module_type);
 
 	if(power_modules_handler == NULL) {
+		debug("\n");
 		return ret;
 	}
 
