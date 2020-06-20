@@ -6,7 +6,7 @@
  *   文件名称：list_utils.h
  *   创 建 者：肖飞
  *   创建日期：2020年03月19日 星期四 13时41分50秒
- *   修改日期：2020年03月19日 星期四 13时42分22秒
+ *   修改日期：2020年06月20日 星期六 12时54分50秒
  *   描    述：
  *
  *================================================================*/
@@ -189,6 +189,14 @@ static inline int list_empty(const struct list_head *head)
  */
 #define list_next_entry(pos, type, member) \
 	list_entry((pos)->member.next, type, member)
+
+/**
+ * list_prev_entry - get the prev element in list
+ * @pos:	the type * to cursor
+ * @member:	the name of the list_head within the struct.
+ */
+#define list_prev_entry(pos, member) \
+	list_entry((pos)->member.prev, typeof(*(pos)), member)
 
 /**
  * list_first_entry - get the first element from a list

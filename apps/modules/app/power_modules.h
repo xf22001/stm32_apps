@@ -6,7 +6,7 @@
  *   文件名称：power_modules.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时37分07秒
- *   修改日期：2020年05月25日 星期一 16时35分29秒
+ *   修改日期：2020年06月20日 星期六 10时56分04秒
  *   描    述：
  *
  *================================================================*/
@@ -27,7 +27,7 @@ extern "C"
 }
 #endif
 
-#define POWER_MODULES_SIZE 20
+#define POWER_MODULES_SIZE 2
 #define CONNECT_STATE_SIZE 10
 
 typedef enum {
