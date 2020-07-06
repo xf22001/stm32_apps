@@ -6,7 +6,7 @@
  *   文件名称：net_protocol_ws.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月23日 星期日 12时23分31秒
- *   修改日期：2020年06月15日 星期一 10时44分03秒
+ *   修改日期：2020年07月02日 星期四 17时34分03秒
  *   描    述：
  *
  *================================================================*/
@@ -36,14 +36,14 @@ void free_1(void *p);
 
 static void *os_alloc_1(size_t size)
 {
-	return malloc_1(size);
-	//return os_alloc(size);
+	//return malloc_1(size);
+	return os_alloc(size);
 }
 
 static void os_free_1(void *p)
 {
-	free_1(p);
-	//os_free(p);
+	//free_1(p);
+	os_free(p);
 }
 
 static void *os_calloc(size_t nmemb, size_t size)

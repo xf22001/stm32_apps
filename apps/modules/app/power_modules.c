@@ -6,7 +6,7 @@
  *   文件名称：power_modules.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时34分29秒
- *   修改日期：2020年06月19日 星期五 13时16分04秒
+ *   修改日期：2020年07月06日 星期一 10时38分58秒
  *   描    述：
  *
  *================================================================*/
@@ -117,12 +117,16 @@ void free_power_modules_info(power_modules_info_t *power_modules_info)
 	if(os_status != osOK) {
 	}
 
-	for(i = 0; i < POWER_MODULES_SIZE; i++) {
+	for(i = 0; i < power_modules_info->power_module_number; i++) {
 		power_module_info_t *power_module_info = power_modules_info->power_module_info + i;
 
 		if(power_module_info->module_cmd_ctx != NULL) {
 			os_free(power_module_info->module_cmd_ctx);
 		}
+	}
+
+	if(power_modules_info->power_module_info != NULL) {
+		os_free(power_modules_info->power_module_info);
 	}
 
 	os_free(power_modules_info);
@@ -132,9 +136,19 @@ static int power_modules_set_channels_info_config(power_modules_info_t *power_mo
 {
 	int ret = -1;
 	int i;
+
+	can_info_t *can_info;
+	power_module_info_t *power_module_info;
 	int max_cmd_size = get_power_modules_handler_max_cmd_size();
 
-	can_info_t *can_info = get_or_alloc_can_info(channels_info_config->hcan_power);
+	power_modules_info->power_module_number = channels_info_config->power_module_number;
+
+	if(power_modules_info->power_module_number == 0) {
+		debug("\n");
+		return ret;
+	}
+
+	can_info = get_or_alloc_can_info(channels_info_config->hcan_power);
 
 	if(can_info == NULL) {
 		debug("\n");
@@ -143,7 +157,16 @@ static int power_modules_set_channels_info_config(power_modules_info_t *power_mo
 
 	power_modules_info->can_info = can_info;
 
-	for(i = 0; i < POWER_MODULES_SIZE; i++) {
+	power_module_info = (power_module_info_t *)os_alloc(sizeof(power_module_info_t) * power_modules_info->power_module_number);
+
+	if(power_module_info == NULL) {
+		debug("\n");
+		return ret;
+	}
+
+	power_modules_info->power_module_info = power_module_info;
+
+	for(i = 0; i < power_modules_info->power_module_number; i++) {
 		power_module_info_t *power_module_info = power_modules_info->power_module_info + i;
 
 		power_module_info->module_cmd_ctx = (module_cmd_ctx_t *)os_alloc(sizeof(module_cmd_ctx_t) * max_cmd_size);
@@ -236,7 +259,7 @@ int power_modules_set_type(power_modules_info_t *power_modules_info, power_modul
 		return ret;
 	}
 
-	for(i = 0; i < POWER_MODULES_SIZE; i++) {
+	for(i = 0; i < power_modules_info->power_module_number; i++) {
 		power_module_info_t *power_module_info = power_modules_info->power_module_info + i;
 
 		memset(power_module_info->module_cmd_ctx, 0, sizeof(module_cmd_ctx_t) * power_modules_handler->cmd_size);
@@ -253,6 +276,11 @@ void set_out_voltage_current(power_modules_info_t *power_modules_info, int modul
 {
 	power_modules_handler_t *power_modules_handler = (power_modules_handler_t *)power_modules_info->power_modules_handler;
 
+	if(module_id >= power_modules_info->power_module_number) {
+		debug("\n");
+		return;
+	}
+
 	if(power_modules_handler == NULL) {
 		return;
 	}
@@ -267,6 +295,11 @@ void set_out_voltage_current(power_modules_info_t *power_modules_info, int modul
 void set_poweroff(power_modules_info_t *power_modules_info, int module_id, uint8_t poweroff)
 {
 	power_modules_handler_t *power_modules_handler = (power_modules_handler_t *)power_modules_info->power_modules_handler;
+
+	if(module_id >= power_modules_info->power_module_number) {
+		debug("\n");
+		return;
+	}
 
 	if(power_modules_handler == NULL) {
 		return;
@@ -283,6 +316,11 @@ void query_status(power_modules_info_t *power_modules_info, int module_id)
 {
 	power_modules_handler_t *power_modules_handler = (power_modules_handler_t *)power_modules_info->power_modules_handler;
 
+	if(module_id >= power_modules_info->power_module_number) {
+		debug("\n");
+		return;
+	}
+
 	if(power_modules_handler == NULL) {
 		return;
 	}
@@ -297,6 +335,11 @@ void query_status(power_modules_info_t *power_modules_info, int module_id)
 void query_a_line_input_voltage(power_modules_info_t *power_modules_info, int module_id)
 {
 	power_modules_handler_t *power_modules_handler = (power_modules_handler_t *)power_modules_info->power_modules_handler;
+
+	if(module_id >= power_modules_info->power_module_number) {
+		debug("\n");
+		return;
+	}
 
 	if(power_modules_handler == NULL) {
 		return;
@@ -313,6 +356,11 @@ void query_b_line_input_voltage(power_modules_info_t *power_modules_info, int mo
 {
 	power_modules_handler_t *power_modules_handler = (power_modules_handler_t *)power_modules_info->power_modules_handler;
 
+	if(module_id >= power_modules_info->power_module_number) {
+		debug("\n");
+		return;
+	}
+
 	if(power_modules_handler == NULL) {
 		return;
 	}
@@ -327,6 +375,11 @@ void query_b_line_input_voltage(power_modules_info_t *power_modules_info, int mo
 void query_c_line_input_voltage(power_modules_info_t *power_modules_info, int module_id)
 {
 	power_modules_handler_t *power_modules_handler = (power_modules_handler_t *)power_modules_info->power_modules_handler;
+
+	if(module_id >= power_modules_info->power_module_number) {
+		debug("\n");
+		return;
+	}
 
 	if(power_modules_handler == NULL) {
 		return;

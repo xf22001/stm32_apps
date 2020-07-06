@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_increase.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 17时36分29秒
- *   修改日期：2020年05月25日 星期一 16时45分45秒
+ *   修改日期：2020年07月06日 星期一 09时53分52秒
  *   描    述：
  *
  *================================================================*/
@@ -479,7 +479,7 @@ static void power_modules_request_increase(power_modules_info_t *power_modules_i
 	int ret;
 	int module_addr;
 
-	for(module_id = 0; module_id < POWER_MODULES_SIZE; module_id++) {
+	for(module_id = 0; module_id < power_modules_info->power_module_number; module_id++) {
 		for(i = 0; i < ARRAY_SIZE(module_command_item_table); i++) {
 			module_command_item_t *item = module_command_item_table[i];
 
@@ -559,7 +559,7 @@ static int power_modules_response_increase(power_modules_info_t *power_modules_i
 			module_addr = 1;
 		}
 
-		if((module_addr <= POWER_MODULES_SIZE) && (module_addr >= 1)) {
+		if((module_addr <= power_modules_info->power_module_number) && (module_addr >= 1)) {
 			module_id = module_addr - 1;
 		} else {
 			return ret;

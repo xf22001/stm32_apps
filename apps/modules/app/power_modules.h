@@ -6,7 +6,7 @@
  *   文件名称：power_modules.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时37分07秒
- *   修改日期：2020年06月20日 星期六 15时38分42秒
+ *   修改日期：2020年07月06日 星期一 09时34分18秒
  *   描    述：
  *
  *================================================================*/
@@ -27,7 +27,6 @@ extern "C"
 }
 #endif
 
-#define POWER_MODULES_SIZE 12
 #define CONNECT_STATE_SIZE 10
 
 typedef enum {
@@ -75,7 +74,7 @@ typedef struct {
 
 	power_module_status_t power_module_status;//模块状态
 
-	module_cmd_ctx_t *module_cmd_ctx;
+	module_cmd_ctx_t *module_cmd_ctx;//os_alloc
 	uint8_t connect_state[CONNECT_STATE_SIZE];//连接状态
 	uint8_t connect_state_index;//连接状态索引
 } power_module_info_t;
@@ -89,7 +88,8 @@ typedef struct {
 
 	power_module_type_t power_module_type;
 	void *power_modules_handler;
-	power_module_info_t power_module_info[POWER_MODULES_SIZE];
+	uint8_t power_module_number;
+	power_module_info_t *power_module_info;//os_alloc
 	uint16_t rate_current;//华为模块参考电流 a
 } power_modules_info_t;
 
