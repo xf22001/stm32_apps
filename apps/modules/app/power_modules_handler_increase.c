@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_increase.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 17时36分29秒
- *   修改日期：2020年07月09日 星期四 13时20分25秒
+ *   修改日期：2020年07月09日 星期四 13时41分18秒
  *   描    述：
  *
  *================================================================*/
@@ -371,7 +371,7 @@ static int response_0x10_0x0c(power_modules_info_t *power_modules_info, int modu
 	}
 
 	for(i = 0; i < power_modules_info->power_module_number; i++) {
-		power_module_info_t *power_module_info = power_modules_info->power_module_info + i;
+		power_module_info = power_modules_info->power_module_info + i;
 		power_module_info->input_aline_voltage = input_aline_voltage;
 	}
 
@@ -426,7 +426,7 @@ static int response_0x10_0x0d(power_modules_info_t *power_modules_info, int modu
 	}
 
 	for(i = 0; i < power_modules_info->power_module_number; i++) {
-		power_module_info_t *power_module_info = power_modules_info->power_module_info + i;
+		power_module_info = power_modules_info->power_module_info + i;
 		power_module_info->input_bline_voltage = input_bline_voltage;
 	}
 
@@ -481,7 +481,7 @@ static int response_0x10_0x0e(power_modules_info_t *power_modules_info, int modu
 	}
 
 	for(i = 0; i < power_modules_info->power_module_number; i++) {
-		power_module_info_t *power_module_info = power_modules_info->power_module_info + i;
+		power_module_info = power_modules_info->power_module_info + i;
 		power_module_info->input_cline_voltage = input_cline_voltage;
 	}
 
