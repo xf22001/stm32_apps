@@ -6,7 +6,7 @@
  *   文件名称：power_modules.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时37分07秒
- *   修改日期：2020年07月06日 星期一 09时34分18秒
+ *   修改日期：2020年07月09日 星期四 11时04分49秒
  *   描    述：
  *
  *================================================================*/
@@ -22,6 +22,7 @@ extern "C"
 #include "list_utils.h"
 
 #include "channels_config.h"
+#include "can_command.h"
 
 #ifdef __cplusplus
 }
@@ -49,18 +50,6 @@ typedef struct {
           uint16_t setting_poweroff : 1;//1:设置关机 0:设置开机
 } power_module_status_t;
 
-typedef enum {
-	MODULE_CMD_STATE_IDLE = 0,
-	MODULE_CMD_STATE_REQUEST,
-	MODULE_CMD_STATE_RESPONSE,
-	MODULE_CMD_STATE_ERROR,
-} module_cmd_state_t;
-
-typedef struct {
-	module_cmd_state_t state;
-	uint32_t retry;
-} module_cmd_ctx_t;
-
 typedef struct {
 	uint32_t setting_voltage;//模块设置输出电压 mv
 	uint16_t setting_current;//模块设置输出电流 ma
@@ -74,9 +63,8 @@ typedef struct {
 
 	power_module_status_t power_module_status;//模块状态
 
-	module_cmd_ctx_t *module_cmd_ctx;//os_alloc
-	uint8_t connect_state[CONNECT_STATE_SIZE];//连接状态
-	uint8_t connect_state_index;//连接状态索引
+	can_com_cmd_ctx_t *cmd_ctx;//os_alloc
+	can_com_connect_state_t connect_state;
 } power_module_info_t;
 
 typedef struct {
@@ -85,6 +73,8 @@ typedef struct {
 	channels_info_config_t *channels_info_config;
 	can_tx_msg_t can_tx_msg;
 	can_rx_msg_t *can_rx_msg;
+
+	uint32_t periodic_stamp;
 
 	power_module_type_t power_module_type;
 	void *power_modules_handler;

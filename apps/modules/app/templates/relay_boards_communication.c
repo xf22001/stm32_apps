@@ -6,7 +6,7 @@
  *   文件名称：relay_boards_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年07月06日 星期一 14时29分27秒
- *   修改日期：2020年07月07日 星期二 15时04分21秒
+ *   修改日期：2020年07月09日 星期四 10时36分39秒
  *   描    述：
  *
  *================================================================*/
@@ -18,7 +18,7 @@
 
 #include "relay_board_command.h"
 
-//#define LOG_NONE
+#define LOG_NONE
 #include "log.h"
 
 typedef struct {
@@ -159,9 +159,9 @@ void free_relay_boards_com_info(relay_boards_com_info_t *relay_boards_com_info)
 	os_free(relay_boards_com_info);
 }
 
-static uint32_t cmd_ctx_offset(uint8_t cmd, uint8_t relay_board_number, uint8_t relay_board_id)
+static uint32_t cmd_ctx_offset(uint8_t relay_board_id, uint8_t cmd)
 {
-	return cmd * relay_board_number + relay_board_id;
+	return RELAY_BOARD_CMD_TOTAL * relay_board_id + cmd;
 }
 
 static int relay_boards_com_info_set_channels_config(relay_boards_com_info_t *relay_boards_com_info, channels_info_config_t *channels_info_config)
@@ -186,21 +186,21 @@ static int relay_boards_com_info_set_channels_config(relay_boards_com_info_t *re
 
 	debug("relay_board_number:%d\n", relay_board_number);
 
-	can_com_cmd_ctx = (can_com_cmd_ctx_t *)os_alloc(sizeof(can_com_cmd_ctx_t) * relay_board_number * RELAY_BOARD_CMD_TOTAL);
+	can_com_cmd_ctx = (can_com_cmd_ctx_t *)os_alloc(sizeof(can_com_cmd_ctx_t) * RELAY_BOARD_CMD_TOTAL * relay_board_number);
 
 	if(can_com_cmd_ctx == NULL) {
 		return ret;
 	}
 
-	memset(can_com_cmd_ctx, 0, sizeof(can_com_cmd_ctx_t) * relay_board_number * RELAY_BOARD_CMD_TOTAL);
+	memset(can_com_cmd_ctx, 0, sizeof(can_com_cmd_ctx_t) * RELAY_BOARD_CMD_TOTAL * relay_board_number);
 
 	relay_boards_com_info->cmd_ctx = can_com_cmd_ctx;
 
 	for(i = 0; i < relay_board_number; i++) {
-		relay_boards_com_info->cmd_ctx[cmd_ctx_offset(RELAY_BOARD_CMD_RELAY_BOARDS_HEARTBEAT, relay_board_number, i)].available = 1;
+		relay_boards_com_info->cmd_ctx[cmd_ctx_offset(i, RELAY_BOARD_CMD_RELAY_BOARDS_HEARTBEAT)].available = 1;
 	}
 
-	//relay_boards_com_info->cmd_ctx[cmd_ctx_offset(RELAY_BOARD_CMD_RELAY_BOARDS_HEARTBEAT, relay_board_number, 0)].available = 1;
+	//relay_boards_com_info->cmd_ctx[cmd_ctx_offset(0, RELAY_BOARD_CMD_RELAY_BOARDS_HEARTBEAT)].available = 1;
 
 	relay_boards_com_data_ctx = (data_ctx_t *)os_alloc(sizeof(data_ctx_t) * relay_board_number);
 
@@ -349,7 +349,7 @@ static int prepare_request(relay_boards_com_info_t *relay_boards_com_info, uint8
 
 	uint8_t relay_board_id = request_get_id(relay_boards_com_info);
 	uint8_t relay_board_number = relay_boards_com_info->relay_board_number;
-	uint8_t cmd_ctx_index = cmd_ctx_offset(cmd, relay_board_number, relay_board_id);
+	uint8_t cmd_ctx_index = cmd_ctx_offset(relay_board_id, cmd);
 	can_com_cmd_ctx_t *cmd_ctx = relay_boards_com_info->cmd_ctx + cmd_ctx_index;
 	can_com_cmd_common_t *can_com_cmd_common = (can_com_cmd_common_t *)relay_boards_com_info->can_tx_msg.Data;
 
@@ -368,7 +368,7 @@ static int process_response(relay_boards_com_info_t *relay_boards_com_info, uint
 	int ret = -1;
 	uint8_t relay_board_id = response_get_id(relay_boards_com_info);
 	uint8_t relay_board_number = relay_boards_com_info->relay_board_number;
-	uint8_t cmd_ctx_index = cmd_ctx_offset(cmd, relay_board_number, relay_board_id);
+	uint8_t cmd_ctx_index = cmd_ctx_offset(relay_board_id, cmd);
 	can_com_cmd_ctx_t *cmd_ctx = relay_boards_com_info->cmd_ctx + cmd_ctx_index;
 	can_com_cmd_response_t *can_com_cmd_response = (can_com_cmd_response_t *)relay_boards_com_info->can_rx_msg->Data;
 
@@ -388,7 +388,7 @@ static int prepare_response(relay_boards_com_info_t *relay_boards_com_info, uint
 
 	uint8_t relay_board_id = request_get_id(relay_boards_com_info);
 	uint8_t relay_board_number = relay_boards_com_info->relay_board_number;
-	uint8_t cmd_ctx_index = cmd_ctx_offset(cmd, relay_board_number, relay_board_id);
+	uint8_t cmd_ctx_index = cmd_ctx_offset(relay_board_id, cmd);
 	can_com_cmd_ctx_t *cmd_ctx = relay_boards_com_info->cmd_ctx + cmd_ctx_index;
 	can_com_cmd_response_t *can_com_cmd_response = (can_com_cmd_response_t *)relay_boards_com_info->can_tx_msg.Data;
 
@@ -407,7 +407,7 @@ static int process_request(relay_boards_com_info_t *relay_boards_com_info, uint8
 	int ret = -1;
 	uint8_t relay_board_id = response_get_id(relay_boards_com_info);
 	uint8_t relay_board_number = relay_boards_com_info->relay_board_number;
-	uint8_t cmd_ctx_index = cmd_ctx_offset(cmd, relay_board_number, relay_board_id);
+	uint8_t cmd_ctx_index = cmd_ctx_offset(relay_board_id, cmd);
 	can_com_cmd_ctx_t *cmd_ctx = relay_boards_com_info->cmd_ctx + cmd_ctx_index;
 	can_com_cmd_common_t *can_com_cmd_common = (can_com_cmd_common_t *)relay_boards_com_info->can_rx_msg->Data;
 
@@ -499,7 +499,7 @@ static int request_relay_boards_heartbeat(relay_boards_com_info_t *relay_boards_
 	data_ctx_t *data_ctx = request_get_data_ctx(relay_boards_com_info);
 	uint8_t relay_board_id = request_get_id(relay_boards_com_info);
 	uint8_t relay_board_number = relay_boards_com_info->relay_board_number;
-	uint8_t cmd_ctx_index = cmd_ctx_offset(RELAY_BOARD_CMD_RELAY_BOARDS_HEARTBEAT, relay_board_number, relay_board_id);
+	uint8_t cmd_ctx_index = cmd_ctx_offset(relay_board_id, RELAY_BOARD_CMD_RELAY_BOARDS_HEARTBEAT);
 	can_com_cmd_ctx_t *cmd_ctx = relay_boards_com_info->cmd_ctx + cmd_ctx_index;
 
 	if(relay_board_id >= relay_board_number) {
@@ -520,8 +520,9 @@ static int response_relay_boards_heartbeat(relay_boards_com_info_t *relay_boards
 	int ret = -1;
 	//uint8_t relay_board_id = response_get_id(relay_boards_com_info);
 	//uint8_t relay_board_number = relay_boards_com_info->relay_board_number;
-	//uint8_t cmd_ctx_index = cmd_ctx_offset(RELAY_BOARD_CMD_RELAY_BOARDS_HEARTBEAT, relay_board_number, relay_board_id);
+	//uint8_t cmd_ctx_index = cmd_ctx_offset(relay_board_id, RELAY_BOARD_CMD_RELAY_BOARDS_HEARTBEAT);
 	//can_com_cmd_ctx_t *cmd_ctx = relay_boards_com_info->cmd_ctx + cmd_ctx_index;
+	//can_com_cmd_ctx_t *cmd_ctx_next;
 	//uint8_t next_relay_board_id = relay_board_id;
 
 	//if(relay_board_id >= relay_board_number) {
@@ -534,13 +535,15 @@ static int response_relay_boards_heartbeat(relay_boards_com_info_t *relay_boards
 	//} else {
 	//	next_relay_board_id += 1;
 	//}
+	//
+	//cmd_ctx_next = relay_boards_com_info->cmd_ctx + next_relay_board_id;
 
 	ret = process_response(relay_boards_com_info, RELAY_BOARD_CMD_RELAY_BOARDS_HEARTBEAT, sizeof(relay_boards_heartbeat_t));
 
 
 	//if(cmd_ctx->state == CAN_COM_STATE_IDLE) {
 	//	cmd_ctx->available = 0;
-	//	relay_boards_com_info->cmd_ctx[cmd_ctx_offset(RELAY_BOARD_CMD_RELAY_BOARDS_HEARTBEAT, relay_board_number, next_relay_board_id)].available = 1;
+	//	cmd_ctx_next->available = 1;
 
 	//	debug("cmd %d(%s), disable relay_board %d, enable relay_board %d\n", RELAY_BOARD_CMD_RELAY_BOARDS_HEARTBEAT, get_relay_board_cmd_des(RELAY_BOARD_CMD_RELAY_BOARDS_HEARTBEAT), relay_board_id, next_relay_board_id);
 	//}
@@ -591,7 +594,7 @@ static void relay_boards_com_request_periodic(relay_boards_com_info_t *relay_boa
 		uint8_t relay_board_number = relay_boards_com_info->relay_board_number;
 
 		for(j = 0; j < relay_board_number; j++) {
-			uint8_t cmd_ctx_index = cmd_ctx_offset(item->cmd, relay_board_number, j);
+			uint8_t cmd_ctx_index = cmd_ctx_offset(j, item->cmd);
 			can_com_cmd_ctx_t *cmd_ctx = relay_boards_com_info->cmd_ctx + cmd_ctx_index;
 
 			if(cmd_ctx->state == CAN_COM_STATE_RESPONSE) {//超时
@@ -603,7 +606,7 @@ static void relay_boards_com_request_periodic(relay_boards_com_info_t *relay_boa
 					      cmd_ctx->index,
 					      j,
 					      relay_boards_com_get_connect_state(relay_boards_com_info, j));
-					relay_boards_com_info->cmd_ctx[cmd_ctx_offset(item->cmd, relay_board_number, j)].state = CAN_COM_STATE_REQUEST;
+					cmd_ctx->state = CAN_COM_STATE_REQUEST;
 				}
 			}
 
@@ -642,7 +645,7 @@ void relay_boards_com_request(relay_boards_com_info_t *relay_boards_com_info)
 
 		for(j = 0; j < relay_board_number; j++) {
 			uint32_t ticks = osKernelSysTick();
-			uint8_t cmd_ctx_index = cmd_ctx_offset(item->cmd, relay_board_number, j);
+			uint8_t cmd_ctx_index = cmd_ctx_offset(j, item->cmd);
 			can_com_cmd_ctx_t *cmd_ctx = relay_boards_com_info->cmd_ctx + cmd_ctx_index;
 			can_com_cmd_common_t *can_com_cmd_common = (can_com_cmd_common_t *)relay_boards_com_info->can_tx_msg.Data;
 			u_com_can_tx_id_t *u_com_can_tx_id = (u_com_can_tx_id_t *)&relay_boards_com_info->can_tx_msg.ExtId;
@@ -673,7 +676,7 @@ void relay_boards_com_request(relay_boards_com_info_t *relay_boards_com_info)
 			ret = item->request_callback(relay_boards_com_info);
 
 			if(ret != 0) {
-				debug("process request cmd %d(%s), index %d, relay_board %d error!\n", item->cmd, get_relay_board_cmd_des(item->cmd), relay_boards_com_info->cmd_ctx[cmd_ctx_offset(item->cmd, relay_board_number, j)].index, j);
+				debug("process request cmd %d(%s), index %d, relay_board %d error!\n", item->cmd, get_relay_board_cmd_des(item->cmd), cmd_ctx->index, j);
 				continue;
 			}
 

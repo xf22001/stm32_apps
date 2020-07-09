@@ -6,7 +6,7 @@
  *   文件名称：power_modules.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时34分29秒
- *   修改日期：2020年07月06日 星期一 10时38分58秒
+ *   修改日期：2020年07月09日 星期四 12时48分57秒
  *   描    述：
  *
  *================================================================*/
@@ -120,8 +120,8 @@ void free_power_modules_info(power_modules_info_t *power_modules_info)
 	for(i = 0; i < power_modules_info->power_module_number; i++) {
 		power_module_info_t *power_module_info = power_modules_info->power_module_info + i;
 
-		if(power_module_info->module_cmd_ctx != NULL) {
-			os_free(power_module_info->module_cmd_ctx);
+		if(power_module_info->cmd_ctx != NULL) {
+			os_free(power_module_info->cmd_ctx);
 		}
 	}
 
@@ -140,6 +140,8 @@ static int power_modules_set_channels_info_config(power_modules_info_t *power_mo
 	can_info_t *can_info;
 	power_module_info_t *power_module_info;
 	int max_cmd_size = get_power_modules_handler_max_cmd_size();
+
+	debug("power_module_number:%d\n", channels_info_config->power_module_number);
 
 	power_modules_info->power_module_number = channels_info_config->power_module_number;
 
@@ -169,9 +171,9 @@ static int power_modules_set_channels_info_config(power_modules_info_t *power_mo
 	for(i = 0; i < power_modules_info->power_module_number; i++) {
 		power_module_info_t *power_module_info = power_modules_info->power_module_info + i;
 
-		power_module_info->module_cmd_ctx = (module_cmd_ctx_t *)os_alloc(sizeof(module_cmd_ctx_t) * max_cmd_size);
+		power_module_info->cmd_ctx = (can_com_cmd_ctx_t *)os_alloc(sizeof(can_com_cmd_ctx_t) * max_cmd_size);
 
-		if(power_module_info->module_cmd_ctx == NULL) {
+		if(power_module_info->cmd_ctx == NULL) {
 			debug("\n");
 			return ret;
 		}
@@ -262,7 +264,7 @@ int power_modules_set_type(power_modules_info_t *power_modules_info, power_modul
 	for(i = 0; i < power_modules_info->power_module_number; i++) {
 		power_module_info_t *power_module_info = power_modules_info->power_module_info + i;
 
-		memset(power_module_info->module_cmd_ctx, 0, sizeof(module_cmd_ctx_t) * power_modules_handler->cmd_size);
+		memset(power_module_info->cmd_ctx, 0, sizeof(can_com_cmd_ctx_t) * power_modules_handler->cmd_size);
 	}
 
 	power_modules_info->power_module_type = power_module_type;
@@ -424,4 +426,3 @@ int power_modules_response(power_modules_info_t *power_modules_info, can_rx_msg_
 
 	return ret;
 }
-
