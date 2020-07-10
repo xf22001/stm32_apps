@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_increase.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 17时36分29秒
- *   修改日期：2020年07月09日 星期四 13时41分18秒
+ *   修改日期：2020年07月10日 星期五 13时35分55秒
  *   描    述：
  *
  *================================================================*/
@@ -688,8 +688,8 @@ power_modules_handler_t power_modules_handler_increase = {
 	.power_module_type = POWER_MODULE_TYPE_INCREASE,
 	.cmd_size = ARRAY_SIZE(module_command_item_table),
 	.set_out_voltage_current = set_out_voltage_current_increase,
-	.set_poweroff =  set_poweroff_increase,
-	.query_status =  query_status_increase,
+	.set_poweroff = set_poweroff_increase,
+	.query_status = query_status_increase,
 	.query_a_line_input_voltage = query_a_line_input_voltage_increase,
 	.query_b_line_input_voltage =  query_b_line_input_voltage_increase,
 	.query_c_line_input_voltage = query_c_line_input_voltage_increase,

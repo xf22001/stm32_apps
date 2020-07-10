@@ -6,7 +6,7 @@
  *   文件名称：power_modules.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时37分07秒
- *   修改日期：2020年07月09日 星期四 11时04分49秒
+ *   修改日期：2020年07月10日 星期五 12时42分33秒
  *   描    述：
  *
  *================================================================*/
@@ -53,13 +53,15 @@ typedef struct {
 typedef struct {
 	uint32_t setting_voltage;//模块设置输出电压 mv
 	uint16_t setting_current;//模块设置输出电流 ma
+
 	uint16_t output_voltage;//模块输出电压 0.1v
 	uint16_t output_current;//模块输出电流 0.1a
-	uint8_t poweroff;
-	uint8_t automode;
-	uint32_t input_aline_voltage;
-	uint32_t input_bline_voltage;
-	uint32_t input_cline_voltage;
+
+	uint8_t poweroff;//输入
+	uint8_t automode;//输入
+	uint32_t input_aline_voltage;//输出
+	uint32_t input_bline_voltage;//输出
+	uint32_t input_cline_voltage;//输出
 
 	power_module_status_t power_module_status;//模块状态
 
@@ -117,4 +119,5 @@ void query_b_line_input_voltage(power_modules_info_t *power_modules_info, int mo
 void query_c_line_input_voltage(power_modules_info_t *power_modules_info, int module_id);
 void power_modules_request(power_modules_info_t *power_modules_info);
 int power_modules_response(power_modules_info_t *power_modules_info, can_rx_msg_t *can_rx_msg);
+uint8_t get_module_connect_state(power_module_info_t *power_module_info);
 #endif //_POWER_MODULES_H

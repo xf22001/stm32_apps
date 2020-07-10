@@ -6,7 +6,7 @@
  *   文件名称：power_modules.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时34分29秒
- *   修改日期：2020年07月09日 星期四 12时48分57秒
+ *   修改日期：2020年07月10日 星期五 12时42分14秒
  *   描    述：
  *
  *================================================================*/
@@ -166,6 +166,8 @@ static int power_modules_set_channels_info_config(power_modules_info_t *power_mo
 		return ret;
 	}
 
+	memset(power_module_info, 0, sizeof(power_module_info_t) * power_modules_info->power_module_number);
+
 	power_modules_info->power_module_info = power_module_info;
 
 	for(i = 0; i < power_modules_info->power_module_number; i++) {
@@ -177,6 +179,8 @@ static int power_modules_set_channels_info_config(power_modules_info_t *power_mo
 			debug("\n");
 			return ret;
 		}
+
+		memset(power_module_info->cmd_ctx, 0, sizeof(can_com_cmd_ctx_t) * max_cmd_size);
 	}
 
 	if(power_modules_set_type(power_modules_info, POWER_MODULE_TYPE_INCREASE) != 0) {
@@ -425,4 +429,11 @@ int power_modules_response(power_modules_info_t *power_modules_info, can_rx_msg_
 	ret = power_modules_handler->power_modules_response(power_modules_info, can_rx_msg);
 
 	return ret;
+}
+
+uint8_t get_module_connect_state(power_module_info_t *power_module_info)
+{
+	can_com_connect_state_t *connect_state = &power_module_info->connect_state;
+
+	return can_com_get_connect_state(connect_state);
 }
