@@ -6,7 +6,7 @@
  *   文件名称：can_config.h
  *   创 建 者：肖飞
  *   创建日期：2020年04月17日 星期五 09时20分02秒
- *   修改日期：2020年05月26日 星期二 09时38分48秒
+ *   修改日期：2020年07月13日 星期一 14时01分09秒
  *   描    述：
  *
  *================================================================*/
@@ -58,7 +58,6 @@ typedef union {
 	uint32_t v;
 } u_can_filter_id_t;
 
-extern can_config_t can_config_can1;
-extern can_config_t can_config_can2;
+can_config_t *get_can_config(CAN_HandleTypeDef *hcan);
 
 #endif //_CAN_CONFIG_H

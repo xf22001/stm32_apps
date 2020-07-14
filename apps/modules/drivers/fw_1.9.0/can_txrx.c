@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时07分55秒
- *   修改日期：2020年06月05日 星期五 08时50分23秒
+ *   修改日期：2020年07月13日 星期一 13时59分23秒
  *   描    述：
  *
  *================================================================*/
@@ -16,29 +16,6 @@
 
 static LIST_HEAD(can_info_list);
 static osMutexId can_info_list_mutex = NULL;
-
-static can_config_t *can_config_sz[] = {
-	&can_config_can1,
-	&can_config_can2,
-};
-
-static can_config_t *get_can_config(CAN_HandleTypeDef *hcan)
-{
-	uint8_t i;
-	can_config_t *can_config = NULL;
-	can_config_t *can_config_item = NULL;
-
-	for(i = 0; i < ARRAY_SIZE(can_config_sz); i++) {
-		can_config_item = can_config_sz[i];
-
-		if(hcan == can_config_item->hcan) {
-			can_config = can_config_item;
-			break;
-		}
-	}
-
-	return can_config;
-}
 
 static can_info_t *get_can_info(CAN_HandleTypeDef *hcan)
 {
