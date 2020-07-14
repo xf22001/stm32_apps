@@ -6,7 +6,7 @@
  *   文件名称：os_utils.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分36秒
- *   修改日期：2020年05月25日 星期一 15时57分09秒
+ *   修改日期：2020年07月14日 星期二 13时49分50秒
  *   描    述：
  *
  *================================================================*/
@@ -56,7 +56,8 @@ typedef union {
 	uint8_t v;
 } u_uint8_bcd_t;
 
-static inline uint8_t get_u8_from_bcd(uint8_t v) {
+static inline uint8_t get_u8_from_bcd(uint8_t v)
+{
 	u_uint8_bcd_t u_uint8_bcd;
 
 	u_uint8_bcd.v = v;
@@ -64,7 +65,8 @@ static inline uint8_t get_u8_from_bcd(uint8_t v) {
 	return u_uint8_bcd.s.h * 10 + u_uint8_bcd.s.l;
 }
 
-static inline uint8_t get_bcd_from_u8(uint8_t v) {
+static inline uint8_t get_bcd_from_u8(uint8_t v)
+{
 	u_uint8_bcd_t u_uint8_bcd;
 
 	u_uint8_bcd.s.h = v / 10;
@@ -167,6 +169,51 @@ static inline uint8_t get_u8_b3_from_u32(uint32_t v)
 	u_uint32_bytes.v = v;
 
 	return u_uint32_bytes.s.byte3;
+}
+
+typedef struct {
+	uint8_t bit0 : 1;
+	uint8_t bit1 : 1;
+	uint8_t bit2 : 1;
+	uint8_t bit3 : 1;
+	uint8_t bit4 : 1;
+	uint8_t bit5 : 1;
+	uint8_t bit6 : 1;
+	uint8_t bit7 : 1;
+} uint8_bits_t;
+
+typedef union {
+	uint8_bits_t s;
+	uint8_t v;
+} u_uint8_bits_t;
+
+#define add_u8_bits_offset_case(e, value) \
+	case e: { \
+		u_uint8_bits.s.bit##e = value; \
+	} \
+	break
+
+static inline uint8_t set_u8_bits(uint8_t v, uint8_t offset, uint8_t value)
+{
+	u_uint8_bits_t u_uint8_bits;
+	u_uint8_bits.v = v;
+
+	switch(offset) {
+			add_u8_bits_offset_case(0, value);
+			add_u8_bits_offset_case(1, value);
+			add_u8_bits_offset_case(2, value);
+			add_u8_bits_offset_case(3, value);
+			add_u8_bits_offset_case(4, value);
+			add_u8_bits_offset_case(5, value);
+			add_u8_bits_offset_case(6, value);
+			add_u8_bits_offset_case(7, value);
+
+		default: {
+		}
+		break;
+	}
+
+	return u_uint8_bits.v;
 }
 
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
