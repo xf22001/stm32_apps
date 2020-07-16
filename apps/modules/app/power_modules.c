@@ -6,7 +6,7 @@
  *   文件名称：power_modules.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时34分29秒
- *   修改日期：2020年07月10日 星期五 12时42分14秒
+ *   修改日期：2020年07月16日 星期四 09时59分27秒
  *   描    述：
  *
  *================================================================*/
@@ -278,7 +278,7 @@ int power_modules_set_type(power_modules_info_t *power_modules_info, power_modul
 	return ret;
 }
 
-void set_out_voltage_current(power_modules_info_t *power_modules_info, int module_id, uint32_t voltage, uint16_t current)
+void set_out_voltage_current(power_modules_info_t *power_modules_info, int module_id, uint32_t voltage, uint32_t current)
 {
 	power_modules_handler_t *power_modules_handler = (power_modules_handler_t *)power_modules_info->power_modules_handler;
 

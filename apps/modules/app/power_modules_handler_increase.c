@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_increase.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 17时36分29秒
- *   修改日期：2020年07月10日 星期五 13时35分55秒
+ *   修改日期：2020年07月16日 星期四 11时57分03秒
  *   描    述：
  *
  *================================================================*/
@@ -40,7 +40,7 @@ typedef struct {
 
 typedef struct {
 	uint8_t cmd;
-	uint8_t unused;
+	uint8_t current_b2;
 	uint8_t current_b1;//mv
 	uint8_t current_b0;
 	uint8_t voltage_b3;//ma
@@ -205,7 +205,7 @@ static char *get_power_module_cmd_des(module_command_t cmd)
 	return des;
 }
 
-static void set_out_voltage_current_increase(power_modules_info_t *power_modules_info, int module_id, uint32_t voltage, uint16_t current)
+static void set_out_voltage_current_increase(power_modules_info_t *power_modules_info, int module_id, uint32_t voltage, uint32_t current)
 {
 	power_modules_info->power_module_info[module_id].setting_current = current;
 	power_modules_info->power_module_info[module_id].setting_voltage = voltage;
@@ -217,8 +217,9 @@ static int request_0(power_modules_info_t *power_modules_info, int module_id)
 	int ret = -1;
 	cmd_0_request_t *cmd_0_request = (cmd_0_request_t *)power_modules_info->can_tx_msg.Data;
 
-	cmd_0_request->current_b0 = get_u8_l_from_u16(power_modules_info->power_module_info[module_id].setting_current);
-	cmd_0_request->current_b1 = get_u8_h_from_u16(power_modules_info->power_module_info[module_id].setting_current);
+	cmd_0_request->current_b0 = get_u8_b0_from_u32(power_modules_info->power_module_info[module_id].setting_current);
+	cmd_0_request->current_b1 = get_u8_b1_from_u32(power_modules_info->power_module_info[module_id].setting_current);
+	cmd_0_request->current_b2 = get_u8_b2_from_u32(power_modules_info->power_module_info[module_id].setting_current);
 
 	cmd_0_request->voltage_b0 = get_u8_b0_from_u32(power_modules_info->power_module_info[module_id].setting_voltage);
 	cmd_0_request->voltage_b1 = get_u8_b1_from_u32(power_modules_info->power_module_info[module_id].setting_voltage);
