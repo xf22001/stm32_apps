@@ -6,7 +6,7 @@
  *   文件名称：eeprom.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月14日 星期四 09时01分36秒
- *   修改日期：2020年05月01日 星期五 19时56分00秒
+ *   修改日期：2020年07月17日 星期五 09时56分08秒
  *   描    述：
  *
  *================================================================*/
@@ -368,3 +368,27 @@ uint8_t eeprom_write(eeprom_info_t *eeprom_info, uint32_t start, uint8_t *data, 
 
 	return state;
 }
+
+int detect_eeprom(eeprom_info_t *eeprom_info)
+{
+	int i;
+	int ret = -1;
+	uint8_t id;
+
+	for(i = 0; i < 10; i++) {
+		id = eeprom_id(eeprom_info);
+
+		if(id == 0x29) {
+			break;
+		}
+
+		osDelay(200);
+	}
+
+	if(id == 0x29) {
+		ret = 0;
+	}
+
+	return ret;
+}
+

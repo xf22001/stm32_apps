@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年06月28日 星期日 16时18分33秒
+ *   修改日期：2020年07月17日 星期五 09时57分17秒
  *   描    述：
  *
  *================================================================*/
@@ -247,29 +247,6 @@ void set_gun_on_off(bms_info_t *bms_info, uint8_t on_off)
 		                  bms_info->bms_info_config->gpio_pin_gun_on_off_state,
 		                  GPIO_PIN_SET);
 	}
-}
-
-static int detect_eeprom(eeprom_info_t *eeprom_info)
-{
-	int i;
-	int ret = -1;
-	uint8_t id;
-
-	for(i = 0; i < 10; i++) {
-		id = eeprom_id(eeprom_info);
-
-		if(id == 0x29) {
-			break;
-		}
-
-		osDelay(200);
-	}
-
-	if(id == 0x29) {
-		ret = 0;
-	}
-
-	return ret;
 }
 
 int save_eeprom_modbus_data(bms_info_t *bms_info)

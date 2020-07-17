@@ -6,7 +6,7 @@
  *   文件名称：eeprom.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月14日 星期四 09时01分48秒
- *   修改日期：2020年05月01日 星期五 20时01分15秒
+ *   修改日期：2020年07月17日 星期五 09时56分21秒
  *   描    述：
  *
  *================================================================*/
@@ -59,4 +59,5 @@ eeprom_info_t *get_or_alloc_eeprom_info( SPI_HandleTypeDef *hspi, GPIO_TypeDef *
 uint8_t eeprom_id(eeprom_info_t *eeprom_info);
 uint8_t eeprom_read(eeprom_info_t *eeprom_info, uint32_t start, uint8_t *data, uint16_t size);
 uint8_t eeprom_write(eeprom_info_t *eeprom_info, uint32_t start, uint8_t *data, uint16_t size);
+int detect_eeprom(eeprom_info_t *eeprom_info);
 #endif //_EEPROM_H

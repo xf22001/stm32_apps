@@ -6,7 +6,7 @@
  *   文件名称：os_utils.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分36秒
- *   修改日期：2020年07月14日 星期二 13时49分50秒
+ *   修改日期：2020年07月17日 星期五 10时27分37秒
  *   描    述：
  *
  *================================================================*/
@@ -215,6 +215,12 @@ static inline uint8_t set_u8_bits(uint8_t v, uint8_t offset, uint8_t value)
 
 	return u_uint8_bits.v;
 }
+
+#define add_des_case(e) \
+		case e: { \
+			des = #e; \
+		} \
+		break
 
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
 

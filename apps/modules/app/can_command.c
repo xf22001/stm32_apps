@@ -6,7 +6,7 @@
  *   文件名称：can_command.c
  *   创 建 者：肖飞
  *   创建日期：2020年07月07日 星期二 08时29分24秒
- *   修改日期：2020年07月07日 星期二 15时01分24秒
+ *   修改日期：2020年07月17日 星期五 10时33分11秒
  *   描    述：
  *
  *================================================================*/
@@ -15,12 +15,6 @@
 #include <string.h>
 
 #include "log.h"
-
-#define add_des_case(e) \
-	case e: { \
-		des = #e; \
-	} \
-	break
 
 char *get_can_com_state_des(can_com_com_state_t state)
 {

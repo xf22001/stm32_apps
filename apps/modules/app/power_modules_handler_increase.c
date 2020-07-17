@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_increase.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 17时36分29秒
- *   修改日期：2020年07月16日 星期四 11时57分03秒
+ *   修改日期：2020年07月17日 星期五 10时33分30秒
  *   描    述：
  *
  *================================================================*/
@@ -178,12 +178,6 @@ typedef struct {
 	uint8_t response_fn;
 	module_response_callback_t response_callback;
 } module_command_item_t;
-
-#define add_des_case(e) \
-	case e: { \
-		des = #e; \
-	} \
-	break
 
 static char *get_power_module_cmd_des(module_command_t cmd)
 {
