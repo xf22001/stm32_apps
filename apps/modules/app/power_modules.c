@@ -6,7 +6,7 @@
  *   文件名称：power_modules.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时34分29秒
- *   修改日期：2020年07月16日 星期四 09时59分27秒
+ *   修改日期：2020年07月20日 星期一 10时39分06秒
  *   描    述：
  *
  *================================================================*/
@@ -17,6 +17,7 @@
 #include "power_modules_handler_increase.h"
 #include <string.h>
 
+//#define LOG_NONE
 #include "log.h"
 
 static LIST_HEAD(power_modules_info_list);
