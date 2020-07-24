@@ -6,14 +6,14 @@
  *   文件名称：modbus_master_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月20日 星期一 15时28分52秒
- *   修改日期：2020年06月17日 星期三 15时24分50秒
+ *   修改日期：2020年07月24日 星期五 11时11分52秒
  *   描    述：
  *
  *================================================================*/
 #include "modbus_master_txrx.h"
 #include "os_utils.h"
 
-#define LOG_NONE
+//#define LOG_NONE
 #include "log.h"
 
 static LIST_HEAD(modbus_master_info_list);
@@ -157,6 +157,8 @@ int modbus_master_read_items(modbus_master_info_t *modbus_master_info, uint8_t s
 	uint16_t crc;
 	int i;
 
+	debug("station:%d, addr:%d, number:%d\n", station, addr, number);
+
 	if(number == 0) {
 		debug("\n");
 		return ret;
@@ -252,6 +254,8 @@ int modbus_master_write_one_item(modbus_master_info_t *modbus_master_info, uint8
 	modbus_crc_t *modbus_crc = NULL;
 	uint16_t crc;
 
+	debug("station:%d, addr:%d, value:%d\n", station, addr, value);
+
 	request_0x06->head.station = station;
 	request_0x06->head.fn = 0x06;
 	set_modbus_addr(&request_0x06->addr, addr);
@@ -340,6 +344,8 @@ int modbus_master_write_items(modbus_master_info_t *modbus_master_info, uint8_t 
 	modbus_crc_t *modbus_crc = NULL;
 	uint16_t crc;
 	int i;
+
+	debug("station:%d, addr:%d, number:%d\n", station, addr, number);
 
 	if(number == 0) {
 		debug("\n");
