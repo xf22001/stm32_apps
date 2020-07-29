@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_increase.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 17时36分29秒
- *   修改日期：2020年07月20日 星期一 10时39分20秒
+ *   修改日期：2020年07月29日 星期三 17时18分44秒
  *   描    述：
  *
  *================================================================*/
@@ -14,7 +14,7 @@
 #include "os_utils.h"
 #include <string.h>
 
-#define LOG_NONE
+//#define LOG_NONE
 #include "log.h"
 
 #define  POWER_ID_TX_INCREASE 0x1307c080
@@ -61,20 +61,20 @@ typedef struct {
 } cmd_1_request_t;
 
 typedef struct {
-	uint16_t poweroff : 1;//1:模块关机 0:模块运行
-	uint16_t fault : 1;//1:模块故障 0:模块正常
-	uint16_t output_state : 1;//1:模块限流 0:模块恒压
-	uint16_t fan_state : 1;//1:风扇故障 0:风扇正常
-	uint16_t input_overvoltage : 1;//1:输入过压 0:输入正常
-	uint16_t input_lowvoltage : 1;//1:输入欠压 0:输入正常
-	uint16_t output_overvoltage : 1;//1:输出过压 0:输出正常
-	uint16_t output_lowvoltage : 1;//1:输出欠压 0:输出正常
+	uint8_t poweroff : 1;//1:模块关机 0:模块运行
+	uint8_t fault : 1;//1:模块故障 0:模块正常
+	uint8_t output_state : 1;//1:模块限流 0:模块恒压
+	uint8_t fan_state : 1;//1:风扇故障 0:风扇正常
+	uint8_t input_overvoltage : 1;//1:输入过压 0:输入正常
+	uint8_t input_lowvoltage : 1;//1:输入欠压 0:输入正常
+	uint8_t output_overvoltage : 1;//1:输出过压 0:输出正常
+	uint8_t output_lowvoltage : 1;//1:输出欠压 0:输出正常
 } status_0_t;
 
 typedef struct {
-	uint16_t protect_overcurrent : 1;//1:过流保护 0:正常
-	uint16_t protect_overtemperature : 1;//1:过温保护 0:正常
-	uint16_t setting_poweroff : 1;//1:设置关机 0:设置开机
+	uint8_t protect_overcurrent : 1;//1:过流保护 0:正常
+	uint8_t protect_overtemperature : 1;//1:过温保护 0:正常
+	uint8_t setting_poweroff : 1;//1:设置关机 0:设置开机
 } status_1_t;
 
 typedef struct {
@@ -250,6 +250,7 @@ static void set_poweroff_increase(power_modules_info_t *power_modules_info, int 
 {
 	power_modules_info->power_module_info[module_id].poweroff = poweroff;
 	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_2_2].state = CAN_COM_STATE_REQUEST;
+	debug("module_id %d poweroff:%d\n", module_id, poweroff);
 }
 
 static int request_2(power_modules_info_t *power_modules_info, int module_id)
@@ -305,19 +306,32 @@ static int response_1(power_modules_info_t *power_modules_info, int module_id)
 	cmd_1_response_t *cmd_1_response = (cmd_1_response_t *)power_modules_info->can_rx_msg->Data;
 
 	power_modules_info->power_module_info[module_id].output_voltage = get_u16_from_u8_lh(cmd_1_response->voltage_b0, cmd_1_response->voltage_b1);
+	debug("module_id %d output voltage:%d\n", module_id, power_modules_info->power_module_info[module_id].output_voltage);
 	power_modules_info->power_module_info[module_id].output_current = get_u16_from_u8_lh(cmd_1_response->current_b0, cmd_1_response->current_b1);
+	debug("module_id %d output current:%d\n", module_id, power_modules_info->power_module_info[module_id].output_current);
 	power_modules_info->power_module_info[module_id].power_module_status.poweroff = cmd_1_response->status_0.poweroff;
+	debug("module_id %d poweroff:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.poweroff);
 	power_modules_info->power_module_info[module_id].power_module_status.fault = cmd_1_response->status_0.fault;
+	debug("module_id %d fault:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.fault);
 	power_modules_info->power_module_info[module_id].power_module_status.output_state = cmd_1_response->status_0.output_state;
+	debug("module_id %d output_state:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.output_state);
 	power_modules_info->power_module_info[module_id].power_module_status.fan_state = cmd_1_response->status_0.fan_state;
+	debug("module_id %d fan_state:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.fan_state);
 	power_modules_info->power_module_info[module_id].power_module_status.input_overvoltage = cmd_1_response->status_0.input_overvoltage;
+	debug("module_id %d input_overvoltage:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.input_overvoltage);
 	power_modules_info->power_module_info[module_id].power_module_status.input_lowvoltage = cmd_1_response->status_0.input_lowvoltage;
+	debug("module_id %d input_lowvoltage:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.input_lowvoltage);
 	power_modules_info->power_module_info[module_id].power_module_status.output_overvoltage = cmd_1_response->status_0.output_overvoltage;
+	debug("module_id %d output_overvoltage:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.output_overvoltage);
 	power_modules_info->power_module_info[module_id].power_module_status.output_lowvoltage = cmd_1_response->status_0.output_lowvoltage;
+	debug("module_id %d output_lowvoltage:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.output_lowvoltage);
 
 	power_modules_info->power_module_info[module_id].power_module_status.protect_overcurrent = cmd_1_response->status_1.protect_overcurrent;
+	debug("module_id %d protect_overcurrent:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.protect_overcurrent);
 	power_modules_info->power_module_info[module_id].power_module_status.protect_overtemperature = cmd_1_response->status_1.protect_overtemperature;
+	debug("module_id %d protect_overtemperature:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.protect_overtemperature);
 	power_modules_info->power_module_info[module_id].power_module_status.setting_poweroff = cmd_1_response->status_1.setting_poweroff;
+	debug("module_id %d setting_poweroff:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.setting_poweroff);
 
 	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_1_1].state = CAN_COM_STATE_IDLE;
 	ret = 0;
@@ -576,6 +590,8 @@ static void power_modules_request_increase(power_modules_info_t *power_modules_i
 			u_module_extid.s.module_addr = module_id + 1;
 
 			power_modules_info->can_tx_msg.ExtId = u_module_extid.v;
+			power_modules_info->can_tx_msg.RTR = CAN_RTR_DATA;
+			power_modules_info->can_tx_msg.IDE = CAN_ID_EXT;
 			power_modules_info->can_tx_msg.DLC = 8;
 
 			memset(power_modules_info->can_tx_msg.Data, 0, 8);
@@ -597,6 +613,16 @@ static void power_modules_request_increase(power_modules_info_t *power_modules_i
 			}
 
 			ret = can_tx_data(power_modules_info->can_info, &power_modules_info->can_tx_msg, 10);
+			//debug("tx extid:0x%08x, data:%02x %02x %02x %02x %02x %02x %02x %02x\n\n",
+			//      power_modules_info->can_tx_msg.ExtId,
+			//      power_modules_info->can_tx_msg.Data[0],
+			//      power_modules_info->can_tx_msg.Data[1],
+			//      power_modules_info->can_tx_msg.Data[2],
+			//      power_modules_info->can_tx_msg.Data[3],
+			//      power_modules_info->can_tx_msg.Data[4],
+			//      power_modules_info->can_tx_msg.Data[5],
+			//      power_modules_info->can_tx_msg.Data[6],
+			//      power_modules_info->can_tx_msg.Data[7]);
 
 			if(ret != 0) {
 				cmd_ctx->state = CAN_COM_STATE_REQUEST;
@@ -632,9 +658,21 @@ static int power_modules_response_increase(power_modules_info_t *power_modules_i
 	module_addr = u_module_extid.s.module_addr;
 	u_module_extid.s.module_addr = 0;
 
+	//debug("rx extid:0x%08x\ndata:%02x %02x %02x %02x %02x %02x %02x %02x\n\n",
+	//      power_modules_info->can_rx_msg->ExtId,
+	//      power_modules_info->can_rx_msg->Data[0],
+	//      power_modules_info->can_rx_msg->Data[1],
+	//      power_modules_info->can_rx_msg->Data[2],
+	//      power_modules_info->can_rx_msg->Data[3],
+	//      power_modules_info->can_rx_msg->Data[4],
+	//      power_modules_info->can_rx_msg->Data[5],
+	//      power_modules_info->can_rx_msg->Data[6],
+	//      power_modules_info->can_rx_msg->Data[7]);
+
 	if((module_addr >= 1) && (module_addr <= power_modules_info->power_module_number)) {
 		module_id = module_addr - 1;
 	} else {
+		//debug("power_modules_info->can_rx_msg->ExtId:0x%08x\n", power_modules_info->can_rx_msg->ExtId);
 		return ret;
 	}
 
