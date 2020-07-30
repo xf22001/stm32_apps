@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_increase.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 17时36分29秒
- *   修改日期：2020年07月29日 星期三 17时18分44秒
+ *   修改日期：2020年07月30日 星期四 13时38分12秒
  *   描    述：
  *
  *================================================================*/
@@ -258,7 +258,7 @@ static int request_2(power_modules_info_t *power_modules_info, int module_id)
 	int ret = -1;
 	cmd_2_request_t *cmd_2_requeset = (cmd_2_request_t *)power_modules_info->can_tx_msg.Data;
 
-	cmd_2_requeset->poweron = (power_modules_info->power_module_info[module_id].poweroff == 0) ? 1 : 0;
+	cmd_2_requeset->poweron = (power_modules_info->power_module_info[module_id].poweroff == 0) ? 0x55 : 0xaa;
 
 	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_2_2].state = CAN_COM_STATE_RESPONSE;
 	ret = 0;
@@ -306,32 +306,33 @@ static int response_1(power_modules_info_t *power_modules_info, int module_id)
 	cmd_1_response_t *cmd_1_response = (cmd_1_response_t *)power_modules_info->can_rx_msg->Data;
 
 	power_modules_info->power_module_info[module_id].output_voltage = get_u16_from_u8_lh(cmd_1_response->voltage_b0, cmd_1_response->voltage_b1);
-	debug("module_id %d output voltage:%d\n", module_id, power_modules_info->power_module_info[module_id].output_voltage);
 	power_modules_info->power_module_info[module_id].output_current = get_u16_from_u8_lh(cmd_1_response->current_b0, cmd_1_response->current_b1);
-	debug("module_id %d output current:%d\n", module_id, power_modules_info->power_module_info[module_id].output_current);
 	power_modules_info->power_module_info[module_id].power_module_status.poweroff = cmd_1_response->status_0.poweroff;
-	debug("module_id %d poweroff:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.poweroff);
 	power_modules_info->power_module_info[module_id].power_module_status.fault = cmd_1_response->status_0.fault;
-	debug("module_id %d fault:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.fault);
 	power_modules_info->power_module_info[module_id].power_module_status.output_state = cmd_1_response->status_0.output_state;
-	debug("module_id %d output_state:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.output_state);
 	power_modules_info->power_module_info[module_id].power_module_status.fan_state = cmd_1_response->status_0.fan_state;
-	debug("module_id %d fan_state:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.fan_state);
 	power_modules_info->power_module_info[module_id].power_module_status.input_overvoltage = cmd_1_response->status_0.input_overvoltage;
-	debug("module_id %d input_overvoltage:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.input_overvoltage);
 	power_modules_info->power_module_info[module_id].power_module_status.input_lowvoltage = cmd_1_response->status_0.input_lowvoltage;
-	debug("module_id %d input_lowvoltage:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.input_lowvoltage);
 	power_modules_info->power_module_info[module_id].power_module_status.output_overvoltage = cmd_1_response->status_0.output_overvoltage;
-	debug("module_id %d output_overvoltage:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.output_overvoltage);
 	power_modules_info->power_module_info[module_id].power_module_status.output_lowvoltage = cmd_1_response->status_0.output_lowvoltage;
-	debug("module_id %d output_lowvoltage:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.output_lowvoltage);
 
 	power_modules_info->power_module_info[module_id].power_module_status.protect_overcurrent = cmd_1_response->status_1.protect_overcurrent;
-	debug("module_id %d protect_overcurrent:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.protect_overcurrent);
 	power_modules_info->power_module_info[module_id].power_module_status.protect_overtemperature = cmd_1_response->status_1.protect_overtemperature;
-	debug("module_id %d protect_overtemperature:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.protect_overtemperature);
 	power_modules_info->power_module_info[module_id].power_module_status.setting_poweroff = cmd_1_response->status_1.setting_poweroff;
-	debug("module_id %d setting_poweroff:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.setting_poweroff);
+
+	//debug("module_id %d output voltage:%d\n", module_id, power_modules_info->power_module_info[module_id].output_voltage);
+	//debug("module_id %d output current:%d\n", module_id, power_modules_info->power_module_info[module_id].output_current);
+	//debug("module_id %d poweroff:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.poweroff);
+	//debug("module_id %d fault:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.fault);
+	//debug("module_id %d output_state:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.output_state);
+	//debug("module_id %d fan_state:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.fan_state);
+	//debug("module_id %d input_overvoltage:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.input_overvoltage);
+	//debug("module_id %d input_lowvoltage:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.input_lowvoltage);
+	//debug("module_id %d output_overvoltage:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.output_overvoltage);
+	//debug("module_id %d output_lowvoltage:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.output_lowvoltage);
+	//debug("module_id %d protect_overcurrent:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.protect_overcurrent);
+	//debug("module_id %d protect_overtemperature:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.protect_overtemperature);
+	//debug("module_id %d setting_poweroff:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.setting_poweroff);
 
 	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_1_1].state = CAN_COM_STATE_IDLE;
 	ret = 0;

@@ -6,7 +6,7 @@
  *   文件名称：net_client.h
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时38分02秒
- *   修改日期：2020年06月11日 星期四 09时50分00秒
+ *   修改日期：2020年07月30日 星期四 09时00分03秒
  *   描    述：
  *
  *================================================================*/
@@ -31,7 +31,7 @@ extern "C"
 
 #define TASK_NET_CLIENT_PERIODIC (100) //ms
 #define TASK_NET_CLIENT_CONNECT_PERIODIC (1000 * 1) //ms
-#define NET_MESSAGE_BUFFER_SIZE 1024
+#define NET_MESSAGE_BUFFER_SIZE (1024 * 2)
 
 typedef enum {
 	CLIENT_DISCONNECT = 0,
