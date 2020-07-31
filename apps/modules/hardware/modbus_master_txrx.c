@@ -6,14 +6,14 @@
  *   文件名称：modbus_master_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月20日 星期一 15时28分52秒
- *   修改日期：2020年07月24日 星期五 11时11分52秒
+ *   修改日期：2020年07月31日 星期五 14时38分26秒
  *   描    述：
  *
  *================================================================*/
 #include "modbus_master_txrx.h"
 #include "os_utils.h"
 
-//#define LOG_NONE
+#define LOG_NONE
 #include "log.h"
 
 static LIST_HEAD(modbus_master_info_list);
