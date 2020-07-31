@@ -6,7 +6,7 @@
  *   文件名称：bms.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分52秒
- *   修改日期：2020年07月17日 星期五 09时57分17秒
+ *   修改日期：2020年07月31日 星期五 11时10分16秒
  *   描    述：
  *
  *================================================================*/
@@ -1407,7 +1407,15 @@ static void update_ui_data(bms_info_t *bms_info)
 	bms_info->bms_poweron_enable = is_bms_poweron_enable(bms_info);
 }
 
+static void handle_bms_poweroff(bms_info_t *bms_info)
+{
+	if(bms_info->bms_poweron_enable == 0) {
+		set_bms_state(bms_info, BMS_STATE_IDLE);
+	}
+}
+
 void bms_periodic(bms_info_t *bms_info)
 {
 	update_ui_data(bms_info);
+	handle_bms_poweroff(bms_info);
 }
