@@ -6,7 +6,7 @@
  *   文件名称：os_utils.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分17秒
- *   修改日期：2020年05月14日 星期四 16时23分57秒
+ *   修改日期：2020年08月04日 星期二 13时12分07秒
  *   描    述：
  *
  *================================================================*/
@@ -249,4 +249,19 @@ int log_puts(log_fn_t log_fn, const char *s)
 void app_panic(void)
 {
 	while(1);
+}
+
+unsigned char mem_is_set(char *values, size_t size, char value)
+{
+	unsigned char ret = 1;
+	int i;
+
+	for(i = 0; i < size; i++) {
+		if(values[i] != value) {
+			ret = 0;
+			break;
+		}
+	}
+
+	return ret;
 }

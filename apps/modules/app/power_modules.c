@@ -6,7 +6,7 @@
  *   文件名称：power_modules.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时34分29秒
- *   修改日期：2020年07月20日 星期一 10时39分06秒
+ *   修改日期：2020年08月03日 星期一 14时36分26秒
  *   描    述：
  *
  *================================================================*/
@@ -437,4 +437,11 @@ uint8_t get_module_connect_state(power_module_info_t *power_module_info)
 	can_com_connect_state_t *connect_state = &power_module_info->connect_state;
 
 	return can_com_get_connect_state(connect_state);
+}
+
+uint32_t get_module_connect_stamp(power_module_info_t *power_module_info)
+{
+	can_com_connect_state_t *connect_state = &power_module_info->connect_state;
+
+	return can_com_get_connect_stamp(connect_state);
 }

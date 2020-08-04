@@ -6,7 +6,7 @@
  *   文件名称：os_utils.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分36秒
- *   修改日期：2020年07月17日 星期五 10时27分37秒
+ *   修改日期：2020年08月04日 星期二 13时12分21秒
  *   描    述：
  *
  *================================================================*/
@@ -187,7 +187,7 @@ typedef union {
 	uint8_t v;
 } u_uint8_bits_t;
 
-#define add_u8_bits_offset_case(e, value) \
+#define add_u8_bits_offset_set_case(e, value) \
 	case e: { \
 		u_uint8_bits.s.bit##e = value; \
 	} \
@@ -199,14 +199,14 @@ static inline uint8_t set_u8_bits(uint8_t v, uint8_t offset, uint8_t value)
 	u_uint8_bits.v = v;
 
 	switch(offset) {
-			add_u8_bits_offset_case(0, value);
-			add_u8_bits_offset_case(1, value);
-			add_u8_bits_offset_case(2, value);
-			add_u8_bits_offset_case(3, value);
-			add_u8_bits_offset_case(4, value);
-			add_u8_bits_offset_case(5, value);
-			add_u8_bits_offset_case(6, value);
-			add_u8_bits_offset_case(7, value);
+			add_u8_bits_offset_set_case(0, value);
+			add_u8_bits_offset_set_case(1, value);
+			add_u8_bits_offset_set_case(2, value);
+			add_u8_bits_offset_set_case(3, value);
+			add_u8_bits_offset_set_case(4, value);
+			add_u8_bits_offset_set_case(5, value);
+			add_u8_bits_offset_set_case(6, value);
+			add_u8_bits_offset_set_case(7, value);
 
 		default: {
 		}
@@ -214,6 +214,37 @@ static inline uint8_t set_u8_bits(uint8_t v, uint8_t offset, uint8_t value)
 	}
 
 	return u_uint8_bits.v;
+}
+
+#define add_u8_bits_offset_get_case(e, value) \
+	case e: { \
+		value = u_uint8_bits.s.bit##e; \
+	} \
+	break
+
+static inline uint8_t get_u8_bits(uint8_t v, uint8_t offset)
+{
+	u_uint8_bits_t u_uint8_bits;
+	uint8_t value = 0;
+
+	u_uint8_bits.v = v;
+
+	switch(offset) {
+			add_u8_bits_offset_get_case(0, value);
+			add_u8_bits_offset_get_case(1, value);
+			add_u8_bits_offset_get_case(2, value);
+			add_u8_bits_offset_get_case(3, value);
+			add_u8_bits_offset_get_case(4, value);
+			add_u8_bits_offset_get_case(5, value);
+			add_u8_bits_offset_get_case(6, value);
+			add_u8_bits_offset_get_case(7, value);
+
+		default: {
+		}
+		break;
+	}
+
+	return value;
 }
 
 #define add_des_case(e) \
@@ -232,4 +263,5 @@ void app_panic(void);
 int log_printf(log_fn_t log_fn, const char *fmt, ...);
 void log_hexdump(log_fn_t log_fn, const char *label, const char *data, int len);
 int log_puts(log_fn_t log_fn, const char *s);
+unsigned char mem_is_set(char *values, size_t size, char value);
 #endif //_OS_UTILS_H

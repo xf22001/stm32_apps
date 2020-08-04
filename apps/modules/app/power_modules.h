@@ -6,7 +6,7 @@
  *   文件名称：power_modules.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时37分07秒
- *   修改日期：2020年07月16日 星期四 10时01分38秒
+ *   修改日期：2020年08月03日 星期一 14时37分01秒
  *   描    述：
  *
  *================================================================*/
@@ -120,4 +120,5 @@ void query_c_line_input_voltage(power_modules_info_t *power_modules_info, int mo
 void power_modules_request(power_modules_info_t *power_modules_info);
 int power_modules_response(power_modules_info_t *power_modules_info, can_rx_msg_t *can_rx_msg);
 uint8_t get_module_connect_state(power_module_info_t *power_module_info);
+uint32_t get_module_connect_stamp(power_module_info_t *power_module_info);
 #endif //_POWER_MODULES_H

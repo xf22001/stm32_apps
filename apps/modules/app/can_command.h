@@ -6,7 +6,7 @@
  *   文件名称：can_command.h
  *   创 建 者：肖飞
  *   创建日期：2020年07月07日 星期二 08时26分08秒
- *   修改日期：2020年07月07日 星期二 10时12分05秒
+ *   修改日期：2020年08月03日 星期一 13时30分05秒
  *   描    述：
  *
  *================================================================*/
@@ -65,6 +65,7 @@ typedef struct {
 typedef struct {
 	uint8_t state[CAN_COM_CONNECT_STATE_SIZE];
 	uint8_t index;
+	uint32_t update_stamp;
 } can_com_connect_state_t;
 
 char *get_can_com_state_des(can_com_com_state_t state);
@@ -75,5 +76,6 @@ int can_com_prepare_response(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_res
 int can_com_process_request(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_common_t *can_com_cmd_common, uint8_t cmd, uint8_t *data, uint8_t data_size);
 void can_com_set_connect_state(can_com_connect_state_t *can_com_connect_state, uint8_t state);
 uint8_t can_com_get_connect_state(can_com_connect_state_t *can_com_connect_state);
+uint32_t can_com_get_connect_stamp(can_com_connect_state_t *can_com_connect_state);
 
 #endif //_CAN_COMMAND_H
