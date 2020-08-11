@@ -6,7 +6,7 @@
  *   文件名称：probe_tool.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 08时03分37秒
- *   修改日期：2020年05月15日 星期五 08时04分16秒
+ *   修改日期：2020年08月11日 星期二 16时58分55秒
  *   描    述：
  *
  *================================================================*/
@@ -17,6 +17,7 @@ extern "C"
 {
 #endif
 
+#include "poll_loop.h"
 #include "request.h"
 #include "os_utils.h"
 
@@ -42,11 +43,12 @@ typedef struct {
 	size_t server_map_size;
 } server_map_info_t;
 
+void probe_broadcast_add_poll_loop(poll_loop_t *poll_loop);
 int log_udp_data(void *data, size_t size);
 int probe_server_chunk_sendto(uint32_t fn, void *data, size_t size);
 void loopback(request_t *request);
 void fn_hello(request_t *request);
-uint8_t is_log_client_address_valid(void);
-void task_probe_tool(void const *argument);
+uint8_t is_log_server_valid(void);
+void probe_server_add_poll_loop(poll_loop_t *poll_loop);
 
 #endif //_PROBE_TOOL_H
