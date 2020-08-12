@@ -6,7 +6,7 @@
  *   文件名称：probe_tool.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 08时02分35秒
- *   修改日期：2020年08月11日 星期二 17时47分19秒
+ *   修改日期：2020年08月12日 星期三 13时25分33秒
  *   描    述：
  *
  *================================================================*/
@@ -18,18 +18,13 @@
 
 #include "log.h"
 
-typedef enum {
-	PROBE_BROADCAST_STATE_INIT = 0,
-	PROBE_BROADCAST_STATE_BROADCAST
-} probe_broadcast_state_t;
-
 typedef struct {
 	probe_broadcast_state_t state;
 	struct sockaddr_in broadcast_addr;
 	uint32_t stamp;
 } probe_broadcast_info_t;
 
-static char *get_probe_broadcast_state_des(probe_broadcast_state_t state)
+char *get_probe_broadcast_state_des(probe_broadcast_state_t state)
 {
 	char *des = "unknow";
 
@@ -104,7 +99,7 @@ static void probe_broadcast_periodic(void *ctx)
 				u_poll_mask.v = 0;
 				u_poll_mask.s.poll_err = 1;
 				poll_ctx->poll_fd.config.v = u_poll_mask.v;
-				poll_ctx->poll_fd.available = 1;
+				poll_ctx->poll_fd.available = 0;
 
 				probe_broadcast_info->state = PROBE_BROADCAST_STATE_BROADCAST;
 			}
@@ -157,12 +152,8 @@ void probe_broadcast_add_poll_loop(poll_loop_t *poll_loop)
 	add_poll_loop_ctx_item(poll_loop, poll_ctx);
 }
 
-typedef enum {
-	PROBE_SERVER_STATE_INIT = 0,
-	PROBE_SERVER_STATE_SERVE,
-} probe_server_state_t;
 
-static char *get_probe_server_state_des(probe_server_state_t state)
+char *get_probe_server_state_des(probe_server_state_t state)
 {
 	char *des = "unknow";
 

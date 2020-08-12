@@ -6,7 +6,7 @@
  *   文件名称：probe_tool.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 08时03分37秒
- *   修改日期：2020年08月11日 星期二 16时58分55秒
+ *   修改日期：2020年08月12日 星期三 13时11分43秒
  *   描    述：
  *
  *================================================================*/
@@ -43,7 +43,19 @@ typedef struct {
 	size_t server_map_size;
 } server_map_info_t;
 
+typedef enum {
+	PROBE_BROADCAST_STATE_INIT = 0,
+	PROBE_BROADCAST_STATE_BROADCAST
+} probe_broadcast_state_t;
+
+typedef enum {
+	PROBE_SERVER_STATE_INIT = 0,
+	PROBE_SERVER_STATE_SERVE,
+} probe_server_state_t;
+
+char *get_probe_broadcast_state_des(probe_broadcast_state_t state);
 void probe_broadcast_add_poll_loop(poll_loop_t *poll_loop);
+char *get_probe_server_state_des(probe_server_state_t state);
 int log_udp_data(void *data, size_t size);
 int probe_server_chunk_sendto(uint32_t fn, void *data, size_t size);
 void loopback(request_t *request);

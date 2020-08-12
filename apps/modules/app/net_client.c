@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2020年06月12日 星期五 09时39分48秒
+ *   修改日期：2020年08月12日 星期三 13时25分42秒
  *   描    述：
  *
  *================================================================*/
@@ -27,6 +27,25 @@
 #include <string.h>
 
 static net_client_info_t *net_client_info = NULL;
+
+char *get_net_client_state_des(client_state_t state)
+{
+	char *des = "unknow";
+
+	switch(state) {
+			add_des_case(CLIENT_DISCONNECT);
+			add_des_case(CLIENT_CONNECTING);
+			add_des_case(CLIENT_CONNECTED);
+			add_des_case(CLIENT_RESET);
+
+		default: {
+		}
+		break;
+	}
+
+	return des;
+}
+
 
 void set_net_client_protocol_if(protocol_if_t *protocol_if)
 {
@@ -225,18 +244,6 @@ client_state_t get_client_state(void)
 static void default_init(void)
 {
 	srand(osKernelSysTick());
-
-	if(net_client_info == NULL) {
-		net_client_info = (net_client_info_t *)os_alloc(sizeof(net_client_info_t));
-
-		if(net_client_info == NULL) {
-			app_panic();
-		}
-
-		memset(net_client_info, 0, sizeof(net_client_info_t));
-		net_client_info->sock_fd = -1;
-		INIT_LIST_HEAD(&net_client_info->net_client_addr_info.socket_addr_info_list);
-	}
 
 	set_net_client_protocol_if(get_protocol_if());
 	set_net_client_request_callback(get_request_callback());
@@ -557,15 +564,15 @@ static void process_server_message(net_message_buffer_t *recv, net_message_buffe
 	size_t left = recv->used;
 	uint8_t *buffer = recv->buffer;
 
-	debug("net client left %d bytes\n", left);
-	_hexdump(NULL, (const char *)buffer, left);
+	debug("net client %d bytes available\n", left);
+	//_hexdump(NULL, (const char *)buffer, left);
 
 	while(left >= sizeof(request_t)) {
 		default_parse((char *)buffer, left, NET_MESSAGE_BUFFER_SIZE, &request, &request_size);
 
 		if(request != NULL) {//可能有效包
 			if(request_size != 0) {//有效包
-				debug("net client request_size %d bytes\n", request_size);
+				debug("net client process %d bytes\n", request_size);
 				blink_led_lan(0);
 				default_process((uint8_t *)request, (uint16_t)request_size, send->buffer, NET_MESSAGE_BUFFER_SIZE);
 				buffer += request_size;
@@ -591,100 +598,41 @@ static void process_server_message(net_message_buffer_t *recv, net_message_buffe
 	recv->used = left;
 }
 
-static int recv_from_server(void)
+static void net_client_handler(void *ctx)
 {
-	int ret = -1;
-	struct fd_set fds;
-	struct timeval tv = {0, 1000 * TASK_NET_CLIENT_PERIODIC};
-	int max_fd = 0;
+	poll_ctx_t *poll_ctx = (poll_ctx_t *)ctx;
+	net_client_info_t *net_client_info = (net_client_info_t *)poll_ctx->priv;
+	int ret;
 
-	if(net_client_info == NULL) {
-		return ret;
+	ret = net_client_info->protocol_if->net_recv(net_client_info,
+	        net_client_info->recv_message_buffer.buffer + net_client_info->recv_message_buffer.used,
+	        NET_MESSAGE_BUFFER_SIZE - net_client_info->recv_message_buffer.used);
+
+	if(ret <= 0) {
+		debug("close connect.\n");
+		set_client_state(CLIENT_RESET);
+	} else {
+		net_client_info->recv_message_buffer.used += ret;
+		process_server_message(&net_client_info->recv_message_buffer, &net_client_info->send_message_buffer);
 	}
-
-	FD_ZERO(&fds);
-
-	FD_SET(net_client_info->sock_fd, &fds);
-
-	if(net_client_info->sock_fd > max_fd) {
-		max_fd = net_client_info->sock_fd;
-	}
-
-	ret = select(max_fd + 1, &fds, NULL, NULL, &tv);
-
-	if(ret > 0) {
-		if(FD_ISSET(net_client_info->sock_fd, &fds)) {
-			ret = net_client_info->protocol_if->net_recv(net_client_info,
-			        net_client_info->recv_message_buffer.buffer + net_client_info->recv_message_buffer.used,
-			        NET_MESSAGE_BUFFER_SIZE - net_client_info->recv_message_buffer.used);
-
-			if(ret <= 0) {
-				debug("close connect.\n");
-				set_client_state(CLIENT_RESET);
-			} else {
-				net_client_info->recv_message_buffer.used += ret;
-				process_server_message(&net_client_info->recv_message_buffer, &net_client_info->send_message_buffer);
-			}
-		}
-	}
-
-	return ret;
 }
 
 int send_to_server(uint8_t *buffer, size_t len)
 {
-	int ret = -1;
-	struct fd_set fds;
-	struct timeval tv = {0, 1000 * TASK_NET_CLIENT_PERIODIC};
-	int max_fd = 0;
+	int ret = 0;
 
-	if(net_client_info == NULL) {
-		debug("\n");
-		return ret;
-	}
+	if(poll_loop_wait_send(net_client_info->sock_fd, TASK_NET_CLIENT_PERIODIC) == 0) {
+		ret = net_client_info->protocol_if->net_send(net_client_info, buffer, len);
 
-	if(net_client_info->sock_fd == -1) {
-		debug("socket fd is not valid!\n");
-		return ret;
-	}
-
-	FD_ZERO(&fds);
-
-	FD_SET(net_client_info->sock_fd, &fds);
-
-	if(net_client_info->sock_fd > max_fd) {
-		max_fd = net_client_info->sock_fd;
-	}
-
-	ret = select(max_fd + 1, NULL, &fds, NULL, &tv);
-
-	if(ret > 0) {
-		if(FD_ISSET(net_client_info->sock_fd, &fds)) {
-			ret = net_client_info->protocol_if->net_send(net_client_info, buffer, len);
-
-			if(ret <= 0) {
-				debug("net_send error!\n");
-			}
-		} else {
-			ret = -1;
+		if(ret <= 0) {
+			debug("net_send error!\n");
+			ret = 0;
 		}
-
 	} else {
-		ret = -1;
+		ret = 0;
 	}
 
 	return ret;
-}
-
-static void task_net_client_periodic(void)
-{
-	static uint32_t expire = 0;
-	uint32_t ticks = osKernelSysTick();
-
-	if(ticks >= expire) {
-		expire = ticks + TASK_NET_CLIENT_PERIODIC;
-		default_periodic(net_client_info->send_message_buffer.buffer, NET_MESSAGE_BUFFER_SIZE);
-	}
 }
 
 static uint8_t is_server_enable(void)
@@ -692,70 +640,118 @@ static uint8_t is_server_enable(void)
 	return 1;
 }
 
-void task_net_client(void const *argument)
+void net_client_periodic(void *ctx)
 {
-	uint8_t run_enable = 1;
+	int ret = 0;
+	poll_ctx_t *poll_ctx = (poll_ctx_t *)ctx;
+	net_client_info_t *net_client_info = (net_client_info_t *)poll_ctx->priv;
+	uint32_t ticks = osKernelSysTick();
 
+	if(!is_display_connected()) { //屏没连接，啥都不做，2秒闪一次
+		blink_led_lan(2 * 1000);
+		return;
+	}
+
+	//debug("state:%s\n", get_net_client_state_des(net_client_info->state));
+
+	//处理周期性事件
+	//约100ms调用一次
+	//这个函数中，不能保证net client已经连接到服务端，需要用get_client_state()来确认
+	if(ticks - net_client_info->periodic_stamp >= TASK_NET_CLIENT_PERIODIC) {
+		default_periodic(net_client_info->send_message_buffer.buffer, NET_MESSAGE_BUFFER_SIZE);
+		net_client_info->periodic_stamp = ticks;
+	}
+
+	switch(net_client_info->state) {
+		case CLIENT_DISCONNECT: {
+			blink_led_lan(3 * 1000);
+
+			if(is_server_enable() == 1) {
+				set_client_state(CLIENT_CONNECTING);
+			}
+		}
+		break;
+
+		case CLIENT_CONNECTING: {
+			ret = create_connect();
+
+			if(ret == 0) { //未连接到服务端，延时100ms,处理周期性事件
+				u_poll_mask_t u_poll_mask;
+
+				poll_ctx->poll_fd.fd = net_client_info->sock_fd;
+
+				u_poll_mask.v = 0;
+				u_poll_mask.s.poll_in = 1;
+				//u_poll_mask.s.poll_err = 1;
+				poll_ctx->poll_fd.config.v = u_poll_mask.v;
+
+				poll_ctx->poll_fd.available = 1;
+
+				set_client_state(CLIENT_CONNECTED);
+			} else {
+				poll_ctx->poll_fd.available = 0;
+			}
+		}
+		break;
+
+		case CLIENT_CONNECTED: {
+			blink_led_lan(0);
+
+			if(is_server_enable() == 0) {
+				set_client_state(CLIENT_RESET);
+			}
+		}
+		break;
+
+		case CLIENT_RESET: {
+			poll_ctx->poll_fd.available = 0;
+
+			close_connect();
+			default_init();
+			set_client_state(CLIENT_DISCONNECT);
+		}
+		break;
+
+		default: {
+		}
+		break;
+	}
+}
+
+void net_client_add_poll_loop(poll_loop_t *poll_loop)
+{
+	poll_ctx_t *poll_ctx;
+
+	poll_ctx = alloc_poll_ctx();
+
+	if(poll_ctx == NULL) {
+		app_panic();
+	}
+
+	if(net_client_info != NULL) {
+		app_panic();
+	}
+
+	if(net_client_info == NULL) {
+		net_client_info = (net_client_info_t *)os_alloc(sizeof(net_client_info_t));
+
+	}
+
+	if(net_client_info == NULL) {
+		app_panic();
+	}
+
+	memset(net_client_info, 0, sizeof(net_client_info_t));
+	net_client_info->sock_fd = -1;
+	INIT_LIST_HEAD(&net_client_info->net_client_addr_info.socket_addr_info_list);
 	default_init();
 
-	while(run_enable) {
-		int ret = 0;
+	net_client_info->state = CLIENT_DISCONNECT;
 
-		if(!is_display_connected()) { //屏没连接，啥都不做，2秒闪一次
-			blink_led_lan(2 * 1000);
-			osDelay(TASK_NET_CLIENT_PERIODIC);
-			continue;
-		}
+	poll_ctx->priv = net_client_info;
+	poll_ctx->name = "net_client_info";
+	poll_ctx->poll_handler = net_client_handler;
+	poll_ctx->poll_periodic = net_client_periodic;
 
-		//处理周期性事件
-		//约100ms调用一次
-		//这个函数中，不能保证net client已经连接到服务端，需要用get_client_state()来确认
-		task_net_client_periodic();
-
-		switch(net_client_info->state) {
-			case CLIENT_DISCONNECT: {
-				osDelay(TASK_NET_CLIENT_PERIODIC);
-				blink_led_lan(3 * 1000);
-
-				if(is_server_enable() == 1) {
-					set_client_state(CLIENT_CONNECTING);
-				}
-			}
-			break;
-
-			case CLIENT_CONNECTING: {
-				ret = create_connect();
-
-				if(ret == 0) { //未连接到服务端，延时100ms,处理周期性事件
-					set_client_state(CLIENT_CONNECTED);
-				} else {
-					osDelay(TASK_NET_CLIENT_CONNECT_PERIODIC);
-				}
-			}
-			break;
-
-			case CLIENT_CONNECTED: {
-				blink_led_lan(0);
-
-				//处理从服务端收到的消息
-				recv_from_server();
-
-				if(is_server_enable() == 0) {
-					set_client_state(CLIENT_RESET);
-				}
-			}
-			break;
-
-			case CLIENT_RESET: {
-				close_connect();
-				default_init();
-				set_client_state(CLIENT_DISCONNECT);
-			}
-			break;
-
-			default: {
-			}
-			break;
-		}
-	}
+	add_poll_loop_ctx_item(poll_loop, poll_ctx);
 }

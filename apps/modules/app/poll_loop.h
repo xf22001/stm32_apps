@@ -6,7 +6,7 @@
  *   文件名称：poll_loop.h
  *   创 建 者：肖飞
  *   创建日期：2020年08月11日 星期二 09时54分24秒
- *   修改日期：2020年08月11日 星期二 17时05分32秒
+ *   修改日期：2020年08月12日 星期三 11时22分54秒
  *   描    述：
  *
  *================================================================*/
@@ -69,6 +69,8 @@ poll_loop_t *get_or_alloc_poll_loop(uint8_t id);
 poll_ctx_t *alloc_poll_ctx(void);
 int add_poll_loop_ctx_item(poll_loop_t *poll_loop, poll_ctx_t *poll_ctx);
 int remove_poll_loop_ctx_item(poll_loop_t *poll_loop, poll_ctx_t *poll_ctx);
+int poll_loop_wait_send(int fd, uint32_t timeout);
+void set_dump_poll_ctx(void);
 void task_poll_loop(void const *argument);
 
 #endif //_POLL_LOOP_H

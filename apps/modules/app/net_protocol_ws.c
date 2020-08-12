@@ -6,7 +6,7 @@
  *   文件名称：net_protocol_ws.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月23日 星期日 12时23分31秒
- *   修改日期：2020年07月02日 星期四 17时34分03秒
+ *   修改日期：2020年08月12日 星期三 11时49分47秒
  *   描    述：
  *
  *================================================================*/
@@ -77,12 +77,12 @@ static int ws_client_connect(void *ctx)
 {
 	int ret = -1;
 	net_client_info_t *net_client_info = (net_client_info_t *)ctx;
-	//char *url = "https://httpbin.org/get";
+	char *url = "https://httpbin.org/get";
 	//char *url = "ws://192.168.41.2:8080/ocpp/";
 	//char *url = "ws://47.244.218.210:8080/OCPP/echoSocket/13623";
 	//char *url = "wss://35.201.125.176:433/SSECHINAEVSE";
 	//char *url = "https://216.58.199.110";
-	char *url = "wss://ocpp-16-json.dev-plugitcloud.com/SSECHINAEVSE";
+	//char *url = "wss://ocpp-16-json.dev-plugitcloud.com/SSECHINAEVSE";
 
 	if(get_connect_enable() != 1) {
 		return ret;
@@ -133,7 +133,7 @@ static int ws_client_connect(void *ctx)
 		return ret;
 	}
 
-	ret = net_client_info->sock_fd;
+	ret = 0;
 	set_connect_enable(0);
 
 	return ret;

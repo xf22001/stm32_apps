@@ -6,7 +6,7 @@
  *   文件名称：net_client.h
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时38分02秒
- *   修改日期：2020年07月30日 星期四 09时00分03秒
+ *   修改日期：2020年08月12日 星期三 13时09分22秒
  *   描    述：
  *
  *================================================================*/
@@ -17,17 +17,20 @@ extern "C"
 {
 #endif
 
-#ifdef __cplusplus
-}
-#endif
-
 #include "app_platform.h"
 #include "cmsis_os.h"
 #include "lwip.h"
 #include "lwip/sockets.h"
 
+#include "poll_loop.h"
 #include "net_protocol.h"
 #include "list_utils.h"
+
+#ifdef __cplusplus
+}
+#endif
+
+
 
 #define TASK_NET_CLIENT_PERIODIC (100) //ms
 #define TASK_NET_CLIENT_CONNECT_PERIODIC (1000 * 1) //ms
@@ -88,6 +91,7 @@ typedef struct {
 	int sock_fd;
 	uint32_t connect_id;
 	uint32_t retry_count;
+	uint32_t periodic_stamp;
 	uint32_t connect_stamp;
 	uint8_t reset_connect;
 	client_state_t state;
@@ -99,11 +103,14 @@ typedef struct {
 	protocol_if_t *protocol_if;
 } net_client_info_t;
 
-trans_protocol_type_t get_net_client_protocol(void);
-void set_net_client_protocol(trans_protocol_type_t type);
+char *get_net_client_state_des(client_state_t state);
+void set_net_client_protocol_if(protocol_if_t *protocol_if);
+void set_net_client_request_callback(request_callback_t *request_callback);
 void set_client_state(client_state_t state);
 client_state_t get_client_state(void);
 uint32_t get_net_client_connect_id(void);
 int send_to_server(uint8_t *buffer, size_t len);
-void task_net_client(void const *argument);
+void net_client_periodic(void *ctx);
+void net_client_add_poll_loop(poll_loop_t *poll_loop);
+
 #endif //_NET_CLIENT_H

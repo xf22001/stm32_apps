@@ -6,7 +6,7 @@
  *   文件名称：request_default.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月05日 星期四 10时09分49秒
- *   修改日期：2020年06月08日 星期一 16时35分41秒
+ *   修改日期：2020年08月12日 星期三 10时18分19秒
  *   描    述：
  *
  *================================================================*/
@@ -16,7 +16,7 @@
 #include "request.h"
 #include "main.h"
 
-#define LOG_NONE
+//#define LOG_NONE
 #include "log.h"
 
 static int chunk_sendto(uint32_t fn, uint32_t stage, void *data, size_t size, char *send_buffer, size_t send_buffer_size)

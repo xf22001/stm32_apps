@@ -6,7 +6,7 @@
  *   文件名称：poll_loop.c
  *   创 建 者：肖飞
  *   创建日期：2020年08月11日 星期二 09时54分20秒
- *   修改日期：2020年08月11日 星期二 17时22分34秒
+ *   修改日期：2020年08月12日 星期三 14时53分53秒
  *   描    述：
  *
  *================================================================*/
@@ -272,7 +272,6 @@ static int poll_loop_poll(poll_loop_t *poll_loop)
 	if(os_status != osOK) {
 	}
 
-
 	max_fd += 1;
 
 	if(max_fd > 0) {
@@ -282,7 +281,7 @@ static int poll_loop_poll(poll_loop_t *poll_loop)
 		ret = 0;
 	}
 
-	if(ret >= 0) {
+	if(ret > 0) {
 		os_status = osMutexWait(poll_loop->poll_ctx_list_mutex, osWaitForever);
 
 		if(os_status != osOK) {
@@ -321,6 +320,7 @@ static int poll_loop_poll(poll_loop_t *poll_loop)
 
 		if(os_status != osOK) {
 		}
+	} else if(ret == 0) {
 	} else {
 		debug("ret:%d\n", ret);
 	}
@@ -358,6 +358,89 @@ static void poll_loop_periodic(poll_loop_t *poll_loop)
 	}
 }
 
+int poll_loop_wait_send(int fd, uint32_t timeout)
+{
+	int ret = -1;
+	struct fd_set fds;
+	struct timeval tv;
+	int max_fd = -1;
+
+	tv.tv_sec = timeout / 1000;
+	tv.tv_usec = 1000 * (timeout % 1000);
+
+	if(fd == -1) {
+		debug("socket fd is not valid!\n");
+		return ret;
+	}
+
+	FD_ZERO(&fds);
+	FD_SET(fd, &fds);
+
+	if(fd > max_fd) {
+		max_fd = fd;
+	}
+
+	max_fd += 1;
+
+	ret = select(max_fd, NULL, &fds, NULL, &tv);
+
+	if(ret > 0) {
+		if(FD_ISSET(fd, &fds)) {
+			ret = 0;
+		} else {
+			ret = -1;
+		}
+
+	} else {
+		ret = -1;
+	}
+
+	return ret;
+}
+
+static uint8_t dump_poll_ctx = 0;
+
+void set_dump_poll_ctx(void)
+{
+	dump_poll_ctx = 1;
+}
+
+static void task_poll_dump_poll_ctx(poll_loop_t *poll_loop)
+{
+	osStatus os_status;
+	struct list_head *head;
+	poll_ctx_t *poll_ctx;
+
+	if(dump_poll_ctx == 0) {
+		return;
+	}
+
+	dump_poll_ctx = 0;
+
+	head = &poll_loop->poll_ctx_list;
+
+	os_status = osMutexWait(poll_loop->poll_ctx_list_mutex, osWaitForever);
+
+	if(os_status != osOK) {
+	}
+
+	list_for_each_entry(poll_ctx, head, poll_ctx_t, list) {
+		debug("%p, name:%s, fd:%d, available:%d, in:%d, out:%d, err:%d\n",
+		      poll_ctx,
+		      poll_ctx->name,
+		      poll_ctx->poll_fd.fd,
+		      poll_ctx->poll_fd.available,
+		      poll_ctx->poll_fd.config.s.poll_in,
+		      poll_ctx->poll_fd.config.s.poll_out,
+		      poll_ctx->poll_fd.config.s.poll_err);
+	}
+
+	os_status = osMutexRelease(poll_loop->poll_ctx_list_mutex);
+
+	if(os_status != osOK) {
+	}
+}
+
 void task_poll_loop(void const *argument)
 {
 	poll_loop_t *poll_loop = (poll_loop_t *)argument;
@@ -372,9 +455,12 @@ void task_poll_loop(void const *argument)
 		ret = poll_loop_poll(poll_loop);
 
 		if(ret < 0) {
-			debug("poll result:%d\n", ret);
+			//debug("poll result:%d\n", ret);
+			//dump_poll_ctx = 1;
 		}
 
 		poll_loop_periodic(poll_loop);
+
+		task_poll_dump_poll_ctx(poll_loop);
 	}
 }

@@ -378,6 +378,7 @@ static int https_init(HTTP_INFO *hi, BOOL https, BOOL verify)
 	}
 
 	//mbedtls_net_init(&hi->tls.ssl_fd);
+	hi->tls.ssl_fd.fd  = -1;
 
 	hi->tls.verify = verify;
 	hi->url.https = https;
