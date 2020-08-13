@@ -6,7 +6,7 @@
  *   文件名称：log.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月14日 星期四 14时09分56秒
- *   修改日期：2020年05月15日 星期五 09时12分53秒
+ *   修改日期：2020年08月13日 星期四 14时41分06秒
  *   描    述：
  *
  *================================================================*/
@@ -30,8 +30,10 @@ extern "C"
 #elif defined(LOG_UART)
 #elif defined(LOG_ALL)
 #else
-#define LOG_UDP
+//#define LOG_NONE
+//#define LOG_UDP
 //#define LOG_UART
+#define LOG_ALL
 #endif
 
 #if defined(LOG_NONE)
@@ -60,5 +62,7 @@ extern "C"
 	log_puts((log_fn_t)log_uart_data, s); \
 } while(0)
 #endif
+
+#define debug(fmt, ...) _printf("[%s:%s:%d] " fmt, __FILE__, __func__, __LINE__, ## __VA_ARGS__)
 
 #endif //_LOG_H
