@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2020年08月15日 星期六 16时20分06秒
+ *   修改日期：2020年08月15日 星期六 16时49分27秒
  *   描    述：
  *
  *================================================================*/
@@ -608,16 +608,21 @@ static void net_client_handler(void *ctx)
 	switch(get_client_state()) {
 		case CLIENT_CONNECT_CONFIRM: {
 			int opt;
-			socklen_t slen;
-			slen = sizeof(int);
+			socklen_t slen = sizeof(int);
 
-			if((getsockopt(poll_ctx->poll_fd.fd, SOL_SOCKET, SO_ERROR, (void *)&opt, &slen) == 0) && (opt > 0) ) {
+			ret = getsockopt(poll_ctx->poll_fd.fd, SOL_SOCKET, SO_ERROR, (void *)&opt, &slen);
+			if(ret == 0) {
+				if(opt == 0) {
+					poll_ctx->poll_fd.config.s.poll_out = 0;
+					poll_ctx->poll_fd.config.s.poll_in = 1;
+					set_client_state(CLIENT_CONNECTED);
+				} else {
+					debug("connect failed!\n");
+					set_client_state(CLIENT_RESET);
+				}
+			} else {
 				debug("connect failed!\n");
 				set_client_state(CLIENT_RESET);
-			} else {
-				poll_ctx->poll_fd.config.s.poll_out = 0;
-				poll_ctx->poll_fd.config.s.poll_in = 1;
-				set_client_state(CLIENT_CONNECTED);
 			}
 		}
 		break;
