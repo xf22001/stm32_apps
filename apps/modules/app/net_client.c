@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2020年08月12日 星期三 13时25分42秒
+ *   修改日期：2020年08月15日 星期六 14时07分49秒
  *   描    述：
  *
  *================================================================*/
@@ -604,16 +604,28 @@ static void net_client_handler(void *ctx)
 	net_client_info_t *net_client_info = (net_client_info_t *)poll_ctx->priv;
 	int ret;
 
-	ret = net_client_info->protocol_if->net_recv(net_client_info,
-	        net_client_info->recv_message_buffer.buffer + net_client_info->recv_message_buffer.used,
-	        NET_MESSAGE_BUFFER_SIZE - net_client_info->recv_message_buffer.used);
+	if(poll_ctx->poll_fd.status.s.poll_out == 1) {
+		int opt;
+		socklen_t slen;
+		slen = sizeof(int);
 
-	if(ret <= 0) {
-		debug("close connect.\n");
-		set_client_state(CLIENT_RESET);
-	} else {
-		net_client_info->recv_message_buffer.used += ret;
-		process_server_message(&net_client_info->recv_message_buffer, &net_client_info->send_message_buffer);
+		if((getsockopt(poll_ctx->poll_fd.fd, SOL_SOCKET, SO_ERROR, (void *)&opt, &slen) == 0) && (opt > 0) ) {
+			set_client_state(CLIENT_RESET);
+		} else {
+			poll_ctx->poll_fd.config.s.poll_out = 0;
+		}
+	} else if(poll_ctx->poll_fd.status.s.poll_in == 1) {
+		ret = net_client_info->protocol_if->net_recv(net_client_info,
+		        net_client_info->recv_message_buffer.buffer + net_client_info->recv_message_buffer.used,
+		        NET_MESSAGE_BUFFER_SIZE - net_client_info->recv_message_buffer.used);
+
+		if(ret <= 0) {
+			debug("close connect.\n");
+			set_client_state(CLIENT_RESET);
+		} else {
+			net_client_info->recv_message_buffer.used += ret;
+			process_server_message(&net_client_info->recv_message_buffer, &net_client_info->send_message_buffer);
+		}
 	}
 }
 
@@ -621,11 +633,15 @@ int send_to_server(uint8_t *buffer, size_t len)
 {
 	int ret = 0;
 
-	if(poll_loop_wait_send(net_client_info->sock_fd, TASK_NET_CLIENT_PERIODIC) == 0) {
-		ret = net_client_info->protocol_if->net_send(net_client_info, buffer, len);
+	if(net_client_info->state == CLIENT_CONNECTED) {
+		if(poll_loop_wait_send(net_client_info->sock_fd, TASK_NET_CLIENT_PERIODIC) == 0) {
+			ret = net_client_info->protocol_if->net_send(net_client_info, buffer, len);
 
-		if(ret <= 0) {
-			debug("net_send error!\n");
+			if(ret <= 0) {
+				debug("net_send error!\n");
+				ret = 0;
+			}
+		} else {
 			ret = 0;
 		}
 	} else {
@@ -676,14 +692,12 @@ void net_client_periodic(void *ctx)
 			ret = create_connect();
 
 			if(ret == 0) { //未连接到服务端，延时100ms,处理周期性事件
-				u_poll_mask_t u_poll_mask;
-
 				poll_ctx->poll_fd.fd = net_client_info->sock_fd;
 
-				u_poll_mask.v = 0;
-				u_poll_mask.s.poll_in = 1;
-				//u_poll_mask.s.poll_err = 1;
-				poll_ctx->poll_fd.config.v = u_poll_mask.v;
+				poll_ctx->poll_fd.config.v = 0;
+				poll_ctx->poll_fd.config.s.poll_in = 1;
+				poll_ctx->poll_fd.config.s.poll_out = 1;
+				poll_ctx->poll_fd.config.s.poll_err = 1;
 
 				poll_ctx->poll_fd.available = 1;
 
