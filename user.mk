@@ -34,9 +34,12 @@ cscope: all
 	#$(silent)tags.sh prepare;
 	$(silent)touch dep_files;
 	$(silent)for f in $$(find . -type f -name "*.d" 2>/dev/null); do \
-		for i in $$(cat "$$f" | sed 's/^.*: //g'); do \
-			if test -f "$$i";then readlink -f "$$i" >>dep_files;fi; \
-			if test "$${i:0:1}" = "/";then :;fi; \
+		for i in $$(cat "$$f" | sed 's/^.*://g' | sed 's/[\\ ]/\n/g' | sort -h | uniq); do \
+			if test "${i:0:1}" = "/";then \
+				echo "$i" >> dep_files; \
+			else \
+				readlink -f "$$i" >> dep_files; \
+			fi; \
 		done; \
 	done;
 	$(silent)cat dep_files | sort | uniq | sed 's/^\(.*\)$$/\"\1\"/g' >> cscope/cscope.files;
