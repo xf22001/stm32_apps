@@ -6,7 +6,7 @@
  *   文件名称：net_protocol_tcp.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月17日 星期一 14时39分04秒
- *   修改日期：2020年08月15日 星期六 13时55分23秒
+ *   修改日期：2020年08月16日 星期日 11时00分51秒
  *   描    述：
  *
  *================================================================*/
@@ -47,7 +47,7 @@ static int tcp_client_connect(void *ctx)
 
 	if(ret != 0) {
 		if(errno != EINPROGRESS) {
-			debug("close socket %d\n", net_client_info->sock_fd);
+			debug("close socket %d(%d)\n", net_client_info->sock_fd, errno);
 			close(net_client_info->sock_fd);
 			net_client_info->sock_fd = -1;
 		} else {
