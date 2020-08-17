@@ -6,7 +6,7 @@
  *   文件名称：net_client.h
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时38分02秒
- *   修改日期：2020年08月15日 星期六 16时13分12秒
+ *   修改日期：2020年08月17日 星期一 10时22分11秒
  *   描    述：
  *
  *================================================================*/
@@ -42,6 +42,7 @@ typedef enum {
 	CLIENT_CONNECT_CONFIRM,
 	CLIENT_CONNECTED,
 	CLIENT_RESET,
+	CLIENT_REINIT,
 } client_state_t;
 
 typedef struct {

@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2020年08月17日 星期一 10时02分24秒
+ *   修改日期：2020年08月17日 星期一 10时45分22秒
  *   描    述：
  *
  *================================================================*/
@@ -38,6 +38,7 @@ char *get_net_client_state_des(client_state_t state)
 			add_des_case(CLIENT_CONNECT_CONFIRM);
 			add_des_case(CLIENT_CONNECTED);
 			add_des_case(CLIENT_RESET);
+			add_des_case(CLIENT_REINIT);
 
 		default: {
 		}
@@ -703,7 +704,6 @@ void net_client_periodic(void *ctx)
 			blink_led_lan(3 * 1000);
 
 			if(is_server_enable() == 1) {
-				default_init();
 				set_client_state(CLIENT_CONNECTING);
 			}
 		}
@@ -750,7 +750,14 @@ void net_client_periodic(void *ctx)
 			poll_ctx->poll_fd.available = 0;
 
 			close_connect();
+
 			set_client_state(CLIENT_DISCONNECT);
+		}
+		break;
+
+		case CLIENT_REINIT: {
+			default_init();
+			set_client_state(CLIENT_RESET);
 		}
 		break;
 

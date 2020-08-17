@@ -6,7 +6,7 @@
  *   文件名称：net_protocol_udp.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月17日 星期一 14时41分21秒
- *   修改日期：2020年06月11日 星期四 13时27分11秒
+ *   修改日期：2020年08月17日 星期一 10时38分33秒
  *   描    述：
  *
  *================================================================*/
@@ -60,6 +60,10 @@ static int udp_client_close(void *ctx)
 {
 	int ret = -1;
 	net_client_info_t *net_client_info = (net_client_info_t *)ctx;
+
+	if(net_client_info->sock_fd == -1) {
+		return ret;
+	}
 
 	debug("close socket %d\n", net_client_info->sock_fd);
 
