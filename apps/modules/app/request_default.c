@@ -6,7 +6,7 @@
  *   文件名称：request_default.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月05日 星期四 10时09分49秒
- *   修改日期：2020年08月12日 星期三 10时18分19秒
+ *   修改日期：2020年08月17日 星期一 09时13分59秒
  *   描    述：
  *
  *================================================================*/
@@ -95,8 +95,17 @@ static void request_process(uint8_t *request, uint16_t request_size, uint8_t *se
 	_hexdump("request_process", (const char *)request, request_size);
 }
 
+static uint32_t send_stamp = 0;
 static void request_periodic(uint8_t *send_buffer, uint16_t send_buffer_size)
 {
+	uint32_t ticks = osKernelSysTick();
+
+	if(ticks - send_stamp < 1 * 1000) {
+		return;
+	}
+
+	send_stamp = ticks;
+
 	debug("\n");
 
 	if(get_client_state() == CLIENT_CONNECTED) {

@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2020年08月16日 星期日 11时04分22秒
+ *   修改日期：2020年08月17日 星期一 10时02分24秒
  *   描    述：
  *
  *================================================================*/
@@ -248,6 +248,7 @@ static void default_init(void)
 
 	set_net_client_protocol_if(get_protocol_if());
 	set_net_client_request_callback(get_request_callback());
+	get_addr_info();
 
 	if(net_client_info->request_callback->init != NULL) {
 		net_client_info->request_callback->init();
@@ -614,6 +615,7 @@ static void net_client_handler(void *ctx)
 
 			if(ret == 0) {
 				if(opt == 0) {
+					debug("connect success!\n");
 					poll_ctx->poll_fd.config.s.poll_out = 0;
 					poll_ctx->poll_fd.config.s.poll_in = 1;
 					set_client_state(CLIENT_CONNECTED);
@@ -701,6 +703,7 @@ void net_client_periodic(void *ctx)
 			blink_led_lan(3 * 1000);
 
 			if(is_server_enable() == 1) {
+				default_init();
 				set_client_state(CLIENT_CONNECTING);
 			}
 		}
@@ -708,8 +711,10 @@ void net_client_periodic(void *ctx)
 
 		case CLIENT_CONNECTING: {
 			ret = create_connect();
+			blink_led_lan(0);
 
 			if(ret == 0) { //未连接到服务端，延时100ms,处理周期性事件
+
 				poll_ctx->poll_fd.fd = net_client_info->sock_fd;
 
 				poll_ctx->poll_fd.config.v = 0;
@@ -727,8 +732,6 @@ void net_client_periodic(void *ctx)
 		break;
 
 		case CLIENT_CONNECT_CONFIRM: {
-			blink_led_lan(0);
-
 			if(ticks - net_client_info->connect_confirm_stamp >= (3 * TASK_NET_CLIENT_CONNECT_PERIODIC)) {
 				debug("connect failed!\n");
 				set_client_state(CLIENT_RESET);
@@ -737,8 +740,6 @@ void net_client_periodic(void *ctx)
 		break;
 
 		case CLIENT_CONNECTED: {
-			blink_led_lan(0);
-
 			if(is_server_enable() == 0) {
 				set_client_state(CLIENT_RESET);
 			}
@@ -749,7 +750,6 @@ void net_client_periodic(void *ctx)
 			poll_ctx->poll_fd.available = 0;
 
 			close_connect();
-			default_init();
 			set_client_state(CLIENT_DISCONNECT);
 		}
 		break;
