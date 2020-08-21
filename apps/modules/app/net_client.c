@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2020年08月17日 星期一 10时45分22秒
+ *   修改日期：2020年08月21日 星期五 13时11分15秒
  *   描    述：
  *
  *================================================================*/
@@ -503,6 +503,8 @@ static int create_connect(void)
 		return ret;
 	}
 
+	blink_led_lan(0);
+
 	ret = create_server_connect();
 
 	if(ret != 0) {
@@ -711,7 +713,6 @@ void net_client_periodic(void *ctx)
 
 		case CLIENT_CONNECTING: {
 			ret = create_connect();
-			blink_led_lan(0);
 
 			if(ret == 0) { //未连接到服务端，延时100ms,处理周期性事件
 
