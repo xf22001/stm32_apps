@@ -3,15 +3,15 @@
 /*================================================================
  *   
  *   
- *   文件名称：config.h
+ *   文件名称：config_list.h
  *   创 建 者：肖飞
- *   创建日期：2020年09月09日 星期三 16时25分37秒
- *   修改日期：2020年09月09日 星期三 16时34分45秒
+ *   创建日期：2020年09月09日 星期三 16时46分30秒
+ *   修改日期：2020年09月09日 星期三 16时46分58秒
  *   描    述：
  *
  *================================================================*/
-#ifndef _CONFIG_H
-#define _CONFIG_H
+#ifndef _CONFIG_LIST_H
+#define _CONFIG_LIST_H
 #ifdef __cplusplus
 extern "C"
 {
@@ -44,4 +44,4 @@ int config_set_class_key_value(uint32_t cls, uint32_t key, void *value);
 int config_delete_class_key(uint32_t cls, uint32_t key);
 void config_dump_class_key_value(void);
 
-#endif //_CONFIG_H
+#endif //_CONFIG_LIST_H
