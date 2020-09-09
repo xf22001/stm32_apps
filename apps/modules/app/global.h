@@ -6,7 +6,7 @@
  *   文件名称：global.h
  *   创 建 者：肖飞
  *   创建日期：2020年09月09日 星期三 09时06分39秒
- *   修改日期：2020年09月09日 星期三 15时22分55秒
+ *   修改日期：2020年09月09日 星期三 16时21分17秒
  *   描    述：
  *
  *================================================================*/
@@ -36,14 +36,14 @@ typedef struct {
 
 typedef struct {
 	struct list_head list;
-	void *key;
+	uint32_t key;
 	void *value;
 } global_key_t;
 
 void global_init(void);
-void *global_get_class_key_value(uint32_t cls, void *key);
-int global_set_class_key_value(uint32_t cls, void *key, void *value, uint8_t replace);
-int global_delete_class_key(uint32_t cls, void *key);
+void *global_get_class_key_value(uint32_t cls, uint32_t key);
+int global_set_class_key_value(uint32_t cls, uint32_t key, void *value, uint8_t replace);
+int global_delete_class_key(uint32_t cls, uint32_t key);
 void global_dump_class_key_value(void);
 
 #endif //_GLOBAL_H

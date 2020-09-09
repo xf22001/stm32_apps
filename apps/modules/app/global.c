@@ -6,7 +6,7 @@
  *   文件名称：global.c
  *   创 建 者：肖飞
  *   创建日期：2020年09月09日 星期三 09时05分04秒
- *   修改日期：2020年09月09日 星期三 16时04分54秒
+ *   修改日期：2020年09月09日 星期三 16时22分11秒
  *   描    述：
  *
  *================================================================*/
@@ -29,7 +29,7 @@ void global_init(void)
 	}
 }
 
-void *global_get_class_key_value(uint32_t cls, void *key)
+void *global_get_class_key_value(uint32_t cls, uint32_t key)
 {
 	void *ret = NULL;
 	osStatus os_status;
@@ -66,7 +66,7 @@ void *global_get_class_key_value(uint32_t cls, void *key)
 	return ret;
 }
 
-int global_set_class_key_value(uint32_t cls, void *key, void *value, uint8_t replace)
+int global_set_class_key_value(uint32_t cls, uint32_t key, void *value, uint8_t replace)
 {
 	int ret = -1;
 	osStatus os_status;
@@ -140,7 +140,7 @@ int global_set_class_key_value(uint32_t cls, void *key, void *value, uint8_t rep
 	return ret;
 }
 
-int global_delete_class_key(uint32_t cls, void *key)
+int global_delete_class_key(uint32_t cls, uint32_t key)
 {
 	int ret = -1;
 	osStatus os_status;
