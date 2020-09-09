@@ -6,7 +6,7 @@
  *   文件名称：global.c
  *   创 建 者：肖飞
  *   创建日期：2020年09月09日 星期三 09时05分04秒
- *   修改日期：2020年09月09日 星期三 14时12分33秒
+ *   修改日期：2020年09月09日 星期三 16时04分54秒
  *   描    述：
  *
  *================================================================*/
@@ -29,7 +29,7 @@ void global_init(void)
 	}
 }
 
-void *global_get_class_key_value(uint32_t cls, uint32_t key)
+void *global_get_class_key_value(uint32_t cls, void *key)
 {
 	void *ret = NULL;
 	osStatus os_status;
@@ -66,7 +66,7 @@ void *global_get_class_key_value(uint32_t cls, uint32_t key)
 	return ret;
 }
 
-int global_set_class_key_value(uint32_t cls, uint32_t key, void *value, uint8_t replace)
+int global_set_class_key_value(uint32_t cls, void *key, void *value, uint8_t replace)
 {
 	int ret = -1;
 	osStatus os_status;
@@ -127,7 +127,7 @@ int global_set_class_key_value(uint32_t cls, uint32_t key, void *value, uint8_t 
 			global_key->key = key;
 			global_key->value = value;
 			list_add_tail(&global_key->list, head_key);
-			//debug("alloc cls:%u, key:%u, value:%p\n", global_cls->cls, global_key->key, global_key->value);
+			//debug("alloc cls:%u, key:%p, value:%p\n", global_cls->cls, global_key->key, global_key->value);
 			ret = 0;
 		}
 	}
@@ -140,7 +140,7 @@ int global_set_class_key_value(uint32_t cls, uint32_t key, void *value, uint8_t 
 	return ret;
 }
 
-int global_delete_class_key(uint32_t cls, uint32_t key)
+int global_delete_class_key(uint32_t cls, void *key)
 {
 	int ret = -1;
 	osStatus os_status;
@@ -215,7 +215,7 @@ void global_dump_class_key_value(void)
 		debug("cls:%u\n", global_cls_item->cls);
 		head_key = &global_cls_item->key_list;
 		list_for_each_entry(global_key_item, head_key, global_key_t, list) {
-			debug("\tkey:%u, value:%p\n", global_key_item->key, global_key_item->value);
+			debug("\tkey:%p, value:%p\n", global_key_item->key, global_key_item->value);
 		}
 	}
 
