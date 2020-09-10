@@ -6,7 +6,7 @@
  *   文件名称：request_ws.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月23日 星期日 15时44分51秒
- *   修改日期：2020年06月10日 星期三 11时09分55秒
+ *   修改日期：2020年09月10日 星期四 08时34分23秒
  *   描    述：
  *
  *================================================================*/
@@ -17,43 +17,43 @@
 
 #include "log.h"
 
-static void request_init(void)
+static void request_init(void *ctx)
 {
 	debug("\n");
 }
 
-static void request_before_create_server_connect(void)
+static void request_before_create_server_connect(void *ctx)
 {
 	debug("\n");
 }
 
-static void request_after_create_server_connect(void)
+static void request_after_create_server_connect(void *ctx)
 {
 	debug("\n");
 }
 
-static void request_before_close_server_connect(void)
+static void request_before_close_server_connect(void *ctx)
 {
 	debug("\n");
 }
 
-static void request_after_close_server_connect(void)
+static void request_after_close_server_connect(void *ctx)
 {
 	debug("\n");
 }
 
-static void request_parse(char *buffer, size_t size, size_t max_request_size, char **prequest, size_t *request_size)
+static void request_parse(void *ctx, char *buffer, size_t size, size_t max_request_size, char **prequest, size_t *request_size)
 {
 	*prequest = buffer;
 	*request_size = size;
 }
 
-static void request_process(uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
+static void request_process(void *ctx, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
 	_hexdump("request_process", (const char *)request, request_size);
 }
 
-static void request_periodic(uint8_t *send_buffer, uint16_t send_buffer_size)
+static void request_periodic(void *ctx, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
 	//debug("\n");
 }

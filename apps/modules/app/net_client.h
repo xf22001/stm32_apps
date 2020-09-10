@@ -6,7 +6,7 @@
  *   文件名称：net_client.h
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时38分02秒
- *   修改日期：2020年08月17日 星期一 10时22分11秒
+ *   修改日期：2020年09月10日 星期四 08时49分11秒
  *   描    述：
  *
  *================================================================*/
@@ -43,6 +43,7 @@ typedef enum {
 	CLIENT_CONNECTED,
 	CLIENT_RESET,
 	CLIENT_REINIT,
+	CLIENT_SUSPEND,
 } client_state_t;
 
 typedef struct {
@@ -67,15 +68,15 @@ typedef struct {
 	uint8_t buffer[NET_MESSAGE_BUFFER_SIZE];
 } net_message_buffer_t;
 
-typedef void (*set_lan_led_state_t)(uint32_t state);
-typedef void (*init_t)(void);
-typedef void (*before_connect_t)(void);
-typedef void (*after_connect_t)(void);
-typedef void (*before_close_t)(void);
-typedef void (*after_close_t)(void);
-typedef void (*parse_t)(char *buffer, size_t size, size_t max_request_size, char **prequest, size_t *request_size);
-typedef void (*process_t)(uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size);
-typedef void (*periodic_t)(uint8_t *send_buffer, uint16_t send_buffer_size);
+typedef void (*set_lan_led_state_t)(void *ctx, uint32_t state);
+typedef void (*init_t)(void *ctx);
+typedef void (*before_connect_t)(void *ctx);
+typedef void (*after_connect_t)(void *ctx);
+typedef void (*before_close_t)(void *ctx);
+typedef void (*after_close_t)(void *ctx);
+typedef void (*parse_t)(void *ctx, char *buffer, size_t size, size_t max_request_size, char **prequest, size_t *request_size);
+typedef void (*process_t)(void *ctx, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size);
+typedef void (*periodic_t)(void *ctx, uint8_t *send_buffer, uint16_t send_buffer_size);
 typedef struct {
 	char *name;
 	set_lan_led_state_t set_lan_led_state;
@@ -98,22 +99,23 @@ typedef struct {
 	uint32_t connect_confirm_stamp;
 	uint8_t reset_connect;
 	client_state_t state;
-	trans_protocol_type_t trans_protocol_type;
 	net_client_addr_info_t net_client_addr_info;
 	net_message_buffer_t recv_message_buffer;
 	net_message_buffer_t send_message_buffer;
 	request_callback_t *request_callback;
+	trans_protocol_type_t trans_protocol_type;
 	protocol_if_t *protocol_if;
 } net_client_info_t;
 
 char *get_net_client_state_des(client_state_t state);
-void set_net_client_protocol_if(protocol_if_t *protocol_if);
-void set_net_client_request_callback(request_callback_t *request_callback);
-void set_client_state(client_state_t state);
-client_state_t get_client_state(void);
-uint32_t get_net_client_connect_id(void);
-int send_to_server(uint8_t *buffer, size_t len);
+void set_net_client_protocol_if(net_client_info_t *net_client_info, protocol_if_t *protocol_if);
+void set_net_client_request_callback(net_client_info_t *net_client_info, request_callback_t *request_callback);
+void set_client_state(net_client_info_t *net_client_info, client_state_t state);
+client_state_t get_client_state(net_client_info_t *net_client_info);
+uint32_t get_net_client_connect_id(net_client_info_t *net_client_info);
+int send_to_server(net_client_info_t *net_client_info, uint8_t *buffer, size_t len);
 void net_client_periodic(void *ctx);
+net_client_info_t *get_net_client_info(void);
 void net_client_add_poll_loop(poll_loop_t *poll_loop);
 
 #endif //_NET_CLIENT_H

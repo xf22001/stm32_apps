@@ -6,7 +6,7 @@
  *   文件名称：request_default.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月05日 星期四 10时09分49秒
- *   修改日期：2020年08月17日 星期一 09时13分59秒
+ *   修改日期：2020年09月10日 星期四 08时32分48秒
  *   描    述：
  *
  *================================================================*/
@@ -19,7 +19,7 @@
 //#define LOG_NONE
 #include "log.h"
 
-static int chunk_sendto(uint32_t fn, uint32_t stage, void *data, size_t size, char *send_buffer, size_t send_buffer_size)
+static int chunk_sendto(net_client_info_t *net_client_info, uint32_t fn, uint32_t stage, void *data, size_t size, char *send_buffer, size_t send_buffer_size)
 {
 	int ret = 0;
 	request_info_t request_info;
@@ -37,7 +37,7 @@ static int chunk_sendto(uint32_t fn, uint32_t stage, void *data, size_t size, ch
 		request_encode(&request_info);
 
 		if(request_info.request_size != 0) {
-			if(send_to_server((uint8_t *)send_buffer, request_info.request_size) != (int)request_info.request_size) {
+			if(send_to_server(net_client_info, (uint8_t *)send_buffer, request_info.request_size) != (int)request_info.request_size) {
 				ret = -1;
 				break;
 			}
@@ -51,7 +51,7 @@ static int chunk_sendto(uint32_t fn, uint32_t stage, void *data, size_t size, ch
 	return ret;
 }
 
-static void request_set_lan_led_state(uint32_t state)
+static void request_set_lan_led_state(void *ctx, uint32_t state)
 {
 	if(state == 0) {
 		HAL_GPIO_WritePin(led_lan_GPIO_Port, led_lan_Pin, GPIO_PIN_RESET);
@@ -60,45 +60,46 @@ static void request_set_lan_led_state(uint32_t state)
 	}
 }
 
-static void request_init(void)
+static void request_init(void *ctx)
 {
 	debug("\n");
 }
 
-static void request_before_create_server_connect(void)
+static void request_before_create_server_connect(void *ctx)
 {
 	debug("\n");
 }
 
-static void request_after_create_server_connect(void)
+static void request_after_create_server_connect(void *ctx)
 {
 	debug("\n");
 }
 
-static void request_before_close_server_connect(void)
+static void request_before_close_server_connect(void *ctx)
 {
 	debug("\n");
 }
 
-static void request_after_close_server_connect(void)
+static void request_after_close_server_connect(void *ctx)
 {
 	debug("\n");
 }
 
-static void request_parse(char *buffer, size_t size, size_t max_request_size, char **prequest, size_t *request_size)
+static void request_parse(void *ctx, char *buffer, size_t size, size_t max_request_size, char **prequest, size_t *request_size)
 {
 	request_decode((char *)buffer, size, max_request_size, prequest, request_size);
 }
 
-static void request_process(uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
+static void request_process(void *ctx, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
 	_hexdump("request_process", (const char *)request, request_size);
 }
 
 static uint32_t send_stamp = 0;
-static void request_periodic(uint8_t *send_buffer, uint16_t send_buffer_size)
+static void request_periodic(void *ctx, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
 	uint32_t ticks = osKernelSysTick();
+	net_client_info_t *net_client_info = (net_client_info_t *)ctx;
 
 	if(ticks - send_stamp < 1 * 1000) {
 		return;
@@ -108,8 +109,8 @@ static void request_periodic(uint8_t *send_buffer, uint16_t send_buffer_size)
 
 	debug("\n");
 
-	if(get_client_state() == CLIENT_CONNECTED) {
-		chunk_sendto(1, 0, (void *)0x8000000, 128, (char *)send_buffer, send_buffer_size);
+	if(get_client_state(net_client_info) == CLIENT_CONNECTED) {
+		chunk_sendto(net_client_info, 1, 0, (void *)0x8000000, 128, (char *)send_buffer, send_buffer_size);
 	}
 }
 
