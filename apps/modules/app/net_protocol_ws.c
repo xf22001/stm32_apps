@@ -6,7 +6,7 @@
  *   文件名称：net_protocol_ws.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月23日 星期日 12时23分31秒
- *   修改日期：2020年08月12日 星期三 11时49分47秒
+ *   修改日期：2020年09月15日 星期二 10时41分32秒
  *   描    述：
  *
  *================================================================*/
@@ -85,6 +85,7 @@ static int ws_client_connect(void *ctx)
 	//char *url = "wss://ocpp-16-json.dev-plugitcloud.com/SSECHINAEVSE";
 
 	if(get_connect_enable() != 1) {
+		debug("\n");
 		return ret;
 	}
 
@@ -94,6 +95,7 @@ static int ws_client_connect(void *ctx)
 		hi = (HTTP_INFO *)os_calloc(1, sizeof(HTTP_INFO));
 
 		if(hi == NULL) {
+			debug("\n");
 			return ret;
 		}
 	}
@@ -108,6 +110,7 @@ static int ws_client_connect(void *ctx)
 		http_close(hi);
 		net_client_info->sock_fd = -1;
 		set_connect_enable(0);
+		debug("\n");
 		return ret;
 	}
 
@@ -121,6 +124,7 @@ static int ws_client_connect(void *ctx)
 		http_close(hi);
 		net_client_info->sock_fd = -1;
 		set_connect_enable(0);
+		debug("\n");
 		return ret;
 	}
 
@@ -130,6 +134,7 @@ static int ws_client_connect(void *ctx)
 		http_close(hi);
 		net_client_info->sock_fd = -1;
 		set_connect_enable(0);
+		debug("\n");
 		return ret;
 	}
 

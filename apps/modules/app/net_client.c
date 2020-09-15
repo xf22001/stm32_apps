@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2020年09月10日 星期四 10时11分43秒
+ *   修改日期：2020年09月15日 星期二 14时32分48秒
  *   描    述：
  *
  *================================================================*/
@@ -15,7 +15,6 @@
 #include "lwip.h"
 #include "lwip/sockets.h"
 #include "lwip/dhcp.h"
-#include "lwip/netdb.h"
 #include "main.h"
 
 #include "os_utils.h"
@@ -88,12 +87,9 @@ void set_net_client_request_callback(net_client_info_t *net_client_info, request
 static int update_net_client_addr(net_client_info_t *net_client_info)
 {
 	int ret = -1;
-	struct addrinfo hints;
-	struct addrinfo *addr_list;
-	struct addrinfo *cur;
 	struct list_head *list_head;
-	struct list_head *pos;
-	struct list_head *n;
+	int socktype;
+	int protocol;
 
 	if(net_client_info == NULL) {
 		debug("\n");
@@ -106,70 +102,13 @@ static int update_net_client_addr(net_client_info_t *net_client_info)
 	}
 
 	list_head = &net_client_info->net_client_addr_info.socket_addr_info_list;
+	socktype = (net_client_info->protocol_if->type == TRANS_PROTOCOL_UDP) ? SOCK_DGRAM : SOCK_STREAM;
+	protocol = (net_client_info->protocol_if->type == TRANS_PROTOCOL_UDP) ? IPPROTO_UDP : IPPROTO_TCP;
 
-	list_for_each_safe(pos, n, list_head) {
-		socket_addr_info_t *entry = list_entry(pos, socket_addr_info_t, list);
+	ret = update_addr_info_list(list_head, net_client_info->net_client_addr_info.host, net_client_info->net_client_addr_info.port, socktype, protocol);
 
-		list_del(pos);
-
-		debug("free addr family:%d, socktype:%d, protocol:%d\n", entry->ai_family, entry->ai_socktype, entry->ai_socktype);
-
-		os_free(entry);
-	}
-
-	/* Do name resolution with both IPv6 and IPv4 */
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = (net_client_info->protocol_if->type == TRANS_PROTOCOL_UDP) ? SOCK_DGRAM : SOCK_STREAM;
-	hints.ai_protocol = (net_client_info->protocol_if->type == TRANS_PROTOCOL_UDP) ? IPPROTO_UDP : IPPROTO_TCP;
-
-	if(getaddrinfo(net_client_info->net_client_addr_info.host, net_client_info->net_client_addr_info.port, &hints, &addr_list) != 0) {
-		debug("\n");
-		return ret;
-	}
-
-	for(cur = addr_list; cur != NULL; cur = cur->ai_next) {
-		socket_addr_info_t *socket_addr_info = (socket_addr_info_t *)os_alloc(sizeof(socket_addr_info_t));
-
-		if(socket_addr_info == NULL) {
-			debug("\n");
-			break;
-		}
-
-		socket_addr_info->ai_family = cur->ai_family;
-		socket_addr_info->ai_socktype = cur->ai_socktype;
-		socket_addr_info->ai_protocol = cur->ai_protocol;
-		socket_addr_info->addr_size = cur->ai_addrlen;
-		memset(&socket_addr_info->addr, 0, sizeof(socket_addr_info->addr));
-		memcpy(&socket_addr_info->addr, cur->ai_addr, cur->ai_addrlen);
-
-		debug("add addr family:%d, socktype:%d, protocol:%d\n", socket_addr_info->ai_family, socket_addr_info->ai_socktype, socket_addr_info->ai_socktype);
-
-		if(socket_addr_info->ai_family == AF_INET) {
-			struct sockaddr_in *sockaddr_in = (struct sockaddr_in *)&socket_addr_info->addr;
-			debug("ip:%s, port:%d\n",
-			      inet_ntoa(sockaddr_in->sin_addr),
-			      ntohs(sockaddr_in->sin_port)
-			     );
-		} else {
-			//struct sockaddr_in6 *sockaddr_in6 = (struct sockaddr_in6 *)&socket_addr_info->addr;
-
-			//debug("ip:%s, port:%d\n",
-			//      inet6_ntoa(sockaddr_in6->sin6_addr),
-			//      ntohs(sockaddr_in6->sin6_port)
-			//     );
-		}
-
-		list_add_tail(&socket_addr_info->list, list_head);
-	}
-
-	freeaddrinfo(addr_list);
-
-	if(!list_empty(list_head)) {
-		net_client_info->net_client_addr_info.socket_addr_info = list_first_entry(list_head, socket_addr_info_t, list);
-		ret = 0;
-	} else {
-		debug("\n");
+	if(ret == 0) {
+		net_client_info->net_client_addr_info.socket_addr_info = get_next_socket_addr_info(list_head, net_client_info->net_client_addr_info.socket_addr_info);
 	}
 
 	return ret;
@@ -195,8 +134,6 @@ static void get_addr_info(net_client_info_t *net_client_info)
 	char *port;
 	char *path;
 
-	debug("\n");
-
 	//u_uint32_bytes_t backstage_ip;
 	if(net_client_info == NULL) {
 		debug("\n");
@@ -220,6 +157,8 @@ static void get_addr_info(net_client_info_t *net_client_info)
 	snprintf(net_client_info->net_client_addr_info.host, sizeof(net_client_info->net_client_addr_info.host), "%s", host);
 	snprintf(net_client_info->net_client_addr_info.port, sizeof(net_client_info->net_client_addr_info.port), "%s", port);
 	snprintf(net_client_info->net_client_addr_info.path, sizeof(net_client_info->net_client_addr_info.path), "%s", path);
+	net_client_info->net_client_addr_info.socket_addr_info = NULL;
+
 	update_net_client_addr(net_client_info);
 }
 
@@ -409,9 +348,6 @@ static int create_server_connect(net_client_info_t *net_client_info)
 	int ret = -1;
 	int flags = 0;
 	uint32_t ticks = osKernelSysTick();
-	struct list_head *list_head;
-
-	list_head = &net_client_info->net_client_addr_info.socket_addr_info_list;
 
 	if(net_client_info == NULL) {
 		debug("\n");
@@ -427,6 +363,7 @@ static int create_server_connect(net_client_info_t *net_client_info)
 	}
 
 	if(net_client_info->net_client_addr_info.socket_addr_info == NULL) {
+		get_addr_info(net_client_info);
 		debug("\n");
 		return ret;
 	}
@@ -440,12 +377,16 @@ static int create_server_connect(net_client_info_t *net_client_info)
 
 		net_client_info->retry_count = 0;
 	} else {
+		struct list_head *list_head;
+
+		list_head = &net_client_info->net_client_addr_info.socket_addr_info_list;
 		debug("connect failed! try to get addr info!\n");
 
-		if(net_client_info->net_client_addr_info.socket_addr_info != list_last_entry(list_head, socket_addr_info_t, list)) {
-			net_client_info->net_client_addr_info.socket_addr_info = list_next_entry(net_client_info->net_client_addr_info.socket_addr_info, socket_addr_info_t, list);
-		} else {
+		net_client_info->net_client_addr_info.socket_addr_info = get_next_socket_addr_info(list_head, net_client_info->net_client_addr_info.socket_addr_info);
+
+		if(net_client_info->net_client_addr_info.socket_addr_info == NULL) {
 			get_addr_info(net_client_info);
+			debug("\n");
 		}
 	}
 
@@ -621,23 +562,11 @@ static void net_client_handler(void *ctx)
 
 	switch(get_client_state(net_client_info)) {
 		case CLIENT_CONNECT_CONFIRM: {
-			int opt;
-			socklen_t slen = sizeof(int);
-
-			ret = getsockopt(poll_ctx->poll_fd.fd, SOL_SOCKET, SO_ERROR, (void *)&opt, &slen);
-
-			if(ret == 0) {
-				if(opt == 0) {
-					debug("connect success!\n");
-					poll_ctx->poll_fd.config.s.poll_out = 0;
-					poll_ctx->poll_fd.config.s.poll_in = 1;
-					set_client_state(net_client_info, CLIENT_CONNECTED);
-				} else {
-					debug("connect failed!(%d)\n", opt);
-					set_client_state(net_client_info, CLIENT_RESET);
-				}
+			if(socket_connect_confirm(poll_ctx->poll_fd.fd) == 0) {
+				poll_ctx->poll_fd.config.s.poll_out = 0;
+				poll_ctx->poll_fd.config.s.poll_in = 1;
+				set_client_state(net_client_info, CLIENT_CONNECTED);
 			} else {
-				debug("connect failed!(%d)\n", errno);
 				set_client_state(net_client_info, CLIENT_RESET);
 			}
 		}

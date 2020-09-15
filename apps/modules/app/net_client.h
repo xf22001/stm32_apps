@@ -6,7 +6,7 @@
  *   文件名称：net_client.h
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时38分02秒
- *   修改日期：2020年09月10日 星期四 08时49分11秒
+ *   修改日期：2020年09月15日 星期二 10时09分42秒
  *   描    述：
  *
  *================================================================*/
@@ -25,6 +25,7 @@ extern "C"
 #include "poll_loop.h"
 #include "net_protocol.h"
 #include "list_utils.h"
+#include "net_utils.h"
 
 #ifdef __cplusplus
 }
@@ -45,15 +46,6 @@ typedef enum {
 	CLIENT_REINIT,
 	CLIENT_SUSPEND,
 } client_state_t;
-
-typedef struct {
-	struct list_head list;
-	int ai_family;/* Address family of socket. */
-	int ai_socktype;/* Socket type. */
-	int ai_protocol;/* Protocol of socket. */
-	struct sockaddr_storage addr;
-	socklen_t addr_size;
-} socket_addr_info_t;
 
 typedef struct {
 	char host[256];
