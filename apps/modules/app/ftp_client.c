@@ -6,7 +6,7 @@
  *   文件名称：ftp_client.c
  *   创 建 者：肖飞
  *   创建日期：2020年09月15日 星期二 09时32分10秒
- *   修改日期：2020年09月16日 星期三 17时11分05秒
+ *   修改日期：2020年09月16日 星期三 17时15分31秒
  *   描    述：
  *
  *================================================================*/
@@ -381,7 +381,7 @@ static void ftp_client_cmd_download(void *ctx)
 			int response_code = atoi(ftp_client_info->cmd.rx_buffer);
 
 			if(response_code == 150) {
-				ftp_client_info->cmd.action_state = 3;
+				ftp_client_info->cmd.action_state = 4;
 			}
 		}
 		break;
