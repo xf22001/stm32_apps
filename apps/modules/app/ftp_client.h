@@ -6,7 +6,7 @@
  *   文件名称：ftp_client.h
  *   创 建 者：肖飞
  *   创建日期：2020年09月15日 星期二 09时32分14秒
- *   修改日期：2020年09月15日 星期二 17时39分40秒
+ *   修改日期：2020年09月16日 星期三 15时50分53秒
  *   描    述：
  *
  *================================================================*/
@@ -30,6 +30,8 @@ extern "C"
 }
 #endif
 
+typedef void (*ftp_client_handler_t)(void *ctx);
+
 typedef struct {
 	struct list_head socket_addr_info_list;
 	socket_addr_info_t *socket_addr_info;
@@ -39,12 +41,7 @@ typedef enum {
 	FTP_CLIENT_CMD_STATE_IDLE = 0,
 	FTP_CLIENT_CMD_STATE_CONNECT,
 	FTP_CLIENT_CMD_STATE_CONNECT_CONFIRM,
-	FTP_CLIENT_CMD_STATE_WAIT_HELLO,
-	FTP_CLIENT_CMD_STATE_WAIT_USER_RESPONSE,
-	FTP_CLIENT_CMD_STATE_WAIT_PASSWORD_RESPONSE,
-	FTP_CLIENT_CMD_STATE_WAIT_BINARY_MODE_RESPONSE,
-	FTP_CLIENT_CMD_STATE_PASV_RESPONSE,
-	FTP_CLIENT_CMD_STATE_DATA,
+	FTP_CLIENT_CMD_STATE_CONNECTED,
 	FTP_CLIENT_CMD_STATE_DISCONNECT,
 	FTP_CLIENT_CMD_STATE_SUSPEND,
 } ftp_client_cmd_state_t;
@@ -52,8 +49,10 @@ typedef enum {
 typedef struct {
 	int sock_fd;
 	addr_info_t addr_info;
+	ftp_client_cmd_state_t request_state;
 	ftp_client_cmd_state_t state;
-	uint32_t stamp;
+	ftp_client_handler_t handler;
+	uint8_t action_state;
 	char rx_buffer[64];
 	size_t rx_size;
 	char tx_buffer[256];
@@ -64,6 +63,7 @@ typedef enum {
 	FTP_CLIENT_DATA_STATE_IDLE = 0,
 	FTP_CLIENT_DATA_STATE_CONNECT,
 	FTP_CLIENT_DATA_STATE_CONNECT_CONFIRM,
+	FTP_CLIENT_DATA_STATE_CONNECTED,
 	FTP_CLIENT_DATA_STATE_DISCONNECT,
 	FTP_CLIENT_DATA_STATE_SUSPEND,
 } ftp_client_data_state_t;
@@ -71,8 +71,10 @@ typedef enum {
 typedef struct {
 	int sock_fd;
 	addr_info_t addr_info;
+	ftp_client_data_state_t request_state;
 	ftp_client_data_state_t state;
-	uint32_t stamp;
+	ftp_client_handler_t handler;
+	uint8_t action_state;
 	char rx_buffer[1024];
 	size_t rx_size;
 	char tx_buffer[256];
@@ -92,19 +94,31 @@ typedef struct {
 	char path[256];
 	char user[32];
 	char password[64];
+	uint8_t rest_enable;
 } ftp_server_path_t;
+
+typedef enum {
+	FTP_CLIENT_ACTION_IDLE = 0,
+	FTP_CLIENT_ACTION_DOWNLOAD,
+} ftp_client_action_t;
 
 typedef struct {
 	ftp_server_path_t ftp_server_path;
+	ftp_client_action_t action;
+	ftp_client_state_t state;
+	uint32_t stamp;
 	ftp_client_cmd_t cmd;
 	ftp_client_data_t data;
-	ftp_client_state_t state;
+
+	int file_size;
+	int download_size;
+	uint32_t download_stamp;
 } ftp_client_info_t;
 
 char *get_ftp_client_state_des(ftp_client_state_t state);
 char *get_ftp_client_cmd_state_des(ftp_client_cmd_state_t state);
 char *get_ftp_client_data_state_des(ftp_client_data_state_t state);
-int request_ftp_client_connect(const char *host, const char *port, const char *path, const char *user, const char *password);
+int request_ftp_client_download(const char *host, const char *port, const char *path, const char *user, const char *password);
 void ftp_client_add_poll_loop(poll_loop_t *poll_loop);
 
 #endif //_FTP_CLIENT_H

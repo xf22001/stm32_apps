@@ -6,7 +6,7 @@
  *   文件名称：ftp_client.c
  *   创 建 者：肖飞
  *   创建日期：2020年09月15日 星期二 09时32分10秒
- *   修改日期：2020年09月15日 星期二 17时40分35秒
+ *   修改日期：2020年09月16日 星期三 15时59分28秒
  *   描    述：
  *
  *================================================================*/
@@ -15,7 +15,25 @@
 
 #include "log.h"
 
+#define FTP_SESSION_TIMEOUT (30 * 1000)
+
 static ftp_client_info_t *ftp_client_info = NULL;
+
+char *get_ftp_client_action_des(ftp_client_action_t action)
+{
+	char *des = "unknow";
+
+	switch(action) {
+			add_des_case(FTP_CLIENT_ACTION_IDLE);
+			add_des_case(FTP_CLIENT_ACTION_DOWNLOAD);
+
+		default: {
+		}
+		break;
+	}
+
+	return des;
+}
 
 char *get_ftp_client_state_des(ftp_client_state_t state)
 {
@@ -41,6 +59,7 @@ char *get_ftp_client_cmd_state_des(ftp_client_cmd_state_t state)
 			add_des_case(FTP_CLIENT_CMD_STATE_IDLE);
 			add_des_case(FTP_CLIENT_CMD_STATE_CONNECT);
 			add_des_case(FTP_CLIENT_CMD_STATE_CONNECT_CONFIRM);
+			add_des_case(FTP_CLIENT_CMD_STATE_CONNECTED);
 			add_des_case(FTP_CLIENT_CMD_STATE_DISCONNECT);
 			add_des_case(FTP_CLIENT_CMD_STATE_SUSPEND);
 
@@ -58,6 +77,10 @@ char *get_ftp_client_data_state_des(ftp_client_data_state_t state)
 
 	switch(state) {
 			add_des_case(FTP_CLIENT_DATA_STATE_IDLE);
+			add_des_case(FTP_CLIENT_DATA_STATE_CONNECT);
+			add_des_case(FTP_CLIENT_DATA_STATE_CONNECT_CONFIRM);
+			add_des_case(FTP_CLIENT_DATA_STATE_CONNECTED);
+			add_des_case(FTP_CLIENT_DATA_STATE_DISCONNECT);
 			add_des_case(FTP_CLIENT_DATA_STATE_SUSPEND);
 
 		default: {
@@ -66,6 +89,72 @@ char *get_ftp_client_data_state_des(ftp_client_data_state_t state)
 	}
 
 	return des;
+}
+
+static ftp_client_action_t get_ftp_client_action(ftp_client_info_t *ftp_client_info)
+{
+	return ftp_client_info->action;
+}
+
+static void set_ftp_client_action(ftp_client_info_t *ftp_client_info, ftp_client_action_t action)
+{
+	debug("%s -> %s\n", get_ftp_client_action_des(ftp_client_info->action), get_ftp_client_action_des(action));
+	ftp_client_info->action = action;
+}
+
+static ftp_client_state_t get_ftp_client_state(ftp_client_info_t *ftp_client_info)
+{
+	return ftp_client_info->state;
+}
+
+static void set_ftp_client_state(ftp_client_info_t *ftp_client_info, ftp_client_state_t state)
+{
+	debug("%s -> %s\n", get_ftp_client_state_des(ftp_client_info->state), get_ftp_client_state_des(state));
+	ftp_client_info->state = state;
+}
+
+static ftp_client_cmd_state_t get_ftp_client_cmd_state(ftp_client_info_t *ftp_client_info)
+{
+	return ftp_client_info->cmd.state;
+}
+
+static void set_ftp_client_cmd_state(ftp_client_info_t *ftp_client_info, ftp_client_cmd_state_t state)
+{
+	debug("%s -> %s\n", get_ftp_client_cmd_state_des(ftp_client_info->cmd.state), get_ftp_client_cmd_state_des(state));
+	ftp_client_info->cmd.state = state;
+}
+
+static ftp_client_cmd_state_t get_ftp_client_cmd_request_state(ftp_client_info_t *ftp_client_info)
+{
+	return ftp_client_info->cmd.request_state;
+}
+
+static void set_ftp_client_cmd_request_state(ftp_client_info_t *ftp_client_info, ftp_client_cmd_state_t state)
+{
+	//debug("%s -> %s\n", get_ftp_client_cmd_state_des(ftp_client_info->cmd.request_state), get_ftp_client_cmd_state_des(state));
+	ftp_client_info->cmd.request_state = state;
+}
+
+static ftp_client_data_state_t get_ftp_client_data_state(ftp_client_info_t *ftp_client_info)
+{
+	return ftp_client_info->data.state;
+}
+
+static void set_ftp_client_data_state(ftp_client_info_t *ftp_client_info, ftp_client_data_state_t state)
+{
+	debug("%s -> %s\n", get_ftp_client_data_state_des(ftp_client_info->data.state), get_ftp_client_data_state_des(state));
+	ftp_client_info->data.state = state;
+}
+
+static ftp_client_data_state_t get_ftp_client_data_request_state(ftp_client_info_t *ftp_client_info)
+{
+	return ftp_client_info->data.request_state;
+}
+
+static void set_ftp_client_data_request_state(ftp_client_info_t *ftp_client_info, ftp_client_data_state_t state)
+{
+	//debug("%s -> %s\n", get_ftp_client_data_state_des(ftp_client_info->data.request_state), get_ftp_client_data_state_des(state));
+	ftp_client_info->data.request_state = state;
 }
 
 static void set_ftp_client_server_info(ftp_client_info_t *ftp_client_info, const char *host, const char *port, const char *path, const char *user, const char *password)
@@ -119,7 +208,7 @@ static void get_ftp_client_cmd_addr_info(ftp_client_info_t *ftp_client_info)
 	}
 }
 
-int request_ftp_client_connect(const char *host, const char *port, const char *path, const char *user, const char *password)
+int request_ftp_client_download(const char *host, const char *port, const char *path, const char *user, const char *password)
 {
 	int ret = -1;
 
@@ -129,8 +218,9 @@ int request_ftp_client_connect(const char *host, const char *port, const char *p
 
 	set_ftp_client_server_info(ftp_client_info, host, port, path, user, password);
 
-	ftp_client_info->cmd.state = FTP_CLIENT_CMD_STATE_CONNECT;
-	debug("ftp_client_info %p\n", ftp_client_info);
+	set_ftp_client_cmd_request_state(ftp_client_info, FTP_CLIENT_CMD_STATE_CONNECT);
+
+	set_ftp_client_action(ftp_client_info, FTP_CLIENT_ACTION_DOWNLOAD);
 
 	return ret;
 }
@@ -214,22 +304,86 @@ static int ftp_client_send_data(int fd, char *buffer, size_t len)
 	return ret;
 }
 
-static void ftp_client_cmd_handler(void *ctx)
+static void ftp_client_cmd_download(void *ctx)
 {
+	int ret;
 	poll_ctx_t *poll_ctx_cmd = (poll_ctx_t *)ctx;
 	ftp_client_info_t *ftp_client_info = (ftp_client_info_t *)poll_ctx_cmd->priv;
-	int ret;
+	uint32_t ticks = osKernelSysTick();
 
-	switch(ftp_client_info->state) {
-		case FTP_CLIENT_STATE_CONNECTED: {
-			ret = recv(poll_ctx_cmd->poll_fd.fd, ftp_client_info->cmd.rx_buffer, sizeof(ftp_client_info->cmd.rx_buffer), 0);
+	switch(ftp_client_info->cmd.action_state) {
+		case 0: {
+			ret = snprintf(ftp_client_info->cmd.tx_buffer, sizeof(ftp_client_info->cmd.tx_buffer), "REST 0\r\n");
+			ret = ftp_client_send_data(poll_ctx_cmd->poll_fd.fd, ftp_client_info->cmd.tx_buffer, ret);
 
-			if(ret > 0) {
-				ftp_client_info->cmd.rx_size = ret;
-				_hexdump("recv", ftp_client_info->cmd.rx_buffer, ftp_client_info->cmd.rx_size);
+			if(ret != 0) {
+				set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
 			} else {
-				debug("recv error %d, (%s)\n", ret, strerror(errno));
-				ftp_client_info->cmd.state = FTP_CLIENT_CMD_STATE_DISCONNECT;
+				ftp_client_info->cmd.action_state = 1;
+			}
+
+			ret = snprintf(ftp_client_info->cmd.tx_buffer, sizeof(ftp_client_info->cmd.tx_buffer), "SIZE %s\r\n", ftp_client_info->ftp_server_path.path);
+			ret = ftp_client_send_data(poll_ctx_cmd->poll_fd.fd, ftp_client_info->cmd.tx_buffer, ret);
+
+			if(ret != 0) {
+				set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
+			} else {
+				ftp_client_info->cmd.action_state = 1;
+			}
+		}
+		break;
+
+		case 1: {
+			int response_code = atoi(ftp_client_info->cmd.rx_buffer);
+
+			if(response_code == 213) {
+				int code;
+				int size;
+
+				ret = sscanf(ftp_client_info->cmd.rx_buffer, "%d %d", &code, &size);
+
+				if(ret == 2) {
+					ftp_client_info->file_size = size;
+					debug("ftp_client_info->file_size:%d\n", ftp_client_info->file_size);
+
+					if(ftp_client_info->ftp_server_path.rest_enable == 1) {
+						ret = snprintf(ftp_client_info->cmd.tx_buffer, sizeof(ftp_client_info->cmd.tx_buffer), "REST %d\r\n", ftp_client_info->download_size);
+						ret = ftp_client_send_data(poll_ctx_cmd->poll_fd.fd, ftp_client_info->cmd.tx_buffer, ret);
+
+						if(ret != 0) {
+							set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
+						} else {
+							ftp_client_info->cmd.action_state = 1;
+						}
+
+					}
+
+					ftp_client_info->download_stamp = ticks;
+
+					ret = snprintf(ftp_client_info->cmd.tx_buffer, sizeof(ftp_client_info->cmd.tx_buffer), "RETR %s\r\n", ftp_client_info->ftp_server_path.path);
+					ret = ftp_client_send_data(poll_ctx_cmd->poll_fd.fd, ftp_client_info->cmd.tx_buffer, ret);
+
+					if(ret != 0) {
+						set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
+					} else {
+						ftp_client_info->cmd.action_state = 2;
+					}
+				} else {
+					set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
+				}
+			} else if(response_code == 350) {
+				ftp_client_info->ftp_server_path.rest_enable = 1;
+			}
+		}
+		break;
+
+		case 3: {
+			int response_code = atoi(ftp_client_info->cmd.rx_buffer);
+
+			if(response_code == 150) {
+				ftp_client_info->cmd.action_state = 3;
+			} else {
+				set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
 			}
 		}
 		break;
@@ -238,16 +392,268 @@ static void ftp_client_cmd_handler(void *ctx)
 		}
 		break;
 	}
+}
 
-	switch(ftp_client_info->cmd.state) {
+static void ftp_client_cmd_pasv(void *ctx)
+{
+	int ret;
+	poll_ctx_t *poll_ctx_cmd = (poll_ctx_t *)ctx;
+	ftp_client_info_t *ftp_client_info = (ftp_client_info_t *)poll_ctx_cmd->priv;
+
+	switch(ftp_client_info->cmd.action_state) {
+		case 0: {
+			ret = snprintf(ftp_client_info->cmd.tx_buffer, sizeof(ftp_client_info->cmd.tx_buffer), "PASV\r\n");
+			ret = ftp_client_send_data(poll_ctx_cmd->poll_fd.fd, ftp_client_info->cmd.tx_buffer, ret);
+
+			if(ret != 0) {
+				set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
+			} else {
+				ftp_client_info->cmd.action_state = 1;
+			}
+		}
+		break;
+
+		case 1: {
+			int response_code = atoi(ftp_client_info->cmd.rx_buffer);
+
+			if(response_code == 227) {//ok
+				int a;
+				int b;
+				int c;
+				int d;
+				int pa;
+				int pb;
+				char *find = strrchr(ftp_client_info->cmd.rx_buffer, '(');
+				char *ip;
+				char *port;
+
+				ret = sscanf(find, "(%d,%d,%d,%d,%d,%d)", &a, &b, &c, &d, &pa, &pb);
+
+				if(ret == 6) {
+					struct list_head *list_head;
+					ip = (char *)os_alloc(64);
+					port = (char *)os_alloc(16);
+
+					if((ip != NULL) && (port != NULL)) {
+						snprintf(ip, 64, "%d.%d.%d.%d", a, b, c, d);
+						snprintf(port, 16, "%d", pa * 256 + pb);
+
+						ftp_client_info->data.addr_info.socket_addr_info = NULL;
+						list_head = &ftp_client_info->data.addr_info.socket_addr_info_list;
+						ret = update_addr_info_list(list_head,
+						                            ip,
+						                            port,
+						                            SOCK_STREAM,
+						                            IPPROTO_TCP);
+
+						if(ret == 0) {
+							ftp_client_info->data.addr_info.socket_addr_info = get_next_socket_addr_info(list_head, ftp_client_info->data.addr_info.socket_addr_info);
+							set_ftp_client_data_request_state(ftp_client_info, FTP_CLIENT_DATA_STATE_CONNECT);
+							ftp_client_info->cmd.action_state = 2;
+
+							switch(get_ftp_client_action(ftp_client_info)) {
+								case FTP_CLIENT_ACTION_DOWNLOAD: {
+									ftp_client_info->cmd.action_state = 0;
+									ftp_client_info->file_size = 0;
+									ftp_client_info->download_size = 0;
+									ftp_client_info->ftp_server_path.rest_enable = 0;
+									ftp_client_info->cmd.handler = ftp_client_cmd_download;
+									ftp_client_info->cmd.handler(ctx);
+								}
+								break;
+
+								default: {
+								}
+								break;
+							}
+						} else {
+							set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
+						}
+
+					} else {
+						set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
+					}
+
+					if(ip != NULL) {
+						os_free(ip);
+					}
+
+					if(port != NULL) {
+						os_free(port);
+					}
+				} else {
+					set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
+				}
+			}
+		}
+		break;
+
+		default: {
+		}
+		break;
+	}
+}
+
+
+static void ftp_client_cmd_login(void *ctx)
+{
+	int ret;
+	poll_ctx_t *poll_ctx_cmd = (poll_ctx_t *)ctx;
+	ftp_client_info_t *ftp_client_info = (ftp_client_info_t *)poll_ctx_cmd->priv;
+
+	switch(ftp_client_info->cmd.action_state) {
+		case 0: {
+			int response_code = atoi(ftp_client_info->cmd.rx_buffer);
+
+			if(response_code == 220) {//send user
+				ret = snprintf(ftp_client_info->cmd.tx_buffer, sizeof(ftp_client_info->cmd.tx_buffer), "USER %s\r\n", ftp_client_info->ftp_server_path.user);
+				ret = ftp_client_send_data(poll_ctx_cmd->poll_fd.fd, ftp_client_info->cmd.tx_buffer, ret);
+
+				if(ret != 0) {
+					set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
+				} else {
+					ftp_client_info->cmd.action_state = 1;
+				}
+			}
+		}
+		break;
+
+		case 1: {
+			int response_code = atoi(ftp_client_info->cmd.rx_buffer);
+
+			if(response_code == 331) {//send passwd
+				ret = snprintf(ftp_client_info->cmd.tx_buffer, sizeof(ftp_client_info->cmd.tx_buffer), "PASS %s\r\n", ftp_client_info->ftp_server_path.password);
+				ret = ftp_client_send_data(poll_ctx_cmd->poll_fd.fd, ftp_client_info->cmd.tx_buffer, ret);
+
+				if(ret != 0) {
+					set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
+				} else {
+					ftp_client_info->cmd.action_state = 2;
+				}
+			} else if(response_code == 230) {
+				ret = snprintf(ftp_client_info->cmd.tx_buffer, sizeof(ftp_client_info->cmd.tx_buffer), "TYPE I\r\n");
+				ret = ftp_client_send_data(poll_ctx_cmd->poll_fd.fd, ftp_client_info->cmd.tx_buffer, ret);
+
+				if(ret != 0) {
+					set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
+				} else {
+					ftp_client_info->cmd.action_state = 3;
+				}
+			}
+		}
+		break;
+
+		case 2: {
+			int response_code = atoi(ftp_client_info->cmd.rx_buffer);
+
+			if(response_code == 230) {//Set to binary mode
+				ret = snprintf(ftp_client_info->cmd.tx_buffer, sizeof(ftp_client_info->cmd.tx_buffer), "TYPE I\r\n");
+				ret = ftp_client_send_data(poll_ctx_cmd->poll_fd.fd, ftp_client_info->cmd.tx_buffer, ret);
+
+				if(ret != 0) {
+					set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
+				} else {
+					ftp_client_info->cmd.action_state = 3;
+				}
+			}
+		}
+		break;
+
+		case 3: {
+			int response_code = atoi(ftp_client_info->cmd.rx_buffer);
+
+			if(response_code == 200) {//ok
+				switch(get_ftp_client_action(ftp_client_info)) {
+					case FTP_CLIENT_ACTION_DOWNLOAD: {
+						ftp_client_info->cmd.action_state = 0;
+						ftp_client_info->cmd.handler = ftp_client_cmd_pasv;
+						ftp_client_info->cmd.handler(ctx);
+					}
+					break;
+
+					default: {
+					}
+					break;
+				}
+			}
+		}
+		break;
+
+		default: {
+		}
+		break;
+	}
+}
+
+static void ftp_client_cmd_handler(void *ctx)
+{
+	poll_ctx_t *poll_ctx_cmd = (poll_ctx_t *)ctx;
+	ftp_client_info_t *ftp_client_info = (ftp_client_info_t *)poll_ctx_cmd->priv;
+	uint32_t ticks = osKernelSysTick();
+	int ret;
+
+	switch(get_ftp_client_state(ftp_client_info)) {
+		default: {
+		}
+		break;
+	}
+
+	switch(get_ftp_client_cmd_state(ftp_client_info)) {
 		case FTP_CLIENT_CMD_STATE_CONNECT_CONFIRM: {
 			if(socket_connect_confirm(poll_ctx_cmd->poll_fd.fd) == 0) {
 				poll_ctx_cmd->poll_fd.config.s.poll_out = 0;
 				poll_ctx_cmd->poll_fd.config.s.poll_in = 1;
-				ftp_client_info->cmd.state = FTP_CLIENT_CMD_STATE_WAIT_HELLO;
-				ftp_client_info->state = FTP_CLIENT_STATE_CONNECTED;
+
+				ftp_client_info->cmd.action_state = 0;
+				ftp_client_info->cmd.handler = ftp_client_cmd_login;
+
+				set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_CONNECTED);
+				set_ftp_client_state(ftp_client_info, FTP_CLIENT_STATE_CONNECTED);
 			} else {
-				ftp_client_info->cmd.state = FTP_CLIENT_CMD_STATE_DISCONNECT;
+				set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
+			}
+		}
+		break;
+
+		case FTP_CLIENT_CMD_STATE_CONNECTED: {
+			ret = recv(poll_ctx_cmd->poll_fd.fd, ftp_client_info->cmd.rx_buffer + ftp_client_info->cmd.rx_size, sizeof(ftp_client_info->cmd.rx_buffer) - ftp_client_info->cmd.rx_size - 1, 0);
+
+			if(ret > 0) {
+				char *find;
+
+				ftp_client_info->cmd.rx_size += ret;
+				ftp_client_info->cmd.rx_buffer[ftp_client_info->cmd.rx_size] = 0;
+
+				//debug("ftp_client_info->cmd.rx_size:%d\n", ftp_client_info->cmd.rx_size);
+				_hexdump("cmd recv", ftp_client_info->cmd.rx_buffer, ftp_client_info->cmd.rx_size);
+
+				while(ftp_client_info->cmd.rx_size != 0) {
+					//_hexdump("process", ftp_client_info->cmd.rx_buffer, ftp_client_info->cmd.rx_size);
+					ftp_client_info->cmd.handler(ctx);
+					ftp_client_info->stamp = ticks;
+
+					find = strchr(ftp_client_info->cmd.rx_buffer, '\n');
+
+					if(find != NULL) {
+						find++;
+						ftp_client_info->cmd.rx_size -= (find - ftp_client_info->cmd.rx_buffer);
+
+						//debug("ftp_client_info->cmd.rx_size:%d\n", ftp_client_info->cmd.rx_size);
+
+						if(ftp_client_info->cmd.rx_size != 0) {
+							memcpy(ftp_client_info->cmd.rx_buffer, find, ftp_client_info->cmd.rx_size);
+							ftp_client_info->cmd.rx_buffer[ftp_client_info->cmd.rx_size] = 0;
+						} else {
+							find = NULL;
+						}
+					} else {
+						ftp_client_info->cmd.rx_size = 0;
+					}
+
+				}
+			} else {
+				debug("recv error %d, (%s)\n", ret, strerror(errno));
+				set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
 			}
 		}
 		break;
@@ -265,13 +671,29 @@ static void ftp_client_cmd_periodic(void *ctx)
 	ftp_client_info_t *ftp_client_info = (ftp_client_info_t *)poll_ctx_cmd->priv;
 	uint32_t ticks = osKernelSysTick();
 
-	switch(ftp_client_info->state) {
+	switch(get_ftp_client_state(ftp_client_info)) {
 		default: {
 		}
 		break;
 	}
 
-	switch(ftp_client_info->cmd.state) {
+	switch(get_ftp_client_cmd_state(ftp_client_info)) {
+		case FTP_CLIENT_CMD_STATE_IDLE: {
+			switch(get_ftp_client_cmd_request_state(ftp_client_info)) {
+				case FTP_CLIENT_CMD_STATE_CONNECT: {
+					set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_CONNECT);
+				}
+				break;
+
+				default: {
+				}
+				break;
+			}
+
+			set_ftp_client_cmd_request_state(ftp_client_info, FTP_CLIENT_CMD_STATE_IDLE);
+		}
+		break;
+
 		case FTP_CLIENT_CMD_STATE_CONNECT: {
 			debug("FTP_CLIENT_CMD_STATE_CONNECT\n");
 			get_ftp_client_cmd_addr_info(ftp_client_info);
@@ -286,192 +708,39 @@ static void ftp_client_cmd_periodic(void *ctx)
 
 				poll_ctx_cmd->poll_fd.available = 1;
 
-				ftp_client_info->cmd.stamp = ticks;
-				ftp_client_info->cmd.state = FTP_CLIENT_CMD_STATE_CONNECT_CONFIRM;
+				ftp_client_info->stamp = ticks;
+				set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_CONNECT_CONFIRM);
 			} else {
-				ftp_client_info->cmd.state = FTP_CLIENT_CMD_STATE_DISCONNECT;
+				set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
 			}
 		}
 		break;
 
 		case FTP_CLIENT_CMD_STATE_CONNECT_CONFIRM: {
-			if(ticks - ftp_client_info->cmd.stamp >= 3000) {
+			if(ticks - ftp_client_info->stamp >= FTP_SESSION_TIMEOUT) {
 				debug("FTP_CLIENT_CMD_STATE_CONNECT_CONFIRM timeout!\n");
-				ftp_client_info->cmd.state = FTP_CLIENT_CMD_STATE_DISCONNECT;
+				set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
 			}
 		}
 		break;
 
-		case FTP_CLIENT_CMD_STATE_WAIT_HELLO: {
-			if(ticks - ftp_client_info->cmd.stamp >= 3000) {
-				debug("FTP_CLIENT_CMD_STATE_WAIT_HELLO timeout!\n");
-				ftp_client_info->cmd.state = FTP_CLIENT_CMD_STATE_DISCONNECT;
+		case FTP_CLIENT_CMD_STATE_CONNECTED: {
+			if(ticks - ftp_client_info->stamp >= FTP_SESSION_TIMEOUT) {
+				debug("FTP_CLIENT_CMD_STATE_CONNECTED timeout!\n");
+				set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
 			} else {
-				if(ftp_client_info->cmd.rx_size > 0) {
-					int response_code = atoi(ftp_client_info->cmd.rx_buffer);
-
-					ftp_client_info->cmd.rx_size = 0;
-
-					if(response_code == 220) {//send user
-						ret = snprintf(ftp_client_info->cmd.tx_buffer, sizeof(ftp_client_info->cmd.tx_buffer), "USER %s\r\n", ftp_client_info->ftp_server_path.user);
-
-						_hexdump("cmd sent", ftp_client_info->cmd.tx_buffer, ret);
-						ret = ftp_client_send_data(poll_ctx_cmd->poll_fd.fd, ftp_client_info->cmd.tx_buffer, ret);
-
-						if(ret != 0) {
-							ftp_client_info->cmd.state = FTP_CLIENT_CMD_STATE_DISCONNECT;
-						} else {
-							ftp_client_info->cmd.state = FTP_CLIENT_CMD_STATE_WAIT_USER_RESPONSE;
-						}
+				switch(get_ftp_client_cmd_request_state(ftp_client_info)) {
+					case FTP_CLIENT_CMD_STATE_DISCONNECT: {
+						set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
 					}
+					break;
 
-				}
-			}
-		}
-		break;
-
-		case FTP_CLIENT_CMD_STATE_WAIT_USER_RESPONSE: {
-			if(ticks - ftp_client_info->cmd.stamp >= 3000) {
-				debug("FTP_CLIENT_CMD_STATE_WAIT_USER_RESPONSE timeout!\n");
-				ftp_client_info->cmd.state = FTP_CLIENT_CMD_STATE_DISCONNECT;
-			} else {
-				if(ftp_client_info->cmd.rx_size > 0) {
-					int response_code = atoi(ftp_client_info->cmd.rx_buffer);
-
-					ftp_client_info->cmd.rx_size = 0;
-
-					if(response_code == 331) {//send passwd
-						ret = snprintf(ftp_client_info->cmd.tx_buffer, sizeof(ftp_client_info->cmd.tx_buffer), "PASS %s\r\n", ftp_client_info->ftp_server_path.password);
-
-						_hexdump("cmd sent", ftp_client_info->cmd.tx_buffer, ret);
-						ret = ftp_client_send_data(poll_ctx_cmd->poll_fd.fd, ftp_client_info->cmd.tx_buffer, ret);
-
-						if(ret != 0) {
-							ftp_client_info->cmd.state = FTP_CLIENT_CMD_STATE_DISCONNECT;
-						} else {
-							ftp_client_info->cmd.state = FTP_CLIENT_CMD_STATE_WAIT_PASSWORD_RESPONSE;
-						}
+					default: {
 					}
+					break;
 				}
-			}
-		}
-		break;
 
-		case FTP_CLIENT_CMD_STATE_WAIT_PASSWORD_RESPONSE: {
-			if(ticks - ftp_client_info->cmd.stamp >= 3000) {
-				debug("FTP_CLIENT_CMD_STATE_WAIT_PASSWORD_RESPONSE timeout!\n");
-				ftp_client_info->cmd.state = FTP_CLIENT_CMD_STATE_DISCONNECT;
-			} else {
-				if(ftp_client_info->cmd.rx_size > 0) {
-					int response_code = atoi(ftp_client_info->cmd.rx_buffer);
-
-					ftp_client_info->cmd.rx_size = 0;
-
-					if(response_code == 230) {//Set to binary mode
-						ret = snprintf(ftp_client_info->cmd.tx_buffer, sizeof(ftp_client_info->cmd.tx_buffer), "TYPE I\r\n");
-
-						_hexdump("cmd sent", ftp_client_info->cmd.tx_buffer, ret);
-						ret = ftp_client_send_data(poll_ctx_cmd->poll_fd.fd, ftp_client_info->cmd.tx_buffer, ret);
-
-						if(ret != 0) {
-							ftp_client_info->cmd.state = FTP_CLIENT_CMD_STATE_DISCONNECT;
-						} else {
-							ftp_client_info->cmd.state = FTP_CLIENT_CMD_STATE_WAIT_BINARY_MODE_RESPONSE;
-						}
-					}
-				}
-			}
-		}
-		break;
-
-		case FTP_CLIENT_CMD_STATE_WAIT_BINARY_MODE_RESPONSE: {
-			if(ticks - ftp_client_info->cmd.stamp >= 3000) {
-				debug("FTP_CLIENT_CMD_STATE_WAIT_BINARY_MODE_RESPONSE timeout!\n");
-				ftp_client_info->cmd.state = FTP_CLIENT_CMD_STATE_DISCONNECT;
-			} else {
-				if(ftp_client_info->cmd.rx_size > 0) {
-					int response_code = atoi(ftp_client_info->cmd.rx_buffer);
-
-					ftp_client_info->cmd.rx_size = 0;
-
-					if(response_code == 200) {//ok
-						ret = snprintf(ftp_client_info->cmd.tx_buffer, sizeof(ftp_client_info->cmd.tx_buffer), "PASV\r\n");
-
-						_hexdump("cmd sent", ftp_client_info->cmd.tx_buffer, ret);
-						ret = ftp_client_send_data(poll_ctx_cmd->poll_fd.fd, ftp_client_info->cmd.tx_buffer, ret);
-
-						if(ret != 0) {
-							ftp_client_info->cmd.state = FTP_CLIENT_CMD_STATE_DISCONNECT;
-						} else {
-							ftp_client_info->cmd.state = FTP_CLIENT_CMD_STATE_WAIT_BINARY_MODE_RESPONSE;
-						}
-
-						ftp_client_info->cmd.state = FTP_CLIENT_CMD_STATE_PASV_RESPONSE;
-					}
-				}
-			}
-		}
-		break;
-
-		case FTP_CLIENT_CMD_STATE_PASV_RESPONSE: {
-			if(ticks - ftp_client_info->cmd.stamp >= 3000) {
-				debug("FTP_CLIENT_CMD_STATE_PASV_RESPONSE timeout!\n");
-				ftp_client_info->cmd.state = FTP_CLIENT_CMD_STATE_DISCONNECT;
-			} else {
-				if(ftp_client_info->cmd.rx_size > 0) {
-					int response_code = atoi(ftp_client_info->cmd.rx_buffer);
-
-					ftp_client_info->cmd.rx_size = 0;
-
-					if(response_code == 227) {//ok
-						int a;
-						int b;
-						int c;
-						int d;
-						int pa;
-						int pb;
-						char *find = strrchr(ftp_client_info->cmd.rx_buffer, '(');
-						char *ip;
-						char *port;
-
-						ret = sscanf(find, "(%d,%d,%d,%d,%d,%d)", &a, &b, &c, &d, &pa, &pb);
-
-						if(ret == 6) {
-							struct list_head *list_head;
-							ip = (char *)os_alloc(64);
-							port = (char *)os_alloc(16);
-
-							if((ip != NULL) && (port != NULL)) {
-								snprintf(ip, 64, "%d.%d.%d.%d", a, b, c, d);
-								snprintf(port, 16, "%d", pa * 256 + pb);
-
-								list_head = &ftp_client_info->data.addr_info.socket_addr_info_list;
-								ret = update_addr_info_list(list_head,
-								                            ip,
-								                            port,
-								                            SOCK_STREAM,
-								                            IPPROTO_TCP);
-
-								if(ret == 0) {
-									ftp_client_info->data.addr_info.socket_addr_info = get_next_socket_addr_info(list_head, ftp_client_info->data.addr_info.socket_addr_info);
-									ftp_client_info->data.state = FTP_CLIENT_DATA_STATE_CONNECT;
-									ftp_client_info->cmd.state = FTP_CLIENT_CMD_STATE_DATA;
-								}
-
-							}
-
-							if(ip != NULL) {
-								os_free(ip);
-							}
-
-							if(port != NULL) {
-								os_free(port);
-							}
-						} else {
-							ftp_client_info->cmd.state = FTP_CLIENT_CMD_STATE_DISCONNECT;
-						}
-					}
-				}
+				set_ftp_client_cmd_request_state(ftp_client_info, FTP_CLIENT_CMD_STATE_IDLE);
 			}
 		}
 		break;
@@ -479,8 +748,35 @@ static void ftp_client_cmd_periodic(void *ctx)
 		case FTP_CLIENT_CMD_STATE_DISCONNECT: {
 			poll_ctx_cmd->poll_fd.available = 0;
 			ftp_client_close(&poll_ctx_cmd->poll_fd.fd);
-			ftp_client_info->cmd.state = FTP_CLIENT_CMD_STATE_IDLE;
-			ftp_client_info->state = FTP_CLIENT_STATE_IDLE;
+			set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_IDLE);
+			set_ftp_client_state(ftp_client_info, FTP_CLIENT_STATE_IDLE);
+
+			set_ftp_client_data_request_state(ftp_client_info, FTP_CLIENT_DATA_STATE_DISCONNECT);
+		}
+		break;
+
+		default: {
+		}
+		break;
+	}
+}
+
+static void ftp_client_data_download(void *ctx)
+{
+	poll_ctx_t *poll_ctx_data = (poll_ctx_t *)ctx;
+	ftp_client_info_t *ftp_client_info = (ftp_client_info_t *)poll_ctx_data->priv;
+	uint32_t ticks = osKernelSysTick();
+
+	switch(ftp_client_info->data.action_state) {
+		case 0: {
+			uint32_t duration = (ticks - ftp_client_info->download_stamp);
+			ftp_client_info->download_size += ftp_client_info->data.rx_size;
+
+			if(duration == 0) {
+				duration = 1;
+			}
+
+			debug("downloading %d/%d(%d%%), %d byte/S\n", ftp_client_info->download_size, ftp_client_info->file_size, ftp_client_info->download_size * 100 / ftp_client_info->file_size, (ftp_client_info->download_size * 1000) / duration);
 		}
 		break;
 
@@ -492,23 +788,53 @@ static void ftp_client_cmd_periodic(void *ctx)
 
 static void ftp_client_data_handler(void *ctx)
 {
+	int ret;
 	poll_ctx_t *poll_ctx_data = (poll_ctx_t *)ctx;
 	ftp_client_info_t *ftp_client_info = (ftp_client_info_t *)poll_ctx_data->priv;
+	uint32_t ticks = osKernelSysTick();
 
-	switch(ftp_client_info->state) {
+	switch(get_ftp_client_state(ftp_client_info)) {
 		default: {
 		}
 		break;
 	}
 
-	switch(ftp_client_info->data.state) {
+	switch(get_ftp_client_data_state(ftp_client_info)) {
 		case FTP_CLIENT_DATA_STATE_CONNECT_CONFIRM: {
 			if(socket_connect_confirm(poll_ctx_data->poll_fd.fd) == 0) {
 				poll_ctx_data->poll_fd.config.s.poll_out = 0;
 				poll_ctx_data->poll_fd.config.s.poll_in = 1;
-				ftp_client_info->data.state = FTP_CLIENT_DATA_STATE_DISCONNECT;
+
+				switch(get_ftp_client_action(ftp_client_info)) {
+					case FTP_CLIENT_ACTION_DOWNLOAD: {
+						ftp_client_info->data.action_state = 0;
+						ftp_client_info->data.handler = ftp_client_data_download;
+					}
+					break;
+
+					default: {
+					}
+					break;
+				}
+
+				set_ftp_client_data_state(ftp_client_info, FTP_CLIENT_DATA_STATE_CONNECTED);
 			} else {
-				ftp_client_info->data.state = FTP_CLIENT_DATA_STATE_DISCONNECT;
+				set_ftp_client_data_state(ftp_client_info, FTP_CLIENT_DATA_STATE_DISCONNECT);
+			}
+		}
+		break;
+
+		case FTP_CLIENT_DATA_STATE_CONNECTED: {
+			ret = recv(poll_ctx_data->poll_fd.fd, ftp_client_info->data.rx_buffer, sizeof(ftp_client_info->data.rx_buffer), 0);
+
+			if(ret > 0) {
+				ftp_client_info->data.rx_size = ret;
+				//_hexdump("data recv", ftp_client_info->data.rx_buffer, ftp_client_info->data.rx_size);
+				ftp_client_info->data.handler(ctx);
+				ftp_client_info->stamp = ticks;
+			} else {
+				debug("recv error %d, (%s)\n", ret, strerror(errno));
+				set_ftp_client_data_state(ftp_client_info, FTP_CLIENT_DATA_STATE_DISCONNECT);
 			}
 		}
 		break;
@@ -526,13 +852,29 @@ static void ftp_client_data_periodic(void *ctx)
 	ftp_client_info_t *ftp_client_info = (ftp_client_info_t *)poll_ctx_data->priv;
 	uint32_t ticks = osKernelSysTick();
 
-	switch(ftp_client_info->state) {
+	switch(get_ftp_client_state(ftp_client_info)) {
 		default: {
 		}
 		break;
 	}
 
-	switch(ftp_client_info->data.state) {
+	switch(get_ftp_client_data_state(ftp_client_info)) {
+		case FTP_CLIENT_DATA_STATE_IDLE: {
+			switch(get_ftp_client_data_request_state(ftp_client_info)) {
+				case FTP_CLIENT_DATA_STATE_CONNECT: {
+					set_ftp_client_data_state(ftp_client_info, FTP_CLIENT_DATA_STATE_CONNECT);
+				}
+				break;
+
+				default: {
+				}
+				break;
+			}
+
+			set_ftp_client_data_request_state(ftp_client_info, FTP_CLIENT_DATA_STATE_IDLE);
+		}
+		break;
+
 		case FTP_CLIENT_DATA_STATE_CONNECT: {
 			ret = ftp_client_connect(ftp_client_info->data.addr_info.socket_addr_info, &ftp_client_info->data.sock_fd);
 
@@ -545,28 +887,51 @@ static void ftp_client_data_periodic(void *ctx)
 
 				poll_ctx_data->poll_fd.available = 1;
 
-				ftp_client_info->data.stamp = ticks;
-				ftp_client_info->data.state = FTP_CLIENT_DATA_STATE_CONNECT_CONFIRM;
+				ftp_client_info->stamp = ticks;
+				set_ftp_client_data_state(ftp_client_info, FTP_CLIENT_DATA_STATE_CONNECT_CONFIRM);
 			} else {
-				ftp_client_info->data.state = FTP_CLIENT_DATA_STATE_DISCONNECT;
+				set_ftp_client_data_state(ftp_client_info, FTP_CLIENT_DATA_STATE_DISCONNECT);
 			}
 		}
 		break;
 
 		case FTP_CLIENT_DATA_STATE_CONNECT_CONFIRM: {
-			if(ticks - ftp_client_info->data.stamp >= 3000) {
+			if(ticks - ftp_client_info->stamp >= FTP_SESSION_TIMEOUT) {
 				debug("FTP_CLIENT_DATA_STATE_CONNECT_CONFIRM timeout!\n");
-				ftp_client_info->data.state = FTP_CLIENT_DATA_STATE_DISCONNECT;
+				set_ftp_client_data_state(ftp_client_info, FTP_CLIENT_DATA_STATE_DISCONNECT);
 			}
 		}
 		break;
+
+		case FTP_CLIENT_DATA_STATE_CONNECTED: {
+			if(ticks - ftp_client_info->stamp >= FTP_SESSION_TIMEOUT) {
+				debug("FTP_CLIENT_DATA_STATE_CONNECTED timeout!\n");
+				set_ftp_client_data_state(ftp_client_info, FTP_CLIENT_DATA_STATE_DISCONNECT);
+			} else {
+				switch(get_ftp_client_data_request_state(ftp_client_info)) {
+					case FTP_CLIENT_DATA_STATE_DISCONNECT: {
+						set_ftp_client_data_state(ftp_client_info, FTP_CLIENT_DATA_STATE_DISCONNECT);
+					}
+					break;
+
+					default: {
+					}
+					break;
+				}
+
+				set_ftp_client_data_request_state(ftp_client_info, FTP_CLIENT_DATA_STATE_IDLE);
+			}
+		}
+		break;
+
 
 		case FTP_CLIENT_DATA_STATE_DISCONNECT: {
 			poll_ctx_data->poll_fd.available = 0;
 			ftp_client_close(&poll_ctx_data->poll_fd.fd);
 
-			ftp_client_info->data.state = FTP_CLIENT_CMD_STATE_IDLE;
-			ftp_client_info->state = FTP_CLIENT_STATE_IDLE;
+			set_ftp_client_data_state(ftp_client_info, FTP_CLIENT_DATA_STATE_IDLE);
+
+			set_ftp_client_cmd_request_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
 		}
 		break;
 
@@ -595,10 +960,10 @@ void ftp_client_add_poll_loop(poll_loop_t *poll_loop)
 
 	memset(ftp_client_info, 0, sizeof(ftp_client_info_t));
 
-	ftp_client_info->state = FTP_CLIENT_STATE_IDLE;
-	ftp_client_info->cmd.state = FTP_CLIENT_CMD_STATE_IDLE;
+	set_ftp_client_state(ftp_client_info, FTP_CLIENT_STATE_IDLE);
+	set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_IDLE);
 	INIT_LIST_HEAD(&ftp_client_info->cmd.addr_info.socket_addr_info_list);
-	ftp_client_info->data.state = FTP_CLIENT_DATA_STATE_IDLE;
+	set_ftp_client_data_state(ftp_client_info, FTP_CLIENT_DATA_STATE_IDLE);
 	INIT_LIST_HEAD(&ftp_client_info->data.addr_info.socket_addr_info_list);
 	ftp_client_info->cmd.sock_fd = -1;
 	ftp_client_info->data.sock_fd = -1;
