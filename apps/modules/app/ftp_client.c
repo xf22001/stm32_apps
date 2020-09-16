@@ -6,7 +6,7 @@
  *   文件名称：ftp_client.c
  *   创 建 者：肖飞
  *   创建日期：2020年09月15日 星期二 09时32分10秒
- *   修改日期：2020年09月16日 星期三 15时59分28秒
+ *   修改日期：2020年09月16日 星期三 16时49分06秒
  *   描    述：
  *
  *================================================================*/
@@ -347,7 +347,7 @@ static void ftp_client_cmd_download(void *ctx)
 					debug("ftp_client_info->file_size:%d\n", ftp_client_info->file_size);
 
 					if(ftp_client_info->ftp_server_path.rest_enable == 1) {
-						ret = snprintf(ftp_client_info->cmd.tx_buffer, sizeof(ftp_client_info->cmd.tx_buffer), "REST %d\r\n", ftp_client_info->download_size);
+						ret = snprintf(ftp_client_info->cmd.tx_buffer, sizeof(ftp_client_info->cmd.tx_buffer), "REST %lu\r\n", ftp_client_info->download_size);
 						ret = ftp_client_send_data(poll_ctx_cmd->poll_fd.fd, ftp_client_info->cmd.tx_buffer, ret);
 
 						if(ret != 0) {
@@ -769,14 +769,31 @@ static void ftp_client_data_download(void *ctx)
 
 	switch(ftp_client_info->data.action_state) {
 		case 0: {
-			uint32_t duration = (ticks - ftp_client_info->download_stamp);
 			ftp_client_info->download_size += ftp_client_info->data.rx_size;
 
-			if(duration == 0) {
-				duration = 1;
-			}
+			if((ticks - ftp_client_info->debug_stamp >= 1 * 1000) ||
+			   (ftp_client_info->file_size == ftp_client_info->download_size)) {
+				uint32_t duration = (ticks - ftp_client_info->download_stamp);
 
-			debug("downloading %d/%d(%d%%), %d byte/S\n", ftp_client_info->download_size, ftp_client_info->file_size, ftp_client_info->download_size * 100 / ftp_client_info->file_size, (ftp_client_info->download_size * 1000) / duration);
+				float percent = (ftp_client_info->download_size * 1.0 / ftp_client_info->file_size) * 100;
+				float speed;
+
+				ftp_client_info->debug_stamp = ticks;
+
+				if(duration == 0) {
+					duration = 1;
+				}
+
+				duration = duration * 1000;
+
+				speed = ftp_client_info->download_size * 1.0 / duration;
+
+				debug("downloading %d/%d(%.2f%%), %.6f Mbyte/S\n",
+				      ftp_client_info->download_size,
+				      ftp_client_info->file_size,
+				      percent,
+				      speed);
+			}
 		}
 		break;
 

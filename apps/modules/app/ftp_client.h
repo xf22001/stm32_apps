@@ -6,7 +6,7 @@
  *   文件名称：ftp_client.h
  *   创 建 者：肖飞
  *   创建日期：2020年09月15日 星期二 09时32分14秒
- *   修改日期：2020年09月16日 星期三 15时50分53秒
+ *   修改日期：2020年09月16日 星期三 16时23分21秒
  *   描    述：
  *
  *================================================================*/
@@ -110,9 +110,10 @@ typedef struct {
 	ftp_client_cmd_t cmd;
 	ftp_client_data_t data;
 
-	int file_size;
-	int download_size;
+	uint32_t file_size;
+	uint32_t download_size;
 	uint32_t download_stamp;
+	uint32_t debug_stamp;
 } ftp_client_info_t;
 
 char *get_ftp_client_state_des(ftp_client_state_t state);
