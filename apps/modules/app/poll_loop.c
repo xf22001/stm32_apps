@@ -6,7 +6,7 @@
  *   文件名称：poll_loop.c
  *   创 建 者：肖飞
  *   创建日期：2020年08月11日 星期二 09时54分20秒
- *   修改日期：2020年08月15日 星期六 13时49分45秒
+ *   修改日期：2020年10月09日 星期五 17时43分31秒
  *   描    述：
  *
  *================================================================*/
@@ -145,12 +145,21 @@ failed:
 poll_ctx_t *alloc_poll_ctx(void)
 {
 	poll_ctx_t *poll_ctx = (poll_ctx_t *)os_alloc(sizeof(poll_ctx_t));
+	osMessageQDef(event_msg_q, 1, uint16_t);
 
 	if(poll_ctx == NULL) {
 		return poll_ctx;
 	}
 
 	memset(poll_ctx, 0, sizeof(poll_ctx_t));
+
+	poll_ctx->event_msg_q = osMessageCreate(osMessageQ(event_msg_q), NULL);
+
+	if(poll_ctx->event_msg_q == NULL) {
+		os_free(poll_ctx);
+		poll_ctx = NULL;
+		return poll_ctx;
+	}
 
 	INIT_LIST_HEAD(&poll_ctx->list);
 	poll_ctx->poll_fd.fd = -1;
@@ -248,10 +257,12 @@ static int poll_loop_poll(poll_loop_t *poll_loop)
 			continue;
 		}
 
-		if(poll_fd->config.v != 0) {
-			if(poll_fd->fd > max_fd) {
-				max_fd = poll_fd->fd;
-			}
+		if(poll_fd->config.v == 0) {
+			continue;
+		}
+
+		if(poll_fd->fd > max_fd) {
+			max_fd = poll_fd->fd;
 		}
 
 		if(poll_fd->config.s.poll_in != 0) {
@@ -308,11 +319,19 @@ static int poll_loop_poll(poll_loop_t *poll_loop)
 				poll_fd->status.s.poll_err = 1;
 			}
 
-			if(poll_fd->status.v != 0) {
-				if(poll_ctx->poll_handler != NULL) {
-					//debug("handler for %s\n", poll_ctx->name);
-					poll_ctx->poll_handler(poll_ctx);
-				}
+			if(poll_fd->status.v == 0) {
+				continue;
+			}
+
+			os_status = osMessagePut(poll_ctx->event_msg_q, 0, 0);
+
+			if(os_status != osOK) {
+			}
+
+			if(poll_ctx->poll_handler != NULL) {
+				//debug("handler for %s\n", poll_ctx->name);
+				poll_ctx->poll_handler(poll_ctx);
+
 			}
 		}
 
@@ -356,6 +375,30 @@ static void poll_loop_periodic(poll_loop_t *poll_loop)
 
 	if(os_status != osOK) {
 	}
+}
+
+int poll_ctx_wait_event(poll_ctx_t *poll_ctx, uint32_t wait_ticks)
+{
+	int ret = -1;
+	osEvent event = osMessageGet(poll_ctx->event_msg_q, wait_ticks);
+
+	switch(event.status) {
+		case osEventMessage: {
+			ret = 0;
+		}
+		break;
+
+		case osOK: {
+			ret = 1;
+		}
+		break;
+
+		default: {
+		}
+		break;
+	}
+
+	return ret;
 }
 
 int poll_loop_wait_send(int fd, uint32_t timeout)
