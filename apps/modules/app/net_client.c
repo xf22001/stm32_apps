@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2020年09月15日 星期二 14时32分48秒
+ *   修改日期：2020年10月10日 星期六 09时44分15秒
  *   描    述：
  *
  *================================================================*/
@@ -27,7 +27,7 @@
 
 extern protocol_if_t protocol_if_tcp;
 extern protocol_if_t protocol_if_ws;
-extern request_callback_t request_callback_default;
+extern request_callback_t request_callback_ws;
 
 char *get_net_client_state_des(client_state_t state)
 {
@@ -562,7 +562,7 @@ static void net_client_handler(void *ctx)
 
 	switch(get_client_state(net_client_info)) {
 		case CLIENT_CONNECT_CONFIRM: {
-			if(socket_connect_confirm(poll_ctx->poll_fd.fd) == 0) {
+			if(socket_nonblock_connect_confirm(poll_ctx->poll_fd.fd) == 0) {
 				poll_ctx->poll_fd.config.s.poll_out = 0;
 				poll_ctx->poll_fd.config.s.poll_in = 1;
 				set_client_state(net_client_info, CLIENT_CONNECTED);
@@ -598,7 +598,7 @@ int send_to_server(net_client_info_t *net_client_info, uint8_t *buffer, size_t l
 	int ret = 0;
 
 	if(get_client_state(net_client_info) == CLIENT_CONNECTED) {
-		if(poll_loop_wait_send(net_client_info->sock_fd, TASK_NET_CLIENT_PERIODIC) == 0) {
+		if(poll_wait_write_available(net_client_info->sock_fd, TASK_NET_CLIENT_PERIODIC) == 0) {
 			ret = net_client_info->protocol_if->net_send(net_client_info, buffer, len);
 
 			if(ret <= 0) {
@@ -672,7 +672,7 @@ void net_client_periodic(void *ctx)
 		break;
 
 		case CLIENT_CONNECT_CONFIRM: {
-			if(ticks - net_client_info->connect_confirm_stamp >= (3 * TASK_NET_CLIENT_CONNECT_PERIODIC)) {
+			if(ticks - net_client_info->connect_confirm_stamp >= (30 * TASK_NET_CLIENT_CONNECT_PERIODIC)) {
 				debug("connect failed!\n");
 				set_client_state(net_client_info, CLIENT_RESET);
 			}
@@ -750,7 +750,7 @@ void net_client_add_poll_loop(poll_loop_t *poll_loop)
 	INIT_LIST_HEAD(&net_client_info->net_client_addr_info.socket_addr_info_list);
 
 	set_net_client_protocol_if(net_client_info, &protocol_if_ws);
-	set_net_client_request_callback(net_client_info, &request_callback_default);
+	set_net_client_request_callback(net_client_info, &request_callback_ws);
 
 	default_init(net_client_info);
 

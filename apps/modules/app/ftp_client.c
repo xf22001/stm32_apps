@@ -6,7 +6,7 @@
  *   文件名称：ftp_client.c
  *   创 建 者：肖飞
  *   创建日期：2020年09月15日 星期二 09时32分10秒
- *   修改日期：2020年09月16日 星期三 17时22分56秒
+ *   修改日期：2020年10月10日 星期六 09时00分47秒
  *   描    述：
  *
  *================================================================*/
@@ -228,39 +228,8 @@ int request_ftp_client_download(const char *host, const char *port, const char *
 static int ftp_client_connect(socket_addr_info_t *socket_addr_info, int *sock_fd)
 {
 	int ret = -1;
-	int flags = 0;
 
-	*sock_fd = -1;
-
-	if(socket_addr_info == NULL) {
-		debug("\n");
-		return ret;
-	}
-
-	*sock_fd = socket(socket_addr_info->ai_family, socket_addr_info->ai_socktype, socket_addr_info->ai_protocol);
-
-	if(*sock_fd == -1) {
-		debug("\n");
-		return ret;
-	}
-
-	debug("create socket %d\n", *sock_fd);
-
-	flags = fcntl(*sock_fd, F_GETFL, 0);
-	flags |= O_NONBLOCK;
-	fcntl(*sock_fd, F_SETFL, flags);
-
-	ret = connect(*sock_fd, (struct sockaddr *)&socket_addr_info->addr, socket_addr_info->addr_size);
-
-	if(ret != 0) {
-		if(errno != EINPROGRESS) {
-			debug("close socket %d(%d)\n", *sock_fd, errno);
-			close(*sock_fd);
-			*sock_fd = -1;
-		} else {
-			ret = 0;
-		}
-	}
+	ret = socket_nonblock_connect(socket_addr_info, sock_fd);
 
 	return ret;
 }
@@ -286,7 +255,7 @@ static int ftp_client_send_data(int fd, char *buffer, size_t len)
 	int sent;
 
 	for(sent = 0; sent < len;) {
-		if(poll_loop_wait_send(fd, 100) == 0) {
+		if(poll_wait_write_available(fd, 100) == 0) {
 			ret = send(fd, buffer + sent, len - sent, 0);
 
 			if(ret >= 0) {
@@ -592,7 +561,7 @@ static void ftp_client_cmd_handler(void *ctx)
 
 	switch(get_ftp_client_cmd_state(ftp_client_info)) {
 		case FTP_CLIENT_CMD_STATE_CONNECT_CONFIRM: {
-			if(socket_connect_confirm(poll_ctx_cmd->poll_fd.fd) == 0) {
+			if(socket_nonblock_connect_confirm(poll_ctx_cmd->poll_fd.fd) == 0) {
 				poll_ctx_cmd->poll_fd.config.s.poll_out = 0;
 				poll_ctx_cmd->poll_fd.config.s.poll_in = 1;
 
@@ -810,7 +779,7 @@ static void ftp_client_data_handler(void *ctx)
 
 	switch(get_ftp_client_data_state(ftp_client_info)) {
 		case FTP_CLIENT_DATA_STATE_CONNECT_CONFIRM: {
-			if(socket_connect_confirm(poll_ctx_data->poll_fd.fd) == 0) {
+			if(socket_nonblock_connect_confirm(poll_ctx_data->poll_fd.fd) == 0) {
 				poll_ctx_data->poll_fd.config.s.poll_out = 0;
 				poll_ctx_data->poll_fd.config.s.poll_in = 1;
 

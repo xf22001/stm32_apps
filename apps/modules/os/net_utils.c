@@ -6,7 +6,7 @@
  *   文件名称：net_utils.c
  *   创 建 者：肖飞
  *   创建日期：2020年09月15日 星期二 09时42分47秒
- *   修改日期：2020年09月15日 星期二 14时31分41秒
+ *   修改日期：2020年10月10日 星期六 08时54分02秒
  *   描    述：
  *
  *================================================================*/
@@ -109,9 +109,93 @@ socket_addr_info_t *get_next_socket_addr_info(struct list_head *list_head, socke
 	return NULL;
 }
 
-int socket_connect_confirm(int fd)
+int socket_nonblock_connect(socket_addr_info_t *socket_addr_info, int *sock_fd)
 {
 	int ret = -1;
+	int flags = 0;
+
+	*sock_fd = -1;
+
+	if(socket_addr_info == NULL) {
+		debug("\n");
+		return ret;
+	}
+
+	*sock_fd = socket(socket_addr_info->ai_family, socket_addr_info->ai_socktype, socket_addr_info->ai_protocol);
+
+	if(*sock_fd == -1) {
+		debug("\n");
+		return ret;
+	}
+
+	debug("create socket %d\n", *sock_fd);
+
+	flags = fcntl(*sock_fd, F_GETFL, 0);
+	flags |= O_NONBLOCK;
+	fcntl(*sock_fd, F_SETFL, flags);
+
+	ret = connect(*sock_fd, (struct sockaddr *)&socket_addr_info->addr, socket_addr_info->addr_size);
+
+	if(ret != 0) {
+		if(errno != EINPROGRESS) {
+			debug("close socket %d(%d)\n", *sock_fd, errno);
+			close(*sock_fd);
+			*sock_fd = -1;
+		} else {
+			ret = 0;
+		}
+	}
+
+	return ret;
+}
+
+int poll_wait_nonblock_connect_event(int fd, uint32_t timeout)
+{
+	int ret = -1;
+	struct fd_set wfds;
+	struct fd_set efds;
+	struct timeval tv;
+	int max_fd = -1;
+
+	tv.tv_sec = timeout / 1000;
+	tv.tv_usec = 1000 * (timeout % 1000);
+
+	if(fd == -1) {
+		debug("socket fd is not valid!\n");
+		return ret;
+	}
+
+	FD_ZERO(&wfds);
+	FD_SET(fd, &wfds);
+
+	FD_ZERO(&efds);
+	FD_SET(fd, &efds);
+
+	if(fd > max_fd) {
+		max_fd = fd;
+	}
+
+	max_fd += 1;
+
+	ret = select(max_fd, NULL, &wfds, &efds, &tv);
+
+	if(ret >= 0) {
+		if(FD_ISSET(fd, &wfds)) {
+			ret = 0;
+		} else if(FD_ISSET(fd, &efds)) {
+			ret = 0;
+		} else {
+			ret = 1;
+		}
+
+	}
+
+	return ret;
+}
+
+int socket_nonblock_connect_confirm(int fd)
+{
+	int ret;
 	int opt;
 	socklen_t slen = sizeof(int);
 
@@ -126,6 +210,82 @@ int socket_connect_confirm(int fd)
 		}
 	} else {
 		debug("connect failed!(%d)\n", errno);
+	}
+
+	return ret;
+}
+
+int poll_wait_read_available(int fd, uint32_t timeout)
+{
+	int ret = -1;
+	struct fd_set fds;
+	struct timeval tv;
+	int max_fd = -1;
+
+	tv.tv_sec = timeout / 1000;
+	tv.tv_usec = 1000 * (timeout % 1000);
+
+	if(fd == -1) {
+		debug("socket fd is not valid!\n");
+		return ret;
+	}
+
+	FD_ZERO(&fds);
+	FD_SET(fd, &fds);
+
+	if(fd > max_fd) {
+		max_fd = fd;
+	}
+
+	max_fd += 1;
+
+	ret = select(max_fd, &fds, NULL, NULL, &tv);
+
+	if(ret >= 0) {
+		if(FD_ISSET(fd, &fds)) {
+			ret = 0;
+		} else {
+			ret = 1;
+		}
+
+	}
+
+	return ret;
+}
+
+int poll_wait_write_available(int fd, uint32_t timeout)
+{
+	int ret = -1;
+	struct fd_set fds;
+	struct timeval tv;
+	int max_fd = -1;
+
+	tv.tv_sec = timeout / 1000;
+	tv.tv_usec = 1000 * (timeout % 1000);
+
+	if(fd == -1) {
+		debug("socket fd is not valid!\n");
+		return ret;
+	}
+
+	FD_ZERO(&fds);
+	FD_SET(fd, &fds);
+
+	if(fd > max_fd) {
+		max_fd = fd;
+	}
+
+	max_fd += 1;
+
+	ret = select(max_fd, NULL, &fds, NULL, &tv);
+
+	if(ret >= 0) {
+		if(FD_ISSET(fd, &fds)) {
+			ret = 0;
+		} else {
+			ret = 1;
+		}
+
 	}
 
 	return ret;

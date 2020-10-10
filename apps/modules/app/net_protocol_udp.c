@@ -6,7 +6,7 @@
  *   文件名称：net_protocol_udp.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月17日 星期一 14时41分21秒
- *   修改日期：2020年08月17日 星期一 10时38分33秒
+ *   修改日期：2020年10月10日 星期六 09时35分05秒
  *   描    述：
  *
  *================================================================*/
@@ -29,13 +29,7 @@ static int udp_client_connect(void *ctx)
 	net_client_info_t *net_client_info = (net_client_info_t *)ctx;
 	socket_addr_info_t *socket_addr_info = net_client_info->net_client_addr_info.socket_addr_info;
 
-	net_client_info->sock_fd = socket(socket_addr_info->ai_family, socket_addr_info->ai_socktype, socket_addr_info->ai_protocol);
-
-	if(net_client_info->sock_fd != -1) {
-		ret = 0;
-	}
-
-	debug("create socket %d\n", net_client_info->sock_fd);
+	ret = socket_nonblock_connect(socket_addr_info, &net_client_info->sock_fd);
 
 	return ret;
 }

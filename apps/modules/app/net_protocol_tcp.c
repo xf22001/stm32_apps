@@ -6,7 +6,7 @@
  *   文件名称：net_protocol_tcp.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月17日 星期一 14时39分04秒
- *   修改日期：2020年08月17日 星期一 10时38分45秒
+ *   修改日期：2020年10月10日 星期六 08时59分48秒
  *   描    述：
  *
  *================================================================*/
@@ -28,32 +28,8 @@ static int tcp_client_connect(void *ctx)
 	int ret = -1;
 	net_client_info_t *net_client_info = (net_client_info_t *)ctx;
 	socket_addr_info_t *socket_addr_info = net_client_info->net_client_addr_info.socket_addr_info;
-	int flags = 0;
 
-	net_client_info->sock_fd = socket(socket_addr_info->ai_family, socket_addr_info->ai_socktype, socket_addr_info->ai_protocol);
-
-	if(net_client_info->sock_fd == -1) {
-		debug("\n");
-		return ret;
-	}
-
-	debug("create socket %d\n", net_client_info->sock_fd);
-
-	flags = fcntl(net_client_info->sock_fd, F_GETFL, 0);
-	flags |= O_NONBLOCK;
-	fcntl(net_client_info->sock_fd, F_SETFL, flags);
-
-	ret = connect(net_client_info->sock_fd, (struct sockaddr *)&socket_addr_info->addr, socket_addr_info->addr_size);
-
-	if(ret != 0) {
-		if(errno != EINPROGRESS) {
-			debug("close socket %d(%d)\n", net_client_info->sock_fd, errno);
-			close(net_client_info->sock_fd);
-			net_client_info->sock_fd = -1;
-		} else {
-			ret = 0;
-		}
-	}
+	ret = socket_nonblock_connect(socket_addr_info, &net_client_info->sock_fd);
 
 	return ret;
 }

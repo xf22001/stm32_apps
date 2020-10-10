@@ -6,7 +6,7 @@
  *   文件名称：poll_loop.c
  *   创 建 者：肖飞
  *   创建日期：2020年08月11日 星期二 09时54分20秒
- *   修改日期：2020年10月09日 星期五 17时43分31秒
+ *   修改日期：2020年10月10日 星期六 08时51分01秒
  *   描    述：
  *
  *================================================================*/
@@ -145,21 +145,12 @@ failed:
 poll_ctx_t *alloc_poll_ctx(void)
 {
 	poll_ctx_t *poll_ctx = (poll_ctx_t *)os_alloc(sizeof(poll_ctx_t));
-	osMessageQDef(event_msg_q, 1, uint16_t);
 
 	if(poll_ctx == NULL) {
 		return poll_ctx;
 	}
 
 	memset(poll_ctx, 0, sizeof(poll_ctx_t));
-
-	poll_ctx->event_msg_q = osMessageCreate(osMessageQ(event_msg_q), NULL);
-
-	if(poll_ctx->event_msg_q == NULL) {
-		os_free(poll_ctx);
-		poll_ctx = NULL;
-		return poll_ctx;
-	}
 
 	INIT_LIST_HEAD(&poll_ctx->list);
 	poll_ctx->poll_fd.fd = -1;
@@ -292,7 +283,7 @@ static int poll_loop_poll(poll_loop_t *poll_loop)
 		ret = 0;
 	}
 
-	if(ret > 0) {
+	if(ret >= 0) {
 		os_status = osMutexWait(poll_loop->poll_ctx_list_mutex, osWaitForever);
 
 		if(os_status != osOK) {
@@ -323,11 +314,6 @@ static int poll_loop_poll(poll_loop_t *poll_loop)
 				continue;
 			}
 
-			os_status = osMessagePut(poll_ctx->event_msg_q, 0, 0);
-
-			if(os_status != osOK) {
-			}
-
 			if(poll_ctx->poll_handler != NULL) {
 				//debug("handler for %s\n", poll_ctx->name);
 				poll_ctx->poll_handler(poll_ctx);
@@ -339,7 +325,6 @@ static int poll_loop_poll(poll_loop_t *poll_loop)
 
 		if(os_status != osOK) {
 		}
-	} else if(ret == 0) {
 	} else {
 		debug("ret:%d, errno:%d\n", ret, errno);
 	}
@@ -375,70 +360,6 @@ static void poll_loop_periodic(poll_loop_t *poll_loop)
 
 	if(os_status != osOK) {
 	}
-}
-
-int poll_ctx_wait_event(poll_ctx_t *poll_ctx, uint32_t wait_ticks)
-{
-	int ret = -1;
-	osEvent event = osMessageGet(poll_ctx->event_msg_q, wait_ticks);
-
-	switch(event.status) {
-		case osEventMessage: {
-			ret = 0;
-		}
-		break;
-
-		case osOK: {
-			ret = 1;
-		}
-		break;
-
-		default: {
-		}
-		break;
-	}
-
-	return ret;
-}
-
-int poll_loop_wait_send(int fd, uint32_t timeout)
-{
-	int ret = -1;
-	struct fd_set fds;
-	struct timeval tv;
-	int max_fd = -1;
-
-	tv.tv_sec = timeout / 1000;
-	tv.tv_usec = 1000 * (timeout % 1000);
-
-	if(fd == -1) {
-		debug("socket fd is not valid!\n");
-		return ret;
-	}
-
-	FD_ZERO(&fds);
-	FD_SET(fd, &fds);
-
-	if(fd > max_fd) {
-		max_fd = fd;
-	}
-
-	max_fd += 1;
-
-	ret = select(max_fd, NULL, &fds, NULL, &tv);
-
-	if(ret > 0) {
-		if(FD_ISSET(fd, &fds)) {
-			ret = 0;
-		} else {
-			ret = -1;
-		}
-
-	} else {
-		ret = -1;
-	}
-
-	return ret;
 }
 
 static uint8_t dump_poll_ctx = 0;
