@@ -6,7 +6,7 @@
  *   文件名称：can_command.h
  *   创 建 者：肖飞
  *   创建日期：2020年07月07日 星期二 08时26分08秒
- *   修改日期：2020年08月03日 星期一 13时30分05秒
+ *   修改日期：2020年10月16日 星期五 16时17分17秒
  *   描    述：
  *
  *================================================================*/
@@ -58,6 +58,7 @@ typedef struct {
 	can_com_com_state_t state;
 	uint32_t stamp;
 	uint32_t send_stamp;
+	uint32_t recv_stamp;
 	uint8_t available;
 	uint8_t index;
 } can_com_cmd_ctx_t;
