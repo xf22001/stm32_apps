@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_huawei.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 17时23分55秒
- *   修改日期：2020年07月20日 星期一 10时39分36秒
+ *   修改日期：2020年10月21日 星期三 13时40分07秒
  *   描    述：
  *
  *================================================================*/
@@ -838,7 +838,7 @@ static module_command_item_t *module_command_item_table[] = {
 	&module_command_item_0x17b_0x17b,
 };
 
-#define RESPONSE_TIMEOUT 200
+#define RESPONSE_TIMEOUT 2000
 
 static void power_modules_request_periodic(power_modules_info_t *power_modules_info)
 {

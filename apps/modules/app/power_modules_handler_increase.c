@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_increase.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 17时36分29秒
- *   修改日期：2020年07月30日 星期四 13时38分12秒
+ *   修改日期：2020年10月21日 星期三 13时34分21秒
  *   描    述：
  *
  *================================================================*/
@@ -524,7 +524,7 @@ static module_command_item_t *module_command_item_table[] = {
 	&module_command_item_0x10_0x0e,
 };
 
-#define RESPONSE_TIMEOUT 200
+#define RESPONSE_TIMEOUT 2000
 
 static void power_modules_request_periodic(power_modules_info_t *power_modules_info)
 {
