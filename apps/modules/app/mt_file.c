@@ -6,7 +6,7 @@
  *   文件名称：mt_file.c
  *   创 建 者：肖飞
  *   创建日期：2020年11月03日 星期二 12时20分46秒
- *   修改日期：2020年11月03日 星期二 16时15分10秒
+ *   修改日期：2020年11月04日 星期三 12时38分33秒
  *   描    述：
  *
  *================================================================*/
@@ -128,35 +128,123 @@ FRESULT mt_f_sync(FIL *fp)											/* Flush cached data of the writing file */
 	return ret;
 }
 
-int mt_f_putc(TCHAR c, FIL *fp)										/* Put a character to the file */
+FRESULT mt_f_opendir(DIR* dp, const TCHAR* path)						/* Open a directory */
 {
-	int ret;
+	FRESULT ret;
 
 	mt_file_mutex_lock();
-	ret = f_putc(c, fp);
+	ret = f_opendir(dp, path);
 	mt_file_mutex_unlock();
 
 	return ret;
 }
 
-int mt_f_puts(const TCHAR *str, FIL *cp)								/* Put a string to the file */
+FRESULT mt_f_closedir(DIR* dp)										/* Close an open directory */
 {
-	int ret;
+	FRESULT ret;
 
 	mt_file_mutex_lock();
-	ret = f_puts(str, cp);
+	ret = f_closedir(dp);
 	mt_file_mutex_unlock();
 
 	return ret;
 }
 
-TCHAR *mt_f_gets(TCHAR *buff, int len, FIL *fp)						/* Get a string from the file */
+FRESULT mt_f_readdir(DIR* dp, FILINFO* fno)							/* Read a directory item */
 {
-	TCHAR *s;
+	FRESULT ret;
 
 	mt_file_mutex_lock();
-	s = f_gets(buff, len, fp);
+	ret = f_readdir(dp, fno);
 	mt_file_mutex_unlock();
 
-	return s;
+	return ret;
+}
+
+FRESULT mt_f_stat(const TCHAR* path, FILINFO* fno)					/* Get file status */
+{
+	FRESULT ret;
+
+	mt_file_mutex_lock();
+	ret = f_stat(path, fno);
+	mt_file_mutex_unlock();
+
+	return ret;
+}
+
+FRESULT mt_f_getcwd(TCHAR* buff, UINT len)							/* Get current directory */
+{
+	FRESULT ret;
+
+	mt_file_mutex_lock();
+	ret = f_getcwd(buff, len);
+	mt_file_mutex_unlock();
+
+	return ret;
+}
+
+FRESULT mt_f_getfree (const TCHAR* path, DWORD* nclst, FATFS** fatfs)	/* Get number of free clusters on the drive */
+{
+	FRESULT ret;
+
+	mt_file_mutex_lock();
+	ret = f_getfree(path, nclst, fatfs);
+	mt_file_mutex_unlock();
+
+	return ret;
+}
+
+FRESULT mt_f_mount(FATFS* fs, const TCHAR* path, BYTE opt)			/* Mount/Unmount a logical drive */
+{
+	FRESULT ret;
+
+	mt_file_mutex_lock();
+	ret = f_mount(fs, path, opt);
+	mt_file_mutex_unlock();
+
+	return ret;
+}
+
+int mt_f_eof(FIL *fp)
+{
+	int ret;
+
+	mt_file_mutex_lock();
+	ret = f_eof(fp);
+	mt_file_mutex_unlock();
+
+	return ret;
+}
+
+FRESULT mt_f_unlink(const TCHAR* path)								/* Delete an existing file or directory */
+{
+	FRESULT ret;
+
+	mt_file_mutex_lock();
+	ret = f_unlink(path);
+	mt_file_mutex_unlock();
+
+	return ret;
+}
+
+FRESULT mt_f_rename(const TCHAR* path_old, const TCHAR* path_new)	/* Rename/Move a file or directory */
+{
+	FRESULT ret;
+
+	mt_file_mutex_lock();
+	ret = f_rename(path_old, path_new);
+	mt_file_mutex_unlock();
+
+	return ret;
+}
+
+FRESULT mt_f_chdir(const TCHAR* path)								/* Change current directory */
+{
+	FRESULT ret;
+
+	mt_file_mutex_lock();
+	ret = f_chdir(path);
+	mt_file_mutex_unlock();
+
+	return ret;
 }

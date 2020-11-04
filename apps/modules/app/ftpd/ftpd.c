@@ -1505,7 +1505,11 @@ void ftpd_init(void)
 {
 	struct tcp_pcb *pcb;
 
-	vfs_init();
+	int ret = vfs_init();
+
+	if(ret != 0) {
+		return;
+	}
 
 	pcb = tcp_new();
 	LWIP_DEBUGF(FTPD_DEBUG, ("ftpd_init: pcb: %x\n", pcb));

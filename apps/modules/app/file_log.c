@@ -6,12 +6,15 @@
  *   文件名称：file_log.c
  *   创 建 者：肖飞
  *   创建日期：2020年11月03日 星期二 13时03分25秒
- *   修改日期：2020年11月03日 星期二 16时21分40秒
+ *   修改日期：2020年11月04日 星期三 16时21分26秒
  *   描    述：
  *
  *================================================================*/
 #include "file_log.h"
+
+#include "os_utils.h"
 #include "mt_file.h"
+#include "log.h"
 
 typedef struct {
 	FIL s_log_file;
@@ -23,24 +26,13 @@ static file_log_info_t file_log_info = {0};
 
 static uint8_t is_time_available(void)
 {
-	//return (Channel_A_Charger.Channel_Common_Data->Screen_Status == 1) ? 1 : 0;
 	return 1;
 }
 
 time_t *get_time(void)
 {
-	struct tm tm = {0};
 	static time_t ts = 0;
-	//tm.tm_sec = get_u8_from_bcd(pModBus_Data->System.Data_Info.time_second);
-	//tm.tm_min = get_u8_from_bcd(pModBus_Data->System.Data_Info.time_min);
-	//tm.tm_hour = get_u8_from_bcd(pModBus_Data->System.Data_Info.time_hour);
-	//tm.tm_mday = get_u8_from_bcd(pModBus_Data->System.Data_Info.time_day);
-	//tm.tm_mon = get_u8_from_bcd(pModBus_Data->System.Data_Info.time_month);
-	//tm.tm_year = get_u16_from_bcd_b01(
-	//                 get_u8_l_from_u16(pModBus_Data->System.Data_Info.time_year),
-	//                 get_u8_h_from_u16(pModBus_Data->System.Data_Info.time_year));
-	//ts = mktime(&tm);
-	ts = osKernelSysTick();
+	ts = osKernelSysTick() / 1000;
 	return &ts;
 }
 
@@ -62,7 +54,7 @@ int open_log(void)
 {
 	int ret = -1;
 
-	char filepath[96] = {0};
+	char *filepath;
 	struct tm *tm = localtime(get_time());
 
 	if(is_time_available() == 0) {
@@ -78,18 +70,27 @@ int open_log(void)
 		return ret;
 	}
 
-	ret = snprintf(filepath, 96, "logs/%04d_%02d_%02d.txt",
+	filepath = (char *)os_alloc(_MAX_LFN + 1);
+
+	if(filepath == NULL) {
+		return ret;
+	}
+
+	ret = snprintf(filepath, 96, "0:/logs/%04d_%02d_%02d.txt",
 	               tm->tm_year,
 	               tm->tm_mon,
 	               tm->tm_mday);
 
-	ret = mt_f_open(&file_log_info.s_log_file, filepath, FA_READ | FA_WRITE | FA_CREATE_ALWAYS | FA_CREATE_NEW | FA_OPEN_ALWAYS);
+	debug("open file %s...\n", filepath);
+	ret = mt_f_open(&file_log_info.s_log_file, filepath, FA_OPEN_APPEND | FA_WRITE);
 
 	if(ret == FR_OK) {
 		file_log_info.log_file = &file_log_info.s_log_file;
 		file_log_info.log_file_stamp = get_log_file_stamp();
 		ret = 0;
 	}
+
+	os_free(filepath);
 
 	return ret;
 }
@@ -106,3 +107,64 @@ FIL *get_log_file(void)
 {
 	return file_log_info.log_file;
 }
+
+int log_file_data(void *data, size_t size)
+{
+	int ret = -1;
+	size_t write_size;
+
+	if(file_log_info.log_file == NULL) {
+		return ret;
+	}
+
+	ret = mt_f_write(file_log_info.log_file, data, size, &write_size);
+
+	if(ret == FR_OK) {
+		ret = write_size;
+	} else {
+		ret = -1;
+	}
+
+	return ret;
+}
+
+static uint8_t request_close_log = 0;
+
+void try_to_close_log(void)
+{
+	request_close_log = 1;
+}
+
+void handle_open_log(void)
+{
+	int ret;
+	static uint32_t stamps = 0;
+	static uint32_t count = 0;
+	uint32_t ticks = osKernelSysTick();
+
+	if(request_close_log == 1) {
+		request_close_log = 0;
+		stamps = ticks;
+		close_log();
+	}
+
+	if(ticks - stamps >= 10 * 1000) {
+		stamps = ticks;
+
+		if(get_log_file() == NULL) {
+			debug("check file log...\n");
+			open_log();
+		} else if(is_log_file_out_of_date() == 1) {
+			debug("check file log...\n");
+			close_log();
+			open_log();
+		}
+	}
+
+	ret = log_printf((log_fn_t)log_file_data, "test %d\n", count++);
+
+	if(ret < 0) {
+		debug("file log ret:%d\n", ret);
+	}
+}
+
