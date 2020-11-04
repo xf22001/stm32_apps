@@ -73,6 +73,24 @@ FRESULT mt_f_mkdir(const TCHAR* path)								/* Create a sub directory */
 	return ret;
 }
 
+//Flags	Meaning
+//FA_READ	Specifies read access to the object. Data can be read from the file.
+//FA_WRITE	Specifies write access to the object. Data can be written to the file. Combine with FA_READ for read-write access.
+//FA_OPEN_EXISTING	Opens the file. The function fails if the file is not existing. (Default)
+//FA_CREATE_NEW	Creates a new file. The function fails with FR_EXIST if the file is existing.
+//FA_CREATE_ALWAYS	Creates a new file. If the file is existing, it will be truncated and overwritten.
+//FA_OPEN_ALWAYS	Opens the file if it is existing. If not, a new file will be created.
+//FA_OPEN_APPEND	Same as FA_OPEN_ALWAYS except the read/write pointer is set end of the file.
+//
+//POSIX	FatFs
+//"r"	FA_READ
+//"r+"	FA_READ | FA_WRITE
+//"w"	FA_CREATE_ALWAYS | FA_WRITE
+//"w+"	FA_CREATE_ALWAYS | FA_WRITE | FA_READ
+//"a"	FA_OPEN_APPEND | FA_WRITE
+//"a+"	FA_OPEN_APPEND | FA_WRITE | FA_READ
+//"wx"	FA_CREATE_NEW | FA_WRITE
+//"w+x"	FA_CREATE_NEW | FA_WRITE | FA_READ
 FRESULT mt_f_open(FIL *fp, const TCHAR *path, BYTE mode)				/* Open or create a file */
 {
 	FRESULT ret;

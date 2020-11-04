@@ -6,7 +6,7 @@
  *   文件名称：vfs.c
  *   创 建 者：肖飞
  *   创建日期：2020年11月04日 星期三 11时22分04秒
- *   修改日期：2020年11月04日 星期三 16时19分24秒
+ *   修改日期：2020年11月04日 星期三 17时11分45秒
  *   描    述：
  *
  *================================================================*/
@@ -179,18 +179,6 @@ void vfs_closedir(vfs_dir_t *dir)
 	}
 }
 
-struct tm dummy = {
-	.tm_year = 70,
-	.tm_mon  = 0,
-	.tm_mday = 1,
-	.tm_hour = 0,
-	.tm_min  = 0
-};
-struct tm *gmtime(const time_t *c_t)
-{
-	return &dummy;
-}
-
 static FATFS fs;      /* File system object (volume work area) */
 
 FATFS *get_vfs_fs(void)
@@ -219,7 +207,7 @@ static int get_free_capicity(DWORD *total_size, DWORD *free_size)
 int vfs_init()
 {
 	FRESULT ret;   /* API result code */
-	FATFS *pfs = get_vfs_fs();
+	//FATFS *pfs = get_vfs_fs();
 	DWORD total_size;
 	DWORD free_size;
 
