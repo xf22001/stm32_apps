@@ -47,9 +47,9 @@ typedef struct {
 } vfs_stat_t;
 typedef struct {
 #if _USE_LFN != 0
-	char name[_MAX_LFN + 1];
+	TCHAR name[_MAX_LFN + 1];
 #else
-	char name[13];
+	TCHAR name[13];
 #endif
 } vfs_dirent_t;
 typedef FIL vfs_t;
