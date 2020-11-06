@@ -6,7 +6,7 @@
  *   文件名称：file_log.c
  *   创 建 者：肖飞
  *   创建日期：2020年11月03日 星期二 13时03分25秒
- *   修改日期：2020年11月04日 星期三 16时21分26秒
+ *   修改日期：2020年11月06日 星期五 11时52分28秒
  *   描    述：
  *
  *================================================================*/
@@ -61,11 +61,12 @@ int open_log(void)
 		return ret;
 	}
 
-	ret = mt_f_mkdir("logs");
+	ret = mt_f_mkdir("0:/logs");
 
 	if(FR_OK == ret || FR_EXIST == ret) {
 		ret = 0;
 	} else {
+		debug("mt_f_mkdir ret:%d\n", ret);
 		ret = -1;
 		return ret;
 	}
@@ -82,12 +83,24 @@ int open_log(void)
 	               tm->tm_mday);
 
 	debug("open file %s...\n", filepath);
+#if defined(FA_OPEN_APPEND)
 	ret = mt_f_open(&file_log_info.s_log_file, filepath, FA_OPEN_APPEND | FA_WRITE);
+#else
+	ret = mt_f_open(&file_log_info.s_log_file, filepath, FA_OPEN_ALWAYS | FA_WRITE);
+#endif
 
 	if(ret == FR_OK) {
+#if !defined(FA_OPEN_APPEND)
+		ret = mt_f_lseek(&file_log_info.s_log_file, file_log_info.s_log_file.fsize);
+		if(ret != FR_OK) {
+			debug("mt_f_lseek ret:%d\n", ret);
+		}
+#endif
 		file_log_info.log_file = &file_log_info.s_log_file;
 		file_log_info.log_file_stamp = get_log_file_stamp();
 		ret = 0;
+	} else {
+		debug("mt_f_open ret:%d\n", ret);
 	}
 
 	os_free(filepath);

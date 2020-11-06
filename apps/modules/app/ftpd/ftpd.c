@@ -1508,7 +1508,7 @@ void ftpd_init(void)
 	int ret = vfs_init();
 
 	if(ret != 0) {
-		return;
+		debug("vfs_init ret:%d\n", ret);
 	}
 
 	pcb = tcp_new();

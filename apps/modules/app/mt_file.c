@@ -6,7 +6,7 @@
  *   文件名称：mt_file.c
  *   创 建 者：肖飞
  *   创建日期：2020年11月03日 星期二 12时20分46秒
- *   修改日期：2020年11月04日 星期三 12时38分33秒
+ *   修改日期：2020年11月06日 星期五 11时39分31秒
  *   描    述：
  *
  *================================================================*/
@@ -130,6 +130,17 @@ FRESULT mt_f_write(FIL *fp, const void *buff, UINT btw, UINT *bw)	/* Write data 
 
 	mt_file_mutex_lock();
 	ret = f_write(fp, buff, btw, bw);
+	mt_file_mutex_unlock();
+
+	return ret;
+}
+
+FRESULT mt_f_lseek(FIL* fp, DWORD ofs)								/* Move file pointer of a file object */
+{
+	FRESULT ret;
+
+	mt_file_mutex_lock();
+	ret = f_lseek(fp, ofs);
 	mt_file_mutex_unlock();
 
 	return ret;

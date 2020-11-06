@@ -6,7 +6,7 @@
  *   文件名称：mt_file.h
  *   创 建 者：肖飞
  *   创建日期：2020年11月03日 星期二 12时20分51秒
- *   修改日期：2020年11月04日 星期三 12时39分15秒
+ *   修改日期：2020年11月06日 星期五 11时50分16秒
  *   描    述：
  *
  *================================================================*/
@@ -34,6 +34,7 @@ FRESULT mt_f_open(FIL *fp, const TCHAR *path, BYTE mode)				/* Open or create a 
 FRESULT mt_f_close(FIL *fp)											/* Close an open file object */;
 FRESULT mt_f_read(FIL *fp, void *buff, UINT btr, UINT *br)			/* Read data from the file */;
 FRESULT mt_f_write(FIL *fp, const void *buff, UINT btw, UINT *bw)	/* Write data to the file */;
+FRESULT mt_f_lseek(FIL* fp, DWORD ofs)								/* Move file pointer of a file object */;
 FRESULT mt_f_sync(FIL *fp)											/* Flush cached data of the writing file */;
 FRESULT mt_f_opendir(DIR* dp, const TCHAR* path)						/* Open a directory */;
 FRESULT mt_f_closedir(DIR* dp)										/* Close an open directory */;
