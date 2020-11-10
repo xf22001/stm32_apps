@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_huawei.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 17时23分55秒
- *   修改日期：2020年10月21日 星期三 13时40分07秒
+ *   修改日期：2020年11月10日 星期二 08时23分35秒
  *   描    述：
  *
  *================================================================*/
@@ -838,7 +838,7 @@ static module_command_item_t *module_command_item_table[] = {
 	&module_command_item_0x17b_0x17b,
 };
 
-#define RESPONSE_TIMEOUT 2000
+#define RESPONSE_TIMEOUT 500
 
 static void power_modules_request_periodic(power_modules_info_t *power_modules_info)
 {
@@ -927,6 +927,7 @@ static void power_modules_request_huawei(power_modules_info_t *power_modules_inf
 
 			if(ret != 0) {
 				cmd_ctx->state = CAN_COM_STATE_REQUEST;
+
 				can_com_set_connect_state(connect_state, 0);
 				debug("send module_id %d cmd %d(%s) error!\n",
 				      module_id,
@@ -984,11 +985,11 @@ static int power_modules_response_huawei(power_modules_info_t *power_modules_inf
 			continue;
 		}
 
+		can_com_set_connect_state(connect_state, 1);
+
 		ret = item->response_callback(power_modules_info, module_id);
 
-		if(ret == 0) {
-			can_com_set_connect_state(connect_state, 1);
-		} else {
+		if(ret != 0) {
 			debug("module_id %d cmd %d(%s) response error!\n",
 			      module_id,
 			      item->cmd,

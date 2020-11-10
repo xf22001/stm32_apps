@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_increase.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 17时36分29秒
- *   修改日期：2020年11月09日 星期一 17时26分45秒
+ *   修改日期：2020年11月10日 星期二 08时22分07秒
  *   描    述：
  *
  *================================================================*/
@@ -549,14 +549,12 @@ static void power_modules_request_periodic(power_modules_info_t *power_modules_i
 
 			if(cmd_ctx->state == CAN_COM_STATE_RESPONSE) {//超时
 				if(ticks - cmd_ctx->send_stamp >= RESPONSE_TIMEOUT) {
-					if(item->cmd == MODULE_CMD_1_1) {
-						can_com_set_connect_state(connect_state, 0);
-						debug("cmd %d(%s), module_id %d timeout, connect state:%d\n",
-						      item->cmd,
-						      get_power_module_cmd_des(item->cmd),
-						      module_id,
-						      can_com_get_connect_state(connect_state));
-					}
+					can_com_set_connect_state(connect_state, 0);
+					debug("cmd %d(%s), module_id %d timeout, connect state:%d\n",
+					      item->cmd,
+					      get_power_module_cmd_des(item->cmd),
+					      module_id,
+					      can_com_get_connect_state(connect_state));
 
 					cmd_ctx->state = CAN_COM_STATE_REQUEST;
 				}
@@ -631,15 +629,7 @@ static void power_modules_request_increase(power_modules_info_t *power_modules_i
 			if(ret != 0) {
 				cmd_ctx->state = CAN_COM_STATE_REQUEST;
 
-				if(item->cmd == MODULE_CMD_1_1) {
-					can_com_set_connect_state(connect_state, 0);
-					debug("cmd %d(%s), module_id %d timeout, connect state:%d\n",
-					      item->cmd,
-					      get_power_module_cmd_des(item->cmd),
-					      module_id,
-					      can_com_get_connect_state(connect_state));
-				}
-
+				can_com_set_connect_state(connect_state, 0);
 				debug("send module_id %d cmd %d(%s) error!\n",
 				      module_id,
 				      item->cmd,
@@ -713,14 +703,7 @@ static int power_modules_response_increase(power_modules_info_t *power_modules_i
 			}
 		}
 
-		if(item->cmd == MODULE_CMD_1_1) {
-			can_com_set_connect_state(connect_state, 1);
-			debug("cmd %d(%s), module_id %d connect state:%d\n",
-			      item->cmd,
-			      get_power_module_cmd_des(item->cmd),
-			      module_id,
-			      can_com_get_connect_state(connect_state));
-		}
+		can_com_set_connect_state(connect_state, 1);
 
 		ret = item->response_callback(power_modules_info, module_id);
 
