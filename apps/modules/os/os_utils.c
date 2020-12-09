@@ -6,28 +6,201 @@
  *   文件名称：os_utils.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分17秒
- *   修改日期：2020年08月04日 星期二 13时12分07秒
+ *   修改日期：2020年12月09日 星期三 16时20分48秒
  *   描    述：
  *
  *================================================================*/
 #include "os_utils.h"
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include "cmsis_os.h"
+#include "list_utils.h"
+#include "FreeRTOSConfig.h"
+
+#include "log.h"
+
+typedef struct {
+	size_t size;
+	struct list_head list;
+} mem_node_info_t;
+
+typedef struct {
+	uint8_t init;
+	osMutexId os_utils_mutex;
+	size_t size;
+	size_t count;
+	size_t max_size;
+	struct list_head mem_info_list;
+} mem_info_t;
 
 #define LOG_BUFFER_SIZE (1024)
 
-void vPortFree( void *pv );
-void *pvPortMalloc( size_t xWantedSize );
+static mem_info_t mem_info = {
+	.init = 0,
+	.os_utils_mutex = NULL,
+};
+
+static int init_mem_info(void)
+{
+	int ret = -1;
+	osMutexDef(os_utils_mutex);
+	osStatus os_status;
+
+	if(mem_info.os_utils_mutex == NULL) {
+		mem_info.os_utils_mutex = osMutexCreate(osMutex(os_utils_mutex));
+
+		if(mem_info.os_utils_mutex == NULL) {
+			return ret;
+		}
+
+		os_status = osMutexWait(mem_info.os_utils_mutex, osWaitForever);
+
+		if(os_status != osOK) {
+		}
+
+		mem_info.size = 0;
+		mem_info.count = 0;
+		mem_info.max_size = 0;
+		INIT_LIST_HEAD(&mem_info.mem_info_list);
+
+		mem_info.init = 1;
+		ret = 0;
+
+		os_status = osMutexRelease(mem_info.os_utils_mutex);
+
+		if(os_status != osOK) {
+		}
+	}
+
+	return ret;
+}
+
+static void *xmalloc(size_t size)
+{
+	osStatus os_status;
+	mem_node_info_t *mem_node_info;
+
+	if(mem_info.init == 0) {
+		if(init_mem_info() != 0) {
+			return NULL;
+		}
+	}
+
+	os_status = osMutexWait(mem_info.os_utils_mutex, osWaitForever);
+
+	if(os_status != osOK) {
+	}
+
+	mem_node_info = (mem_node_info_t *)pvPortMalloc(sizeof(mem_node_info_t) + size);
+
+	if(mem_node_info != NULL) {
+		mem_info.size += size;
+		mem_info.count += 1;
+
+		if(mem_info.size > mem_info.max_size) {
+			mem_info.max_size = mem_info.size;
+		}
+
+		mem_node_info->size = size;
+		list_add_tail(&mem_node_info->list, &mem_info.mem_info_list);
+	}
+
+	os_status = osMutexRelease(mem_info.os_utils_mutex);
+
+	if(os_status != osOK) {
+	}
+
+	return (mem_node_info != NULL) ? (mem_node_info + 1) : NULL;
+}
+
+static void xfree(void *p)
+{
+	osStatus os_status;
+
+	if(mem_info.init == 0) {
+		if(init_mem_info() != 0) {
+			return;
+		}
+	}
+
+	os_status = osMutexWait(mem_info.os_utils_mutex, osWaitForever);
+
+	if(os_status != osOK) {
+	}
+
+	if(p != NULL) {
+		mem_node_info_t *mem_node_info = (mem_node_info_t *)p;
+
+		mem_node_info--;
+
+		mem_info.size -= mem_node_info->size;
+		mem_info.count -= 1;
+
+		list_del(&mem_node_info->list);
+		vPortFree(mem_node_info);
+	}
+
+	os_status = osMutexRelease(mem_info.os_utils_mutex);
+
+	if(os_status != osOK) {
+	}
+}
+
+void get_mem_info(size_t *size, size_t *count, size_t *max_size)
+{
+	osStatus os_status;
+	mem_node_info_t *mem_node_info;
+	struct list_head *head;
+
+	*size = 0;
+	*count = 0;
+	*max_size = 0;
+
+	if(mem_info.init == 0) {
+		if(init_mem_info() != 0) {
+			return;
+		}
+	}
+
+	os_status = osMutexWait(mem_info.os_utils_mutex, osWaitForever);
+
+	if(os_status != osOK) {
+	}
+
+	*size = mem_info.size;
+	*count = mem_info.count;
+	*max_size = mem_info.max_size;
+
+	head = &mem_info.mem_info_list;
+
+	list_for_each_entry(mem_node_info, head, mem_node_info_t, list) {
+	}
+
+	os_status = osMutexRelease(mem_info.os_utils_mutex);
+
+	if(os_status != osOK) {
+	}
+}
+
+uint32_t get_total_heap_size(void)
+{
+	return (uint32_t)configTOTAL_HEAP_SIZE;
+}
 
 void *os_alloc(size_t size)
 {
-	return pvPortMalloc(size);
+	void *p;
+
+	p = xmalloc(size);
+
+	return p;
 }
 
 void os_free(void *p)
 {
-	vPortFree(p);
+	xfree(p);
 }
 
 int log_printf(log_fn_t log_fn, const char *fmt, ...)

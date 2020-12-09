@@ -6,7 +6,7 @@
  *   文件名称：os_utils.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分36秒
- *   修改日期：2020年08月12日 星期三 17时38分18秒
+ *   修改日期：2020年12月09日 星期三 13时28分54秒
  *   描    述：
  *
  *================================================================*/
@@ -257,6 +257,8 @@ static inline uint8_t get_u8_bits(uint8_t v, uint8_t offset)
 
 typedef int (*log_fn_t)(const char *buffer, size_t size);
 
+void get_mem_info(size_t *size, size_t *count, size_t *max_size);
+uint32_t get_total_heap_size(void);
 void *os_alloc(size_t size);
 void os_free(void *p);
 int log_printf(log_fn_t log_fn, const char *fmt, ...);

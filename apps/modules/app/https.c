@@ -536,6 +536,7 @@ static int https_connect(HTTP_INFO *hi, char *host, char *port)
 		ret = mbedtls_ctr_drbg_seed( &hi->tls.ctr_drbg, mbedtls_entropy_func, &hi->tls.entropy, NULL, 0);
 
 		if( ret != 0 ) {
+			debug("ret:%d\n", ret);
 			return ret;
 		}
 
@@ -950,6 +951,7 @@ int http_open(HTTP_INFO *hi, char *url)
 
 
 	if (NULL == hi) {
+		debug("\n");
 		return -1;
 	}
 
@@ -970,6 +972,7 @@ int http_open(HTTP_INFO *hi, char *url)
 
 			_error = ret;
 
+			debug("\n");
 			return -1;
 		}
 	} else {
@@ -987,6 +990,7 @@ int http_open(HTTP_INFO *hi, char *url)
 
 				_error = ret;
 
+				debug("\n");
 				return -1;
 			}
 		}
@@ -1117,12 +1121,12 @@ int http_write_ws_header(HTTP_INFO *hi)
 	               "Sec-WebSocket-Version: 13\r\n",
 	               hi->request.method, hi->url.path,
 	               hi->url.host, hi->url.port,
-		       base64_key);
+	               base64_key);
 
 	len += snprintf(&request[len], H_FIELD_SIZE, "\r\n");
 
 
-	_printf("%s", request);
+	debug("%s", request);
 
 	if ((ret = https_write(hi, request, len)) != len) {
 		https_close(hi);

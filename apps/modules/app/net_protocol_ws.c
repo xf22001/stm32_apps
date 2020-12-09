@@ -6,7 +6,7 @@
  *   文件名称：net_protocol_ws.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月23日 星期日 12时23分31秒
- *   修改日期：2020年10月10日 星期六 09时19分22秒
+ *   修改日期：2020年12月09日 星期三 13时49分33秒
  *   描    述：
  *
  *================================================================*/
@@ -49,12 +49,24 @@ static void os_free_1(void *p)
 static void *os_calloc(size_t nmemb, size_t size)
 {
 	void *ptr = os_alloc_1(nmemb * size);
+	//uint32_t total_heap_size = get_total_heap_size();
+	//size_t heap_size = 0;
+	//size_t heap_count = 0;
+	//size_t heap_max_size = 0;
 
 	if(ptr == NULL) {
 		while(1);
 	}
 
 	memset(ptr, 0, nmemb * size);
+
+	//get_mem_info(&heap_size, &heap_count,  &heap_max_size);
+	//debug("total heap size:%d, free heap size:%d, used:%d, heap count:%d, max heap size:%d\n",
+	//      get_total_heap_size(),
+	//      xPortGetFreeHeapSize(),
+	//      heap_size,
+	//      heap_count,
+	//      heap_max_size);
 
 	return ptr;
 }

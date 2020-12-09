@@ -6,7 +6,7 @@
  *   文件名称：file_log.c
  *   创 建 者：肖飞
  *   创建日期：2020年11月03日 星期二 13时03分25秒
- *   修改日期：2020年11月06日 星期五 16时57分05秒
+ *   修改日期：2020年11月23日 星期一 11时10分01秒
  *   描    述：
  *
  *================================================================*/
@@ -165,10 +165,10 @@ void handle_open_log(void)
 		stamps = ticks;
 
 		if(get_log_file() == NULL) {
-			debug("check file log...\n");
+			//debug("check file log...\n");
 			open_log();
 		} else if(is_log_file_out_of_date() == 1) {
-			debug("check file log...\n");
+			//debug("check file log...\n");
 			close_log();
 			open_log();
 		}
@@ -177,7 +177,7 @@ void handle_open_log(void)
 	ret = log_printf((log_fn_t)log_file_data, "test %d\n", count++);
 
 	if(ret < 0) {
-		debug("file log ret:%d\n", ret);
+		//debug("file log ret:%d\n", ret);
 	}
 }
 
