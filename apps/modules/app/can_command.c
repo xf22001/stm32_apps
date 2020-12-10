@@ -6,7 +6,7 @@
  *   文件名称：can_command.c
  *   创 建 者：肖飞
  *   创建日期：2020年07月07日 星期二 08时29分24秒
- *   修改日期：2020年08月03日 星期一 13时29分50秒
+ *   修改日期：2020年12月10日 星期四 15时01分56秒
  *   描    述：
  *
  *================================================================*/
@@ -51,7 +51,7 @@ char *get_can_com_response_status_des(can_com_response_status_t status)
 }
 
 //准备请求数据 发
-int can_com_prepare_request(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_common_t *can_com_cmd_common, uint8_t cmd, uint8_t *data, uint8_t data_size)
+int can_com_prepare_tx_request(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_common_t *can_com_cmd_common, uint8_t cmd, uint8_t *data, uint8_t data_size)
 {
 	int ret = -1;
 
@@ -87,7 +87,7 @@ int can_com_prepare_request(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_comm
 }
 
 //请求数据后,处理响应响应 收
-int can_com_process_response(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_response_t *can_com_cmd_response, uint8_t cmd, uint8_t data_size)
+int can_com_process_rx_response(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_response_t *can_com_cmd_response, uint8_t cmd, uint8_t data_size)
 {
 	int ret = -1;
 	uint8_t index = can_com_cmd_ctx->index;
@@ -125,7 +125,7 @@ int can_com_process_response(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_res
 }
 
 //处理请求后，准备响应数据 发
-int can_com_prepare_response(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_response_t *can_com_cmd_response, uint8_t cmd, uint8_t data_size)
+int can_com_prepare_tx_response(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_response_t *can_com_cmd_response, uint8_t cmd, uint8_t data_size)
 {
 	int ret = -1;
 
@@ -152,7 +152,7 @@ int can_com_prepare_response(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_res
 }
 
 //处理请求数据 收
-int can_com_process_request(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_common_t *can_com_cmd_common, uint8_t cmd, uint8_t *data, uint8_t data_size)
+int can_com_process_rx_request(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_common_t *can_com_cmd_common, uint8_t cmd, uint8_t *data, uint8_t data_size)
 {
 	int ret = -1;
 	uint8_t index = can_com_cmd_common->index;

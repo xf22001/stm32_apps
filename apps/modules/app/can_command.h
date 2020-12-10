@@ -6,7 +6,7 @@
  *   文件名称：can_command.h
  *   创 建 者：肖飞
  *   创建日期：2020年07月07日 星期二 08时26分08秒
- *   修改日期：2020年10月16日 星期五 16时17分17秒
+ *   修改日期：2020年12月10日 星期四 15时02分27秒
  *   描    述：
  *
  *================================================================*/
@@ -71,10 +71,10 @@ typedef struct {
 
 char *get_can_com_state_des(can_com_com_state_t state);
 char *get_can_com_response_status_des(can_com_response_status_t status);
-int can_com_prepare_request(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_common_t *can_com_cmd_common, uint8_t cmd, uint8_t *data, uint8_t data_size);
-int can_com_process_response(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_response_t *can_com_cmd_response, uint8_t cmd, uint8_t data_size);
-int can_com_prepare_response(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_response_t *can_com_cmd_response, uint8_t cmd, uint8_t data_size);
-int can_com_process_request(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_common_t *can_com_cmd_common, uint8_t cmd, uint8_t *data, uint8_t data_size);
+int can_com_prepare_tx_request(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_common_t *can_com_cmd_common, uint8_t cmd, uint8_t *data, uint8_t data_size);
+int can_com_process_rx_response(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_response_t *can_com_cmd_response, uint8_t cmd, uint8_t data_size);
+int can_com_prepare_tx_response(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_response_t *can_com_cmd_response, uint8_t cmd, uint8_t data_size);
+int can_com_process_rx_request(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_common_t *can_com_cmd_common, uint8_t cmd, uint8_t *data, uint8_t data_size);
 void can_com_set_connect_state(can_com_connect_state_t *can_com_connect_state, uint8_t state);
 uint8_t can_com_get_connect_state(can_com_connect_state_t *can_com_connect_state);
 uint32_t can_com_get_connect_stamp(can_com_connect_state_t *can_com_connect_state);
