@@ -6,7 +6,7 @@
  *   文件名称：file_log.c
  *   创 建 者：肖飞
  *   创建日期：2020年11月03日 星期二 13时03分25秒
- *   修改日期：2020年11月23日 星期一 11时10分01秒
+ *   修改日期：2020年12月10日 星期四 13时50分46秒
  *   描    述：
  *
  *================================================================*/
@@ -61,7 +61,7 @@ int open_log(void)
 		return ret;
 	}
 
-	ret = mt_f_mkdir("0:/logs");
+	ret = mt_f_mkdir("/logs");
 
 	if(FR_OK == ret || FR_EXIST == ret) {
 		ret = 0;
@@ -77,7 +77,7 @@ int open_log(void)
 		return ret;
 	}
 
-	ret = snprintf(filepath, 96, "0:/logs/%04d%02d%02d",
+	ret = snprintf(filepath, 96, "/logs/%04d%02d%02d",
 	               tm->tm_year,
 	               tm->tm_mon,
 	               tm->tm_mday);
