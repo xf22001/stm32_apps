@@ -6,15 +6,18 @@
  *   文件名称：os_utils.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分17秒
- *   修改日期：2020年12月17日 星期四 09时00分28秒
+ *   修改日期：2020年12月17日 星期四 12时44分32秒
  *   描    述：
  *
  *================================================================*/
 #include "os_utils.h"
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+
 #include "cmsis_os.h"
 #include "list_utils.h"
 #include "FreeRTOSConfig.h"
@@ -442,7 +445,7 @@ unsigned char mem_is_set(char *values, size_t size, char value)
 unsigned int str_hash(const char *s)
 {
 	unsigned int hash = 0;
-	char *p = NULL;
+	const char *p = NULL;
 
 	p = s;
 	while(*p != 0) {
@@ -451,4 +454,19 @@ unsigned int str_hash(const char *s)
 	}
 
 	return hash;
+}
+
+unsigned char calc_crc8(void *data, size_t size)
+{
+	unsigned char crc = 0;
+	unsigned char *p = (unsigned char *)data;
+
+	while(size > 0) {
+		crc += *p;
+
+		p++;
+		size--;
+	}
+
+	return crc;
 }
