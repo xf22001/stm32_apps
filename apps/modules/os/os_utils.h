@@ -6,7 +6,7 @@
  *   文件名称：os_utils.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分36秒
- *   修改日期：2020年12月17日 星期四 12时38分06秒
+ *   修改日期：2020年12月17日 星期四 14时35分06秒
  *   描    述：
  *
  *================================================================*/
@@ -267,5 +267,5 @@ int log_puts(log_fn_t log_fn, const char *s);
 void app_panic(void);
 unsigned char mem_is_set(char *values, size_t size, char value);
 unsigned int str_hash(const char *s);
-unsigned char calc_crc8(void *data, size_t size);
+unsigned char calc_crc8(const void *data, size_t size);
 #endif //_OS_UTILS_H
