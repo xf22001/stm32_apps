@@ -6,7 +6,7 @@
  *   文件名称：os_utils.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分17秒
- *   修改日期：2020年12月09日 星期三 16时20分48秒
+ *   修改日期：2020年12月17日 星期四 09时00分28秒
  *   描    述：
  *
  *================================================================*/
@@ -437,4 +437,18 @@ unsigned char mem_is_set(char *values, size_t size, char value)
 	}
 
 	return ret;
+}
+
+unsigned int str_hash(const char *s)
+{
+	unsigned int hash = 0;
+	char *p = NULL;
+
+	p = s;
+	while(*p != 0) {
+		hash = (31 * hash) + tolower(*p);
+		p++;
+	}
+
+	return hash;
 }
