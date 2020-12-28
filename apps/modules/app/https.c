@@ -206,14 +206,14 @@ static int http_parse(HTTP_INFO *hi)
 				*p2 = 0;
 
 				if(len > 0) {
-					// _printf("header: %s(%ld)\n", p1, len);
+					// debug("header: %s(%ld)\n", p1, len);
 
 					http_header(hi, p1);
 					p1 = p2 + 2;    // skip CR+LF
 				} else {
 					hi->header_end = TRUE; // reach the header-end.
 
-					// _printf("header_end .... \n");
+					// debug("header_end .... \n");
 
 					p1 = p2 + 2;    // skip CR+LF
 
@@ -383,7 +383,7 @@ static int https_init(HTTP_INFO *hi, BOOL https, BOOL verify)
 	hi->tls.verify = verify;
 	hi->url.https = https;
 
-//  _printf("https_init ... \n");
+//  debug("https_init ... \n");
 
 	return 0;
 }
@@ -405,7 +405,7 @@ static int https_close(HTTP_INFO *hi)
 		mbedtls_entropy_free(&hi->tls.entropy);
 	}
 
-//  _printf("https_close ... \n");
+//  debug("https_close ... \n");
 
 	return 0;
 }
@@ -723,7 +723,7 @@ int http_get(HTTP_INFO *hi, char *url, char *response, int size)
 		return -1;
 	}
 
-//  _printf("request: %s \r\n\r\n", request);
+//  debug("request: %s \r\n\r\n", request);
 
 	hi->response.status = 0;
 	hi->response.content_length = 0;
@@ -757,8 +757,8 @@ int http_get(HTTP_INFO *hi, char *url, char *response, int size)
 		hi->r_len += ret;
 		hi->r_buf[hi->r_len] = 0;
 
-		// _printf("read(%ld): |%s| \n", hi->r_len, hi->r_buf);
-		// _printf("read(%ld) ... \n", hi->r_len);
+		// debug("read(%ld): |%s| \n", hi->r_len, hi->r_buf);
+		// debug("read(%ld) ... \n", hi->r_len);
 
 		if(http_parse(hi) != 0) {
 			break;
@@ -774,12 +774,12 @@ int http_get(HTTP_INFO *hi, char *url, char *response, int size)
 	}
 
 	/*
-	_printf("status: %d \n", hi->response.status);
-	_printf("cookie: %s \n", hi->response.cookie);
-	_printf("location: %s \n", hi->response.location);
-	_printf("referrer: %s \n", hi->response.referrer);
-	_printf("length: %ld \n", hi->response.content_length);
-	_printf("body: %ld \n", hi->body_len);
+	debug("status: %d \n", hi->response.status);
+	debug("cookie: %s \n", hi->response.cookie);
+	debug("location: %s \n", hi->response.location);
+	debug("referrer: %s \n", hi->response.referrer);
+	debug("length: %ld \n", hi->response.content_length);
+	debug("body: %ld \n", hi->body_len);
 	*/
 
 	return hi->response.status;
@@ -841,7 +841,7 @@ int http_post(HTTP_INFO *hi, char *url, char *data, char *response, int size)
 		}
 
 //      else
-//          _printf("socket reuse: %d \n", sock_fd);
+//          debug("socket reuse: %d \n", sock_fd);
 	}
 
 	/* Send HTTP request. */
@@ -870,7 +870,7 @@ int http_post(HTTP_INFO *hi, char *url, char *data, char *response, int size)
 		return -1;
 	}
 
-//  _printf("request: %s \r\n\r\n", request);
+//  debug("request: %s \r\n\r\n", request);
 
 	hi->response.status = 0;
 	hi->response.content_length = 0;
@@ -906,8 +906,8 @@ int http_post(HTTP_INFO *hi, char *url, char *data, char *response, int size)
 		hi->r_len += ret;
 		hi->r_buf[hi->r_len] = 0;
 
-//        _printf("read(%ld): %s \n", hi->r_len, hi->r_buf);
-//        _printf("read(%ld) \n", hi->r_len);
+//        debug("read(%ld): %s \n", hi->r_len, hi->r_buf);
+//        debug("read(%ld) \n", hi->r_len);
 
 		if(http_parse(hi) != 0) {
 			break;
@@ -923,12 +923,12 @@ int http_post(HTTP_INFO *hi, char *url, char *data, char *response, int size)
 	}
 
 	/*
-	    _printf("status: %d \n", hi->response.status);
-	    _printf("cookie: %s \n", hi->response.cookie);
-	    _printf("location: %s \n", hi->response.location);
-	    _printf("referrer: %s \n", hi->response.referrer);
-	    _printf("length: %d \n", hi->response.content_length);
-	    _printf("body: %d \n", hi->body_len);
+	    debug("status: %d \n", hi->response.status);
+	    debug("cookie: %s \n", hi->response.cookie);
+	    debug("location: %s \n", hi->response.location);
+	    debug("referrer: %s \n", hi->response.referrer);
+	    debug("length: %d \n", hi->response.content_length);
+	    debug("body: %d \n", hi->body_len);
 	*/
 
 	return hi->response.status;
@@ -996,7 +996,7 @@ int http_open(HTTP_INFO *hi, char *url)
 		}
 
 //      else
-//          _printf("socket reuse: %d \n", sock_fd);
+//          debug("socket reuse: %d \n", sock_fd);
 	}
 
 	strncpy(hi->url.host, host, strlen(host));
@@ -1063,7 +1063,7 @@ int http_write_header(HTTP_INFO *hi)
 	len += snprintf(&request[len], H_FIELD_SIZE, "\r\n");
 
 
-	_printf("%s", request);
+	debug("%s", request);
 
 	if ((ret = https_write(hi, request, len)) != len) {
 		https_close(hi);
@@ -1220,7 +1220,7 @@ int http_read_chunked(HTTP_INFO *hi, char *response, int size)
 		return -1;
 	}
 
-//  _printf("request: %s \r\n\r\n", request);
+//  debug("request: %s \r\n\r\n", request);
 
 	hi->response.status = 0;
 	hi->response.content_length = 0;
@@ -1253,8 +1253,8 @@ int http_read_chunked(HTTP_INFO *hi, char *response, int size)
 		hi->r_len += ret;
 		hi->r_buf[hi->r_len] = 0;
 
-//        _printf("read(%ld): %s \n", hi->r_len, hi->r_buf);
-//        _printf("read(%ld) \n", hi->r_len);
+//        debug("read(%ld): %s \n", hi->r_len, hi->r_buf);
+//        debug("read(%ld) \n", hi->r_len);
 
 		if(http_parse(hi) != 0) {
 			break;
@@ -1266,12 +1266,12 @@ int http_read_chunked(HTTP_INFO *hi, char *response, int size)
 	}
 
 	/*
-	    _printf("status: %d \n", hi->status);
-	    _printf("cookie: %s \n", hi->cookie);
-	    _printf("location: %s \n", hi->location);
-	    _printf("referrer: %s \n", hi->referrer);
-	    _printf("length: %d \n", hi->content_length);
-	    _printf("body: %d \n", hi->body_len);
+	    debug("status: %d \n", hi->status);
+	    debug("cookie: %s \n", hi->cookie);
+	    debug("location: %s \n", hi->location);
+	    debug("referrer: %s \n", hi->referrer);
+	    debug("length: %d \n", hi->content_length);
+	    debug("body: %d \n", hi->body_len);
 	*/
 
 	return hi->response.status;

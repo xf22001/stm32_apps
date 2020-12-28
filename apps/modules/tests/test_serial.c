@@ -6,7 +6,7 @@
  *   文件名称：test_serial.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 10时54分01秒
- *   修改日期：2020年05月15日 星期五 08时31分39秒
+ *   修改日期：2020年12月28日 星期一 13时24分40秒
  *   描    述：
  *
  *================================================================*/
@@ -31,8 +31,8 @@ static void task_uart_tx(void const *argument)
 		ret = uart_tx_data(uart_info, (uint8_t *)msg, strlen(msg) + 1, 10);
 
 		if(ret > 0) {
-			_printf("\n\n");
-			_printf("sent msg!\n");
+			debug("\n\n");
+			debug("sent msg!\n");
 		}
 
 		osDelay(200);

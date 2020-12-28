@@ -6,7 +6,7 @@
  *   文件名称：uart_debug.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月13日 星期三 10时45分00秒
- *   修改日期：2020年05月15日 星期五 08时36分23秒
+ *   修改日期：2020年12月28日 星期一 13时24分13秒
  *   描    述：
  *
  *================================================================*/
@@ -54,7 +54,7 @@ void task_uart_debug(void const *argument)
 				continue;
 			}
 		} else {
-			_printf("\n");
+			debug("\n");
 
 			received = DEBUG_BUFFER_SIZE - 1;
 		}
@@ -70,9 +70,9 @@ void task_uart_debug(void const *argument)
 			char *arguments = &buffer[catched];
 			uint8_t found = 0;
 
-			//_printf("fn:%d!\n", fn);
-			//_printf("catched:%d!\n", catched);
-			//_printf("arguments:%s!\n", arguments);
+			//debug("fn:%d!\n", fn);
+			//debug("catched:%d!\n", catched);
+			//debug("arguments:%s!\n", arguments);
 
 			for(i = 0; i < uart_fn_map_info.uart_fn_map_size; i++) {
 				uart_fn_item_t *uart_fn_item = uart_fn_map_info.uart_fn_map + i;
@@ -85,10 +85,10 @@ void task_uart_debug(void const *argument)
 			}
 
 			if(found == 0) {
-				_printf("invalid function:%d!\n", fn);
+				debug("invalid function:%d!\n", fn);
 			}
 		} else {
-			_printf("invalid command:\'%s\'\n", buffer);
+			debug("invalid command:\'%s\'\n", buffer);
 		}
 
 		received = 0;

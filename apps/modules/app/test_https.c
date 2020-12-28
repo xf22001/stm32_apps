@@ -6,7 +6,7 @@
  *   文件名称：test_https.c
  *   创 建 者：肖飞
  *   创建日期：2020年01月27日 星期一 12时22分23秒
- *   修改日期：2020年05月15日 星期五 08时36分49秒
+ *   修改日期：2020年12月28日 星期一 13时23分45秒
  *   描    述：
  *
  *================================================================*/
@@ -60,8 +60,8 @@ int test_https(void)
 
 	ret = http_read_chunked(&hi, response, 1024);
 
-	_printf("return code: %d \n", ret);
-	_printf("return body: %s \n", response);
+	debug("return code: %d \n", ret);
+	debug("return body: %s \n", response);
 
 	http_close(&hi);
 
