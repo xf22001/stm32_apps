@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2020年11月09日 星期一 14时48分30秒
+ *   修改日期：2020年12月29日 星期二 14时20分26秒
  *   描    述：
  *
  *================================================================*/
@@ -17,65 +17,45 @@
 #include <stdarg.h>
 
 #include "os_utils.h"
+#include "map_utils.h"
 
 #define LOG_NONE
 #include "log.h"
 
-static LIST_HEAD(uart_info_list);
-static osMutexId uart_info_list_mutex = NULL;
+static map_utils_t *uart_map = NULL;
 
 static uart_info_t *get_uart_info(UART_HandleTypeDef *huart)
 {
 	uart_info_t *uart_info = NULL;
-	uart_info_t *uart_info_item = NULL;
-	osStatus os_status;
 
-	if(uart_info_list_mutex == NULL) {
-		return uart_info;
-	}
-
-	os_status = osMutexWait(uart_info_list_mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
-
-	list_for_each_entry(uart_info_item, &uart_info_list, uart_info_t, list) {
-		if(uart_info_item->huart == huart) {
-			uart_info = uart_info_item;
-			break;
-		}
-	}
-
-	os_status = osMutexRelease(uart_info_list_mutex);
-
-	if(os_status != osOK) {
-	}
+	__disable_irq();
+	uart_info = (uart_info_t *)map_utils_get_value(uart_map, huart);
+	__enable_irq();
 
 	return uart_info;
 }
 
-void free_uart_info(uart_info_t *uart_info)
+static void uart_info_free(uart_info_t *uart_info)
 {
+	int ret;
 	osStatus os_status;
 
 	if(uart_info == NULL) {
 		return;
 	}
 
-	if(uart_info_list_mutex == NULL) {
-		return;
+	__disable_irq();
+	ret = map_utils_remove_value(uart_map, uart_info->huart);
+	__enable_irq();
+
+	if(ret != 0) {
 	}
 
-	os_status = osMutexWait(uart_info_list_mutex, osWaitForever);
+	if(uart_info->huart_mutex != NULL) {
+		os_status = osMutexWait(uart_info->huart_mutex, osWaitForever);
 
-	if(os_status != osOK) {
-	}
-
-	list_del(&uart_info->list);
-
-	os_status = osMutexRelease(uart_info_list_mutex);
-
-	if(os_status != osOK) {
+		if(os_status != osOK) {
+		}
 	}
 
 	if(uart_info->tx_msg_q) {
@@ -92,15 +72,22 @@ void free_uart_info(uart_info_t *uart_info)
 		}
 	}
 
-	if(uart_info->huart_mutex) {
-		os_status = osMutexDelete(uart_info->huart_mutex);
+	if(uart_info->log_mutex) {
+		os_status = osMutexDelete(uart_info->log_mutex);
 
 		if(osOK != os_status) {
 		}
 	}
 
-	if(uart_info->log_mutex) {
-		os_status = osMutexDelete(uart_info->log_mutex);
+	if(uart_info->huart_mutex != NULL) {
+		os_status = osMutexRelease(uart_info->huart_mutex);
+
+		if(os_status != osOK) {
+		}
+	}
+
+	if(uart_info->huart_mutex) {
+		os_status = osMutexDelete(uart_info->huart_mutex);
 
 		if(osOK != os_status) {
 		}
@@ -109,28 +96,24 @@ void free_uart_info(uart_info_t *uart_info)
 	os_free(uart_info);
 }
 
+
 uart_info_t *get_or_alloc_uart_info(UART_HandleTypeDef *huart)
 {
+	int ret;
 	uart_info_t *uart_info = NULL;
+
 	osMessageQDef(tx_msg_q, 1, uint16_t);
 	osMessageQDef(rx_msg_q, 1, uint16_t);
 	osMutexDef(huart_mutex);
 	osMutexDef(log_mutex);
-	osStatus os_status;
 
-	uart_info = get_uart_info(huart);
-
-	if(uart_info != NULL) {
-		return uart_info;
+	if(uart_map == NULL) {
+		uart_map = map_utils_alloc();
 	}
 
-	if(uart_info_list_mutex == NULL) {
-		osMutexDef(uart_info_list_mutex);
-		uart_info_list_mutex = osMutexCreate(osMutex(uart_info_list_mutex));
-
-		if(uart_info_list_mutex == NULL) {
-			return uart_info;
-		}
+	uart_info = get_uart_info(huart);
+	if(uart_info != NULL) {
+		return uart_info;
 	}
 
 	uart_info = (uart_info_t *)os_alloc(sizeof(uart_info_t));
@@ -147,16 +130,13 @@ uart_info_t *get_or_alloc_uart_info(UART_HandleTypeDef *huart)
 	uart_info->rx_poll_interval = 5;
 	uart_info->max_pending_duration = 50;
 
-	os_status = osMutexWait(uart_info_list_mutex, osWaitForever);
+	__disable_irq();
+	ret = map_utils_add_key_value(uart_map, huart, uart_info);
+	__enable_irq();
 
-	if(os_status != osOK) {
-	}
-
-	list_add_tail(&uart_info->list, &uart_info_list);
-
-	os_status = osMutexRelease(uart_info_list_mutex);
-
-	if(os_status != osOK) {
+	if(ret != 0) {
+		uart_info_free(uart_info);
+		uart_info = NULL;
 	}
 
 	return uart_info;
@@ -232,7 +212,7 @@ int uart_tx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t 
 	HAL_StatusTypeDef status;
 	osStatus os_status;
 
-	if(uart_info->huart_mutex) {
+	if(uart_info->huart_mutex != NULL) {
 		os_status = osMutexWait(uart_info->huart_mutex, osWaitForever);
 
 		if(os_status != osOK) {
@@ -245,7 +225,7 @@ int uart_tx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t 
 		debug("\n");
 	}
 
-	if(uart_info->huart_mutex) {
+	if(uart_info->huart_mutex != NULL) {
 		os_status = osMutexRelease(uart_info->huart_mutex);
 
 		if(os_status != osOK) {
@@ -332,7 +312,7 @@ int uart_rx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t 
 	HAL_StatusTypeDef status;
 	osStatus os_status;
 
-	if(uart_info->huart_mutex) {
+	if(uart_info->huart_mutex != NULL) {
 		os_status = osMutexWait(uart_info->huart_mutex, osWaitForever);
 
 		if(os_status != osOK) {
@@ -345,7 +325,7 @@ int uart_rx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t 
 		debug("\n");
 	}
 
-	if(uart_info->huart_mutex) {
+	if(uart_info->huart_mutex != NULL) {
 		os_status = osMutexRelease(uart_info->huart_mutex);
 
 		if(os_status != osOK) {
@@ -363,7 +343,7 @@ int uart_tx_rx_data(uart_info_t *uart_info, uint8_t *tx_data, uint16_t tx_size, 
 	HAL_StatusTypeDef status;
 	osStatus os_status;
 
-	if(uart_info->huart_mutex) {
+	if(uart_info->huart_mutex != NULL) {
 		os_status = osMutexWait(uart_info->huart_mutex, osWaitForever);
 
 		if(os_status != osOK) {
@@ -381,7 +361,7 @@ int uart_tx_rx_data(uart_info_t *uart_info, uint8_t *tx_data, uint16_t tx_size, 
 	if(status != HAL_OK) {
 	}
 
-	if(uart_info->huart_mutex) {
+	if(uart_info->huart_mutex != NULL) {
 		os_status = osMutexRelease(uart_info->huart_mutex);
 
 		if(os_status != osOK) {
@@ -420,7 +400,7 @@ int log_uart_data(void *data, size_t size)
 	osStatus os_status;
 
 	if(uart_info != NULL) {
-		if(uart_info->log_mutex) {
+		if(uart_info->log_mutex != NULL) {
 			os_status = osMutexWait(uart_info->log_mutex, osWaitForever);
 
 			if(os_status != osOK) {
@@ -429,7 +409,7 @@ int log_uart_data(void *data, size_t size)
 
 		ret = uart_tx_data(uart_info, (uint8_t *)data, size, 100);
 
-		if(uart_info->log_mutex) {
+		if(uart_info->log_mutex != NULL) {
 			os_status = osMutexRelease(uart_info->log_mutex);
 
 			if(os_status != osOK) {
