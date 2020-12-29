@@ -6,7 +6,7 @@
  *   文件名称：map_utils.c
  *   创 建 者：肖飞
  *   创建日期：2020年12月29日 星期二 11时40分50秒
- *   修改日期：2020年12月29日 星期二 14时46分19秒
+ *   修改日期：2020年12月29日 星期二 15时59分50秒
  *   描    述：
  *
  *================================================================*/
@@ -144,6 +144,9 @@ int map_utils_add_key_value(map_utils_t *map_utils, void *key, void *value)
 	}
 
 	if(found == 0) {
+		map_utils_item->key = key;
+		map_utils_item->value = value;
+
 		list_add_tail(&map_utils_item->list, &map_utils->list);
 		ret = 0;
 	}

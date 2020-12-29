@@ -6,7 +6,7 @@
  *   文件名称：sys_class.c
  *   创 建 者：肖飞
  *   创建日期：2020年12月29日 星期二 09时52分23秒
- *   修改日期：2020年12月29日 星期二 13时46分45秒
+ *   修改日期：2020年12月29日 星期二 16时33分00秒
  *   描    述：
  *
  *================================================================*/
@@ -47,6 +47,7 @@ int sys_class_init(void)
 	return ret;
 
 failed:
+
 	if(sys_class != NULL) {
 		os_free(sys_class);
 		sys_class = NULL;
@@ -74,9 +75,24 @@ void sys_classs_uninit(void)
 
 		list_for_each_safe(pos, n, &sys_class->list) {
 			sys_class_info_t *info = list_entry(pos, sys_class_info_t, list);
-			info->uninit(info->ctx);
+
 			list_del(pos);
+
+			os_status = osMutexRelease(sys_class->mutex);
+
+			if(os_status != osOK) {
+			}
+
+			if(info->uninit != NULL) {
+				info->uninit(info->ctx);
+			}
+
 			os_free(info);
+
+			os_status = osMutexWait(sys_class->mutex, osWaitForever);
+
+			if(os_status != osOK) {
+			}
 		}
 	}
 
@@ -220,7 +236,9 @@ int sys_class_info_register(sys_class_info_t *info)
 	}
 
 	if(ret == 0) {
-		info->init(info->ctx);
+		if(info->init != NULL) {
+			info->init(info->ctx);
+		}
 	}
 
 	return ret;
@@ -266,7 +284,9 @@ int sys_class_info_unregister(sys_class_info_t *info)
 	}
 
 	if(ret == 0) {
-		info->uninit(info->ctx);
+		if(info->uninit != NULL) {
+			info->uninit(info->ctx);
+		}
 	}
 
 	return ret;
