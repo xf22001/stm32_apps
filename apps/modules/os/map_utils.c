@@ -6,7 +6,7 @@
  *   文件名称：map_utils.c
  *   创 建 者：肖飞
  *   创建日期：2020年12月29日 星期二 11时40分50秒
- *   修改日期：2020年12月29日 星期二 13时40分48秒
+ *   修改日期：2020年12月29日 星期二 14时46分19秒
  *   描    述：
  *
  *================================================================*/
@@ -60,7 +60,18 @@ void map_utils_free(map_utils_t *map_utils)
 	os_free(map_utils);
 }
 
-map_utils_t *map_utils_alloc(void)
+static int map_utils_default_match(void *key1, void *key2)
+{
+	int ret = -1;
+
+	if(key1 == key2) {
+		ret = 0;
+	}
+
+	return ret;
+}
+
+map_utils_t *map_utils_alloc(key_match_t match)
 {
 	map_utils_t *map_utils = NULL;
 
@@ -79,6 +90,12 @@ map_utils_t *map_utils_alloc(void)
 	}
 
 	INIT_LIST_HEAD(&map_utils->list);
+
+	if(match == NULL) {
+		match = map_utils_default_match;
+	}
+
+	map_utils->match = match;
 
 	return map_utils;
 
@@ -120,7 +137,7 @@ int map_utils_add_key_value(map_utils_t *map_utils, void *key, void *value)
 		list_for_each_safe(pos, n, &map_utils->list) {
 			map_utils_item_t *item = list_entry(pos, map_utils_item_t, list);
 
-			if(item->key == key) {
+			if(map_utils->match(item->key, key) == 0) {
 				found = 1;
 			}
 		}
@@ -164,7 +181,7 @@ void *map_utils_get_value(map_utils_t *map_utils, void *key)
 		list_for_each_safe(pos, n, &map_utils->list) {
 			map_utils_item_t *map_utils_item = list_entry(pos, map_utils_item_t, list);
 
-			if(map_utils_item->key == key) {
+			if(map_utils->match(map_utils_item->key, key) == 0) {
 				value = map_utils_item->value;
 				break;
 			}
@@ -204,7 +221,7 @@ int map_utils_remove_value(map_utils_t *map_utils, void *key)
 		list_for_each_safe(pos, n, &map_utils->list) {
 			map_utils_item_t *map_utils_item = list_entry(pos, map_utils_item_t, list);
 
-			if(map_utils_item->key == key) {
+			if(map_utils->match(map_utils_item->key, key) == 0) {
 				list_del(pos);
 				ret = 0;
 				break;

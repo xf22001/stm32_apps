@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2020年12月29日 星期二 14时20分26秒
+ *   修改日期：2020年12月29日 星期二 14时52分58秒
  *   描    述：
  *
  *================================================================*/
@@ -35,7 +35,7 @@ static uart_info_t *get_uart_info(UART_HandleTypeDef *huart)
 	return uart_info;
 }
 
-static void uart_info_free(uart_info_t *uart_info)
+static void free_uart_info(uart_info_t *uart_info)
 {
 	int ret;
 	osStatus os_status;
@@ -96,7 +96,6 @@ static void uart_info_free(uart_info_t *uart_info)
 	os_free(uart_info);
 }
 
-
 uart_info_t *get_or_alloc_uart_info(UART_HandleTypeDef *huart)
 {
 	int ret;
@@ -108,7 +107,7 @@ uart_info_t *get_or_alloc_uart_info(UART_HandleTypeDef *huart)
 	osMutexDef(log_mutex);
 
 	if(uart_map == NULL) {
-		uart_map = map_utils_alloc();
+		uart_map = map_utils_alloc(NULL);
 	}
 
 	uart_info = get_uart_info(huart);
@@ -135,7 +134,7 @@ uart_info_t *get_or_alloc_uart_info(UART_HandleTypeDef *huart)
 	__enable_irq();
 
 	if(ret != 0) {
-		uart_info_free(uart_info);
+		free_uart_info(uart_info);
 		uart_info = NULL;
 	}
 

@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分40秒
- *   修改日期：2020年05月14日 星期四 12时01分27秒
+ *   修改日期：2020年12月29日 星期二 14时55分32秒
  *   描    述：
  *
  *================================================================*/
@@ -37,7 +37,6 @@ typedef struct {
 } uart_info_t;
 
 uart_info_t *get_or_alloc_uart_info(UART_HandleTypeDef *huart);
-void free_uart_info(uart_info_t *uart_info);
 uint16_t crc_check_for_dcph(uint8_t *data, uint16_t size);
 void set_rx_poll_duration(uart_info_t *uart_info, uint32_t rx_poll_interval);
 void set_max_pending_duration(uart_info_t *uart_info, uint32_t max_pending_duration);
