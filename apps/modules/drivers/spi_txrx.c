@@ -6,7 +6,7 @@
  *   文件名称：spi_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 10时30分48秒
- *   修改日期：2020年12月29日 星期二 14时54分19秒
+ *   修改日期：2020年12月29日 星期二 15时06分08秒
  *   描    述：
  *
  *================================================================*/
@@ -49,6 +49,10 @@ spi_info_t *get_or_alloc_spi_info(SPI_HandleTypeDef *hspi)
 {
 	spi_info_t *spi_info = NULL;
 	int ret;
+
+	if(spi_map == NULL) {
+		spi_map = map_utils_alloc(NULL);
+	}
 
 	spi_info = get_spi_info(hspi);
 

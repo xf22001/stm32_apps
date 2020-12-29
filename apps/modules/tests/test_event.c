@@ -6,7 +6,7 @@
  *   文件名称：test_event.c
  *   创 建 者：肖飞
  *   创建日期：2020年12月29日 星期二 08时47分25秒
- *   修改日期：2020年12月29日 星期二 09时14分24秒
+ *   修改日期：2020年12月29日 星期二 15时21分04秒
  *   描    述：
  *
  *================================================================*/
@@ -43,7 +43,7 @@ void try_get_test_event()
 	debug("get event %d!\n", test_event->count);
 }
 
-void task_test_event(void const *argument)
+static void task_test_event(void const *argument)
 {
 	int ret = 0;
 	uint32_t count = 0;
@@ -77,4 +77,10 @@ void task_test_event(void const *argument)
 		debug("sent event %d!\n", test_event->count);
 		count++;
 	}
+}
+
+void test_event(void)
+{
+	osThreadDef(test_event, task_test_event, osPriorityNormal, 0, 128 * 2 * 2);
+	osThreadCreate(osThread(test_event), NULL);
 }

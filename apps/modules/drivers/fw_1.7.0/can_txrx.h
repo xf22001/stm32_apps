@@ -44,8 +44,8 @@ typedef struct {
 	osMessageQId tx_msg_q;
 	osMessageQId rx_msg_q;
 
-	can_config_t *can_config;
 	uint32_t receive_fifo;
+	can_config_t *can_config;
 
 	can_hal_init_t can_hal_init;
 	receive_init_t receive_init;

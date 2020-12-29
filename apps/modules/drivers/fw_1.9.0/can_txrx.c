@@ -6,43 +6,24 @@
  *   文件名称：can_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时07分55秒
- *   修改日期：2020年07月13日 星期一 13时59分23秒
+ *   修改日期：2020年12月29日 星期二 15时11分31秒
  *   描    述：
  *
  *================================================================*/
 #include "can_txrx.h"
 
 #include "os_utils.h"
+#include "map_utils.h"
 
-static LIST_HEAD(can_info_list);
-static osMutexId can_info_list_mutex = NULL;
+static map_utils_t *can_map = NULL;
 
 static can_info_t *get_can_info(CAN_HandleTypeDef *hcan)
 {
 	can_info_t *can_info = NULL;
-	can_info_t *can_info_item = NULL;
-	osStatus os_status;
 
-	if(can_info_list_mutex == NULL) {
-		return can_info;
-	}
-
-	os_status = osMutexWait(can_info_list_mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
-
-	list_for_each_entry(can_info_item, &can_info_list, can_info_t, list) {
-		if(can_info_item->hcan == hcan) {
-			can_info = can_info_item;
-			break;
-		}
-	}
-
-	os_status = osMutexRelease(can_info_list_mutex);
-
-	if(os_status != osOK) {
-	}
+	__disable_irq();
+	can_info = (can_info_t *)map_utils_get_value(can_map, hcan);
+	__enable_irq();
 
 	return can_info;
 }
@@ -109,42 +90,49 @@ static void receive_init(CAN_HandleTypeDef *hcan)
 void free_can_info(can_info_t *can_info)
 {
 	osStatus os_status;
+	int ret;
 
 	if(can_info == NULL) {
 		return;
 	}
 
-	if(can_info_list_mutex == NULL) {
-		return;
+	__disable_irq();
+	ret = map_utils_remove_value(can_map, can_info->hcan);
+	__enable_irq();
+
+	if(ret != 0) {
 	}
 
-	os_status = osMutexWait(can_info_list_mutex, osWaitForever);
+	if(can_info->hcan_mutex != NULL) {
+		os_status = osMutexWait(can_info->hcan_mutex, osWaitForever);
 
-	if(os_status != osOK) {
+		if(osOK != os_status) {
+		}
 	}
 
-	list_del(&can_info->list);
-
-	os_status = osMutexRelease(can_info_list_mutex);
-
-	if(os_status != osOK) {
-	}
-
-	if(can_info->rx_msg_q) {
+	if(can_info->rx_msg_q != NULL) {
 		os_status = osMessageDelete(can_info->rx_msg_q);
 
 		if(osOK != os_status) {
 		}
 	}
 
-	if(can_info->tx_msg_q) {
+	if(can_info->tx_msg_q != NULL) {
 		os_status = osMessageDelete(can_info->tx_msg_q);
 
 		if(osOK != os_status) {
 		}
 	}
 
-	if(can_info->hcan_mutex) {
+	if(can_info->hcan_mutex != NULL) {
+		os_status = osMutexRelease(can_info->hcan_mutex);
+
+		if(osOK != os_status) {
+		}
+	}
+
+
+	if(can_info->hcan_mutex != NULL) {
 		os_status = osMutexDelete(can_info->hcan_mutex);
 
 		if(osOK != os_status) {
@@ -158,11 +146,15 @@ can_info_t *get_or_alloc_can_info(CAN_HandleTypeDef *hcan)
 {
 	can_info_t *can_info = NULL;
 	can_config_t *can_config = NULL;
-	osStatus os_status;
+	int ret;
 
 	osMutexDef(hcan_mutex);
 	osMessageQDef(tx_msg_q, 1, uint16_t);
 	osMessageQDef(rx_msg_q, 1, uint16_t);
+
+	if(can_map == NULL) {
+		can_map = map_utils_alloc(NULL);
+	}
 
 	can_info = get_can_info(hcan);
 
@@ -174,15 +166,6 @@ can_info_t *get_or_alloc_can_info(CAN_HandleTypeDef *hcan)
 
 	if(can_config == NULL) {
 		return can_info;
-	}
-
-	if(can_info_list_mutex == NULL) {
-		osMutexDef(can_info_list_mutex);
-		can_info_list_mutex = osMutexCreate(osMutex(can_info_list_mutex));
-
-		if(can_info_list_mutex == NULL) {
-			return can_info;
-		}
 	}
 
 	can_info = (can_info_t *)os_alloc(sizeof(can_info_t));
@@ -199,19 +182,16 @@ can_info_t *get_or_alloc_can_info(CAN_HandleTypeDef *hcan)
 
 	can_info->receive_init = receive_init;
 
-	os_status = osMutexWait(can_info_list_mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
-
-	list_add_tail(&can_info->list, &can_info_list);
-
-	os_status = osMutexRelease(can_info_list_mutex);
-
-	if(os_status != osOK) {
-	}
-
 	can_info->receive_init(hcan);
+
+	__disable_irq();
+	ret = map_utils_add_key_value(can_map, hcan, can_info);
+	__enable_irq();
+
+	if(ret != 0) {
+		free_can_info(can_info);
+		can_info = NULL;
+	}
 
 	return can_info;
 }
