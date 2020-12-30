@@ -6,7 +6,7 @@
  *   文件名称：modbus_master_txrx.h
  *   创 建 者：肖飞
  *   创建日期：2020年04月20日 星期一 15时28分59秒
- *   修改日期：2020年06月08日 星期一 12时49分48秒
+ *   修改日期：2020年12月30日 星期三 15时33分31秒
  *   描    述：
  *
  *================================================================*/
@@ -26,7 +26,6 @@ extern "C"
 #endif
 
 typedef struct {
-	struct list_head list;
 	uart_info_t *uart_info;
 	uint8_t rx_buffer[MODBUS_BUFFER_SIZE];
 	uint8_t rx_size;
@@ -36,11 +35,10 @@ typedef struct {
 	uint32_t tx_timeout;
 } modbus_master_info_t;
 
-void free_modbus_master_info(modbus_master_info_t *modbus_master_info);
-modbus_master_info_t *get_or_alloc_modbus_master_info(UART_HandleTypeDef *huart);
-int modbus_master_read_items(modbus_master_info_t *modbus_master_info, uint8_t station, uint16_t addr, uint16_t number, uint16_t *values);
-int modbus_master_write_one_item(modbus_master_info_t *modbus_master_info, uint8_t station, uint16_t addr, uint16_t value);
-int modbus_master_write_items(modbus_master_info_t *modbus_master_info, uint8_t station, uint16_t addr, uint16_t number, uint16_t *values);
+modbus_master_info_t *get_or_alloc_modbus_master_info(uart_info_t *uart_info);
+int modbus_master_read_items(modbus_master_info_t *modbus_master_info, uint8_t station, uint16_t addr, uint16_t number, uint16_t *values)/*read some number*/;
+int modbus_master_write_one_item(modbus_master_info_t *modbus_master_info, uint8_t station, uint16_t addr, uint16_t value)/*write one number*/;
+int modbus_master_write_items(modbus_master_info_t *modbus_master_info, uint8_t station, uint16_t addr, uint16_t number, uint16_t *values)/*write more number*/;
 
 static inline int modbus_master_read_items_retry(modbus_master_info_t *modbus_master_info, uint8_t station, uint16_t addr, uint16_t number, uint16_t *values, uint8_t retry)
 {

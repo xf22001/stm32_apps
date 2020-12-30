@@ -6,72 +6,40 @@
  *   文件名称：modbus_slave_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月20日 星期一 14时54分12秒
- *   修改日期：2020年06月15日 星期一 14时56分09秒
+ *   修改日期：2020年12月30日 星期三 15时43分52秒
  *   描    述：
  *
  *================================================================*/
 #include "modbus_slave_txrx.h"
 #include "modbus_spec.h"
+#include "map_utils.h"
 #include "os_utils.h"
 
 #define LOG_NONE
 #include "log.h"
 
-static LIST_HEAD(modbus_slave_info_list);
-static osMutexId modbus_slave_info_list_mutex = NULL;
+static map_utils_t *modbus_slave_map = NULL;
 
-static modbus_slave_info_t *get_modbus_slave_info(UART_HandleTypeDef *huart)
+static modbus_slave_info_t *get_modbus_slave_info(uart_info_t *uart_info)
 {
 	modbus_slave_info_t *modbus_slave_info = NULL;
-	modbus_slave_info_t *modbus_slave_info_item = NULL;
-	osStatus os_status;
 
-	if(modbus_slave_info_list_mutex == NULL) {
-		return modbus_slave_info;
-	}
-
-	os_status = osMutexWait(modbus_slave_info_list_mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
-
-	list_for_each_entry(modbus_slave_info_item, &modbus_slave_info_list, modbus_slave_info_t, list) {
-		if(modbus_slave_info_item->uart_info->huart == huart) {
-			modbus_slave_info = modbus_slave_info_item;
-			break;
-		}
-	}
-
-	os_status = osMutexRelease(modbus_slave_info_list_mutex);
-
-	if(os_status != osOK) {
-	}
+	modbus_slave_info = (modbus_slave_info_t *)map_utils_get_value(modbus_slave_map, uart_info);
 
 	return modbus_slave_info;
 }
 
 void free_modbus_slave_info(modbus_slave_info_t *modbus_slave_info)
 {
-	osStatus os_status;
+	int ret;
 
 	if(modbus_slave_info == NULL) {
 		return;
 	}
 
-	if(modbus_slave_info_list_mutex == NULL) {
-		return;
-	}
+	ret = map_utils_remove_value(modbus_slave_map, modbus_slave_info->uart_info);
 
-	os_status = osMutexWait(modbus_slave_info_list_mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
-
-	list_del(&modbus_slave_info->list);
-
-	os_status = osMutexRelease(modbus_slave_info_list_mutex);
-
-	if(os_status != osOK) {
+	if(ret != 0) {
 	}
 
 	if(modbus_slave_info->uart_info) {
@@ -86,31 +54,23 @@ void free_modbus_slave_info(modbus_slave_info_t *modbus_slave_info)
 	os_free(modbus_slave_info);
 }
 
-modbus_slave_info_t *get_or_alloc_modbus_slave_info(UART_HandleTypeDef *huart)
+modbus_slave_info_t *get_or_alloc_modbus_slave_info(uart_info_t *uart_info)
 {
 	modbus_slave_info_t *modbus_slave_info = NULL;
-	osStatus os_status;
-	uart_info_t *uart_info;
+	int ret;
 
-	modbus_slave_info = get_modbus_slave_info(huart);
-
-	if(modbus_slave_info != NULL) {
-		return modbus_slave_info;
+	if(modbus_slave_map == NULL) {
+		modbus_slave_map = map_utils_alloc(NULL);
 	}
-
-	uart_info = get_or_alloc_uart_info(huart);
 
 	if(uart_info == NULL) {
 		return modbus_slave_info;
 	}
 
-	if(modbus_slave_info_list_mutex == NULL) {
-		osMutexDef(modbus_slave_info_list_mutex);
-		modbus_slave_info_list_mutex = osMutexCreate(osMutex(modbus_slave_info_list_mutex));
+	modbus_slave_info = get_modbus_slave_info(uart_info);
 
-		if(modbus_slave_info_list_mutex == NULL) {
-			return modbus_slave_info;
-		}
+	if(modbus_slave_info != NULL) {
+		return modbus_slave_info;
 	}
 
 	modbus_slave_info = (modbus_slave_info_t *)os_alloc(sizeof(modbus_slave_info_t));
@@ -130,16 +90,10 @@ modbus_slave_info_t *get_or_alloc_modbus_slave_info(UART_HandleTypeDef *huart)
 	modbus_slave_info->tx_timeout = 1000;
 	modbus_slave_info->modbus_slave_data_info = NULL;
 
-	os_status = osMutexWait(modbus_slave_info_list_mutex, osWaitForever);
+	ret = map_utils_add_key_value(modbus_slave_map, uart_info, modbus_slave_info);
 
-	if(os_status != osOK) {
-	}
-
-	list_add_tail(&modbus_slave_info->list, &modbus_slave_info_list);
-
-	os_status = osMutexRelease(modbus_slave_info_list_mutex);
-
-	if(os_status != osOK) {
+	if(ret != 0) {
+		goto failed;
 	}
 
 	return modbus_slave_info;

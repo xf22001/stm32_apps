@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分40秒
- *   修改日期：2020年12月29日 星期二 14时55分32秒
+ *   修改日期：2020年12月30日 星期三 15时01分10秒
  *   描    述：
  *
  *================================================================*/
@@ -26,7 +26,6 @@ extern "C"
 #include "list_utils.h"
 
 typedef struct {
-	struct list_head list;
 	UART_HandleTypeDef *huart;
 	osMessageQId tx_msg_q;
 	osMessageQId rx_msg_q;

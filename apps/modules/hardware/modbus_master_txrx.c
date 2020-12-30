@@ -6,71 +6,39 @@
  *   文件名称：modbus_master_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月20日 星期一 15时28分52秒
- *   修改日期：2020年07月31日 星期五 14时38分26秒
+ *   修改日期：2020年12月30日 星期三 15时34分22秒
  *   描    述：
  *
  *================================================================*/
 #include "modbus_master_txrx.h"
 #include "os_utils.h"
+#include "map_utils.h"
 
 #define LOG_NONE
 #include "log.h"
 
-static LIST_HEAD(modbus_master_info_list);
-static osMutexId modbus_master_info_list_mutex = NULL;
+static map_utils_t *modbus_master_map = NULL;
 
-static modbus_master_info_t *get_modbus_master_info(UART_HandleTypeDef *huart)
+static modbus_master_info_t *get_modbus_master_info(uart_info_t *uart_info)
 {
 	modbus_master_info_t *modbus_master_info = NULL;
-	modbus_master_info_t *modbus_master_info_item = NULL;
-	osStatus os_status;
 
-	if(modbus_master_info_list_mutex == NULL) {
-		return modbus_master_info;
-	}
-
-	os_status = osMutexWait(modbus_master_info_list_mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
-
-	list_for_each_entry(modbus_master_info_item, &modbus_master_info_list, modbus_master_info_t, list) {
-		if(modbus_master_info_item->uart_info->huart == huart) {
-			modbus_master_info = modbus_master_info_item;
-			break;
-		}
-	}
-
-	os_status = osMutexRelease(modbus_master_info_list_mutex);
-
-	if(os_status != osOK) {
-	}
+	modbus_master_info = (modbus_master_info_t *)map_utils_get_value(modbus_master_map, uart_info);
 
 	return modbus_master_info;
 }
 
-void free_modbus_master_info(modbus_master_info_t *modbus_master_info)
+static void free_modbus_master_info(modbus_master_info_t *modbus_master_info)
 {
-	osStatus os_status;
+	int ret;
 
 	if(modbus_master_info == NULL) {
 		return;
 	}
 
-	if(modbus_master_info_list_mutex == NULL) {
-		return;
-	}
+	ret = map_utils_remove_value(modbus_master_map, modbus_master_info->uart_info);
 
-	os_status = osMutexWait(modbus_master_info_list_mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
-
-	list_del(&modbus_master_info->list);
-
-	os_status = osMutexRelease(modbus_master_info_list_mutex);
-
-	if(os_status != osOK) {
+	if(ret != 0) {
 	}
 
 	if(modbus_master_info->uart_info) {
@@ -82,31 +50,23 @@ void free_modbus_master_info(modbus_master_info_t *modbus_master_info)
 	os_free(modbus_master_info);
 }
 
-modbus_master_info_t *get_or_alloc_modbus_master_info(UART_HandleTypeDef *huart)
+modbus_master_info_t *get_or_alloc_modbus_master_info(uart_info_t *uart_info)
 {
 	modbus_master_info_t *modbus_master_info = NULL;
-	osStatus os_status;
-	uart_info_t *uart_info;
+	int ret;
 
-	modbus_master_info = get_modbus_master_info(huart);
-
-	if(modbus_master_info != NULL) {
-		return modbus_master_info;
+	if(modbus_master_map == NULL) {
+		modbus_master_map = map_utils_alloc(NULL);
 	}
-
-	uart_info = get_or_alloc_uart_info(huart);
 
 	if(uart_info == NULL) {
 		return modbus_master_info;
 	}
 
-	if(modbus_master_info_list_mutex == NULL) {
-		osMutexDef(modbus_master_info_list_mutex);
-		modbus_master_info_list_mutex = osMutexCreate(osMutex(modbus_master_info_list_mutex));
+	modbus_master_info = get_modbus_master_info(uart_info);
 
-		if(modbus_master_info_list_mutex == NULL) {
-			return modbus_master_info;
-		}
+	if(modbus_master_info != NULL) {
+		return modbus_master_info;
 	}
 
 	modbus_master_info = (modbus_master_info_t *)os_alloc(sizeof(modbus_master_info_t));
@@ -119,16 +79,11 @@ modbus_master_info_t *get_or_alloc_modbus_master_info(UART_HandleTypeDef *huart)
 	modbus_master_info->rx_timeout = 100;
 	modbus_master_info->tx_timeout = 100;
 
-	os_status = osMutexWait(modbus_master_info_list_mutex, osWaitForever);
+	ret = map_utils_add_key_value(modbus_master_map, uart_info, modbus_master_info);
 
-	if(os_status != osOK) {
-	}
-
-	list_add_tail(&modbus_master_info->list, &modbus_master_info_list);
-
-	os_status = osMutexRelease(modbus_master_info_list_mutex);
-
-	if(os_status != osOK) {
+	if(ret != 0) {
+		free_modbus_master_info(modbus_master_info);
+		modbus_master_info = NULL;
 	}
 
 	return modbus_master_info;
@@ -146,7 +101,7 @@ typedef struct {
 	uint8_t bytes_size;
 } modbus_master_response_0x03_head_t;
 
-int modbus_master_read_items(modbus_master_info_t *modbus_master_info, uint8_t station, uint16_t addr, uint16_t number, uint16_t *values)//read some number
+int modbus_master_read_items(modbus_master_info_t *modbus_master_info, uint8_t station, uint16_t addr, uint16_t number, uint16_t *values)/*read some number*/
 {
 	int ret = -1;
 	int rx_size;
@@ -245,7 +200,7 @@ typedef struct {
 	modbus_crc_t crc;
 } modbus_master_response_0x06_t;
 
-int modbus_master_write_one_item(modbus_master_info_t *modbus_master_info, uint8_t station, uint16_t addr, uint16_t value)//write one number
+int modbus_master_write_one_item(modbus_master_info_t *modbus_master_info, uint8_t station, uint16_t addr, uint16_t value)/*write one number*/
 {
 	int ret = -1;
 	int rx_size;
@@ -334,7 +289,7 @@ typedef struct {
 	modbus_crc_t crc;
 } modbus_master_response_0x10_t;
 
-int modbus_master_write_items(modbus_master_info_t *modbus_master_info, uint8_t station, uint16_t addr, uint16_t number, uint16_t *values)//write more number
+int modbus_master_write_items(modbus_master_info_t *modbus_master_info, uint8_t station, uint16_t addr, uint16_t number, uint16_t *values)/*write more number*/
 {
 	int ret = -1;
 	int rx_size;

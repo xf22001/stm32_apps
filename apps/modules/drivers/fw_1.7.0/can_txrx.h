@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时29分22秒
- *   修改日期：2020年04月29日 星期三 08时54分28秒
+ *   修改日期：2020年12月30日 星期三 15时02分05秒
  *   描    述：
  *
  *================================================================*/
@@ -34,8 +34,6 @@ typedef void (*can_hal_init_t)(void);
 typedef void (*receive_init_t)(CAN_HandleTypeDef *hcan);
 
 typedef struct {
-	struct list_head list;
-
 	CAN_HandleTypeDef *hcan;
 	CAN_HandleTypeDef *config_can;
 	can_rx_msg_t rx_msg;

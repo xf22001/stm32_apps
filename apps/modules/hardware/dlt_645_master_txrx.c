@@ -6,69 +6,36 @@
  *   文件名称：dlt_645_master_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月21日 星期四 10时19分55秒
- *   修改日期：2020年05月21日 星期四 17时34分08秒
+ *   修改日期：2020年12月30日 星期三 15时23分53秒
  *   描    述：
  *
  *================================================================*/
 #include "dlt_645_master_txrx.h"
 #include <string.h>
+#include "map_utils.h"
 #include "log.h"
 
-static LIST_HEAD(dlt_645_master_info_list);
-static osMutexId dlt_645_master_info_list_mutex = NULL;
+static map_utils_t *dlt_645_master_map = NULL;
 
-static dlt_645_master_info_t *get_dlt_645_master_info(UART_HandleTypeDef *huart)
+static dlt_645_master_info_t *get_dlt_645_master_info(uart_info_t *uart_info)
 {
 	dlt_645_master_info_t *dlt_645_master_info = NULL;
-	dlt_645_master_info_t *dlt_645_master_info_item = NULL;
-	osStatus os_status;
 
-	if(dlt_645_master_info_list_mutex == NULL) {
-		return dlt_645_master_info;
-	}
-
-	os_status = osMutexWait(dlt_645_master_info_list_mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
-
-	list_for_each_entry(dlt_645_master_info_item, &dlt_645_master_info_list, dlt_645_master_info_t, list) {
-		if(dlt_645_master_info_item->uart_info->huart == huart) {
-			dlt_645_master_info = dlt_645_master_info_item;
-			break;
-		}
-	}
-
-	os_status = osMutexRelease(dlt_645_master_info_list_mutex);
-
-	if(os_status != osOK) {
-	}
+	dlt_645_master_info = (dlt_645_master_info_t *)map_utils_get_value(dlt_645_master_map, uart_info);
 
 	return dlt_645_master_info;
 }
 
-void free_dlt_645_master_info(dlt_645_master_info_t *dlt_645_master_info)
+static void free_dlt_645_master_info(dlt_645_master_info_t *dlt_645_master_info)
 {
-	osStatus os_status;
+	int ret;
 
 	if(dlt_645_master_info == NULL) {
 		return;
 	}
 
-	if(dlt_645_master_info_list_mutex == NULL) {
-		return;
-	}
-
-	os_status = osMutexWait(dlt_645_master_info_list_mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
-
-	list_del(&dlt_645_master_info->list);
-
-	os_status = osMutexRelease(dlt_645_master_info_list_mutex);
-
-	if(os_status != osOK) {
+	ret = map_utils_remove_value(dlt_645_master_map, dlt_645_master_info->uart_info);
+	if(ret != 0) {
 	}
 
 	if(dlt_645_master_info->uart_info) {
@@ -80,31 +47,23 @@ void free_dlt_645_master_info(dlt_645_master_info_t *dlt_645_master_info)
 	os_free(dlt_645_master_info);
 }
 
-dlt_645_master_info_t *get_or_alloc_dlt_645_master_info(UART_HandleTypeDef *huart)
+dlt_645_master_info_t *get_or_alloc_dlt_645_master_info(uart_info_t *uart_info)
 {
 	dlt_645_master_info_t *dlt_645_master_info = NULL;
-	osStatus os_status;
-	uart_info_t *uart_info;
+	int ret;
 
-	dlt_645_master_info = get_dlt_645_master_info(huart);
-
-	if(dlt_645_master_info != NULL) {
-		return dlt_645_master_info;
+	if(dlt_645_master_map == NULL) {
+		dlt_645_master_map = map_utils_alloc(NULL);
 	}
-
-	uart_info = get_or_alloc_uart_info(huart);
 
 	if(uart_info == NULL) {
 		return dlt_645_master_info;
 	}
 
-	if(dlt_645_master_info_list_mutex == NULL) {
-		osMutexDef(dlt_645_master_info_list_mutex);
-		dlt_645_master_info_list_mutex = osMutexCreate(osMutex(dlt_645_master_info_list_mutex));
+	dlt_645_master_info = get_dlt_645_master_info(uart_info);
 
-		if(dlt_645_master_info_list_mutex == NULL) {
-			return dlt_645_master_info;
-		}
+	if(dlt_645_master_info != NULL) {
+		return dlt_645_master_info;
 	}
 
 	dlt_645_master_info = (dlt_645_master_info_t *)os_alloc(sizeof(dlt_645_master_info_t));
@@ -117,16 +76,11 @@ dlt_645_master_info_t *get_or_alloc_dlt_645_master_info(UART_HandleTypeDef *huar
 	dlt_645_master_info->rx_timeout = 100;
 	dlt_645_master_info->tx_timeout = 100;
 
-	os_status = osMutexWait(dlt_645_master_info_list_mutex, osWaitForever);
+	ret = map_utils_add_key_value(dlt_645_master_map, uart_info, dlt_645_master_info);
 
-	if(os_status != osOK) {
-	}
-
-	list_add_tail(&dlt_645_master_info->list, &dlt_645_master_info_list);
-
-	os_status = osMutexRelease(dlt_645_master_info_list_mutex);
-
-	if(os_status != osOK) {
+	if(ret != 0) {
+		free_dlt_645_master_info(dlt_645_master_info);
+		dlt_645_master_info = NULL;
 	}
 
 	return dlt_645_master_info;
@@ -181,7 +135,7 @@ typedef struct {
 	uint8_t end_flag;//0x16
 } response_energy_t;
 
-int dlt_645_master_get_energy(dlt_645_master_info_t *dlt_645_master_info, dlt_645_addr_t *addr, uint32_t *energy)//*100
+int dlt_645_master_get_energy(dlt_645_master_info_t *dlt_645_master_info, dlt_645_addr_t *addr, uint32_t *energy)/*100*/
 {
 	int ret = -1;
 	int rx_size;
@@ -512,19 +466,19 @@ int dlt_645_master_get_current(dlt_645_master_info_t *dlt_645_master_info, dlt_6
 	          response_current->data.data_block.ca_b0,
 	          response_current->data.data_block.ca_b1,
 	          response_current->data.data_block.ca_b2,
-		  0);
+	          0);
 
 	*cb = get_u32_from_bcd_b0123(
 	          response_current->data.data_block.cb_b0,
 	          response_current->data.data_block.cb_b1,
 	          response_current->data.data_block.cb_b2,
-		  0);
+	          0);
 
 	*cc = get_u32_from_bcd_b0123(
 	          response_current->data.data_block.cc_b0,
 	          response_current->data.data_block.cc_b1,
 	          response_current->data.data_block.cc_b2,
-		  0);
+	          0);
 	ret = 0;
 
 	return ret;

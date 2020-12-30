@@ -6,7 +6,7 @@
  *   文件名称：eeprom.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月14日 星期四 09时01分48秒
- *   修改日期：2020年07月17日 星期五 09时56分21秒
+ *   修改日期：2020年12月30日 星期三 15时55分16秒
  *   描    述：
  *
  *================================================================*/
@@ -27,7 +27,6 @@ extern "C"
 #include "list_utils.h"
 
 typedef struct {
-	struct list_head list;
 	spi_info_t *spi_info;
 	osMutexId mutex;
 
@@ -54,8 +53,7 @@ typedef struct {
 
 #define EEPROM_1024_PAGE 256
 
-void free_eeprom_info(eeprom_info_t *eeprom_info);
-eeprom_info_t *get_or_alloc_eeprom_info( SPI_HandleTypeDef *hspi, GPIO_TypeDef *gpio_port_spi_cs, uint16_t gpio_pin_spi_cs, GPIO_TypeDef *gpio_port_spi_wp, uint16_t gpio_pin_spi_wp);
+eeprom_info_t *get_or_alloc_eeprom_info(spi_info_t *spi_info, GPIO_TypeDef *gpio_port_spi_cs, uint16_t gpio_pin_spi_cs, GPIO_TypeDef *gpio_port_spi_wp, uint16_t gpio_pin_spi_wp);
 uint8_t eeprom_id(eeprom_info_t *eeprom_info);
 uint8_t eeprom_read(eeprom_info_t *eeprom_info, uint32_t start, uint8_t *data, uint16_t size);
 uint8_t eeprom_write(eeprom_info_t *eeprom_info, uint32_t start, uint8_t *data, uint16_t size);

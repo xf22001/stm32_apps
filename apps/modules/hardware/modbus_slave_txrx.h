@@ -6,7 +6,7 @@
  *   文件名称：modbus_slave_txrx.h
  *   创 建 者：肖飞
  *   创建日期：2020年04月20日 星期一 14时54分35秒
- *   修改日期：2020年05月01日 星期五 18时56分38秒
+ *   修改日期：2020年12月30日 星期三 15时43分32秒
  *   描    述：
  *
  *================================================================*/
@@ -40,7 +40,6 @@ typedef struct {
 } modbus_slave_data_info_t;
 
 typedef struct {
-	struct list_head list;
 	uart_info_t *uart_info;
 	uint8_t rx_buffer[MODBUS_BUFFER_SIZE];
 	uint8_t rx_size;
@@ -53,9 +52,9 @@ typedef struct {
 } modbus_slave_info_t;
 
 void free_modbus_slave_info(modbus_slave_info_t *modbus_slave_info);
-modbus_slave_info_t *get_or_alloc_modbus_slave_info(UART_HandleTypeDef *huart);
-int modbus_slave_process_request(modbus_slave_info_t *modbus_slave_info);
-int set_modbus_slave_data_info(modbus_slave_info_t *modbus_slave_info, modbus_slave_data_info_t *modbus_slave_data_info);
+modbus_slave_info_t *get_or_alloc_modbus_slave_info(uart_info_t *uart_info);
 int add_modbus_slave_data_changed_cb(modbus_slave_info_t *modbus_slave_info, callback_item_t *callback_item);
 int remove_modbus_slave_data_changed_cb(modbus_slave_info_t *modbus_slave_info, callback_item_t *callback_item);
+int modbus_slave_process_request(modbus_slave_info_t *modbus_slave_info);
+int set_modbus_slave_data_info(modbus_slave_info_t *modbus_slave_info, modbus_slave_data_info_t *modbus_slave_data_info);
 #endif //_MODBUS_SLAVE_TXRX_H
