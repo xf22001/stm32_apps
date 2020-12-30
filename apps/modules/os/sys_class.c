@@ -6,7 +6,7 @@
  *   文件名称：sys_class.c
  *   创 建 者：肖飞
  *   创建日期：2020年12月29日 星期二 09时52分23秒
- *   修改日期：2020年12月29日 星期二 16时33分00秒
+ *   修改日期：2020年12月30日 星期三 08时34分35秒
  *   描    述：
  *
  *================================================================*/
@@ -59,6 +59,7 @@ failed:
 void sys_classs_uninit(void)
 {
 	osStatus os_status;
+	LIST_HEAD(uninit_list);
 
 	if(sys_class == NULL) {
 		return;
@@ -74,31 +75,30 @@ void sys_classs_uninit(void)
 		struct list_head *n;
 
 		list_for_each_safe(pos, n, &sys_class->list) {
-			sys_class_info_t *info = list_entry(pos, sys_class_info_t, list);
-
-			list_del(pos);
-
-			os_status = osMutexRelease(sys_class->mutex);
-
-			if(os_status != osOK) {
-			}
-
-			if(info->uninit != NULL) {
-				info->uninit(info->ctx);
-			}
-
-			os_free(info);
-
-			os_status = osMutexWait(sys_class->mutex, osWaitForever);
-
-			if(os_status != osOK) {
-			}
+			list_move_tail(pos, &uninit_list);
 		}
 	}
 
 	os_status = osMutexRelease(sys_class->mutex);
 
 	if(os_status != osOK) {
+	}
+
+	if(!list_empty(&uninit_list)) {
+		struct list_head *pos;
+		struct list_head *n;
+
+		list_for_each_safe(pos, n, &sys_class->list) {
+			sys_class_info_t *info = list_entry(pos, sys_class_info_t, list);
+
+			list_del(pos);
+
+			if(info->uninit != NULL) {
+				info->uninit(info->ctx);
+			}
+
+			os_free(info);
+		}
 	}
 
 	os_status = osMutexDelete(sys_class->mutex);

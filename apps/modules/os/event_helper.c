@@ -6,7 +6,7 @@
  *   文件名称：event_helper.c
  *   创 建 者：肖飞
  *   创建日期：2020年01月07日 星期二 09时56分01秒
- *   修改日期：2020年05月25日 星期一 15时59分53秒
+ *   修改日期：2020年12月30日 星期三 08时38分31秒
  *   描    述：
  *
  *================================================================*/
@@ -147,6 +147,10 @@ int event_pool_put_event(event_pool_t *event_pool, void *event, uint32_t timeout
 int event_pool_wait_event(event_pool_t *event_pool, uint32_t timeout)
 {
 	int ret = -1;
+
+	if(event_pool == NULL) {
+		return ret;
+	}
 
 	osEvent event = osMessageGet(event_pool->queue, timeout);
 
