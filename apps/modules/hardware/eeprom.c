@@ -6,7 +6,7 @@
  *   文件名称：eeprom.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月14日 星期四 09时01分36秒
- *   修改日期：2020年07月17日 星期五 09时56分08秒
+ *   修改日期：2020年12月30日 星期三 11时30分33秒
  *   描    述：
  *
  *================================================================*/
@@ -15,6 +15,7 @@
 #include "cmsis_os.h"
 
 #include "os_utils.h"
+#include "log.h"
 
 extern SPI_HandleTypeDef hspi3;
 
@@ -271,6 +272,8 @@ uint8_t eeprom_read(eeprom_info_t *eeprom_info, uint32_t start, uint8_t *data, u
 	osStatus os_status;
 	uint16_t i;
 
+	//debug("start:%d, size:%d\n", start, size);
+
 	if(eeprom_info == NULL) {
 		return state;
 	}
@@ -288,6 +291,8 @@ uint8_t eeprom_read(eeprom_info_t *eeprom_info, uint32_t start, uint8_t *data, u
 
 	if(os_status != osOK) {
 	}
+
+	//_hexdump("read", data, size);
 
 	return state;
 }
@@ -339,6 +344,8 @@ uint8_t eeprom_write(eeprom_info_t *eeprom_info, uint32_t start, uint8_t *data, 
 
 	osStatus os_status;
 
+	//debug("start:%d, size:%d\n", start, size);
+
 	if(eeprom_info == NULL) {
 		return state;
 	}
@@ -365,6 +372,8 @@ uint8_t eeprom_write(eeprom_info_t *eeprom_info, uint32_t start, uint8_t *data, 
 
 	if(os_status != osOK) {
 	}
+
+	//_hexdump("write", data, size);
 
 	return state;
 }

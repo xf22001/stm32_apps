@@ -6,7 +6,7 @@
  *   文件名称：eeprom_config.c
  *   创 建 者：肖飞
  *   创建日期：2020年12月17日 星期四 14时02分18秒
- *   修改日期：2020年12月17日 星期四 14时31分02秒
+ *   修改日期：2020年12月30日 星期三 11时30分09秒
  *   描    述：
  *
  *================================================================*/
@@ -18,6 +18,8 @@ int eeprom_load_config_item(eeprom_info_t *eeprom_info, const char *label, void 
 	int ret = -1;
 	unsigned char crc;
 	eeprom_config_item_head_t eeprom_config_item_head;
+
+	///debug("offset:%d, size:%d\n", offset, size);
 
 	if(detect_eeprom(eeprom_info) != 0) {
 		debug("\n");
@@ -32,7 +34,7 @@ int eeprom_load_config_item(eeprom_info_t *eeprom_info, const char *label, void 
 		return ret;
 	}
 
-	crc = eeprom_config_item_head.payload_size;
+	crc = size;
 
 	if(label != NULL) {
 		crc += calc_crc8(label, strlen(label));
@@ -58,6 +60,8 @@ int eeprom_save_config_item(eeprom_info_t *eeprom_info, const char *label, void 
 	unsigned char crc;
 	eeprom_config_item_head_t eeprom_config_item_head;
 
+	//debug("offset:%d, size:%d\n", offset, size);
+
 	if(detect_eeprom(eeprom_info) != 0) {
 		debug("\n");
 		return ret;
@@ -65,7 +69,7 @@ int eeprom_save_config_item(eeprom_info_t *eeprom_info, const char *label, void 
 
 	eeprom_config_item_head.payload_size = size;
 
-	crc = eeprom_config_item_head.payload_size;
+	crc = size;
 
 	if(label != NULL) {
 		crc += calc_crc8(label, strlen(label));
