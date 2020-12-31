@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时07分55秒
- *   修改日期：2020年12月29日 星期二 15时11分31秒
+ *   修改日期：2020年12月31日 星期四 11时17分27秒
  *   描    述：
  *
  *================================================================*/
@@ -246,7 +246,7 @@ int can_tx_data(can_info_t *can_info, can_tx_msg_t *msg, uint32_t timeout)
 	status = HAL_BUSY;
 
 	while(status != HAL_OK) {
-		if(can_info->hcan_mutex) {
+		if(can_info->hcan_mutex != NULL) {
 			os_status = osMutexWait(can_info->hcan_mutex, osWaitForever);
 
 			if(os_status != osOK) {
@@ -255,7 +255,7 @@ int can_tx_data(can_info_t *can_info, can_tx_msg_t *msg, uint32_t timeout)
 
 		status = HAL_CAN_AddTxMessage(can_info->hcan, &tx_header, msg->Data, &msg->tx_mailbox);
 
-		if(can_info->hcan_mutex) {
+		if(can_info->hcan_mutex != NULL) {
 			os_status = osMutexRelease(can_info->hcan_mutex);
 
 			if(os_status != osOK) {
@@ -289,7 +289,7 @@ int can_rx_data(can_info_t *can_info, uint32_t timeout)
 		return ret;
 	}
 
-	if(can_info->hcan_mutex) {
+	if(can_info->hcan_mutex != NULL) {
 		os_status = osMutexWait(can_info->hcan_mutex, osWaitForever);
 
 		if(os_status != osOK) {
@@ -302,7 +302,7 @@ int can_rx_data(can_info_t *can_info, uint32_t timeout)
 		/* Notification Error */
 	}
 
-	if(can_info->hcan_mutex) {
+	if(can_info->hcan_mutex != NULL) {
 		os_status = osMutexRelease(can_info->hcan_mutex);
 
 		if(os_status != osOK) {

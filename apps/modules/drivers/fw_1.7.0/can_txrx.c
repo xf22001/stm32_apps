@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时07分55秒
- *   修改日期：2020年07月13日 星期一 13时59分39秒
+ *   修改日期：2020年12月31日 星期四 11时11分48秒
  *   描    述：
  *
  *================================================================*/
@@ -229,7 +229,7 @@ int can_tx_data(can_info_t *can_info, can_tx_msg_t *msg, uint32_t timeout)
 
 	can_info->hcan->pTxMsg = msg;
 
-	if(can_info->hcan_mutex) {
+	if(can_info->hcan_mutex != NULL) {
 		os_status = osMutexWait(can_info->hcan_mutex, osWaitForever);
 
 		if(os_status != osOK) {
@@ -241,7 +241,7 @@ int can_tx_data(can_info_t *can_info, can_tx_msg_t *msg, uint32_t timeout)
 	if(status != HAL_OK) {
 	}
 
-	if(can_info->hcan_mutex) {
+	if(can_info->hcan_mutex != NULL) {
 		os_status = osMutexRelease(can_info->hcan_mutex);
 
 		if(os_status != osOK) {
@@ -269,7 +269,7 @@ int can_rx_data(can_info_t *can_info, uint32_t timeout)
 		return ret;
 	}
 
-	if(can_info->hcan_mutex) {
+	if(can_info->hcan_mutex != NULL) {
 		os_status = osMutexWait(can_info->hcan_mutex, osWaitForever);
 
 		if(os_status != osOK) {
@@ -295,7 +295,7 @@ int can_rx_data(can_info_t *can_info, uint32_t timeout)
 		//}
 	}
 
-	if(can_info->hcan_mutex) {
+	if(can_info->hcan_mutex != NULL) {
 		os_status = osMutexRelease(can_info->hcan_mutex);
 
 		if(os_status != osOK) {
