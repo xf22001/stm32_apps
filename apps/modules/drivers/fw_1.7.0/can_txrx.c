@@ -171,8 +171,6 @@ can_info_t *get_or_alloc_can_info(CAN_HandleTypeDef *hcan)
 
 	can_info->receive_init = receive_init;
 
-	can_info->receive_init(hcan);
-
 	__disable_irq();
 	ret = map_utils_add_key_value(can_map, hcan, can_info);
 	__enable_irq();
@@ -181,6 +179,8 @@ can_info_t *get_or_alloc_can_info(CAN_HandleTypeDef *hcan)
 		free_can_info(can_info);
 		can_info = NULL;
 	}
+
+	can_info->receive_init(hcan);
 
 	return can_info;
 }

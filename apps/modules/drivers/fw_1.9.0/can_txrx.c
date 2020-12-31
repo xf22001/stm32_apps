@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时07分55秒
- *   修改日期：2020年12月31日 星期四 11时17分27秒
+ *   修改日期：2020年12月31日 星期四 15时52分13秒
  *   描    述：
  *
  *================================================================*/
@@ -182,8 +182,6 @@ can_info_t *get_or_alloc_can_info(CAN_HandleTypeDef *hcan)
 
 	can_info->receive_init = receive_init;
 
-	can_info->receive_init(hcan);
-
 	__disable_irq();
 	ret = map_utils_add_key_value(can_map, hcan, can_info);
 	__enable_irq();
@@ -192,6 +190,8 @@ can_info_t *get_or_alloc_can_info(CAN_HandleTypeDef *hcan)
 		free_can_info(can_info);
 		can_info = NULL;
 	}
+
+	can_info->receive_init(hcan);
 
 	return can_info;
 }
