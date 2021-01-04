@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2020年10月10日 星期六 09时44分15秒
+ *   修改日期：2021年01月04日 星期一 15时23分45秒
  *   描    述：
  *
  *================================================================*/
@@ -84,36 +84,6 @@ void set_net_client_request_callback(net_client_info_t *net_client_info, request
 	net_client_info->request_callback = request_callback;
 }
 
-static int update_net_client_addr(net_client_info_t *net_client_info)
-{
-	int ret = -1;
-	struct list_head *list_head;
-	int socktype;
-	int protocol;
-
-	if(net_client_info == NULL) {
-		debug("\n");
-		return ret;
-	}
-
-	if(net_client_info->protocol_if == NULL) {
-		debug("\n");
-		return ret;
-	}
-
-	list_head = &net_client_info->net_client_addr_info.socket_addr_info_list;
-	socktype = (net_client_info->protocol_if->type == TRANS_PROTOCOL_UDP) ? SOCK_DGRAM : SOCK_STREAM;
-	protocol = (net_client_info->protocol_if->type == TRANS_PROTOCOL_UDP) ? IPPROTO_UDP : IPPROTO_TCP;
-
-	ret = update_addr_info_list(list_head, net_client_info->net_client_addr_info.host, net_client_info->net_client_addr_info.port, socktype, protocol);
-
-	if(ret == 0) {
-		net_client_info->net_client_addr_info.socket_addr_info = get_next_socket_addr_info(list_head, net_client_info->net_client_addr_info.socket_addr_info);
-	}
-
-	return ret;
-}
-
 static int get_addr_host_port_service(net_client_info_t *net_client_info, char **host, char **port, char **path)
 {
 	int ret = 0;
@@ -134,9 +104,21 @@ static void get_addr_info(net_client_info_t *net_client_info)
 	char *port;
 	char *path;
 
+	struct list_head *list_head;
+	int socktype;
+	int protocol;
+
 	//u_uint32_bytes_t backstage_ip;
 	if(net_client_info == NULL) {
 		debug("\n");
+		return;
+	}
+
+	list_head = &net_client_info->net_client_addr_info.socket_addr_info_list;
+
+	net_client_info->net_client_addr_info.socket_addr_info = get_next_socket_addr_info(list_head, net_client_info->net_client_addr_info.socket_addr_info);
+
+	if(net_client_info->net_client_addr_info.socket_addr_info != NULL) {
 		return;
 	}
 
@@ -159,7 +141,15 @@ static void get_addr_info(net_client_info_t *net_client_info)
 	snprintf(net_client_info->net_client_addr_info.path, sizeof(net_client_info->net_client_addr_info.path), "%s", path);
 	net_client_info->net_client_addr_info.socket_addr_info = NULL;
 
-	update_net_client_addr(net_client_info);
+
+	socktype = (net_client_info->protocol_if->type == TRANS_PROTOCOL_UDP) ? SOCK_DGRAM : SOCK_STREAM;
+	protocol = (net_client_info->protocol_if->type == TRANS_PROTOCOL_UDP) ? IPPROTO_UDP : IPPROTO_TCP;
+
+	ret = update_addr_info_list(list_head, net_client_info->net_client_addr_info.host, net_client_info->net_client_addr_info.port, socktype, protocol);
+
+	if(ret == 0) {
+		net_client_info->net_client_addr_info.socket_addr_info = get_next_socket_addr_info(list_head, net_client_info->net_client_addr_info.socket_addr_info);
+	}
 }
 
 static void set_system_net_info(uint16_t info)
@@ -193,9 +183,8 @@ client_state_t get_client_state(net_client_info_t *net_client_info)
 
 static void default_init(net_client_info_t *net_client_info)
 {
+	debug("\n");
 	srand(osKernelSysTick());
-
-	get_addr_info(net_client_info);
 
 	if(net_client_info->request_callback->init != NULL) {
 		net_client_info->request_callback->init(net_client_info);
@@ -377,17 +366,8 @@ static int create_server_connect(net_client_info_t *net_client_info)
 
 		net_client_info->retry_count = 0;
 	} else {
-		struct list_head *list_head;
-
-		list_head = &net_client_info->net_client_addr_info.socket_addr_info_list;
-		debug("connect failed! try to get addr info!\n");
-
-		net_client_info->net_client_addr_info.socket_addr_info = get_next_socket_addr_info(list_head, net_client_info->net_client_addr_info.socket_addr_info);
-
-		if(net_client_info->net_client_addr_info.socket_addr_info == NULL) {
-			get_addr_info(net_client_info);
-			debug("\n");
-		}
+		get_addr_info(net_client_info);
+		debug("\n");
 	}
 
 	return ret;
@@ -687,6 +667,8 @@ void net_client_periodic(void *ctx)
 		break;
 
 		case CLIENT_RESET: {
+			get_addr_info(net_client_info);
+			debug("\n");
 			poll_ctx->poll_fd.available = 0;
 
 			close_connect(net_client_info);
