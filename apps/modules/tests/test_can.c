@@ -6,7 +6,7 @@
  *   文件名称：test_can.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 16时45分27秒
- *   修改日期：2020年06月02日 星期二 17时02分18秒
+ *   修改日期：2021年01月04日 星期一 13时19分04秒
  *   描    述：
  *
  *================================================================*/
@@ -19,6 +19,7 @@
 
 #include "can_txrx.h"
 #include "can.h"
+#include "log.h"
 
 extern CAN_HandleTypeDef hcan1;
 extern CAN_HandleTypeDef hcan2;
@@ -55,6 +56,9 @@ static void task_can_send(void const *argument)
 		int ret = can_transmit_test(can_info);
 
 		if(ret == 0) {
+			debug("tx done!\n");
+		} else {
+			debug("tx error!\n");
 		}
 
 		osDelay(1000);
@@ -70,10 +74,12 @@ static void task_can_receive(void const *argument)
 	}
 
 	for(;;) {
-		int ret = can_rx_data(can_info, 10);
+		int ret = can_rx_data(can_info, 3000);
 
 		if(ret == 0) {
-			can_transmit_test(can_info);
+			debug("rx done!\n");
+		} else {
+			debug("rx error!\n");
 		}
 	}
 }
