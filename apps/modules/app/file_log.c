@@ -6,7 +6,7 @@
  *   文件名称：file_log.c
  *   创 建 者：肖飞
  *   创建日期：2020年11月03日 星期二 13时03分25秒
- *   修改日期：2020年12月10日 星期四 13时50分46秒
+ *   修改日期：2021年01月07日 星期四 12时41分38秒
  *   描    述：
  *
  *================================================================*/
@@ -92,9 +92,11 @@ int open_log(void)
 	if(ret == FR_OK) {
 #if !defined(FA_OPEN_APPEND)
 		ret = mt_f_lseek(&file_log_info.s_log_file, file_log_info.s_log_file.fsize);
+
 		if(ret != FR_OK) {
 			debug("mt_f_lseek ret:%d\n", ret);
 		}
+
 #endif
 		file_log_info.log_file = &file_log_info.s_log_file;
 		file_log_info.log_file_stamp = get_log_file_stamp();
@@ -113,6 +115,19 @@ void close_log(void)
 	if(file_log_info.log_file != NULL) {
 		mt_f_close(file_log_info.log_file);
 		file_log_info.log_file = NULL;
+	}
+}
+
+void sync_log(void)
+{
+	FRESULT ret;
+
+	if(file_log_info.log_file != NULL) {
+		ret = mt_f_sync(file_log_info.log_file);
+
+		if(ret != FR_OK) {
+			debug("mt_f_sync ret:%d\n", ret);
+		}
 	}
 }
 
@@ -171,6 +186,8 @@ void handle_open_log(void)
 			//debug("check file log...\n");
 			close_log();
 			open_log();
+		} else {
+			sync_log();
 		}
 	}
 
