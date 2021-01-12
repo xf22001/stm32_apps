@@ -6,7 +6,7 @@
  *   文件名称：power_modules.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时37分07秒
- *   修改日期：2020年08月03日 星期一 14时37分01秒
+ *   修改日期：2021年01月12日 星期二 12时28分54秒
  *   描    述：
  *
  *================================================================*/
@@ -34,6 +34,7 @@ typedef enum {
 	POWER_MODULE_TYPE_UNKNOW = 0,
 	POWER_MODULE_TYPE_HUAWEI,
 	POWER_MODULE_TYPE_INCREASE,
+	POWER_MODULE_TYPE_PSEUDO,
 } power_module_type_t;
 
 typedef struct {
