@@ -6,7 +6,7 @@
  *   文件名称：power_modules.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时34分29秒
- *   修改日期：2020年08月03日 星期一 14时36分26秒
+ *   修改日期：2021年01月13日 星期三 09时14分14秒
  *   描    述：
  *
  *================================================================*/
@@ -15,6 +15,7 @@
 #include "os_utils.h"
 #include "power_modules_handler_huawei.h"
 #include "power_modules_handler_increase.h"
+#include "power_modules_handler_pseudo.h"
 #include <string.h>
 
 //#define LOG_NONE
@@ -26,6 +27,7 @@ static osMutexId power_modules_info_list_mutex = NULL;
 static power_modules_handler_t *power_modules_handler_sz[] = {
 	&power_modules_handler_huawei,
 	&power_modules_handler_increase,
+	&power_modules_handler_pseudo,
 };
 
 static power_modules_handler_t *get_power_modules_handler(power_module_type_t power_module_type)

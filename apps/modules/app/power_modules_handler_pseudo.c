@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_pseudo.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 17时36分29秒
- *   修改日期：2021年01月12日 星期二 12时30分06秒
+ *   修改日期：2021年01月13日 星期三 16时13分34秒
  *   描    述：
  *
  *================================================================*/
@@ -14,25 +14,29 @@
 #include "os_utils.h"
 #include <string.h>
 
-//#define LOG_NONE
+#define LOG_NONE
 #include "log.h"
 
 static void set_out_voltage_current_pseudo(power_modules_info_t *power_modules_info, int module_id, uint32_t voltage, uint32_t current)
 {
-	power_modules_info->power_module_info[module_id].setting_current = current;
 	power_modules_info->power_module_info[module_id].setting_voltage = voltage;
+	power_modules_info->power_module_info[module_id].setting_current = current;
 
-	power_modules_info->power_module_info[module_id].output_current = current;
-	power_modules_info->power_module_info[module_id].output_voltage = voltage;
-	debug("module_id %d current:%d, voltage:%d\n", module_id, current, voltage);
+	power_modules_info->power_module_info[module_id].output_voltage = power_modules_info->power_module_info[module_id].setting_voltage / 100;
+	debug("module_id %d output voltage:%d\n", module_id, power_modules_info->power_module_info[module_id].setting_voltage / 100);
+
+	power_modules_info->power_module_info[module_id].output_current = power_modules_info->power_module_info[module_id].setting_current / 100;
+	debug("module_id %d output current:%d\n", module_id, power_modules_info->power_module_info[module_id].setting_current / 100);
 }
 
 static void set_poweroff_pseudo(power_modules_info_t *power_modules_info, int module_id, uint8_t poweroff)
 {
+
 	power_modules_info->power_module_info[module_id].poweroff = poweroff;
-	power_modules_info->power_module_info[module_id].power_module_status.poweroff = poweroff;
-	power_modules_info->power_module_info[module_id].power_module_status.setting_poweroff = poweroff;
-	debug("module_id %d poweroff:%d\n", module_id, poweroff);
+
+	power_modules_info->power_module_info[module_id].power_module_status.poweroff = power_modules_info->power_module_info[module_id].poweroff;
+	power_modules_info->power_module_info[module_id].power_module_status.setting_poweroff = power_modules_info->power_module_info[module_id].poweroff;
+	debug("module_id %d poweroff:%d\n", module_id, power_modules_info->power_module_info[module_id].poweroff);
 }
 
 static void query_status_pseudo(power_modules_info_t *power_modules_info, int module_id)
@@ -76,11 +80,12 @@ static void query_c_line_input_voltage_pseudo(power_modules_info_t *power_module
 static void power_modules_request_pseudo(power_modules_info_t *power_modules_info)
 {
 	int module_id;
-	int i;
-	int ret;
 
 	for(module_id = 0; module_id < power_modules_info->power_module_number; module_id++) {
-		//power_module_info_t *power_module_info = power_modules_info->power_module_info + module_id;
+		power_module_info_t *power_module_info = power_modules_info->power_module_info + module_id;
+		can_com_connect_state_t *connect_state = &power_module_info->connect_state;
+
+		can_com_set_connect_state(connect_state, 1);
 	}
 }
 
