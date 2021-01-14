@@ -6,7 +6,7 @@
  *   文件名称：power_modules.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时34分29秒
- *   修改日期：2021年01月13日 星期三 09时14分14秒
+ *   修改日期：2021年01月14日 星期四 12时57分22秒
  *   描    述：
  *
  *================================================================*/
@@ -184,11 +184,6 @@ static int power_modules_set_channels_info_config(power_modules_info_t *power_mo
 		}
 
 		memset(power_module_info->cmd_ctx, 0, sizeof(can_com_cmd_ctx_t) * max_cmd_size);
-	}
-
-	if(power_modules_set_type(power_modules_info, POWER_MODULE_TYPE_INCREASE) != 0) {
-		debug("\n");
-		return ret;
 	}
 
 	ret = 0;
