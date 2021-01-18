@@ -6,7 +6,7 @@
  *   文件名称：test_map_utils.c
  *   创 建 者：肖飞
  *   创建日期：2020年12月29日 星期二 15时30分46秒
- *   修改日期：2020年12月29日 星期二 15时54分00秒
+ *   修改日期：2021年01月18日 星期一 09时53分23秒
  *   描    述：
  *
  *================================================================*/
@@ -28,7 +28,11 @@
 
 void test_map_utils(void)
 {
-	map_utils_t *map_utils = map_utils_alloc(NULL);
+	map_utils_t *map_utils;
+
+	__disable_irq();
+	map_utils = map_utils_alloc(NULL);
+	__enable_irq();
 
 	add_key_value(map_utils, 2, 2);
 	add_key_value(map_utils, 3, 3);

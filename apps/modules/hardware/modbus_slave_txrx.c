@@ -6,7 +6,7 @@
  *   文件名称：modbus_slave_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月20日 星期一 14时54分12秒
- *   修改日期：2020年12月30日 星期三 15时43分52秒
+ *   修改日期：2021年01月18日 星期一 09时50分27秒
  *   描    述：
  *
  *================================================================*/
@@ -59,9 +59,13 @@ modbus_slave_info_t *get_or_alloc_modbus_slave_info(uart_info_t *uart_info)
 	modbus_slave_info_t *modbus_slave_info = NULL;
 	int ret;
 
+	__disable_irq();
+
 	if(modbus_slave_map == NULL) {
 		modbus_slave_map = map_utils_alloc(NULL);
 	}
+
+	__enable_irq();
 
 	if(uart_info == NULL) {
 		return modbus_slave_info;

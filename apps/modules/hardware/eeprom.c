@@ -6,7 +6,7 @@
  *   文件名称：eeprom.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月14日 星期四 09时01分36秒
- *   修改日期：2020年12月30日 星期三 15时23分22秒
+ *   修改日期：2021年01月18日 星期一 09时48分07秒
  *   描    述：
  *
  *================================================================*/
@@ -61,9 +61,13 @@ eeprom_info_t *get_or_alloc_eeprom_info(spi_info_t *spi_info, GPIO_TypeDef *gpio
 	osMutexDef(eeprom_mutex);
 	int ret;
 
+	__disable_irq();
+
 	if(eeprom_map == NULL) {
 		eeprom_map = map_utils_alloc(NULL);
 	}
+
+	__enable_irq();
 
 	if(spi_info == NULL) {
 		return eeprom_info;

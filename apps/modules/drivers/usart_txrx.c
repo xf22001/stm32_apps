@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2020年12月29日 星期二 15时25分27秒
+ *   修改日期：2021年01月18日 星期一 09时52分20秒
  *   描    述：
  *
  *================================================================*/
@@ -28,9 +28,7 @@ static uart_info_t *get_uart_info(UART_HandleTypeDef *huart)
 {
 	uart_info_t *uart_info = NULL;
 
-	__disable_irq();
 	uart_info = (uart_info_t *)map_utils_get_value(uart_map, huart);
-	__enable_irq();
 
 	return uart_info;
 }
@@ -44,9 +42,7 @@ static void free_uart_info(uart_info_t *uart_info)
 		return;
 	}
 
-	__disable_irq();
 	ret = map_utils_remove_value(uart_map, uart_info->huart);
-	__enable_irq();
 
 	if(ret != 0) {
 	}
@@ -106,11 +102,20 @@ uart_info_t *get_or_alloc_uart_info(UART_HandleTypeDef *huart)
 	osMutexDef(huart_mutex);
 	osMutexDef(log_mutex);
 
+	__disable_irq();
+
 	if(uart_map == NULL) {
 		uart_map = map_utils_alloc(NULL);
 	}
 
+	__enable_irq();
+
+	if(huart == NULL) {
+		return uart_info;
+	}
+
 	uart_info = get_uart_info(huart);
+
 	if(uart_info != NULL) {
 		return uart_info;
 	}
@@ -129,9 +134,7 @@ uart_info_t *get_or_alloc_uart_info(UART_HandleTypeDef *huart)
 	uart_info->rx_poll_interval = 5;
 	uart_info->max_pending_duration = 50;
 
-	__disable_irq();
 	ret = map_utils_add_key_value(uart_map, huart, uart_info);
-	__enable_irq();
 
 	if(ret != 0) {
 		free_uart_info(uart_info);

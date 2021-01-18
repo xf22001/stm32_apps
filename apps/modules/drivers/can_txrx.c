@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时07分55秒
- *   修改日期：2020年12月31日 星期四 15时52分13秒
+ *   修改日期：2021年01月18日 星期一 09时49分25秒
  *   描    述：
  *
  *================================================================*/
@@ -21,9 +21,7 @@ static can_info_t *get_can_info(CAN_HandleTypeDef *hcan)
 {
 	can_info_t *can_info = NULL;
 
-	__disable_irq();
 	can_info = (can_info_t *)map_utils_get_value(can_map, hcan);
-	__enable_irq();
 
 	return can_info;
 }
@@ -38,6 +36,7 @@ static void receive_init(CAN_HandleTypeDef *hcan)
 
 
 	if(can_info == NULL) {
+		app_panic();
 		return;
 	}
 
@@ -96,9 +95,7 @@ void free_can_info(can_info_t *can_info)
 		return;
 	}
 
-	__disable_irq();
 	ret = map_utils_remove_value(can_map, can_info->hcan);
-	__enable_irq();
 
 	if(ret != 0) {
 	}
@@ -152,13 +149,21 @@ can_info_t *get_or_alloc_can_info(CAN_HandleTypeDef *hcan)
 	osMessageQDef(tx_msg_q, 1, uint16_t);
 	osMessageQDef(rx_msg_q, 1, uint16_t);
 
+	__disable_irq();
+
 	if(can_map == NULL) {
 		can_map = map_utils_alloc(NULL);
 	}
 
+	__enable_irq();
+
 	can_info = get_can_info(hcan);
 
 	if(can_info != NULL) {
+		return can_info;
+	}
+
+	if(hcan == NULL) {
 		return can_info;
 	}
 
@@ -182,9 +187,7 @@ can_info_t *get_or_alloc_can_info(CAN_HandleTypeDef *hcan)
 
 	can_info->receive_init = receive_init;
 
-	__disable_irq();
 	ret = map_utils_add_key_value(can_map, hcan, can_info);
-	__enable_irq();
 
 	if(ret != 0) {
 		free_can_info(can_info);

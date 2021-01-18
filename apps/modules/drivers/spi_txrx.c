@@ -6,7 +6,7 @@
  *   文件名称：spi_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 10时30分48秒
- *   修改日期：2020年12月29日 星期二 15时06分08秒
+ *   修改日期：2021年01月18日 星期一 09时51分44秒
  *   描    述：
  *
  *================================================================*/
@@ -20,9 +20,7 @@ static spi_info_t *get_spi_info(SPI_HandleTypeDef *hspi)
 {
 	spi_info_t *spi_info = NULL;
 
-	__disable_irq();
 	spi_info = (spi_info_t *)map_utils_get_value(spi_map, hspi);
-	__enable_irq();
 
 	return spi_info;
 }
@@ -35,9 +33,7 @@ void free_spi_info(spi_info_t *spi_info)
 		return;
 	}
 
-	__disable_irq();
 	ret = map_utils_remove_value(spi_map, spi_info->hspi);
-	__enable_irq();
 
 	if(ret != 0) {
 	}
@@ -50,8 +46,16 @@ spi_info_t *get_or_alloc_spi_info(SPI_HandleTypeDef *hspi)
 	spi_info_t *spi_info = NULL;
 	int ret;
 
+	__disable_irq();
+
 	if(spi_map == NULL) {
 		spi_map = map_utils_alloc(NULL);
+	}
+
+	__enable_irq();
+
+	if(hspi == NULL) {
+		return spi_info;
 	}
 
 	spi_info = get_spi_info(hspi);
@@ -68,9 +72,7 @@ spi_info_t *get_or_alloc_spi_info(SPI_HandleTypeDef *hspi)
 
 	spi_info->hspi = hspi;
 
-	__disable_irq();
 	ret = map_utils_add_key_value(spi_map, hspi, spi_info);
-	__enable_irq();
 
 	if(ret != 0) {
 		free_spi_info(spi_info);

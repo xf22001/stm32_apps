@@ -6,7 +6,7 @@
  *   文件名称：dlt_645_master_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月21日 星期四 10时19分55秒
- *   修改日期：2020年12月30日 星期三 15时23分53秒
+ *   修改日期：2021年01月18日 星期一 09时50分51秒
  *   描    述：
  *
  *================================================================*/
@@ -35,6 +35,7 @@ static void free_dlt_645_master_info(dlt_645_master_info_t *dlt_645_master_info)
 	}
 
 	ret = map_utils_remove_value(dlt_645_master_map, dlt_645_master_info->uart_info);
+
 	if(ret != 0) {
 	}
 
@@ -52,9 +53,13 @@ dlt_645_master_info_t *get_or_alloc_dlt_645_master_info(uart_info_t *uart_info)
 	dlt_645_master_info_t *dlt_645_master_info = NULL;
 	int ret;
 
+	__disable_irq();
+
 	if(dlt_645_master_map == NULL) {
 		dlt_645_master_map = map_utils_alloc(NULL);
 	}
+
+	__enable_irq();
 
 	if(uart_info == NULL) {
 		return dlt_645_master_info;
