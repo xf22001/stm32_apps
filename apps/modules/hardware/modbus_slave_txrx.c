@@ -6,7 +6,7 @@
  *   文件名称：modbus_slave_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月20日 星期一 14时54分12秒
- *   修改日期：2021年01月18日 星期一 09时50分27秒
+ *   修改日期：2021年01月20日 星期三 10时32分02秒
  *   描    述：
  *
  *================================================================*/
@@ -20,26 +20,10 @@
 
 static map_utils_t *modbus_slave_map = NULL;
 
-static modbus_slave_info_t *get_modbus_slave_info(uart_info_t *uart_info)
+static void free_modbus_slave_info(modbus_slave_info_t *modbus_slave_info)
 {
-	modbus_slave_info_t *modbus_slave_info = NULL;
-
-	modbus_slave_info = (modbus_slave_info_t *)map_utils_get_value(modbus_slave_map, uart_info);
-
-	return modbus_slave_info;
-}
-
-void free_modbus_slave_info(modbus_slave_info_t *modbus_slave_info)
-{
-	int ret;
-
 	if(modbus_slave_info == NULL) {
 		return;
-	}
-
-	ret = map_utils_remove_value(modbus_slave_map, modbus_slave_info->uart_info);
-
-	if(ret != 0) {
 	}
 
 	if(modbus_slave_info->uart_info) {
@@ -54,26 +38,11 @@ void free_modbus_slave_info(modbus_slave_info_t *modbus_slave_info)
 	os_free(modbus_slave_info);
 }
 
-modbus_slave_info_t *get_or_alloc_modbus_slave_info(uart_info_t *uart_info)
+static modbus_slave_info_t *alloc_modbus_slave_info(uart_info_t *uart_info)
 {
 	modbus_slave_info_t *modbus_slave_info = NULL;
-	int ret;
-
-	__disable_irq();
-
-	if(modbus_slave_map == NULL) {
-		modbus_slave_map = map_utils_alloc(NULL);
-	}
-
-	__enable_irq();
 
 	if(uart_info == NULL) {
-		return modbus_slave_info;
-	}
-
-	modbus_slave_info = get_modbus_slave_info(uart_info);
-
-	if(modbus_slave_info != NULL) {
 		return modbus_slave_info;
 	}
 
@@ -94,17 +63,28 @@ modbus_slave_info_t *get_or_alloc_modbus_slave_info(uart_info_t *uart_info)
 	modbus_slave_info->tx_timeout = 1000;
 	modbus_slave_info->modbus_slave_data_info = NULL;
 
-	ret = map_utils_add_key_value(modbus_slave_map, uart_info, modbus_slave_info);
-
-	if(ret != 0) {
-		goto failed;
-	}
-
 	return modbus_slave_info;
 
 failed:
 	free_modbus_slave_info(modbus_slave_info);
 	modbus_slave_info = NULL;
+
+	return modbus_slave_info;
+}
+
+modbus_slave_info_t *get_or_alloc_modbus_slave_info(uart_info_t *uart_info)
+{
+	modbus_slave_info_t *modbus_slave_info = NULL;
+
+	__disable_irq();
+
+	if(modbus_slave_map == NULL) {
+		modbus_slave_map = map_utils_alloc(NULL);
+	}
+
+	__enable_irq();
+
+	modbus_slave_info = (modbus_slave_info_t *)map_utils_get_or_alloc_value(modbus_slave_map, uart_info, (map_utils_value_alloc_t)alloc_modbus_slave_info, (map_utils_value_free_t)free_modbus_slave_info);
 
 	return modbus_slave_info;
 }

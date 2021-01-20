@@ -6,7 +6,7 @@
  *   文件名称：bms_multi_data.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月09日 星期四 13时04分55秒
- *   修改日期：2020年12月28日 星期一 17时07分07秒
+ *   修改日期：2021年01月20日 星期三 08时34分35秒
  *   描    述：
  *
  *================================================================*/
@@ -322,6 +322,8 @@ int send_multi_packets(can_info_t *can_info, multi_packets_info_t *multi_packets
 		if(ret != 0) {
 			debug("send_multi_request error!\n");
 			multi_packets_des->bms_data_multi_fn = FN_INVALID;
+		} else {
+			ret = -1;
 		}
 	} else {
 		if((multi_packets_des->bms_data_multi_next_index >= 1) && (multi_packets_des->bms_data_multi_next_index <= multi_packets_des->bms_data_multi_packets)) {

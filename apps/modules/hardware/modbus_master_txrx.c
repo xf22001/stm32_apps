@@ -6,7 +6,7 @@
  *   文件名称：modbus_master_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月20日 星期一 15时28分52秒
- *   修改日期：2021年01月18日 星期一 09时50分04秒
+ *   修改日期：2021年01月20日 星期三 10时34分59秒
  *   描    述：
  *
  *================================================================*/
@@ -19,26 +19,10 @@
 
 static map_utils_t *modbus_master_map = NULL;
 
-static modbus_master_info_t *get_modbus_master_info(uart_info_t *uart_info)
-{
-	modbus_master_info_t *modbus_master_info = NULL;
-
-	modbus_master_info = (modbus_master_info_t *)map_utils_get_value(modbus_master_map, uart_info);
-
-	return modbus_master_info;
-}
-
 static void free_modbus_master_info(modbus_master_info_t *modbus_master_info)
 {
-	int ret;
-
 	if(modbus_master_info == NULL) {
 		return;
-	}
-
-	ret = map_utils_remove_value(modbus_master_map, modbus_master_info->uart_info);
-
-	if(ret != 0) {
 	}
 
 	if(modbus_master_info->uart_info) {
@@ -50,26 +34,11 @@ static void free_modbus_master_info(modbus_master_info_t *modbus_master_info)
 	os_free(modbus_master_info);
 }
 
-modbus_master_info_t *get_or_alloc_modbus_master_info(uart_info_t *uart_info)
+static modbus_master_info_t *alloc_modbus_master_info(uart_info_t *uart_info)
 {
 	modbus_master_info_t *modbus_master_info = NULL;
-	int ret;
-
-	__disable_irq();
-
-	if(modbus_master_map == NULL) {
-		modbus_master_map = map_utils_alloc(NULL);
-	}
-
-	__enable_irq();
 
 	if(uart_info == NULL) {
-		return modbus_master_info;
-	}
-
-	modbus_master_info = get_modbus_master_info(uart_info);
-
-	if(modbus_master_info != NULL) {
 		return modbus_master_info;
 	}
 
@@ -79,16 +48,27 @@ modbus_master_info_t *get_or_alloc_modbus_master_info(uart_info_t *uart_info)
 		return modbus_master_info;
 	}
 
+	memset(modbus_master_info, 0, sizeof(modbus_master_info_t));
+
 	modbus_master_info->uart_info = uart_info;
 	modbus_master_info->rx_timeout = 100;
 	modbus_master_info->tx_timeout = 100;
 
-	ret = map_utils_add_key_value(modbus_master_map, uart_info, modbus_master_info);
+	return modbus_master_info;
+}
+modbus_master_info_t *get_or_alloc_modbus_master_info(uart_info_t *uart_info)
+{
+	modbus_master_info_t *modbus_master_info = NULL;
 
-	if(ret != 0) {
-		free_modbus_master_info(modbus_master_info);
-		modbus_master_info = NULL;
+	__disable_irq();
+
+	if(modbus_master_map == NULL) {
+		modbus_master_map = map_utils_alloc(NULL);
 	}
+
+	__enable_irq();
+
+	modbus_master_info = (modbus_master_info_t *)map_utils_get_or_alloc_value(modbus_master_map, uart_info, (map_utils_value_alloc_t)alloc_modbus_master_info, (map_utils_value_free_t)free_modbus_master_info);
 
 	return modbus_master_info;
 }

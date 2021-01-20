@@ -6,7 +6,7 @@
  *   文件名称：modbus_slave_txrx.h
  *   创 建 者：肖飞
  *   创建日期：2020年04月20日 星期一 14时54分35秒
- *   修改日期：2020年12月30日 星期三 15时43分32秒
+ *   修改日期：2021年01月20日 星期三 10时32分19秒
  *   描    述：
  *
  *================================================================*/
@@ -51,7 +51,6 @@ typedef struct {
 	callback_chain_t *data_changed_chain;
 } modbus_slave_info_t;
 
-void free_modbus_slave_info(modbus_slave_info_t *modbus_slave_info);
 modbus_slave_info_t *get_or_alloc_modbus_slave_info(uart_info_t *uart_info);
 int add_modbus_slave_data_changed_cb(modbus_slave_info_t *modbus_slave_info, callback_item_t *callback_item);
 int remove_modbus_slave_data_changed_cb(modbus_slave_info_t *modbus_slave_info, callback_item_t *callback_item);

@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2021年01月18日 星期一 09时52分20秒
+ *   修改日期：2021年01月20日 星期三 10时24分49秒
  *   描    述：
  *
  *================================================================*/
@@ -24,27 +24,12 @@
 
 static map_utils_t *uart_map = NULL;
 
-static uart_info_t *get_uart_info(UART_HandleTypeDef *huart)
-{
-	uart_info_t *uart_info = NULL;
-
-	uart_info = (uart_info_t *)map_utils_get_value(uart_map, huart);
-
-	return uart_info;
-}
-
 static void free_uart_info(uart_info_t *uart_info)
 {
-	int ret;
 	osStatus os_status;
 
 	if(uart_info == NULL) {
 		return;
-	}
-
-	ret = map_utils_remove_value(uart_map, uart_info->huart);
-
-	if(ret != 0) {
 	}
 
 	if(uart_info->huart_mutex != NULL) {
@@ -92,9 +77,8 @@ static void free_uart_info(uart_info_t *uart_info)
 	os_free(uart_info);
 }
 
-uart_info_t *get_or_alloc_uart_info(UART_HandleTypeDef *huart)
+static uart_info_t *alloc_uart_info(UART_HandleTypeDef *huart)
 {
-	int ret;
 	uart_info_t *uart_info = NULL;
 
 	osMessageQDef(tx_msg_q, 1, uint16_t);
@@ -102,21 +86,7 @@ uart_info_t *get_or_alloc_uart_info(UART_HandleTypeDef *huart)
 	osMutexDef(huart_mutex);
 	osMutexDef(log_mutex);
 
-	__disable_irq();
-
-	if(uart_map == NULL) {
-		uart_map = map_utils_alloc(NULL);
-	}
-
-	__enable_irq();
-
 	if(huart == NULL) {
-		return uart_info;
-	}
-
-	uart_info = get_uart_info(huart);
-
-	if(uart_info != NULL) {
 		return uart_info;
 	}
 
@@ -126,6 +96,8 @@ uart_info_t *get_or_alloc_uart_info(UART_HandleTypeDef *huart)
 		return uart_info;
 	}
 
+	memset(uart_info, 0, sizeof(uart_info_t));
+
 	uart_info->huart = huart;
 	uart_info->tx_msg_q = osMessageCreate(osMessageQ(tx_msg_q), NULL);
 	uart_info->rx_msg_q = osMessageCreate(osMessageQ(rx_msg_q), NULL);
@@ -134,19 +106,29 @@ uart_info_t *get_or_alloc_uart_info(UART_HandleTypeDef *huart)
 	uart_info->rx_poll_interval = 5;
 	uart_info->max_pending_duration = 50;
 
-	ret = map_utils_add_key_value(uart_map, huart, uart_info);
+	return uart_info;
+}
 
-	if(ret != 0) {
-		free_uart_info(uart_info);
-		uart_info = NULL;
+uart_info_t *get_or_alloc_uart_info(UART_HandleTypeDef *huart)
+{
+	uart_info_t *uart_info = NULL;
+
+	__disable_irq();
+
+	if(uart_map == NULL) {
+		uart_map = map_utils_alloc(NULL);
 	}
+
+	__enable_irq();
+
+	uart_info = (uart_info_t *)map_utils_get_or_alloc_value(uart_map, huart, (map_utils_value_alloc_t)alloc_uart_info, (map_utils_value_free_t)free_uart_info);
 
 	return uart_info;
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
-	uart_info_t *uart_info = get_uart_info(huart);
+	uart_info_t *uart_info = get_or_alloc_uart_info(huart);
 
 	if(uart_info == NULL) {
 		return;
@@ -162,7 +144,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	uart_info_t *uart_info = get_uart_info(huart);
+	uart_info_t *uart_info = get_or_alloc_uart_info(huart);
 
 	if(uart_info == NULL) {
 		return;

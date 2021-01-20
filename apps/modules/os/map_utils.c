@@ -6,7 +6,7 @@
  *   文件名称：map_utils.c
  *   创 建 者：肖飞
  *   创建日期：2020年12月29日 星期二 11时40分50秒
- *   修改日期：2020年12月29日 星期二 15时59分50秒
+ *   修改日期：2021年01月20日 星期三 10时58分43秒
  *   描    述：
  *
  *================================================================*/
@@ -39,6 +39,13 @@ void map_utils_free(map_utils_t *map_utils)
 			map_utils_item_t *map_utils_item = list_entry(pos, map_utils_item_t, list);
 			list_del(pos);
 			os_free(map_utils_item);
+		}
+	}
+
+	if(map_utils->sync_mutex != NULL) {
+		os_status = osMutexDelete(map_utils->sync_mutex);
+
+		if(osOK != os_status) {
 		}
 	}
 
@@ -76,6 +83,7 @@ map_utils_t *map_utils_alloc(key_match_t match)
 	map_utils_t *map_utils = NULL;
 
 	osMutexDef(mutex);
+	osMutexDef(sync_mutex);
 
 	map_utils = (map_utils_t *)os_alloc(sizeof(map_utils_t));
 
@@ -86,6 +94,12 @@ map_utils_t *map_utils_alloc(key_match_t match)
 	map_utils->mutex = osMutexCreate(osMutex(mutex));
 
 	if(map_utils->mutex == NULL) {
+		goto failed;
+	}
+
+	map_utils->sync_mutex = osMutexCreate(osMutex(sync_mutex));
+
+	if(map_utils->sync_mutex == NULL) {
 		goto failed;
 	}
 
@@ -106,7 +120,7 @@ failed:
 	return map_utils;
 }
 
-int map_utils_add_key_value(map_utils_t *map_utils, void *key, void *value)
+static int map_utils_add_key_value(map_utils_t *map_utils, void *key, void *value)
 {
 	int ret = -1;
 	osStatus os_status;
@@ -161,7 +175,7 @@ int map_utils_add_key_value(map_utils_t *map_utils, void *key, void *value)
 	return ret;
 }
 
-void *map_utils_get_value(map_utils_t *map_utils, void *key)
+static void *map_utils_get_value(map_utils_t *map_utils, void *key)
 {
 	osStatus os_status;
 	void *value = NULL;
@@ -201,7 +215,7 @@ void *map_utils_get_value(map_utils_t *map_utils, void *key)
 	return value;
 }
 
-int map_utils_remove_value(map_utils_t *map_utils, void *key)
+static int map_utils_remove_value(map_utils_t *map_utils, void *key)
 {
 	int ret = -1;
 	osStatus os_status;
@@ -242,3 +256,51 @@ int map_utils_remove_value(map_utils_t *map_utils, void *key)
 	return ret;
 }
 
+void *map_utils_get_or_alloc_value(map_utils_t *map_utils, void *key, map_utils_value_alloc_t map_utils_value_alloc, map_utils_value_free_t map_utils_value_free)
+{
+	void *value = NULL;
+	osStatus os_status;
+
+	if(map_utils == NULL) {
+		return value;
+	}
+
+	if(map_utils_value_alloc == NULL) {
+		return value;
+	}
+
+	if(map_utils_value_free == NULL) {
+		return value;
+	}
+
+	if(map_utils->sync_mutex != NULL) {
+		os_status = osMutexWait(map_utils->sync_mutex, osWaitForever);
+
+		if(os_status != osOK) {
+		}
+	}
+
+	value = map_utils_get_value(map_utils, key);
+
+	if(value == NULL) {
+		value = map_utils_value_alloc(key);
+
+		if(value != NULL) {
+			int ret = map_utils_add_key_value(map_utils, key, value);
+
+			if(ret != 0) {
+				map_utils_value_free(value);
+				value = NULL;
+			}
+		}
+	}
+
+	if(map_utils->sync_mutex != NULL) {
+		os_status = osMutexRelease(map_utils->sync_mutex);
+
+		if(os_status != osOK) {
+		}
+	}
+
+	return value;
+}

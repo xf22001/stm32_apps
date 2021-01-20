@@ -6,61 +6,33 @@
  *   文件名称：spi_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 10时30分48秒
- *   修改日期：2021年01月18日 星期一 09时51分44秒
+ *   修改日期：2021年01月20日 星期三 10时53分26秒
  *   描    述：
  *
  *================================================================*/
 #include "spi_txrx.h"
+
+#include <string.h>
+
 #include "os_utils.h"
 #include "map_utils.h"
 
 static map_utils_t *spi_map = NULL;
 
-static spi_info_t *get_spi_info(SPI_HandleTypeDef *hspi)
+static void free_spi_info(spi_info_t *spi_info)
 {
-	spi_info_t *spi_info = NULL;
-
-	spi_info = (spi_info_t *)map_utils_get_value(spi_map, hspi);
-
-	return spi_info;
-}
-
-void free_spi_info(spi_info_t *spi_info)
-{
-	int ret;
-
 	if(spi_info == NULL) {
 		return;
-	}
-
-	ret = map_utils_remove_value(spi_map, spi_info->hspi);
-
-	if(ret != 0) {
 	}
 
 	os_free(spi_info);
 }
 
-spi_info_t *get_or_alloc_spi_info(SPI_HandleTypeDef *hspi)
+static spi_info_t *alloc_spi_info(SPI_HandleTypeDef *hspi)
 {
 	spi_info_t *spi_info = NULL;
-	int ret;
-
-	__disable_irq();
-
-	if(spi_map == NULL) {
-		spi_map = map_utils_alloc(NULL);
-	}
-
-	__enable_irq();
 
 	if(hspi == NULL) {
-		return spi_info;
-	}
-
-	spi_info = get_spi_info(hspi);
-
-	if(spi_info != NULL) {
 		return spi_info;
 	}
 
@@ -70,14 +42,26 @@ spi_info_t *get_or_alloc_spi_info(SPI_HandleTypeDef *hspi)
 		return spi_info;
 	}
 
+	memset(spi_info, 0, sizeof(spi_info_t));
+
 	spi_info->hspi = hspi;
 
-	ret = map_utils_add_key_value(spi_map, hspi, spi_info);
+	return spi_info;
+}
 
-	if(ret != 0) {
-		free_spi_info(spi_info);
-		spi_info = NULL;
+spi_info_t *get_or_alloc_spi_info(SPI_HandleTypeDef *hspi)
+{
+	spi_info_t *spi_info = NULL;
+
+	__disable_irq();
+
+	if(spi_map == NULL) {
+		spi_map = map_utils_alloc(NULL);
 	}
+
+	__enable_irq();
+
+	spi_info = (spi_info_t *)map_utils_get_or_alloc_value(spi_map, hspi, (map_utils_value_alloc_t)alloc_spi_info, (map_utils_value_free_t)free_spi_info);
 
 	return spi_info;
 }

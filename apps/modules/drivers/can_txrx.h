@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时29分22秒
- *   修改日期：2020年12月30日 星期三 15时01分50秒
+ *   修改日期：2021年01月20日 星期三 10时19分12秒
  *   描    述：
  *
  *================================================================*/
@@ -69,7 +69,7 @@ typedef struct {
 } can_rx_msg_t;
 
 typedef void (*can_hal_init_t)(void);
-typedef void (*receive_init_t)(CAN_HandleTypeDef *hcan);
+typedef void (*receive_init_t)(void *ctx);
 
 typedef struct {
 	CAN_HandleTypeDef *hcan;
@@ -86,7 +86,6 @@ typedef struct {
 	receive_init_t receive_init;
 } can_info_t;
 
-void free_can_info(can_info_t *can_info);
 can_info_t *get_or_alloc_can_info(CAN_HandleTypeDef *hcan);
 void set_can_info_hal_init(can_info_t *can_info, can_hal_init_t can_hal_init);
 int can_tx_data(can_info_t *can_info, can_tx_msg_t *msg, uint32_t timeout);

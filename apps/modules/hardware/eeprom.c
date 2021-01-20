@@ -6,7 +6,7 @@
  *   文件名称：eeprom.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月14日 星期四 09时01分36秒
- *   修改日期：2021年01月18日 星期一 09时48分07秒
+ *   修改日期：2021年01月20日 星期三 10时00分22秒
  *   描    述：
  *
  *================================================================*/
@@ -20,27 +20,12 @@
 
 static map_utils_t *eeprom_map = NULL;
 
-static eeprom_info_t *get_eeprom_info(spi_info_t *spi_info)
-{
-	eeprom_info_t *eeprom_info = NULL;
-
-	eeprom_info = (eeprom_info_t *)map_utils_get_value(eeprom_map, spi_info);
-
-	return eeprom_info;
-}
-
 static void free_eeprom_info(eeprom_info_t *eeprom_info)
 {
 	osStatus os_status;
-	int ret;
 
 	if(eeprom_info == NULL) {
 		return;
-	}
-
-	ret = map_utils_remove_value(eeprom_map, eeprom_info->spi_info);
-
-	if(ret != 0) {
 	}
 
 	os_status = osMutexDelete(eeprom_info->mutex);
@@ -55,27 +40,12 @@ static void free_eeprom_info(eeprom_info_t *eeprom_info)
 	os_free(eeprom_info);
 }
 
-eeprom_info_t *get_or_alloc_eeprom_info(spi_info_t *spi_info, GPIO_TypeDef *gpio_port_spi_cs, uint16_t gpio_pin_spi_cs, GPIO_TypeDef *gpio_port_spi_wp, uint16_t gpio_pin_spi_wp)
+static eeprom_info_t *alloc_eeprom_info(spi_info_t *spi_info)
 {
 	eeprom_info_t *eeprom_info = NULL;
 	osMutexDef(eeprom_mutex);
-	int ret;
-
-	__disable_irq();
-
-	if(eeprom_map == NULL) {
-		eeprom_map = map_utils_alloc(NULL);
-	}
-
-	__enable_irq();
 
 	if(spi_info == NULL) {
-		return eeprom_info;
-	}
-
-	eeprom_info = get_eeprom_info(spi_info);
-
-	if(eeprom_info != NULL) {
 		return eeprom_info;
 	}
 
@@ -85,19 +55,48 @@ eeprom_info_t *get_or_alloc_eeprom_info(spi_info_t *spi_info, GPIO_TypeDef *gpio
 		return eeprom_info;
 	}
 
+	memset(eeprom_info, 0, sizeof(eeprom_info_t));
+
 	eeprom_info->spi_info = spi_info;
+
+	eeprom_info->mutex = osMutexCreate(osMutex(eeprom_mutex));
+
+	if(eeprom_info->mutex == NULL) {
+		free_eeprom_info(eeprom_info);
+		eeprom_info = NULL;
+	}
+
+	return eeprom_info;
+}
+
+static void set_eeprom_gpio_pins(eeprom_info_t *eeprom_info, GPIO_TypeDef *gpio_port_spi_cs, uint16_t gpio_pin_spi_cs, GPIO_TypeDef *gpio_port_spi_wp, uint16_t gpio_pin_spi_wp)
+{
+	if(eeprom_info == NULL) {
+		return;
+	}
+
 	eeprom_info->gpio_port_spi_cs = gpio_port_spi_cs;
 	eeprom_info->gpio_pin_spi_cs = gpio_pin_spi_cs;
 	eeprom_info->gpio_port_spi_wp = gpio_port_spi_wp;
 	eeprom_info->gpio_pin_spi_wp = gpio_pin_spi_wp;
+}
 
-	eeprom_info->mutex = osMutexCreate(osMutex(eeprom_mutex));
+eeprom_info_t *get_or_alloc_eeprom_info(spi_info_t *spi_info, GPIO_TypeDef *gpio_port_spi_cs, uint16_t gpio_pin_spi_cs, GPIO_TypeDef *gpio_port_spi_wp, uint16_t gpio_pin_spi_wp)
+{
+	eeprom_info_t *eeprom_info = NULL;
 
-	ret = map_utils_add_key_value(eeprom_map, spi_info, eeprom_info);
+	__disable_irq();
 
-	if(ret != 0) {
-		free_eeprom_info(eeprom_info);
-		eeprom_info = NULL;
+	if(eeprom_map == NULL) {
+		eeprom_map = map_utils_alloc(NULL);
+	}
+
+	__enable_irq();
+
+	eeprom_info = (eeprom_info_t *)map_utils_get_or_alloc_value(eeprom_map, spi_info, (map_utils_value_alloc_t)alloc_eeprom_info, (map_utils_value_free_t)free_eeprom_info);
+
+	if(eeprom_info != NULL) {
+		set_eeprom_gpio_pins(eeprom_info, gpio_port_spi_cs, gpio_pin_spi_cs, gpio_port_spi_wp, gpio_pin_spi_wp);
 	}
 
 	return eeprom_info;

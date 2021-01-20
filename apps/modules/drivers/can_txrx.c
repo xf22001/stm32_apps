@@ -6,30 +6,70 @@
  *   文件名称：can_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时07分55秒
- *   修改日期：2021年01月18日 星期一 09时49分25秒
+ *   修改日期：2021年01月20日 星期三 10时50分59秒
  *   描    述：
  *
  *================================================================*/
 #include "can_txrx.h"
+
+#include <string.h>
 
 #include "os_utils.h"
 #include "map_utils.h"
 
 static map_utils_t *can_map = NULL;
 
-static can_info_t *get_can_info(CAN_HandleTypeDef *hcan)
+static void free_can_info(can_info_t *can_info)
 {
-	can_info_t *can_info = NULL;
+	osStatus os_status;
 
-	can_info = (can_info_t *)map_utils_get_value(can_map, hcan);
+	if(can_info == NULL) {
+		return;
+	}
 
-	return can_info;
+	if(can_info->hcan_mutex != NULL) {
+		os_status = osMutexWait(can_info->hcan_mutex, osWaitForever);
+
+		if(osOK != os_status) {
+		}
+	}
+
+	if(can_info->rx_msg_q != NULL) {
+		os_status = osMessageDelete(can_info->rx_msg_q);
+
+		if(osOK != os_status) {
+		}
+	}
+
+	if(can_info->tx_msg_q != NULL) {
+		os_status = osMessageDelete(can_info->tx_msg_q);
+
+		if(osOK != os_status) {
+		}
+	}
+
+	if(can_info->hcan_mutex != NULL) {
+		os_status = osMutexRelease(can_info->hcan_mutex);
+
+		if(osOK != os_status) {
+		}
+	}
+
+
+	if(can_info->hcan_mutex != NULL) {
+		os_status = osMutexDelete(can_info->hcan_mutex);
+
+		if(osOK != os_status) {
+		}
+	}
+
+	os_free(can_info);
 }
 
-static void receive_init(CAN_HandleTypeDef *hcan)
+static void receive_init(void *ctx)
 {
+	can_info_t *can_info = (can_info_t *)ctx;
 	CAN_FilterTypeDef filter;
-	can_info_t *can_info = get_can_info(hcan);
 	HAL_StatusTypeDef status;
 	u_can_filter_id_t id;
 	u_can_filter_id_t id_mask;
@@ -86,82 +126,14 @@ static void receive_init(CAN_HandleTypeDef *hcan)
 	}
 }
 
-void free_can_info(can_info_t *can_info)
-{
-	osStatus os_status;
-	int ret;
-
-	if(can_info == NULL) {
-		return;
-	}
-
-	ret = map_utils_remove_value(can_map, can_info->hcan);
-
-	if(ret != 0) {
-	}
-
-	if(can_info->hcan_mutex != NULL) {
-		os_status = osMutexWait(can_info->hcan_mutex, osWaitForever);
-
-		if(osOK != os_status) {
-		}
-	}
-
-	if(can_info->rx_msg_q != NULL) {
-		os_status = osMessageDelete(can_info->rx_msg_q);
-
-		if(osOK != os_status) {
-		}
-	}
-
-	if(can_info->tx_msg_q != NULL) {
-		os_status = osMessageDelete(can_info->tx_msg_q);
-
-		if(osOK != os_status) {
-		}
-	}
-
-	if(can_info->hcan_mutex != NULL) {
-		os_status = osMutexRelease(can_info->hcan_mutex);
-
-		if(osOK != os_status) {
-		}
-	}
-
-
-	if(can_info->hcan_mutex != NULL) {
-		os_status = osMutexDelete(can_info->hcan_mutex);
-
-		if(osOK != os_status) {
-		}
-	}
-
-	os_free(can_info);
-}
-
-can_info_t *get_or_alloc_can_info(CAN_HandleTypeDef *hcan)
+static can_info_t *alloc_can_info(CAN_HandleTypeDef *hcan)
 {
 	can_info_t *can_info = NULL;
 	can_config_t *can_config = NULL;
-	int ret;
 
 	osMutexDef(hcan_mutex);
 	osMessageQDef(tx_msg_q, 1, uint16_t);
 	osMessageQDef(rx_msg_q, 1, uint16_t);
-
-	__disable_irq();
-
-	if(can_map == NULL) {
-		can_map = map_utils_alloc(NULL);
-	}
-
-	__enable_irq();
-
-	can_info = get_can_info(hcan);
-
-	if(can_info != NULL) {
-		return can_info;
-	}
 
 	if(hcan == NULL) {
 		return can_info;
@@ -179,6 +151,8 @@ can_info_t *get_or_alloc_can_info(CAN_HandleTypeDef *hcan)
 		return can_info;
 	}
 
+	memset(can_info, 0, sizeof(can_info_t));
+
 	can_info->hcan = hcan;
 	can_info->can_config = can_config;
 	can_info->hcan_mutex = osMutexCreate(osMutex(hcan_mutex));
@@ -187,21 +161,31 @@ can_info_t *get_or_alloc_can_info(CAN_HandleTypeDef *hcan)
 
 	can_info->receive_init = receive_init;
 
-	ret = map_utils_add_key_value(can_map, hcan, can_info);
+	can_info->receive_init(can_info);
 
-	if(ret != 0) {
-		free_can_info(can_info);
-		can_info = NULL;
+	return can_info;
+}
+
+can_info_t *get_or_alloc_can_info(CAN_HandleTypeDef *hcan)
+{
+	can_info_t *can_info = NULL;
+
+	__disable_irq();
+
+	if(can_map == NULL) {
+		can_map = map_utils_alloc(NULL);
 	}
 
-	can_info->receive_init(hcan);
+	__enable_irq();
+
+	can_info = (can_info_t *)map_utils_get_or_alloc_value(can_map, hcan, (map_utils_value_alloc_t)alloc_can_info, (map_utils_value_free_t)free_can_info);
 
 	return can_info;
 }
 
 void can_rxfifo_pending_callback(CAN_HandleTypeDef *hcan)
 {
-	can_info_t *can_info = get_can_info(hcan);
+	can_info_t *can_info = get_or_alloc_can_info(hcan);
 	HAL_StatusTypeDef status;
 
 	if(can_info == NULL) {
