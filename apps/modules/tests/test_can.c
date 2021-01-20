@@ -6,7 +6,7 @@
  *   文件名称：test_can.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 16时45分27秒
- *   修改日期：2021年01月04日 星期一 13时19分04秒
+ *   修改日期：2021年01月20日 星期三 15时58分39秒
  *   描    述：
  *
  *================================================================*/
@@ -17,7 +17,7 @@
 #include "cmsis_os.h"
 #include "app_platform.h"
 
-#include "can_txrx.h"
+#include "can_data_task.h"
 #include "can.h"
 #include "log.h"
 
@@ -44,69 +44,83 @@ static int can_transmit_test(can_info_t *info)
 	return ret;
 }
 
-static void task_can_send(void const *argument)
-{
-	can_info_t *can_info = (can_info_t *)argument;
+typedef struct {
+	uint32_t stamp;
+	uint32_t recv_stamp;
+	char *des;
+} can_test_ctx_t;
 
-	if(can_info == NULL) {
-		app_panic();
+static void can_data_request(void *fn_ctx, void *chain_ctx)
+{
+	can_test_ctx_t *ctx = (can_test_ctx_t *)fn_ctx;
+	can_data_task_info_t *can_data_task_info = (can_data_task_info_t *)chain_ctx;
+	uint32_t ticks = osKernelSysTick();
+	int ret;
+
+	if(ticks - ctx->recv_stamp >= 1000) {
+		ctx->recv_stamp = ticks;
+		debug("%s rx error!\n", ctx->des);
 	}
 
-	for(;;) {
-		int ret = can_transmit_test(can_info);
+	if(ticks - ctx->stamp < 500) {
+		return;
+	}
 
-		if(ret == 0) {
-			debug("tx done!\n");
-		} else {
-			debug("tx error!\n");
-		}
+	ctx->stamp = ticks;
 
-		osDelay(1000);
+	ret = can_transmit_test(can_data_task_info->can_info);
+
+	if(ret == 0) {
+		//debug("%s tx done!\n", ctx->des);
+	} else {
+		debug("%s tx error!\n", ctx->des);
 	}
 }
 
-static void task_can_receive(void const *argument)
+static void can_data_response(void *fn_ctx, void *chain_ctx)
 {
-	can_info_t *can_info = (can_info_t *)argument;
+	can_test_ctx_t *ctx = (can_test_ctx_t *)fn_ctx;
+	//can_data_task_info_t *can_data_task_info = (can_data_task_info_t *)chain_ctx;
+	uint32_t ticks = osKernelSysTick();
 
-	if(can_info == NULL) {
-		app_panic();
-	}
-
-	for(;;) {
-		int ret = can_rx_data(can_info, 3000);
-
-		if(ret == 0) {
-			debug("rx done!\n");
-		} else {
-			debug("rx error!\n");
-		}
-	}
+	ctx->recv_stamp = ticks;
+	//debug("%s rx done!\n", ctx->des);
 }
 
+static can_test_ctx_t ctx1 = {0};
+static callback_item_t can1_data_request_cb;
+static callback_item_t can1_data_response_cb;
+
+static can_test_ctx_t ctx2 = {0};
+static callback_item_t can2_data_request_cb;
+static callback_item_t can2_data_response_cb;
 
 void test_can(void)
 {
 
-	{
-		can_info_t *can_info = get_or_alloc_can_info(&hcan1);
-		osThreadDef(test_can, task_can_send, osPriorityNormal, 0, 128 * 4);
+	can_data_task_info_t *can_data_task_info;
 
-		if(can_info == NULL) {
-			app_panic();
-		}
+	can_data_task_info = get_or_alloc_can_data_task_info(&hcan1);
 
-		osThreadCreate(osThread(test_can), can_info);
-	}
+	ctx1.des = "can1";
+	can1_data_request_cb.fn = can_data_request;
+	can1_data_request_cb.fn_ctx = &ctx1;
+	add_can_data_task_info_request_cb(can_data_task_info, &can1_data_request_cb);
 
-	{
-		can_info_t *can_info = get_or_alloc_can_info(&hcan2);
-		osThreadDef(test_can, task_can_receive, osPriorityNormal, 0, 128 * 4);
+	can1_data_response_cb.fn = can_data_response;
+	can1_data_response_cb.fn_ctx = &ctx1;
+	add_can_data_task_info_response_cb(can_data_task_info, &can1_data_response_cb);
 
-		if(can_info == NULL) {
-			app_panic();
-		}
 
-		osThreadCreate(osThread(test_can), can_info);
-	}
+
+	can_data_task_info = get_or_alloc_can_data_task_info(&hcan2);
+
+	ctx2.des = "can2";
+	can2_data_request_cb.fn = can_data_request;
+	can2_data_request_cb.fn_ctx = &ctx2;
+	add_can_data_task_info_request_cb(can_data_task_info, &can2_data_request_cb);
+
+	can2_data_response_cb.fn = can_data_response;
+	can2_data_response_cb.fn_ctx = &ctx2;
+	add_can_data_task_info_response_cb(can_data_task_info, &can2_data_response_cb);
 }

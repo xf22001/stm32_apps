@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时29分22秒
- *   修改日期：2021年01月20日 星期三 10时19分12秒
+ *   修改日期：2021年01月20日 星期三 15时57分35秒
  *   描    述：
  *
  *================================================================*/
@@ -74,6 +74,7 @@ typedef void (*receive_init_t)(void *ctx);
 typedef struct {
 	CAN_HandleTypeDef *hcan;
 	CAN_HandleTypeDef *config_can;
+	can_rx_msg_t rx_msg_isr;
 	can_rx_msg_t rx_msg;
 	osMutexId hcan_mutex;
 	osMessageQId tx_msg_q;
@@ -84,11 +85,15 @@ typedef struct {
 
 	can_hal_init_t can_hal_init;
 	receive_init_t receive_init;
+
+	uint32_t tx_error;
 } can_info_t;
 
 can_info_t *get_or_alloc_can_info(CAN_HandleTypeDef *hcan);
-void set_can_info_hal_init(can_info_t *can_info, can_hal_init_t can_hal_init);
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan);
+void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan);
 int can_tx_data(can_info_t *can_info, can_tx_msg_t *msg, uint32_t timeout);
 int can_rx_data(can_info_t *can_info, uint32_t timeout);
+void set_can_info_hal_init(can_info_t *can_info, can_hal_init_t can_hal_init);
 can_rx_msg_t *can_get_msg(can_info_t *can_info);
 #endif //_CAN_TXRX_H
