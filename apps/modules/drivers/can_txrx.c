@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时07分55秒
- *   修改日期：2021年01月21日 星期四 10时16分53秒
+ *   修改日期：2021年01月21日 星期四 14时37分06秒
  *   描    述：
  *
  *================================================================*/
@@ -289,6 +289,7 @@ int can_tx_data(can_info_t *can_info, can_tx_msg_t *msg, uint32_t timeout)
 	}
 
 	if(status == HAL_OK) {
+		can_info->tx_error = 0;
 		ret = 0;
 	} else {
 		can_info->tx_error++;
