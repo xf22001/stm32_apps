@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时07分55秒
- *   修改日期：2021年01月20日 星期三 16时05分38秒
+ *   修改日期：2021年01月21日 星期四 10时16分53秒
  *   描    述：
  *
  *================================================================*/
@@ -55,7 +55,6 @@ static void free_can_info(can_info_t *can_info)
 		}
 	}
 
-
 	if(can_info->hcan_mutex != NULL) {
 		os_status = osMutexDelete(can_info->hcan_mutex);
 
@@ -73,7 +72,6 @@ static void receive_init(void *ctx)
 	HAL_StatusTypeDef status;
 	u_can_filter_id_t id;
 	u_can_filter_id_t id_mask;
-
 
 	if(can_info == NULL) {
 		app_panic();
@@ -160,6 +158,9 @@ static can_info_t *alloc_can_info(CAN_HandleTypeDef *hcan)
 	can_info->rx_msg_q = osMessageCreate(osMessageQ(rx_msg_q), NULL);
 
 	can_info->receive_init = receive_init;
+	can_info->rx_msg_r = 0;
+	can_info->rx_msg_w = 0;
+	can_info->rx_msg_pos = 0;
 	can_info->tx_error = 0;
 
 	can_info->receive_init(can_info);
@@ -203,7 +204,19 @@ static void can_rxfifo_pending_callback(CAN_HandleTypeDef *hcan)
 		}
 	}
 
-	rx_msg = &can_info->rx_msg_isr;
+	rx_msg = &can_info->rx_msg[can_info->rx_msg_w];
+	can_info->rx_msg_w++;
+
+	if(can_info->rx_msg_w >= CAN_RX_MSG_BUFFER_SIZE) {
+		can_info->rx_msg_w = 0;
+	}
+
+	if(can_info->hcan_mutex != NULL) {
+		os_status = osMutexRelease(can_info->hcan_mutex);
+
+		if(os_status != osOK) {
+		}
+	}
 
 	status = HAL_CAN_GetRxMessage(can_info->hcan, can_info->can_config->filter_fifo, &rx_header, rx_msg->Data);
 
@@ -214,14 +227,6 @@ static void can_rxfifo_pending_callback(CAN_HandleTypeDef *hcan)
 		rx_msg->RTR = rx_header.RTR;
 		rx_msg->DLC = rx_header.DLC;
 	}
-
-	if(can_info->hcan_mutex != NULL) {
-		os_status = osMutexRelease(can_info->hcan_mutex);
-
-		if(os_status != osOK) {
-		}
-	}
-
 
 	if(can_info->rx_msg_q != NULL) {
 		osStatus status = osMessagePut(can_info->rx_msg_q, 0, 0);
@@ -259,7 +264,6 @@ int can_tx_data(can_info_t *can_info, can_tx_msg_t *msg, uint32_t timeout)
 	int ret = -1;
 	uint32_t stamp = osKernelSysTick();
 	HAL_StatusTypeDef status;
-	osStatus os_status;
 	CAN_TxHeaderTypeDef tx_header;
 
 	msg->tx_mailbox = 0;
@@ -273,21 +277,7 @@ int can_tx_data(can_info_t *can_info, can_tx_msg_t *msg, uint32_t timeout)
 	status = HAL_BUSY;
 
 	while(status != HAL_OK) {
-		if(can_info->hcan_mutex != NULL) {
-			os_status = osMutexWait(can_info->hcan_mutex, osWaitForever);
-
-			if(os_status != osOK) {
-			}
-		}
-
 		status = HAL_CAN_AddTxMessage(can_info->hcan, &tx_header, msg->Data, &msg->tx_mailbox);
-
-		if(can_info->hcan_mutex != NULL) {
-			os_status = osMutexRelease(can_info->hcan_mutex);
-
-			if(os_status != osOK) {
-			}
-		}
 
 		if(osKernelSysTick() - stamp >= timeout) {
 			break;
@@ -317,32 +307,46 @@ int can_rx_data(can_info_t *can_info, uint32_t timeout)
 {
 	int ret = -1;
 	osStatus os_status;
+	uint8_t rx_msg_w;
 
 	if(can_info == NULL) {
 		return ret;
 	}
 
-	if(can_info->rx_msg_q != NULL) {
-		osEvent event = osMessageGet(can_info->rx_msg_q, timeout);
+	if(can_info->hcan_mutex != NULL) {
+		os_status = osMutexWait(can_info->hcan_mutex, osWaitForever);
 
-		if(event.status == osEventMessage) {
-			if(can_info->hcan_mutex != NULL) {
-				os_status = osMutexWait(can_info->hcan_mutex, osWaitForever);
+		if(os_status != osOK) {
+		}
+	}
 
-				if(os_status != osOK) {
-				}
+	rx_msg_w = can_info->rx_msg_w;
+
+	if(can_info->hcan_mutex != NULL) {
+		os_status = osMutexRelease(can_info->hcan_mutex);
+
+		if(osOK != os_status) {
+		}
+	}
+
+	if(can_info->rx_msg_r == rx_msg_w) {//没有数据
+		if(can_info->rx_msg_q != NULL) {
+			osEvent event = osMessageGet(can_info->rx_msg_q, timeout);
+
+			if(event.status == osEventMessage) {//等到数据
+				ret = 0;
 			}
+		}
+	} else {//有数据
+		ret = 0;
+	}
 
-			can_info->rx_msg = can_info->rx_msg_isr;
+	if(ret == 0) {
+		can_info->rx_msg_pos = can_info->rx_msg_r;
+		can_info->rx_msg_r++;
 
-			if(can_info->hcan_mutex != NULL) {
-				os_status = osMutexRelease(can_info->hcan_mutex);
-
-				if(os_status != osOK) {
-				}
-			}
-
-			ret = 0;
+		if(can_info->rx_msg_r >= CAN_RX_MSG_BUFFER_SIZE) {
+			can_info->rx_msg_r = 0;
 		}
 	}
 
@@ -356,7 +360,7 @@ void set_can_info_hal_init(can_info_t *can_info, can_hal_init_t can_hal_init)
 
 can_rx_msg_t *can_get_msg(can_info_t *can_info)
 {
-	can_rx_msg_t *rx_msg = &can_info->rx_msg;
+	can_rx_msg_t *rx_msg = &can_info->rx_msg[can_info->rx_msg_pos];
 
 	return rx_msg;
 }

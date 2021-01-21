@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时29分22秒
- *   修改日期：2021年01月20日 星期三 15时57分35秒
+ *   修改日期：2021年01月21日 星期四 08时50分39秒
  *   描    述：
  *
  *================================================================*/
@@ -70,12 +70,11 @@ typedef struct {
 
 typedef void (*can_hal_init_t)(void);
 typedef void (*receive_init_t)(void *ctx);
+#define CAN_RX_MSG_BUFFER_SIZE 16
 
 typedef struct {
 	CAN_HandleTypeDef *hcan;
 	CAN_HandleTypeDef *config_can;
-	can_rx_msg_t rx_msg_isr;
-	can_rx_msg_t rx_msg;
 	osMutexId hcan_mutex;
 	osMessageQId tx_msg_q;
 	osMessageQId rx_msg_q;
@@ -86,6 +85,10 @@ typedef struct {
 	can_hal_init_t can_hal_init;
 	receive_init_t receive_init;
 
+	can_rx_msg_t rx_msg[CAN_RX_MSG_BUFFER_SIZE];
+	uint8_t rx_msg_pos;
+	uint8_t rx_msg_r;
+	uint8_t rx_msg_w;
 	uint32_t tx_error;
 } can_info_t;
 
