@@ -6,7 +6,7 @@
  *   文件名称：poll_loop.c
  *   创 建 者：肖飞
  *   创建日期：2020年08月11日 星期二 09时54分20秒
- *   修改日期：2020年10月10日 星期六 08时51分01秒
+ *   修改日期：2021年01月21日 星期四 13时00分38秒
  *   描    述：
  *
  *================================================================*/
@@ -14,95 +14,25 @@
 #include <string.h>
 #include <lwip/sockets.h>
 
+#include "map_utils.h"
+
 #include "log.h"
 
-static LIST_HEAD(poll_loop_list);
-static osMutexId poll_loop_list_mutex = NULL;
-
-static poll_loop_t *get_poll_loop(uint8_t id)
-{
-	poll_loop_t *poll_loop = NULL;
-	poll_loop_t *poll_loop_item = NULL;
-	osStatus os_status;
-
-	if(poll_loop_list_mutex == NULL) {
-		return poll_loop;
-	}
-
-	os_status = osMutexWait(poll_loop_list_mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
-
-	list_for_each_entry(poll_loop_item, &poll_loop_list, poll_loop_t, list) {
-		if(poll_loop_item->id != id) {
-			continue;
-		}
-
-		poll_loop = poll_loop_item;
-		break;
-	}
-
-	os_status = osMutexRelease(poll_loop_list_mutex);
-
-	if(os_status != osOK) {
-	}
-
-	return poll_loop;
-}
+static map_utils_t *poll_loop_map = NULL;
 
 void free_poll_loop(poll_loop_t *poll_loop)
 {
-	osStatus os_status;
-
 	if(poll_loop == NULL) {
 		return;
-	}
-
-	if(poll_loop_list_mutex == NULL) {
-		return;
-	}
-
-	os_status = osMutexWait(poll_loop_list_mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
-
-	list_del(&poll_loop->list);
-
-	os_status = osMutexRelease(poll_loop_list_mutex);
-
-	if(os_status != osOK) {
-	}
-
-	os_status = osMutexDelete(poll_loop->poll_ctx_list_mutex);
-
-	if(os_status != osOK) {
 	}
 
 	os_free(poll_loop);
 }
 
-poll_loop_t *get_or_alloc_poll_loop(uint8_t id)
+static poll_loop_t *alloc_poll_loop(uint8_t id)
 {
 	poll_loop_t *poll_loop = NULL;
 	osMutexDef(poll_ctx_list_mutex);
-	osStatus os_status;
-
-	if(poll_loop_list_mutex == NULL) {
-		osMutexDef(poll_loop_list_mutex);
-		poll_loop_list_mutex = osMutexCreate(osMutex(poll_loop_list_mutex));
-
-		if(poll_loop_list_mutex == NULL) {
-			return poll_loop;
-		}
-	}
-
-	poll_loop = get_poll_loop(id);
-
-	if(poll_loop != NULL) {
-		return poll_loop;
-	}
 
 	poll_loop = (poll_loop_t *)os_alloc(sizeof(poll_loop_t));
 
@@ -121,18 +51,6 @@ poll_loop_t *get_or_alloc_poll_loop(uint8_t id)
 		goto failed;
 	}
 
-	os_status = osMutexWait(poll_loop_list_mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
-
-	list_add_tail(&poll_loop->list, &poll_loop_list);
-
-	os_status = osMutexRelease(poll_loop_list_mutex);
-
-	if(os_status != osOK) {
-	}
-
 	return poll_loop;
 
 failed:
@@ -141,6 +59,22 @@ failed:
 	return poll_loop;
 }
 
+poll_loop_t *get_or_alloc_poll_loop(uint8_t id)
+{
+	poll_loop_t *poll_loop = NULL;
+
+	__disable_irq();
+
+	if(poll_loop_map == NULL) {
+		poll_loop_map = map_utils_alloc(NULL);
+	}
+
+	__enable_irq();
+
+	poll_loop = (poll_loop_t *)map_utils_get_or_alloc_value(poll_loop_map, id, (map_utils_value_alloc_t)alloc_poll_loop, (map_utils_value_free_t)free_poll_loop);
+
+	return poll_loop;
+}
 
 poll_ctx_t *alloc_poll_ctx(void)
 {

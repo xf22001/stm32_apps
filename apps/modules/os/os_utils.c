@@ -6,7 +6,7 @@
  *   文件名称：os_utils.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分17秒
- *   修改日期：2021年01月21日 星期四 10时23分19秒
+ *   修改日期：2021年01月21日 星期四 13时03分00秒
  *   描    述：
  *
  *================================================================*/
@@ -210,6 +210,7 @@ static char isr_log_buffer[LOG_BUFFER_SIZE];
 
 static int isr_log(const char *buffer, size_t size)
 {
+	return size;
 }
 
 int log_printf(log_fn_t log_fn, const char *fmt, ...)
