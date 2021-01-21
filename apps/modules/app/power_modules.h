@@ -6,7 +6,7 @@
  *   文件名称：power_modules.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时37分07秒
- *   修改日期：2021年01月12日 星期二 12时28分54秒
+ *   修改日期：2021年01月21日 星期四 16时42分21秒
  *   描    述：
  *
  *================================================================*/
@@ -21,8 +21,9 @@ extern "C"
 #include "app_platform.h"
 #include "list_utils.h"
 
-#include "channels_config.h"
+#include "can_txrx.h"
 #include "can_command.h"
+#include "callback_chain.h"
 
 #ifdef __cplusplus
 }
@@ -71,9 +72,8 @@ typedef struct {
 } power_module_info_t;
 
 typedef struct {
-	struct list_head list;
 	can_info_t *can_info;
-	channels_info_config_t *channels_info_config;
+	void *channels_info;
 	can_tx_msg_t can_tx_msg;
 	can_rx_msg_t *can_rx_msg;
 
@@ -84,6 +84,8 @@ typedef struct {
 	uint8_t power_module_number;
 	power_module_info_t *power_module_info;//os_alloc
 	uint16_t rate_current;//华为模块参考电流 a
+	callback_item_t can_data_request_cb;
+	callback_item_t can_data_response_cb;
 } power_modules_info_t;
 
 typedef void (*set_out_voltage_current_t)(power_modules_info_t *power_modules_info, int module_id, uint32_t voltage, uint32_t current);
@@ -109,8 +111,6 @@ typedef struct {
 	power_modules_response_t power_modules_response;
 } power_modules_handler_t;
 
-void free_power_modules_info(power_modules_info_t *power_modules_info);
-power_modules_info_t *get_or_alloc_power_modules_info(channels_info_config_t *channels_info_config);
 int power_modules_set_type(power_modules_info_t *power_modules_info, power_module_type_t power_module_type);
 void set_out_voltage_current(power_modules_info_t *power_modules_info, int module_id, uint32_t voltage, uint32_t current);
 void set_poweroff(power_modules_info_t *power_modules_info, int module_id, uint8_t poweroff);
@@ -118,8 +118,7 @@ void query_status(power_modules_info_t *power_modules_info, int module_id);
 void query_a_line_input_voltage(power_modules_info_t *power_modules_info, int module_id);
 void query_b_line_input_voltage(power_modules_info_t *power_modules_info, int module_id);
 void query_c_line_input_voltage(power_modules_info_t *power_modules_info, int module_id);
-void power_modules_request(power_modules_info_t *power_modules_info);
-int power_modules_response(power_modules_info_t *power_modules_info, can_rx_msg_t *can_rx_msg);
 uint8_t get_module_connect_state(power_module_info_t *power_module_info);
 uint32_t get_module_connect_stamp(power_module_info_t *power_module_info);
+power_modules_info_t *get_or_alloc_power_modules_info(void *ctx);
 #endif //_POWER_MODULES_H
