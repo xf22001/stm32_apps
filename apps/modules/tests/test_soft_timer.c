@@ -6,7 +6,7 @@
  *   文件名称：test_soft_timer.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月22日 星期五 13时09分20秒
- *   修改日期：2021年01月22日 星期五 14时34分09秒
+ *   修改日期：2021年01月22日 星期五 14时48分15秒
  *   描    述：
  *
  *================================================================*/
@@ -107,6 +107,14 @@ void test_soft_timer(void)
 	debug("start ctx_3_timer_1\n");
 
 	osDelay(5000);
+
+	ret = cancel_soft_timer(ctx_0_timer_0);
+
+	if(ret != 0) {
+		debug("\n");
+	}
+
+	debug("stop ctx_0_timer_0\n");
 
 	ret = cancel_soft_timer(ctx_1_timer_0);
 
