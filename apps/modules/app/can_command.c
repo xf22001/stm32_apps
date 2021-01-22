@@ -6,7 +6,7 @@
  *   文件名称：can_command.c
  *   创 建 者：肖飞
  *   创建日期：2020年07月07日 星期二 08时29分24秒
- *   修改日期：2020年12月10日 星期四 15时01分56秒
+ *   修改日期：2021年01月22日 星期五 08时31分42秒
  *   描    述：
  *
  *================================================================*/
@@ -183,6 +183,51 @@ int can_com_process_rx_request(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_c
 
 	return ret;
 }
+
+
+//准备请求数据 发
+int can_com_prepare_tx_request_broadcast(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_common_t *can_com_cmd_common, uint8_t cmd, uint8_t *data, uint8_t data_size)
+{
+	int ret = -1;
+
+	uint8_t index = can_com_cmd_ctx->index;
+	uint8_t *buffer = can_com_cmd_common->data;
+	uint8_t buffer_size = sizeof(can_com_cmd_common->data);
+	uint8_t sent = buffer_size * index;
+	uint8_t send;
+
+	can_com_cmd_common->index = index;
+
+	if(sent >= data_size) {
+		can_com_cmd_ctx->state = CAN_COM_STATE_IDLE;
+		debug("sent:%d, data_size:%d\n", sent, data_size);
+		return ret;
+	}
+
+	send = data_size - sent;
+
+	if(send > buffer_size) {
+		send = buffer_size;
+	}
+
+	//填状态数据
+	memcpy(buffer, data + sent, send);
+
+	//debug("sent %d/%d\n", sent + send, data_size);
+
+	if(sent + send >= data_size) {
+		can_com_cmd_ctx->state = CAN_COM_STATE_IDLE;
+	} else {
+		can_com_cmd_ctx->state = CAN_COM_STATE_REQUEST;
+	}
+
+	can_com_cmd_ctx->index++;
+
+	ret = 0;
+
+	return ret;
+}
+
 
 void can_com_set_connect_state(can_com_connect_state_t *can_com_connect_state, uint8_t state)
 {
