@@ -6,7 +6,7 @@
  *   文件名称：soft_timer.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月22日 星期五 10时28分46秒
- *   修改日期：2021年01月22日 星期五 14时33分11秒
+ *   修改日期：2021年01月22日 星期五 16时23分05秒
  *   描    述：
  *
  *================================================================*/
@@ -64,8 +64,10 @@ static void common_soft_timer_fn(void *fn_ctx, void *chain_ctx)
 			}
 			break;
 
-			default:
-				break;
+			default: {
+				list_move_tail(&soft_timer_ctx->list, &soft_timer_ctx->soft_timer_info->invalid_timers);
+			}
+			break;
 		}
 	} else {
 		next_delay = soft_timer_ctx->stamp + soft_timer_ctx->period - ticks;
@@ -79,6 +81,14 @@ soft_timer_ctx_t *register_soft_timer(soft_timer_info_t *soft_timer_info, callba
 	soft_timer_ctx_t *soft_timer_ctx = NULL;
 	callback_item_t *callback_item = NULL;
 	uint32_t ticks = osKernelSysTick();
+
+	if(soft_timer_info == NULL) {
+		return soft_timer_ctx;
+	}
+
+	if(fn == NULL) {
+		return soft_timer_ctx;
+	}
 
 	soft_timer_ctx = (soft_timer_ctx_t *)os_alloc(sizeof(soft_timer_ctx_t));
 
