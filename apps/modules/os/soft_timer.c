@@ -6,7 +6,7 @@
  *   文件名称：soft_timer.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月22日 星期五 10时28分46秒
- *   修改日期：2021年01月22日 星期五 16时23分05秒
+ *   修改日期：2021年01月22日 星期五 22时55分26秒
  *   描    述：
  *
  *================================================================*/
@@ -44,11 +44,11 @@ static void common_soft_timer_fn(void *fn_ctx, void *chain_ctx)
 {
 	soft_timer_ctx_t *soft_timer_ctx = (soft_timer_ctx_t *)fn_ctx;
 	uint32_t ticks = osKernelSysTick();
-	uint32_t next_delay;
+	uint32_t delay;
 
 	if(ticks - soft_timer_ctx->stamp >= soft_timer_ctx->period) {
 		soft_timer_ctx->stamp += soft_timer_ctx->period;
-		next_delay = soft_timer_ctx->period;
+		delay = osWaitForever;
 
 		if(soft_timer_ctx->fn != NULL) {
 			soft_timer_ctx->fn(soft_timer_ctx->fn_ctx, chain_ctx);
@@ -61,6 +61,14 @@ static void common_soft_timer_fn(void *fn_ctx, void *chain_ctx)
 			break;
 
 			case SOFT_TIMER_FN_TYPE_REPEAT: {
+				ticks = osKernelSysTick();
+
+				if(soft_timer_ctx->stamp + soft_timer_ctx->period >= ticks) {
+					delay = soft_timer_ctx->stamp + soft_timer_ctx->period - ticks;
+				} else {
+					delay = 0;
+				}
+
 			}
 			break;
 
@@ -70,13 +78,13 @@ static void common_soft_timer_fn(void *fn_ctx, void *chain_ctx)
 			break;
 		}
 	} else {
-		next_delay = soft_timer_ctx->stamp + soft_timer_ctx->period - ticks;
+		delay = soft_timer_ctx->stamp + soft_timer_ctx->period - ticks;
 	}
 
-	soft_timer_update_timeout(soft_timer_ctx->soft_timer_info, next_delay, 0);
+	soft_timer_update_timeout(soft_timer_ctx->soft_timer_info, delay, 0);
 }
 
-soft_timer_ctx_t *register_soft_timer(soft_timer_info_t *soft_timer_info, callback_fn_t fn, void *fn_ctx, uint32_t period, soft_timer_fn_type_t type)
+soft_timer_ctx_t *add_soft_timer(soft_timer_info_t *soft_timer_info, callback_fn_t fn, void *fn_ctx, uint32_t period, soft_timer_fn_type_t type)
 {
 	soft_timer_ctx_t *soft_timer_ctx = NULL;
 	callback_item_t *callback_item = NULL;
@@ -136,13 +144,32 @@ failed:
 
 int start_soft_timer(soft_timer_ctx_t *soft_timer_ctx)
 {
-	int ret = register_callback(soft_timer_ctx->soft_timer_info->timer_cb_chain, soft_timer_ctx->callback_item);
+	int ret = -1;
+
+	if(soft_timer_ctx == NULL) {
+		return ret;
+	}
+
+	ret = register_callback(soft_timer_ctx->soft_timer_info->timer_cb_chain, soft_timer_ctx->callback_item);
 
 	soft_timer_update_timeout(soft_timer_ctx->soft_timer_info, soft_timer_ctx->period, 1);
 	return ret;
 }
 
-int cancel_soft_timer(soft_timer_ctx_t *soft_timer_ctx)
+int stop_soft_timer(soft_timer_ctx_t *soft_timer_ctx)
+{
+	int ret = -1;
+
+	if(soft_timer_ctx == NULL) {
+		return ret;
+	}
+
+	ret = remove_callback(soft_timer_ctx->soft_timer_info->timer_cb_chain, soft_timer_ctx->callback_item);
+
+	return ret;
+}
+
+int remove_soft_timer(soft_timer_ctx_t *soft_timer_ctx)
 {
 	int ret = -1;
 

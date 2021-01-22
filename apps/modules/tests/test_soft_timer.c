@@ -6,7 +6,7 @@
  *   文件名称：test_soft_timer.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月22日 星期五 13时09分20秒
- *   修改日期：2021年01月22日 星期五 14时48分15秒
+ *   修改日期：2021年01月22日 星期五 22时47分29秒
  *   描    述：
  *
  *================================================================*/
@@ -30,25 +30,25 @@ void test_soft_timer(void)
 	soft_timer_info_t *soft_timer_info_1 = get_or_alloc_soft_timer_info(1);
 
 
-	soft_timer_ctx_t *ctx_0_timer_0 = register_soft_timer(
+	soft_timer_ctx_t *ctx_0_timer_0 = add_soft_timer(
 	                                      soft_timer_info_0,
 	                                      fn,
 	                                      "ctx_0_timer_0",
 	                                      1000, SOFT_TIMER_FN_TYPE_ONESHOT);
 
-	soft_timer_ctx_t *ctx_1_timer_0 = register_soft_timer(
+	soft_timer_ctx_t *ctx_1_timer_0 = add_soft_timer(
 	                                      soft_timer_info_0,
 	                                      fn,
 	                                      "ctx_1_timer_0",
 	                                      250, SOFT_TIMER_FN_TYPE_REPEAT);
 
-	soft_timer_ctx_t *ctx_2_timer_1 = register_soft_timer(
+	soft_timer_ctx_t *ctx_2_timer_1 = add_soft_timer(
 	                                      soft_timer_info_1,
 	                                      fn,
 	                                      "ctx_2_timer_1",
 	                                      1000, SOFT_TIMER_FN_TYPE_REPEAT);
 
-	soft_timer_ctx_t *ctx_3_timer_1 = register_soft_timer(
+	soft_timer_ctx_t *ctx_3_timer_1 = add_soft_timer(
 	                                      soft_timer_info_1,
 	                                      fn,
 	                                      "ctx_3_timer_1",
@@ -108,7 +108,7 @@ void test_soft_timer(void)
 
 	osDelay(5000);
 
-	ret = cancel_soft_timer(ctx_0_timer_0);
+	ret = remove_soft_timer(ctx_0_timer_0);
 
 	if(ret != 0) {
 		debug("\n");
@@ -116,7 +116,7 @@ void test_soft_timer(void)
 
 	debug("stop ctx_0_timer_0\n");
 
-	ret = cancel_soft_timer(ctx_1_timer_0);
+	ret = remove_soft_timer(ctx_1_timer_0);
 
 	if(ret != 0) {
 		debug("\n");
@@ -124,7 +124,7 @@ void test_soft_timer(void)
 
 	debug("stop ctx_1_timer_0\n");
 
-	ret = cancel_soft_timer(ctx_2_timer_1);
+	ret = remove_soft_timer(ctx_2_timer_1);
 
 	if(ret != 0) {
 		debug("\n");
@@ -132,7 +132,7 @@ void test_soft_timer(void)
 
 	debug("stop ctx_2_timer_1\n");
 
-	ret = cancel_soft_timer(ctx_3_timer_1);
+	ret = remove_soft_timer(ctx_3_timer_1);
 
 	if(ret != 0) {
 		debug("\n");
@@ -143,7 +143,7 @@ void test_soft_timer(void)
 	for(i = 0; i < 5; i++) {
 		osDelay(200);
 
-		ctx_3_timer_1 = register_soft_timer(
+		ctx_3_timer_1 = add_soft_timer(
 		                    soft_timer_info_1,
 		                    fn,
 		                    "ctx_3_timer_1",
@@ -159,7 +159,7 @@ void test_soft_timer(void)
 		osDelay(200);
 
 		if(ctx_3_timer_1 != NULL) {
-			int ret = cancel_soft_timer(ctx_3_timer_1);
+			int ret = remove_soft_timer(ctx_3_timer_1);
 
 			if(ret != 0) {
 				debug("\n");
