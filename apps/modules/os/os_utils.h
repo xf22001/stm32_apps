@@ -6,7 +6,7 @@
  *   文件名称：os_utils.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分36秒
- *   修改日期：2020年12月17日 星期四 14时35分06秒
+ *   修改日期：2021年01月22日 星期五 16时48分32秒
  *   描    述：
  *
  *================================================================*/
@@ -254,6 +254,12 @@ static inline uint8_t get_u8_bits(uint8_t v, uint8_t offset)
 		break
 
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
+
+#define OS_ASSERT(exp) do {\
+	if(!(exp)) { \
+		app_panic(); \
+	} \
+} while(0)
 
 typedef int (*log_fn_t)(const char *buffer, size_t size);
 
