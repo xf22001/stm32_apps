@@ -6,7 +6,7 @@
  *   文件名称：can_data_task.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月19日 星期二 16时15分20秒
- *   修改日期：2021年01月20日 星期三 14时21分37秒
+ *   修改日期：2021年01月22日 星期五 12时53分23秒
  *   描    述：
  *
  *================================================================*/
@@ -16,7 +16,6 @@
 #include "map_utils.h"
 #include "os_utils.h"
 #include "log.h"
-
 
 static map_utils_t *can_data_task_map = NULL;
 
@@ -86,11 +85,13 @@ static void free_can_data_task_info(can_data_task_info_t *can_data_task_info)
 		return;
 	}
 
-	free_callback_chain(can_data_task_info->can_data_request_chain);
-	free_callback_chain(can_data_task_info->can_data_response_chain);
+	if(can_data_task_info->can_data_request_chain != NULL) {
+		free_callback_chain(can_data_task_info->can_data_request_chain);
+	}
 
-	can_data_task_info->can_data_request_chain = NULL;
-	can_data_task_info->can_data_response_chain = NULL;
+	if(can_data_task_info->can_data_response_chain != NULL) {
+		free_callback_chain(can_data_task_info->can_data_response_chain);
+	}
 
 	os_free(can_data_task_info);
 }

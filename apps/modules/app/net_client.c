@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2021年01月04日 星期一 15时23分45秒
+ *   修改日期：2021年01月22日 星期五 09时15分56秒
  *   描    述：
  *
  *================================================================*/
@@ -26,8 +26,7 @@
 #include <string.h>
 
 extern protocol_if_t protocol_if_tcp;
-extern protocol_if_t protocol_if_ws;
-extern request_callback_t request_callback_ws;
+extern request_callback_t request_callback_default;
 
 char *get_net_client_state_des(client_state_t state)
 {
@@ -731,8 +730,8 @@ void net_client_add_poll_loop(poll_loop_t *poll_loop)
 	net_client_info->sock_fd = -1;
 	INIT_LIST_HEAD(&net_client_info->net_client_addr_info.socket_addr_info_list);
 
-	set_net_client_protocol_if(net_client_info, &protocol_if_ws);
-	set_net_client_request_callback(net_client_info, &request_callback_ws);
+	set_net_client_protocol_if(net_client_info, &protocol_if_tcp);
+	set_net_client_request_callback(net_client_info, &request_callback_default);
 
 	default_init(net_client_info);
 
