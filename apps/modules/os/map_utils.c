@@ -6,7 +6,7 @@
  *   文件名称：map_utils.c
  *   创 建 者：肖飞
  *   创建日期：2020年12月29日 星期二 11时40分50秒
- *   修改日期：2021年01月20日 星期三 10时58分43秒
+ *   修改日期：2021年01月23日 星期六 21时29分44秒
  *   描    述：
  *
  *================================================================*/
@@ -84,6 +84,10 @@ map_utils_t *map_utils_alloc(key_match_t match)
 
 	osMutexDef(mutex);
 	osMutexDef(sync_mutex);
+
+	if(__get_IPSR() != 0) {
+		return map_utils;
+	}
 
 	map_utils = (map_utils_t *)os_alloc(sizeof(map_utils_t));
 
