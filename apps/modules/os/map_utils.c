@@ -6,7 +6,7 @@
  *   文件名称：map_utils.c
  *   创 建 者：肖飞
  *   创建日期：2020年12月29日 星期二 11时40分50秒
- *   修改日期：2021年01月25日 星期一 10时44分56秒
+ *   修改日期：2021年01月25日 星期一 16时39分28秒
  *   描    述：
  *
  *================================================================*/
@@ -255,6 +255,7 @@ int map_utils_remove_value(map_utils_t *map_utils, void *key)
 void *map_utils_get_or_alloc_value(map_utils_t *map_utils, void *key, map_utils_value_alloc_t map_utils_value_alloc, map_utils_value_free_t map_utils_value_free)
 {
 	void *value = NULL;
+	int ret;
 
 	if(map_utils == NULL) {
 		return value;
@@ -280,13 +281,15 @@ void *map_utils_get_or_alloc_value(map_utils_t *map_utils, void *key, map_utils_
 
 	value = map_utils_value_alloc(key);
 
-	if(value != NULL) {
-		int ret = map_utils_add_key_value(map_utils, key, value);
+	if(value == NULL) {
+		return value;
+	}
 
-		if(ret != 0) {
-			map_utils_value_free(value);
-			value = NULL;
-		}
+	ret = map_utils_add_key_value(map_utils, key, value);
+
+	if(ret != 0) {
+		map_utils_value_free(value);
+		value = NULL;
 	}
 
 	return value;
