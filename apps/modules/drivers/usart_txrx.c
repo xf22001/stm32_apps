@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2021年01月25日 星期一 11时01分08秒
+ *   修改日期：2021年01月25日 星期一 13时27分08秒
  *   描    述：
  *
  *================================================================*/
@@ -41,15 +41,15 @@ static void free_uart_info(uart_info_t *uart_info)
 		}
 	}
 
-	if(log_uart_info == uart_info) {
-		log_uart_info = NULL;
-	}
-
 	if(uart_info->log_mutex != NULL) {
 		os_status = osMutexWait(uart_info->log_mutex, osWaitForever);
 
 		if(os_status != osOK) {
 		}
+	}
+
+	if(log_uart_info == uart_info) {
+		log_uart_info = NULL;
 	}
 
 	if(uart_info->log_mutex != NULL) {
