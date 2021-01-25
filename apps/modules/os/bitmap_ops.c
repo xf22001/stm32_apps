@@ -6,7 +6,7 @@
  *   文件名称：bitmap_ops.c
  *   创 建 者：肖飞
  *   创建日期：2020年01月19日 星期日 13时14分10秒
- *   修改日期：2020年04月12日 星期日 13时32分52秒
+ *   修改日期：2021年01月25日 星期一 10时41分30秒
  *   描    述：
  *
  *================================================================*/
@@ -105,11 +105,9 @@ int get_first_value_index(bitmap_t *bitmap, uint8_t value)
 		return ret;
 	}
 
-	if(bitmap->bitmap_mutex) {
-		os_status = osMutexWait(bitmap->bitmap_mutex, osWaitForever);
+	os_status = osMutexWait(bitmap->bitmap_mutex, osWaitForever);
 
-		if(os_status != osOK) {
-		}
+	if(os_status != osOK) {
 	}
 
 	loops = (bitmap->size + BIT_PER_CELL - 1) / BIT_PER_CELL;
@@ -123,11 +121,9 @@ int get_first_value_index(bitmap_t *bitmap, uint8_t value)
 		}
 	}
 
-	if(bitmap->bitmap_mutex) {
-		os_status = osMutexRelease(bitmap->bitmap_mutex);
+	os_status = osMutexRelease(bitmap->bitmap_mutex);
 
-		if(os_status != osOK) {
-		}
+	if(os_status != osOK) {
 	}
 
 	return ret;
@@ -145,11 +141,9 @@ int set_bitmap_value(bitmap_t *bitmap, int index, uint8_t value)
 		return ret;
 	}
 
-	if(bitmap->bitmap_mutex) {
-		os_status = osMutexWait(bitmap->bitmap_mutex, osWaitForever);
+	os_status = osMutexWait(bitmap->bitmap_mutex, osWaitForever);
 
-		if(os_status != osOK) {
-		}
+	if(os_status != osOK) {
 	}
 
 	if(index >= bitmap->size) {
@@ -167,11 +161,9 @@ int set_bitmap_value(bitmap_t *bitmap, int index, uint8_t value)
 		*cell &= ~(1 << cell_offset);
 	}
 
-	if(bitmap->bitmap_mutex) {
-		os_status = osMutexRelease(bitmap->bitmap_mutex);
+	os_status = osMutexRelease(bitmap->bitmap_mutex);
 
-		if(os_status != osOK) {
-		}
+	if(os_status != osOK) {
 	}
 
 	ret = 0;

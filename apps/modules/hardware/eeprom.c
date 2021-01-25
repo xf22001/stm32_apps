@@ -6,7 +6,7 @@
  *   文件名称：eeprom.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月14日 星期四 09时01分36秒
- *   修改日期：2021年01月20日 星期三 10时00分22秒
+ *   修改日期：2021年01月25日 星期一 11时12分42秒
  *   描    述：
  *
  *================================================================*/
@@ -28,9 +28,11 @@ static void free_eeprom_info(eeprom_info_t *eeprom_info)
 		return;
 	}
 
-	os_status = osMutexDelete(eeprom_info->mutex);
+	if(eeprom_info->mutex != NULL) {
+		os_status = osMutexDelete(eeprom_info->mutex);
 
-	if(os_status != osOK) {
+		if(os_status != osOK) {
+		}
 	}
 
 	if(eeprom_info->spi_info) {
@@ -62,10 +64,13 @@ static eeprom_info_t *alloc_eeprom_info(spi_info_t *spi_info)
 	eeprom_info->mutex = osMutexCreate(osMutex(eeprom_mutex));
 
 	if(eeprom_info->mutex == NULL) {
-		free_eeprom_info(eeprom_info);
-		eeprom_info = NULL;
+		goto failed;
 	}
 
+	return eeprom_info;
+failed:
+	free_eeprom_info(eeprom_info);
+	eeprom_info = NULL;
 	return eeprom_info;
 }
 

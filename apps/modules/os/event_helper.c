@@ -6,7 +6,7 @@
  *   文件名称：event_helper.c
  *   创 建 者：肖飞
  *   创建日期：2020年01月07日 星期二 09时56分01秒
- *   修改日期：2020年12月30日 星期三 08时38分31秒
+ *   修改日期：2021年01月25日 星期一 11时38分58秒
  *   描    述：
  *
  *================================================================*/
@@ -30,9 +30,9 @@ void free_event_pool(event_pool_t *event_pool)
 	}
 
 	if(event_pool->mutex != NULL) {
-		status = osMutexDelete(event_pool->mutex);
+		status = osMutexWait(event_pool->mutex, osWaitForever);
 
-		if(osOK != status) {
+		if(status != osOK) {
 		}
 	}
 
@@ -48,6 +48,20 @@ void free_event_pool(event_pool_t *event_pool)
 		}
 	}
 
+	if(event_pool->mutex != NULL) {
+		status = osMutexRelease(event_pool->mutex);
+
+		if(status != osOK) {
+		}
+	}
+
+	if(event_pool->mutex != NULL) {
+		status = osMutexDelete(event_pool->mutex);
+
+		if(osOK != status) {
+		}
+	}
+
 	os_free(event_pool);
 }
 
@@ -55,7 +69,7 @@ event_pool_t *alloc_event_pool(void)
 {
 	event_pool_t *event_pool = NULL;
 
-	osMessageQDef(queue, 10, uint16_t);
+	osMessageQDef(queue, 1, uint16_t);
 	osMutexDef(mutex);
 
 	event_pool = (event_pool_t *)os_alloc(sizeof(event_pool_t));
@@ -111,34 +125,25 @@ int event_pool_put_event(event_pool_t *event_pool, void *event, uint32_t timeout
 		return ret;
 	}
 
+	ret = 0;
+
 	event_item->event = event;
 
-	if(event_pool->mutex) {
-		status = osMutexWait(event_pool->mutex, osWaitForever);
+	status = osMutexWait(event_pool->mutex, osWaitForever);
 
-		if(status != osOK) {
-		}
+	if(status != osOK) {
 	}
 
 	list_add_tail(&event_item->list_head, &event_pool->list_event);
 
+	status = osMutexRelease(event_pool->mutex);
+
+	if(status != osOK) {
+	}
+
 	status = osMessagePut(event_pool->queue, 0, timeout);
 
 	if(status == osOK) {
-		ret = 0;
-	} else {
-		list_del(&event_item->list_head);
-	}
-
-	if(event_pool->mutex) {
-		status = osMutexRelease(event_pool->mutex);
-
-		if(status != osOK) {
-		}
-	}
-
-	if(ret != 0) {
-		os_free(event_item);
 	}
 
 	return ret;
@@ -171,30 +176,26 @@ void *event_pool_get_event(event_pool_t *event_pool)
 		return event;
 	}
 
-	if(list_empty(&event_pool->list_event)) {
-		return event;
+	status = osMutexWait(event_pool->mutex, osWaitForever);
+
+	if(status != osOK) {
 	}
 
-	if(event_pool->mutex != NULL) {
-		status = osMutexWait(event_pool->mutex, osWaitForever);
+	if(!list_empty(&event_pool->list_event)) {
+		event_item = list_first_entry(&event_pool->list_event, event_item_t, list_head);
+		list_del(&event_item->list_head);
 
-		if(status != osOK) {
-		}
+		event = event_item->event;
 	}
 
-	event_item = list_first_entry(&event_pool->list_event, event_item_t, list_head);
-	list_del(&event_item->list_head);
+	status = osMutexRelease(event_pool->mutex);
 
-	if(event_pool->mutex != NULL) {
-		status = osMutexRelease(event_pool->mutex);
-
-		if(status != osOK) {
-		}
+	if(status != osOK) {
 	}
 
-	event = event_item->event;
-
-	os_free(event_item);
+	if(event_item != NULL) {
+		os_free(event_item);
+	}
 
 	return event;
 }

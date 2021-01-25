@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时07分55秒
- *   修改日期：2021年01月21日 星期四 14时37分06秒
+ *   修改日期：2021年01月25日 星期一 10时34分59秒
  *   描    述：
  *
  *================================================================*/
@@ -188,7 +188,6 @@ can_info_t *get_or_alloc_can_info(CAN_HandleTypeDef *hcan)
 static void can_rxfifo_pending_callback(CAN_HandleTypeDef *hcan)
 {
 	can_info_t *can_info = get_or_alloc_can_info(hcan);
-	osStatus os_status;
 	HAL_StatusTypeDef status;
 	CAN_RxHeaderTypeDef rx_header;
 	can_rx_msg_t *rx_msg;
@@ -197,25 +196,11 @@ static void can_rxfifo_pending_callback(CAN_HandleTypeDef *hcan)
 		return;
 	}
 
-	if(can_info->hcan_mutex != NULL) {
-		os_status = osMutexWait(can_info->hcan_mutex, osWaitForever);
-
-		if(os_status != osOK) {
-		}
-	}
-
 	rx_msg = &can_info->rx_msg[can_info->rx_msg_w];
 	can_info->rx_msg_w++;
 
 	if(can_info->rx_msg_w >= CAN_RX_MSG_BUFFER_SIZE) {
 		can_info->rx_msg_w = 0;
-	}
-
-	if(can_info->hcan_mutex != NULL) {
-		os_status = osMutexRelease(can_info->hcan_mutex);
-
-		if(os_status != osOK) {
-		}
 	}
 
 	status = HAL_CAN_GetRxMessage(can_info->hcan, can_info->can_config->filter_fifo, &rx_header, rx_msg->Data);
@@ -265,6 +250,7 @@ int can_tx_data(can_info_t *can_info, can_tx_msg_t *msg, uint32_t timeout)
 	uint32_t stamp = osKernelSysTick();
 	HAL_StatusTypeDef status;
 	CAN_TxHeaderTypeDef tx_header;
+	osStatus os_status;
 
 	msg->tx_mailbox = 0;
 	tx_header.StdId = msg->StdId;
@@ -277,7 +263,17 @@ int can_tx_data(can_info_t *can_info, can_tx_msg_t *msg, uint32_t timeout)
 	status = HAL_BUSY;
 
 	while(status != HAL_OK) {
+		os_status = osMutexWait(can_info->hcan_mutex, osWaitForever);
+
+		if(osOK != os_status) {
+		}
+
 		status = HAL_CAN_AddTxMessage(can_info->hcan, &tx_header, msg->Data, &msg->tx_mailbox);
+
+		os_status = osMutexRelease(can_info->hcan_mutex);
+
+		if(osOK != os_status) {
+		}
 
 		if(osKernelSysTick() - stamp >= timeout) {
 			break;
@@ -307,28 +303,13 @@ int can_tx_data(can_info_t *can_info, can_tx_msg_t *msg, uint32_t timeout)
 int can_rx_data(can_info_t *can_info, uint32_t timeout)
 {
 	int ret = -1;
-	osStatus os_status;
 	uint8_t rx_msg_w;
 
 	if(can_info == NULL) {
 		return ret;
 	}
 
-	if(can_info->hcan_mutex != NULL) {
-		os_status = osMutexWait(can_info->hcan_mutex, osWaitForever);
-
-		if(os_status != osOK) {
-		}
-	}
-
 	rx_msg_w = can_info->rx_msg_w;
-
-	if(can_info->hcan_mutex != NULL) {
-		os_status = osMutexRelease(can_info->hcan_mutex);
-
-		if(osOK != os_status) {
-		}
-	}
 
 	if(can_info->rx_msg_r == rx_msg_w) {//没有数据
 		if(can_info->rx_msg_q != NULL) {

@@ -6,7 +6,7 @@
  *   文件名称：callback_chain.c
  *   创 建 者：肖飞
  *   创建日期：2020年03月20日 星期五 08时20分36秒
- *   修改日期：2021年01月22日 星期五 13时01分12秒
+ *   修改日期：2021年01月25日 星期一 11时15分03秒
  *   描    述：
  *
  *================================================================*/
@@ -22,9 +22,9 @@ void free_callback_chain(callback_chain_t *callback_chain)
 	}
 
 	if(callback_chain->mutex != NULL) {
-		status = osMutexDelete(callback_chain->mutex);
+		status = osMutexWait(callback_chain->mutex, osWaitForever);
 
-		if(osOK != status) {
+		if(status != osOK) {
 		}
 	}
 
@@ -34,6 +34,20 @@ void free_callback_chain(callback_chain_t *callback_chain)
 
 		list_for_each_safe(pos, n, &callback_chain->list_callback) {
 			list_del(pos);
+		}
+	}
+
+	if(callback_chain->mutex != NULL) {
+		status = osMutexRelease(callback_chain->mutex);
+
+		if(status != osOK) {
+		}
+	}
+
+	if(callback_chain->mutex != NULL) {
+		status = osMutexDelete(callback_chain->mutex);
+
+		if(osOK != status) {
 		}
 	}
 
@@ -79,11 +93,9 @@ int register_callback(callback_chain_t *callback_chain, callback_item_t *callbac
 		return ret;
 	}
 
-	if(callback_chain->mutex) {
-		status = osMutexWait(callback_chain->mutex, osWaitForever);
+	status = osMutexWait(callback_chain->mutex, osWaitForever);
 
-		if(status != osOK) {
-		}
+	if(status != osOK) {
 	}
 
 	if(!list_empty(&callback_chain->list_callback)) {
@@ -103,11 +115,9 @@ int register_callback(callback_chain_t *callback_chain, callback_item_t *callbac
 		ret = 0;
 	}
 
-	if(callback_chain->mutex) {
-		status = osMutexRelease(callback_chain->mutex);
+	status = osMutexRelease(callback_chain->mutex);
 
-		if(status != osOK) {
-		}
+	if(status != osOK) {
 	}
 
 	return ret;
@@ -126,11 +136,9 @@ int remove_callback(callback_chain_t *callback_chain, callback_item_t *callback_
 		return ret;
 	}
 
-	if(callback_chain->mutex) {
-		status = osMutexWait(callback_chain->mutex, osWaitForever);
+	status = osMutexWait(callback_chain->mutex, osWaitForever);
 
-		if(status != osOK) {
-		}
+	if(status != osOK) {
 	}
 
 	if(!list_empty(&callback_chain->list_callback)) {
@@ -147,11 +155,9 @@ int remove_callback(callback_chain_t *callback_chain, callback_item_t *callback_
 		}
 	}
 
-	if(callback_chain->mutex) {
-		status = osMutexRelease(callback_chain->mutex);
+	status = osMutexRelease(callback_chain->mutex);
 
-		if(status != osOK) {
-		}
+	if(status != osOK) {
 	}
 
 	return ret;
@@ -166,11 +172,9 @@ void do_callback_chain(callback_chain_t *callback_chain, void *chain_ctx)
 		return;
 	}
 
-	if(callback_chain->mutex) {
-		status = osMutexWait(callback_chain->mutex, osWaitForever);
+	status = osMutexWait(callback_chain->mutex, osWaitForever);
 
-		if(status != osOK) {
-		}
+	if(status != osOK) {
 	}
 
 	if(!list_empty(&callback_chain->list_callback)) {
@@ -180,31 +184,15 @@ void do_callback_chain(callback_chain_t *callback_chain, void *chain_ctx)
 			callback_item = list_entry(pos, callback_item_t, list_head);
 
 			if(callback_item->fn != NULL) {
-				if(callback_chain->mutex) {
-					status = osMutexRelease(callback_chain->mutex);
-
-					if(status != osOK) {
-					}
-				}
-
 				callback_item->fn(callback_item->fn_ctx, chain_ctx);
-
-				if(callback_chain->mutex) {
-					status = osMutexWait(callback_chain->mutex, osWaitForever);
-
-					if(status != osOK) {
-					}
-				}
 			}
 
 		}
 	}
 
-	if(callback_chain->mutex) {
-		status = osMutexRelease(callback_chain->mutex);
+	status = osMutexRelease(callback_chain->mutex);
 
-		if(status != osOK) {
-		}
+	if(status != osOK) {
 	}
 
 	return;
@@ -219,11 +207,9 @@ int get_callback_chain_size(callback_chain_t *callback_chain)
 		return size;
 	}
 
-	if(callback_chain->mutex) {
-		status = osMutexWait(callback_chain->mutex, osWaitForever);
+	status = osMutexWait(callback_chain->mutex, osWaitForever);
 
-		if(status != osOK) {
-		}
+	if(status != osOK) {
 	}
 
 	if(!list_empty(&callback_chain->list_callback)) {
@@ -233,11 +219,9 @@ int get_callback_chain_size(callback_chain_t *callback_chain)
 		}
 	}
 
-	if(callback_chain->mutex) {
-		status = osMutexRelease(callback_chain->mutex);
+	status = osMutexRelease(callback_chain->mutex);
 
-		if(status != osOK) {
-		}
+	if(status != osOK) {
 	}
 
 	return size;

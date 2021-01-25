@@ -6,7 +6,7 @@
  *   文件名称：test_can.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 16时45分27秒
- *   修改日期：2021年01月24日 星期日 16时15分22秒
+ *   修改日期：2021年01月25日 星期一 11时06分58秒
  *   描    述：
  *
  *================================================================*/
@@ -64,7 +64,7 @@ static void can_data_request(void *fn_ctx, void *chain_ctx)
 
 	if(ticks - ctx->recv_stamp >= 1000) {
 		ctx->recv_stamp = ticks;
-		debug("%s rx error!\n", ctx->des);
+		debug("%s rx timeout!\n", ctx->des);
 	}
 
 	if(ticks - ctx->stamp < 500) {
@@ -102,19 +102,23 @@ static void can_data_response(void *fn_ctx, void *chain_ctx)
 				if(ctx->recv.d1 + 1 == can_data->d1) {
 					//debug("%s rx done!\n", ctx->des);
 				} else {
+					debug("%s ctx->recv.d1:%d, can_data->d1:%d!\n", ctx->des, ctx->recv.d1, can_data->d1);
 					debug("%s rx error!\n", ctx->des);
 				}
 			} else {
 				if(ctx->recv.d1 == can_data->d1) {
 					//debug("%s rx done!\n", ctx->des);
 				} else {
+					debug("%s ctx->recv.d1:%d, can_data->d1:%d!\n", ctx->des, ctx->recv.d1, can_data->d1);
 					debug("%s rx error!\n", ctx->des);
 				}
 			}
 		} else {
+			debug("%s ctx->recv.d0:%d, can_data->d0:%d!\n", ctx->des, ctx->recv.d0, can_data->d0);
 			debug("%s rx error!\n", ctx->des);
 		}
 	} else {
+		debug("%s can_rx_msg->ExtId:%08x!\n", ctx->des, can_rx_msg->ExtId);
 		debug("%s rx error!\n", ctx->des);
 	}
 
