@@ -6,7 +6,7 @@
  *   文件名称：test_soft_timer.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月22日 星期五 13时09分20秒
- *   修改日期：2021年01月26日 星期二 11时42分44秒
+ *   修改日期：2021年01月26日 星期二 11时49分47秒
  *   描    述：
  *
  *================================================================*/
@@ -35,13 +35,13 @@ static void fn1(void *fn_ctx, void *chain_ctx)
 
 	debug("%s run in %p\n", fn1_ctx->des, chain_ctx);
 
+	debug("start %s\n", fn1_ctx->des);
 	ret = start_soft_timer(soft_timer_ctx);
 
 	if(ret != 0) {
 		debug("\n");
+		debug("start %s error\n", fn1_ctx->des);
 	}
-
-	debug("start %s\n", fn1_ctx->des);
 }
 
 fn1_ctx_t fn1_ctx;
