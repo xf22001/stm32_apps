@@ -6,7 +6,7 @@
  *   文件名称：soft_timer.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月22日 星期五 10时28分46秒
- *   修改日期：2021年01月22日 星期五 22时55分26秒
+ *   修改日期：2021年01月26日 星期二 11时39分26秒
  *   描    述：
  *
  *================================================================*/
@@ -45,21 +45,13 @@ static void common_soft_timer_fn(void *fn_ctx, void *chain_ctx)
 	soft_timer_ctx_t *soft_timer_ctx = (soft_timer_ctx_t *)fn_ctx;
 	uint32_t ticks = osKernelSysTick();
 	uint32_t delay;
+	osStatus os_status;
 
 	if(ticks - soft_timer_ctx->stamp >= soft_timer_ctx->period) {
-		soft_timer_ctx->stamp += soft_timer_ctx->period;
+		soft_timer_ctx->stamp = ticks;
 		delay = osWaitForever;
 
-		if(soft_timer_ctx->fn != NULL) {
-			soft_timer_ctx->fn(soft_timer_ctx->fn_ctx, chain_ctx);
-		}
-
 		switch(soft_timer_ctx->type) {
-			case SOFT_TIMER_FN_TYPE_ONESHOT: {
-				list_move_tail(&soft_timer_ctx->list, &soft_timer_ctx->soft_timer_info->invalid_timers);
-			}
-			break;
-
 			case SOFT_TIMER_FN_TYPE_REPEAT: {
 				ticks = osKernelSysTick();
 
@@ -73,15 +65,31 @@ static void common_soft_timer_fn(void *fn_ctx, void *chain_ctx)
 			break;
 
 			default: {
-				list_move_tail(&soft_timer_ctx->list, &soft_timer_ctx->soft_timer_info->invalid_timers);
+				os_status = osMutexWait(soft_timer_ctx->soft_timer_info->mutex, osWaitForever);
+
+				if(os_status != osOK) {
+				}
+
+				list_move_tail(&soft_timer_ctx->list, &soft_timer_ctx->soft_timer_info->deactive_timers);
+
+				os_status = osMutexRelease(soft_timer_ctx->soft_timer_info->mutex);
+
+				if(os_status != osOK) {
+				}
 			}
 			break;
 		}
+
+		soft_timer_update_timeout(soft_timer_ctx->soft_timer_info, delay, 0);
+
+		if(soft_timer_ctx->fn != NULL) {
+			soft_timer_ctx->fn(soft_timer_ctx->fn_ctx, chain_ctx);
+		}
 	} else {
 		delay = soft_timer_ctx->stamp + soft_timer_ctx->period - ticks;
+		soft_timer_update_timeout(soft_timer_ctx->soft_timer_info, delay, 0);
 	}
 
-	soft_timer_update_timeout(soft_timer_ctx->soft_timer_info, delay, 0);
 }
 
 soft_timer_ctx_t *add_soft_timer(soft_timer_info_t *soft_timer_info, callback_fn_t fn, void *fn_ctx, uint32_t period, soft_timer_fn_type_t type)
@@ -145,26 +153,55 @@ failed:
 int start_soft_timer(soft_timer_ctx_t *soft_timer_ctx)
 {
 	int ret = -1;
+	osStatus os_status;
 
 	if(soft_timer_ctx == NULL) {
 		return ret;
 	}
 
-	ret = register_callback(soft_timer_ctx->soft_timer_info->timer_cb_chain, soft_timer_ctx->callback_item);
+	os_status = osMutexWait(soft_timer_ctx->soft_timer_info->mutex, osWaitForever);
+
+	if(os_status != osOK) {
+	}
+
+	soft_timer_ctx->stamp = osKernelSysTick();
+	list_move_tail(&soft_timer_ctx->list, &soft_timer_ctx->soft_timer_info->active_timers);
+	os_status = osMutexRelease(soft_timer_ctx->soft_timer_info->mutex);
+
+	if(os_status != osOK) {
+	}
 
 	soft_timer_update_timeout(soft_timer_ctx->soft_timer_info, soft_timer_ctx->period, 1);
+
+	ret = 0;
+
 	return ret;
 }
 
 int stop_soft_timer(soft_timer_ctx_t *soft_timer_ctx)
 {
 	int ret = -1;
+	osStatus os_status;
 
 	if(soft_timer_ctx == NULL) {
 		return ret;
 	}
 
-	ret = remove_callback(soft_timer_ctx->soft_timer_info->timer_cb_chain, soft_timer_ctx->callback_item);
+	os_status = osMutexWait(soft_timer_ctx->soft_timer_info->mutex, osWaitForever);
+
+	if(os_status != osOK) {
+	}
+
+	list_move_tail(&soft_timer_ctx->list, &soft_timer_ctx->soft_timer_info->deactive_timers);
+
+	os_status = osMutexRelease(soft_timer_ctx->soft_timer_info->mutex);
+
+	if(os_status != osOK) {
+	}
+
+	soft_timer_update_timeout(soft_timer_ctx->soft_timer_info, 0, 1);
+
+	ret = 0;
 
 	return ret;
 }
@@ -172,12 +209,27 @@ int stop_soft_timer(soft_timer_ctx_t *soft_timer_ctx)
 int remove_soft_timer(soft_timer_ctx_t *soft_timer_ctx)
 {
 	int ret = -1;
+	osStatus os_status;
 
 	if(soft_timer_ctx == NULL) {
 		return ret;
 	}
 
-	ret = remove_callback(soft_timer_ctx->soft_timer_info->timer_cb_chain, soft_timer_ctx->callback_item);
+	os_status = osMutexWait(soft_timer_ctx->soft_timer_info->mutex, osWaitForever);
+
+	if(os_status != osOK) {
+	}
+
+	list_del(&soft_timer_ctx->list);
+
+	os_status = osMutexRelease(soft_timer_ctx->soft_timer_info->mutex);
+
+	if(os_status != osOK) {
+	}
+
+	if(remove_callback(soft_timer_ctx->soft_timer_info->timer_cb_chain, soft_timer_ctx->callback_item) != 0) {
+		debug("remove_callback %p in %p failed\n", soft_timer_ctx->callback_item, soft_timer_ctx->soft_timer_info);
+	}
 
 	os_free(soft_timer_ctx->callback_item);
 	os_free(soft_timer_ctx);
@@ -186,20 +238,43 @@ int remove_soft_timer(soft_timer_ctx_t *soft_timer_ctx)
 	return ret;
 }
 
-static void stop_invalid_timers(soft_timer_info_t *soft_timer_info)
+static void active_deactive_timers(soft_timer_info_t *soft_timer_info)
 {
-	struct list_head *head = &soft_timer_info->invalid_timers;
+	struct list_head *head;
 	struct list_head *pos;
 	struct list_head *n;
+	osStatus os_status;
 
+	os_status = osMutexWait(soft_timer_info->mutex, osWaitForever);
+
+	if(os_status != osOK) {
+	}
+
+	head = &soft_timer_info->deactive_timers;
 	list_for_each_safe(pos, n, head) {
 		soft_timer_ctx_t *soft_timer_ctx = list_entry(pos, soft_timer_ctx_t, list);
 
 		if(remove_callback(soft_timer_ctx->soft_timer_info->timer_cb_chain, soft_timer_ctx->callback_item) != 0) {
-			debug("\n");
+			debug("remove_callback %p in %p failed\n", soft_timer_ctx->callback_item, soft_timer_ctx->soft_timer_info);
 		}
 
 		list_del(pos);
+	}
+
+	head = &soft_timer_info->active_timers;
+	list_for_each_safe(pos, n, head) {
+		soft_timer_ctx_t *soft_timer_ctx = list_entry(pos, soft_timer_ctx_t, list);
+
+		if(register_callback(soft_timer_ctx->soft_timer_info->timer_cb_chain, soft_timer_ctx->callback_item) != 0) {
+			debug("register_callback %p in %p failed\n", soft_timer_ctx->callback_item, soft_timer_ctx->soft_timer_info);
+		}
+
+		list_del(pos);
+	}
+
+	os_status = osMutexRelease(soft_timer_info->mutex);
+
+	if(os_status != osOK) {
 	}
 }
 
@@ -215,15 +290,19 @@ static void soft_timer_task(void const *argument)
 		if(get_callback_chain_size(soft_timer_info->timer_cb_chain) == 0) {
 			soft_timer_delay(soft_timer_info, osWaitForever);
 		} else {
+			soft_timer_info->delay = osWaitForever;
 			do_callback_chain(soft_timer_info->timer_cb_chain, soft_timer_info);
-			stop_invalid_timers(soft_timer_info);
+			//debug("%p delay:%d\n", soft_timer_info, soft_timer_info->delay);
 			soft_timer_delay(soft_timer_info, soft_timer_info->delay);
 		}
+
+		active_deactive_timers(soft_timer_info);
 	}
 }
 
 static void free_soft_timer_info(soft_timer_info_t *soft_timer_info)
 {
+	osStatus os_status;
 
 	if(soft_timer_info == NULL) {
 		return;
@@ -233,8 +312,15 @@ static void free_soft_timer_info(soft_timer_info_t *soft_timer_info)
 		free_callback_chain(soft_timer_info->timer_cb_chain);
 	}
 
+	if(soft_timer_info->mutex != NULL) {
+		os_status = osMutexDelete(soft_timer_info->mutex);
+
+		if(osOK != os_status) {
+		}
+	}
+
 	if(soft_timer_info->wakeup != NULL) {
-		osStatus os_status = osMessageDelete(soft_timer_info->wakeup);
+		os_status = osMessageDelete(soft_timer_info->wakeup);
 
 		if(osOK != os_status) {
 		}
@@ -246,6 +332,7 @@ static void free_soft_timer_info(soft_timer_info_t *soft_timer_info)
 static soft_timer_info_t *alloc_soft_timer_info(uint32_t id)
 {
 	soft_timer_info_t *soft_timer_info = NULL;
+	osMutexDef(mutex);
 	osMessageQDef(wakeup, 1, uint16_t);
 
 	soft_timer_info = (soft_timer_info_t *)os_alloc(sizeof(soft_timer_info_t));
@@ -258,7 +345,8 @@ static soft_timer_info_t *alloc_soft_timer_info(uint32_t id)
 
 	soft_timer_info->id = id;
 
-	INIT_LIST_HEAD(&soft_timer_info->invalid_timers);
+	INIT_LIST_HEAD(&soft_timer_info->deactive_timers);
+	INIT_LIST_HEAD(&soft_timer_info->active_timers);
 
 	soft_timer_info->timer_cb_chain = alloc_callback_chain();
 
@@ -270,6 +358,13 @@ static soft_timer_info_t *alloc_soft_timer_info(uint32_t id)
 	soft_timer_info->wakeup = osMessageCreate(osMessageQ(wakeup), NULL);
 
 	if(soft_timer_info->wakeup == NULL) {
+		debug("\n");
+		goto failed;
+	}
+
+	soft_timer_info->mutex = osMutexCreate(osMutex(mutex));
+
+	if(soft_timer_info->mutex == NULL) {
 		debug("\n");
 		goto failed;
 	}

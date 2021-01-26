@@ -6,7 +6,7 @@
  *   文件名称：soft_timer.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月22日 星期五 10时28分59秒
- *   修改日期：2021年01月22日 星期五 22时44分02秒
+ *   修改日期：2021年01月26日 星期二 08时37分26秒
  *   描    述：
  *
  *================================================================*/
@@ -27,7 +27,9 @@ extern "C"
 
 typedef struct {
 	uint32_t id;
-	struct list_head invalid_timers;
+	osMutexId mutex;
+	struct list_head deactive_timers;
+	struct list_head active_timers;
 	callback_chain_t *timer_cb_chain;
 	osMessageQId wakeup;
 	uint32_t delay;
