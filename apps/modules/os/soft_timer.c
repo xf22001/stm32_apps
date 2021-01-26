@@ -6,7 +6,7 @@
  *   文件名称：soft_timer.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月22日 星期五 10时28分46秒
- *   修改日期：2021年01月26日 星期二 11时39分26秒
+ *   修改日期：2021年01月26日 星期二 12时31分55秒
  *   描    述：
  *
  *================================================================*/
@@ -228,7 +228,7 @@ int remove_soft_timer(soft_timer_ctx_t *soft_timer_ctx)
 	}
 
 	if(remove_callback(soft_timer_ctx->soft_timer_info->timer_cb_chain, soft_timer_ctx->callback_item) != 0) {
-		debug("remove_callback %p in %p failed\n", soft_timer_ctx->callback_item, soft_timer_ctx->soft_timer_info);
+		//debug("remove_callback %p in %p failed\n", soft_timer_ctx->callback_item, soft_timer_ctx->soft_timer_info);
 	}
 
 	os_free(soft_timer_ctx->callback_item);
@@ -255,7 +255,7 @@ static void active_deactive_timers(soft_timer_info_t *soft_timer_info)
 		soft_timer_ctx_t *soft_timer_ctx = list_entry(pos, soft_timer_ctx_t, list);
 
 		if(remove_callback(soft_timer_ctx->soft_timer_info->timer_cb_chain, soft_timer_ctx->callback_item) != 0) {
-			debug("remove_callback %p in %p failed\n", soft_timer_ctx->callback_item, soft_timer_ctx->soft_timer_info);
+			//debug("remove_callback %p in %p failed\n", soft_timer_ctx->callback_item, soft_timer_ctx->soft_timer_info);
 		}
 
 		list_del(pos);
@@ -266,7 +266,7 @@ static void active_deactive_timers(soft_timer_info_t *soft_timer_info)
 		soft_timer_ctx_t *soft_timer_ctx = list_entry(pos, soft_timer_ctx_t, list);
 
 		if(register_callback(soft_timer_ctx->soft_timer_info->timer_cb_chain, soft_timer_ctx->callback_item) != 0) {
-			debug("register_callback %p in %p failed\n", soft_timer_ctx->callback_item, soft_timer_ctx->soft_timer_info);
+			//debug("register_callback %p in %p failed\n", soft_timer_ctx->callback_item, soft_timer_ctx->soft_timer_info);
 		}
 
 		list_del(pos);
