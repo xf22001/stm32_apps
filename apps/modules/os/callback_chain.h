@@ -6,7 +6,7 @@
  *   文件名称：callback_chain.h
  *   创 建 者：肖飞
  *   创建日期：2020年03月20日 星期五 08时20分40秒
- *   修改日期：2021年01月22日 星期五 10时49分13秒
+ *   修改日期：2021年01月27日 星期三 09时09分00秒
  *   描    述：
  *
  *================================================================*/
@@ -44,5 +44,5 @@ callback_chain_t *alloc_callback_chain(void);
 int register_callback(callback_chain_t *callback_chain, callback_item_t *callback_item);
 int remove_callback(callback_chain_t *callback_chain, callback_item_t *callback_item);
 void do_callback_chain(callback_chain_t *callback_chain, void *chain_ctx);
-int get_callback_chain_size(callback_chain_t *callback_chain);
+int callback_chain_empty(callback_chain_t *callback_chain);
 #endif //_CALLBACK_CHAIN_H

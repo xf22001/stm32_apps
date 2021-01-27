@@ -6,7 +6,7 @@
  *   文件名称：soft_timer.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月22日 星期五 10时28分46秒
- *   修改日期：2021年01月26日 星期二 12时31分55秒
+ *   修改日期：2021年01月27日 星期三 09时07分51秒
  *   描    述：
  *
  *================================================================*/
@@ -287,7 +287,7 @@ static void soft_timer_task(void const *argument)
 	}
 
 	for(;;) {
-		if(get_callback_chain_size(soft_timer_info->timer_cb_chain) == 0) {
+		if(callback_chain_empty(soft_timer_info->timer_cb_chain) == 0) {
 			soft_timer_delay(soft_timer_info, osWaitForever);
 		} else {
 			soft_timer_info->delay = osWaitForever;
