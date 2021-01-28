@@ -6,7 +6,7 @@
  *   文件名称：callback_chain.c
  *   创 建 者：肖飞
  *   创建日期：2020年03月20日 星期五 08时20分36秒
- *   修改日期：2021年01月27日 星期三 09时08分50秒
+ *   修改日期：2021年01月28日 星期四 17时17分55秒
  *   描    述：
  *
  *================================================================*/
@@ -200,9 +200,24 @@ void do_callback_chain(callback_chain_t *callback_chain, void *chain_ctx)
 
 int callback_chain_empty(callback_chain_t *callback_chain)
 {
+	int ret;
+	osStatus status;
+
 	if(callback_chain == NULL) {
-		return 0;
+		return 1;
 	}
 
-	return list_empty(&callback_chain->list_callback);
+	status = osMutexWait(callback_chain->mutex, osWaitForever);
+
+	if(status != osOK) {
+	}
+
+	ret = list_empty(&callback_chain->list_callback);
+
+	status = osMutexRelease(callback_chain->mutex);
+
+	if(status != osOK) {
+	}
+	
+	return ret;
 }

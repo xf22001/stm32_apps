@@ -6,7 +6,7 @@
  *   文件名称：test_soft_timer.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月22日 星期五 13时09分20秒
- *   修改日期：2021年01月26日 星期二 11时49分47秒
+ *   修改日期：2021年01月28日 星期四 17时19分59秒
  *   描    述：
  *
  *================================================================*/
@@ -14,6 +14,7 @@
 #include "soft_timer.h"
 
 #include "log.h"
+extern RNG_HandleTypeDef hrng;
 
 static void fn(void *fn_ctx, void *chain_ctx)
 {
@@ -31,12 +32,36 @@ static void fn1(void *fn_ctx, void *chain_ctx)
 {
 	fn1_ctx_t *fn1_ctx = (fn1_ctx_t *)fn_ctx;
 	soft_timer_ctx_t *soft_timer_ctx = fn1_ctx->ctx;
+	soft_timer_info_t *soft_timer_info = fn1_ctx->ctx->soft_timer_info;
 	int ret;
+	uint32_t period;
 
 	debug("%s run in %p\n", fn1_ctx->des, chain_ctx);
 
+	debug("remove %s\n", fn1_ctx->des);
+	ret = remove_soft_timer(soft_timer_ctx);
+
+	if(ret != 0) {
+		debug("remove %s error\n", fn1_ctx->des);
+		return;
+	}
+
+	period = HAL_RNG_GetRandomNumber(&hrng) % 1000;
+
+	debug("period:%d\n", period);
+
+	fn1_ctx->ctx = add_soft_timer(soft_timer_info,
+	                              fn1,
+	                              fn1_ctx,
+	                              period, SOFT_TIMER_FN_TYPE_ONESHOT);
+
+	if(fn1_ctx->ctx == NULL) {
+		debug("create %s failed\n", fn1_ctx->des);
+		return;
+	}
+
 	debug("start %s\n", fn1_ctx->des);
-	ret = start_soft_timer(soft_timer_ctx);
+	ret = start_soft_timer(fn1_ctx->ctx);
 
 	if(ret != 0) {
 		debug("\n");

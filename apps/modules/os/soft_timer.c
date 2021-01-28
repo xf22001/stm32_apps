@@ -6,7 +6,7 @@
  *   文件名称：soft_timer.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月22日 星期五 10时28分46秒
- *   修改日期：2021年01月27日 星期三 09时07分51秒
+ *   修改日期：2021年01月28日 星期四 17时18分12秒
  *   描    述：
  *
  *================================================================*/
@@ -166,6 +166,7 @@ int start_soft_timer(soft_timer_ctx_t *soft_timer_ctx)
 
 	soft_timer_ctx->stamp = osKernelSysTick();
 	list_move_tail(&soft_timer_ctx->list, &soft_timer_ctx->soft_timer_info->active_timers);
+
 	os_status = osMutexRelease(soft_timer_ctx->soft_timer_info->mutex);
 
 	if(os_status != osOK) {
@@ -220,19 +221,13 @@ int remove_soft_timer(soft_timer_ctx_t *soft_timer_ctx)
 	if(os_status != osOK) {
 	}
 
-	list_del(&soft_timer_ctx->list);
+	list_move_tail(&soft_timer_ctx->list, &soft_timer_ctx->soft_timer_info->delete_timers);
 
 	os_status = osMutexRelease(soft_timer_ctx->soft_timer_info->mutex);
 
 	if(os_status != osOK) {
 	}
 
-	if(remove_callback(soft_timer_ctx->soft_timer_info->timer_cb_chain, soft_timer_ctx->callback_item) != 0) {
-		//debug("remove_callback %p in %p failed\n", soft_timer_ctx->callback_item, soft_timer_ctx->soft_timer_info);
-	}
-
-	os_free(soft_timer_ctx->callback_item);
-	os_free(soft_timer_ctx);
 	ret = 0;
 
 	return ret;
@@ -272,6 +267,20 @@ static void active_deactive_timers(soft_timer_info_t *soft_timer_info)
 		list_del(pos);
 	}
 
+	head = &soft_timer_info->delete_timers;
+	list_for_each_safe(pos, n, head) {
+		soft_timer_ctx_t *soft_timer_ctx = list_entry(pos, soft_timer_ctx_t, list);
+
+		if(remove_callback(soft_timer_ctx->soft_timer_info->timer_cb_chain, soft_timer_ctx->callback_item) != 0) {
+			//debug("remove_callback %p in %p failed\n", soft_timer_ctx->callback_item, soft_timer_ctx->soft_timer_info);
+		}
+
+		list_del(pos);
+
+		os_free(soft_timer_ctx->callback_item);
+		os_free(soft_timer_ctx);
+	}
+
 	os_status = osMutexRelease(soft_timer_info->mutex);
 
 	if(os_status != osOK) {
@@ -287,7 +296,7 @@ static void soft_timer_task(void const *argument)
 	}
 
 	for(;;) {
-		if(callback_chain_empty(soft_timer_info->timer_cb_chain) == 0) {
+		if(callback_chain_empty(soft_timer_info->timer_cb_chain)) {
 			soft_timer_delay(soft_timer_info, osWaitForever);
 		} else {
 			soft_timer_info->delay = osWaitForever;
@@ -347,6 +356,7 @@ static soft_timer_info_t *alloc_soft_timer_info(uint32_t id)
 
 	INIT_LIST_HEAD(&soft_timer_info->deactive_timers);
 	INIT_LIST_HEAD(&soft_timer_info->active_timers);
+	INIT_LIST_HEAD(&soft_timer_info->delete_timers);
 
 	soft_timer_info->timer_cb_chain = alloc_callback_chain();
 
