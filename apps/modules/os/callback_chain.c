@@ -6,7 +6,7 @@
  *   文件名称：callback_chain.c
  *   创 建 者：肖飞
  *   创建日期：2020年03月20日 星期五 08时20分36秒
- *   修改日期：2021年01月28日 星期四 17时17分55秒
+ *   修改日期：2021年01月29日 星期五 19时37分47秒
  *   描    述：
  *
  *================================================================*/
@@ -21,8 +21,8 @@ void free_callback_chain(callback_chain_t *callback_chain)
 		return;
 	}
 
-	if(callback_chain->mutex != NULL) {
-		status = osMutexWait(callback_chain->mutex, osWaitForever);
+	if(callback_chain->callback_mutex != NULL) {
+		status = osMutexWait(callback_chain->callback_mutex, osWaitForever);
 
 		if(status != osOK) {
 		}
@@ -37,15 +37,15 @@ void free_callback_chain(callback_chain_t *callback_chain)
 		}
 	}
 
-	if(callback_chain->mutex != NULL) {
-		status = osMutexRelease(callback_chain->mutex);
+	if(callback_chain->callback_mutex != NULL) {
+		status = osMutexRelease(callback_chain->callback_mutex);
 
 		if(status != osOK) {
 		}
 	}
 
-	if(callback_chain->mutex != NULL) {
-		status = osMutexDelete(callback_chain->mutex);
+	if(callback_chain->callback_mutex != NULL) {
+		status = osMutexDelete(callback_chain->callback_mutex);
 
 		if(osOK != status) {
 		}
@@ -56,16 +56,16 @@ void free_callback_chain(callback_chain_t *callback_chain)
 
 callback_chain_t *alloc_callback_chain(void)
 {
-	osMutexDef(mutex);
+	osMutexDef(callback_mutex);
 	callback_chain_t *callback_chain = (callback_chain_t *)os_alloc(sizeof(callback_chain_t));
 
 	if(callback_chain == NULL) {
 		return callback_chain;
 	}
 
-	callback_chain->mutex = osMutexCreate(osMutex(mutex));
+	callback_chain->callback_mutex = osMutexCreate(osMutex(callback_mutex));
 
-	if(callback_chain->mutex == NULL) {
+	if(callback_chain->callback_mutex == NULL) {
 		goto failed;
 	}
 
@@ -93,7 +93,7 @@ int register_callback(callback_chain_t *callback_chain, callback_item_t *callbac
 		return ret;
 	}
 
-	status = osMutexWait(callback_chain->mutex, osWaitForever);
+	status = osMutexWait(callback_chain->callback_mutex, osWaitForever);
 
 	if(status != osOK) {
 	}
@@ -115,7 +115,7 @@ int register_callback(callback_chain_t *callback_chain, callback_item_t *callbac
 		ret = 0;
 	}
 
-	status = osMutexRelease(callback_chain->mutex);
+	status = osMutexRelease(callback_chain->callback_mutex);
 
 	if(status != osOK) {
 	}
@@ -136,7 +136,7 @@ int remove_callback(callback_chain_t *callback_chain, callback_item_t *callback_
 		return ret;
 	}
 
-	status = osMutexWait(callback_chain->mutex, osWaitForever);
+	status = osMutexWait(callback_chain->callback_mutex, osWaitForever);
 
 	if(status != osOK) {
 	}
@@ -155,7 +155,7 @@ int remove_callback(callback_chain_t *callback_chain, callback_item_t *callback_
 		}
 	}
 
-	status = osMutexRelease(callback_chain->mutex);
+	status = osMutexRelease(callback_chain->callback_mutex);
 
 	if(status != osOK) {
 	}
@@ -172,7 +172,7 @@ void do_callback_chain(callback_chain_t *callback_chain, void *chain_ctx)
 		return;
 	}
 
-	status = osMutexWait(callback_chain->mutex, osWaitForever);
+	status = osMutexWait(callback_chain->callback_mutex, osWaitForever);
 
 	if(status != osOK) {
 	}
@@ -190,7 +190,7 @@ void do_callback_chain(callback_chain_t *callback_chain, void *chain_ctx)
 		}
 	}
 
-	status = osMutexRelease(callback_chain->mutex);
+	status = osMutexRelease(callback_chain->callback_mutex);
 
 	if(status != osOK) {
 	}
@@ -207,14 +207,14 @@ int callback_chain_empty(callback_chain_t *callback_chain)
 		return 1;
 	}
 
-	status = osMutexWait(callback_chain->mutex, osWaitForever);
+	status = osMutexWait(callback_chain->callback_mutex, osWaitForever);
 
 	if(status != osOK) {
 	}
 
 	ret = list_empty(&callback_chain->list_callback);
 
-	status = osMutexRelease(callback_chain->mutex);
+	status = osMutexRelease(callback_chain->callback_mutex);
 
 	if(status != osOK) {
 	}

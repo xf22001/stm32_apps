@@ -6,7 +6,7 @@
  *   文件名称：callback_chain.h
  *   创 建 者：肖飞
  *   创建日期：2020年03月20日 星期五 08时20分40秒
- *   修改日期：2021年01月27日 星期三 09时09分00秒
+ *   修改日期：2021年01月29日 星期五 19时40分07秒
  *   描    述：
  *
  *================================================================*/
@@ -35,7 +35,7 @@ typedef struct {
 } callback_item_t;
 
 typedef struct {
-	osMutexId mutex;//保护回调链数据
+	osMutexId callback_mutex;
 	struct list_head list_callback;
 } callback_chain_t;
 
