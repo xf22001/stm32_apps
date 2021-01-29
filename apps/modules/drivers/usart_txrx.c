@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2021年01月25日 星期一 13时27分08秒
+ *   修改日期：2021年01月29日 星期五 15时11分02秒
  *   描    述：
  *
  *================================================================*/
@@ -408,13 +408,18 @@ static uart_info_t *get_log_uart_info(void)
 	return log_uart_info;
 }
 
-int log_uart_data(void *data, size_t size)
+int log_uart_data(uint32_t log_mask, void *data, size_t size)
 {
 	int ret = 0;
 	uart_info_t *uart_info = get_log_uart_info();
 	osStatus os_status;
+	u_log_mask_t *u_log_mask = (u_log_mask_t *)&log_mask;
 
 	if(uart_info == NULL) {
+		return ret;
+	}
+
+	if(u_log_mask->s.enable_log_uart == 0) {
 		ret = size;
 		return ret;
 	}

@@ -6,7 +6,7 @@
  *   文件名称：file_log.h
  *   创 建 者：肖飞
  *   创建日期：2020年11月03日 星期二 13时55分49秒
- *   修改日期：2020年11月04日 星期三 16时17分47秒
+ *   修改日期：2021年01月29日 星期五 15时15分18秒
  *   描    述：
  *
  *================================================================*/
@@ -33,7 +33,7 @@ uint8_t is_log_file_out_of_date(void);
 int open_log(void);
 void close_log(void);
 FIL *get_log_file(void);
-int log_file_data(void *data, size_t size);
+int log_file_data(uint32_t log_mask, void *data, size_t size);
 void try_to_close_log(void);
 void handle_open_log(void);
 

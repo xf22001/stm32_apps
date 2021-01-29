@@ -6,14 +6,16 @@
  *   文件名称：net_utils.c
  *   创 建 者：肖飞
  *   创建日期：2020年09月15日 星期二 09时42分47秒
- *   修改日期：2020年10月10日 星期六 08时54分02秒
+ *   修改日期：2021年01月29日 星期五 16时11分21秒
  *   描    述：
  *
  *================================================================*/
 #include "net_utils.h"
-#include "log.h"
 
 #include <string.h>
+
+#include "os_utils.h"
+#include "log.h"
 
 int update_addr_info_list(struct list_head *list_head, const char *host, const char *port, int socktype, int protocol)
 {

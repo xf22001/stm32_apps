@@ -6,6 +6,8 @@
 
 #include "os_utils.h"
 #include "ftpd/ftpd_file_rtt.h"
+#include "poll_loop.h"
+#include "mt_file.h"
 #include "log.h"
 
 #define FTP_PORT 21

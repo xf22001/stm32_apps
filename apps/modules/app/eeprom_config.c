@@ -6,12 +6,13 @@
  *   文件名称：eeprom_config.c
  *   创 建 者：肖飞
  *   创建日期：2020年12月17日 星期四 14时02分18秒
- *   修改日期：2021年01月04日 星期一 14时13分49秒
+ *   修改日期：2021年01月29日 星期五 16时04分57秒
  *   描    述：
  *
  *================================================================*/
 #include "eeprom_config.h"
 #include <string.h>
+#include "os_utils.h"
 #include "log.h"
 
 int eeprom_load_config_item(eeprom_info_t *eeprom_info, const char *label, void *config, size_t size, size_t offset)

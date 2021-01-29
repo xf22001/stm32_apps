@@ -6,13 +6,15 @@
  *   文件名称：test_serial.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 10时54分01秒
- *   修改日期：2020年12月28日 星期一 13时24分40秒
+ *   修改日期：2021年01月29日 星期五 16时13分51秒
  *   描    述：
  *
  *================================================================*/
 #include "test_serial.h"
 #include <string.h>
+
 #include "usart_txrx.h"
+#include "os_utils.h"
 
 #define LOG_UDP
 #include "log.h"

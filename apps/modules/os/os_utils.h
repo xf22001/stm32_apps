@@ -6,7 +6,7 @@
  *   文件名称：os_utils.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分36秒
- *   修改日期：2021年01月22日 星期五 16时48分32秒
+ *   修改日期：2021年01月29日 星期五 16时01分38秒
  *   描    述：
  *
  *================================================================*/
@@ -17,12 +17,12 @@ extern "C"
 {
 #endif
 
+#include "app_platform.h"
+#include "cmsis_os.h"
+
 #ifdef __cplusplus
 }
 #endif
-
-#include <stddef.h>
-#include <stdint.h>
 
 typedef struct {
 	uint8_t byte0;
@@ -261,15 +261,10 @@ static inline uint8_t get_u8_bits(uint8_t v, uint8_t offset)
 	} \
 } while(0)
 
-typedef int (*log_fn_t)(const char *buffer, size_t size);
-
 void get_mem_info(size_t *size, size_t *count, size_t *max_size);
 uint32_t get_total_heap_size(void);
 void *os_alloc(size_t size);
 void os_free(void *p);
-int log_printf(log_fn_t log_fn, const char *fmt, ...);
-void log_hexdump(log_fn_t log_fn, const char *label, const char *data, int len);
-int log_puts(log_fn_t log_fn, const char *s);
 void app_panic(void);
 unsigned char mem_is_set(char *values, size_t size, char value);
 unsigned int str_hash(const char *s);

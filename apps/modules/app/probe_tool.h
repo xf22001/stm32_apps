@@ -6,7 +6,7 @@
  *   文件名称：probe_tool.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 08时03分37秒
- *   修改日期：2020年08月12日 星期三 13时11分43秒
+ *   修改日期：2021年01月29日 星期五 15时16分21秒
  *   描    述：
  *
  *================================================================*/
@@ -56,7 +56,7 @@ typedef enum {
 char *get_probe_broadcast_state_des(probe_broadcast_state_t state);
 void probe_broadcast_add_poll_loop(poll_loop_t *poll_loop);
 char *get_probe_server_state_des(probe_server_state_t state);
-int log_udp_data(void *data, size_t size);
+int log_udp_data(uint32_t log_mask, void *data, size_t size);
 int probe_server_chunk_sendto(uint32_t fn, void *data, size_t size);
 void loopback(request_t *request);
 void fn_hello(request_t *request);

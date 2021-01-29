@@ -6,7 +6,7 @@
  *   文件名称：file_log.c
  *   创 建 者：肖飞
  *   创建日期：2020年11月03日 星期二 13时03分25秒
- *   修改日期：2021年01月07日 星期四 12时41分38秒
+ *   修改日期：2021年01月29日 星期五 16时26分35秒
  *   描    述：
  *
  *================================================================*/
@@ -136,12 +136,18 @@ FIL *get_log_file(void)
 	return file_log_info.log_file;
 }
 
-int log_file_data(void *data, size_t size)
+int log_file_data(uint32_t log_mask, void *data, size_t size)
 {
 	int ret = -1;
 	size_t write_size;
+	u_log_mask_t *u_log_mask = (u_log_mask_t *)&log_mask;
 
 	if(file_log_info.log_file == NULL) {
+		return ret;
+	}
+
+	if(u_log_mask->s.enable_log_file == 0) {
+		ret = size;
 		return ret;
 	}
 
@@ -191,7 +197,7 @@ void handle_open_log(void)
 		}
 	}
 
-	ret = log_printf((log_fn_t)log_file_data, "test %d\n", count++);
+	ret = log_printf((1 << LOG_MASK_FILE_OFFSET), "test %d\n", count++);
 
 	if(ret < 0) {
 		//debug("file log ret:%d\n", ret);

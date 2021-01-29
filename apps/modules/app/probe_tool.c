@@ -6,7 +6,7 @@
  *   文件名称：probe_tool.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 08时02分35秒
- *   修改日期：2020年08月15日 星期六 13时40分12秒
+ *   修改日期：2021年01月29日 星期五 15时11分15秒
  *   描    述：
  *
  *================================================================*/
@@ -186,15 +186,21 @@ typedef struct {
 
 static probe_server_info_t *probe_server_info = NULL;
 
-int log_udp_data(void *data, size_t size)
+int log_udp_data(uint32_t log_mask, void *data, size_t size)
 {
 	int ret = 0;
+	u_log_mask_t *u_log_mask = (u_log_mask_t *)&log_mask;
 
 	if(probe_server_info == NULL) {
 		return ret;
 	}
 
 	if(probe_server_info->log_server_valid == 0) {
+		return ret;
+	}
+
+	if(u_log_mask->s.enable_log_udp == 0) {
+		ret = size;
 		return ret;
 	}
 

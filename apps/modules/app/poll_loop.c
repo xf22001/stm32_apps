@@ -6,7 +6,7 @@
  *   文件名称：poll_loop.c
  *   创 建 者：肖飞
  *   创建日期：2020年08月11日 星期二 09时54分20秒
- *   修改日期：2021年01月21日 星期四 13时00分38秒
+ *   修改日期：2021年01月29日 星期五 16时06分03秒
  *   描    述：
  *
  *================================================================*/
@@ -59,7 +59,7 @@ failed:
 	return poll_loop;
 }
 
-poll_loop_t *get_or_alloc_poll_loop(uint8_t id)
+poll_loop_t *get_or_alloc_poll_loop(uint32_t id)
 {
 	poll_loop_t *poll_loop = NULL;
 

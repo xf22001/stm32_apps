@@ -47,6 +47,7 @@
 
 #include "vfs.h"
 #include "log.h"
+#include "os_utils.h"
 
 #define EINVAL 1
 #define ENOMEM 2
