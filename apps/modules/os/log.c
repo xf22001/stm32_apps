@@ -6,7 +6,7 @@
  *   文件名称：log.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月29日 星期五 12时45分56秒
- *   修改日期：2021年01月29日 星期五 15时38分47秒
+ *   修改日期：2021年01月29日 星期五 20时34分27秒
  *   描    述：
  *
  *================================================================*/
@@ -188,6 +188,8 @@ int remove_log_handler(log_fn_t fn)
 	}
 
 	ret = map_utils_remove_value(log_info->log_callback_map, fn);
+
+	os_free(callback_item);
 
 	return ret;
 }

@@ -6,7 +6,7 @@
  *   文件名称：poll_loop.c
  *   创 建 者：肖飞
  *   创建日期：2020年08月11日 星期二 09时54分20秒
- *   修改日期：2021年01月29日 星期五 16时06分03秒
+ *   修改日期：2021年01月29日 星期五 21时55分00秒
  *   描    述：
  *
  *================================================================*/
@@ -19,62 +19,6 @@
 #include "log.h"
 
 static map_utils_t *poll_loop_map = NULL;
-
-void free_poll_loop(poll_loop_t *poll_loop)
-{
-	if(poll_loop == NULL) {
-		return;
-	}
-
-	os_free(poll_loop);
-}
-
-static poll_loop_t *alloc_poll_loop(uint8_t id)
-{
-	poll_loop_t *poll_loop = NULL;
-	osMutexDef(poll_ctx_list_mutex);
-
-	poll_loop = (poll_loop_t *)os_alloc(sizeof(poll_loop_t));
-
-	if(poll_loop == NULL) {
-		return poll_loop;
-	}
-
-	memset(poll_loop, 0, sizeof(poll_loop_t));
-
-	poll_loop->id = id;
-	INIT_LIST_HEAD(&poll_loop->poll_ctx_list);
-
-	poll_loop->poll_ctx_list_mutex = osMutexCreate(osMutex(poll_ctx_list_mutex));
-
-	if(poll_loop->poll_ctx_list_mutex == NULL) {
-		goto failed;
-	}
-
-	return poll_loop;
-
-failed:
-	free_poll_loop(poll_loop);
-	poll_loop = NULL;
-	return poll_loop;
-}
-
-poll_loop_t *get_or_alloc_poll_loop(uint32_t id)
-{
-	poll_loop_t *poll_loop = NULL;
-
-	__disable_irq();
-
-	if(poll_loop_map == NULL) {
-		poll_loop_map = map_utils_alloc(NULL);
-	}
-
-	__enable_irq();
-
-	poll_loop = (poll_loop_t *)map_utils_get_or_alloc_value(poll_loop_map, id, (map_utils_value_alloc_t)alloc_poll_loop, (map_utils_value_free_t)free_poll_loop);
-
-	return poll_loop;
-}
 
 poll_ctx_t *alloc_poll_ctx(void)
 {
@@ -339,7 +283,7 @@ static void task_poll_dump_poll_ctx(poll_loop_t *poll_loop)
 	}
 }
 
-void task_poll_loop(void const *argument)
+static void task_poll_loop(void const *argument)
 {
 	poll_loop_t *poll_loop = (poll_loop_t *)argument;
 
@@ -362,3 +306,96 @@ void task_poll_loop(void const *argument)
 		task_poll_dump_poll_ctx(poll_loop);
 	}
 }
+
+void free_poll_loop(poll_loop_t *poll_loop)
+{
+	osStatus status;
+
+	if(poll_loop == NULL) {
+		return;
+	}
+
+	if(poll_loop->poll_ctx_list_mutex  != NULL) {
+		status = osMutexWait(poll_loop->poll_ctx_list_mutex , osWaitForever);
+
+		if(status != osOK) {
+		}
+	}
+
+	if(!list_empty(&poll_loop->poll_ctx_list)) {
+		struct list_head *pos;
+		struct list_head *n;
+
+		list_for_each_safe(pos, n, &poll_loop->poll_ctx_list) {
+			list_del(pos);
+		}
+	}
+
+	if(poll_loop->poll_ctx_list_mutex  != NULL) {
+		status = osMutexRelease(poll_loop->poll_ctx_list_mutex);
+
+		if(status != osOK) {
+		}
+	}
+
+
+	if(poll_loop->poll_ctx_list_mutex != NULL) {
+		status = osMutexDelete(poll_loop->poll_ctx_list_mutex);
+
+		if(osOK != status) {
+		}
+	}
+
+	os_free(poll_loop);
+}
+
+static poll_loop_t *alloc_poll_loop(uint8_t id)
+{
+	poll_loop_t *poll_loop = NULL;
+	osMutexDef(poll_ctx_list_mutex);
+
+	poll_loop = (poll_loop_t *)os_alloc(sizeof(poll_loop_t));
+
+	if(poll_loop == NULL) {
+		return poll_loop;
+	}
+
+	memset(poll_loop, 0, sizeof(poll_loop_t));
+
+	poll_loop->id = id;
+	INIT_LIST_HEAD(&poll_loop->poll_ctx_list);
+
+	poll_loop->poll_ctx_list_mutex = osMutexCreate(osMutex(poll_ctx_list_mutex));
+
+	if(poll_loop->poll_ctx_list_mutex == NULL) {
+		goto failed;
+	}
+
+	osThreadDef(poll_loop, task_poll_loop, osPriorityNormal, 0, 128 * 2 * 8);
+	osThreadCreate(osThread(poll_loop), poll_loop);
+
+	return poll_loop;
+
+failed:
+	free_poll_loop(poll_loop);
+	poll_loop = NULL;
+	return poll_loop;
+}
+
+poll_loop_t *get_or_alloc_poll_loop(uint32_t id)
+{
+	poll_loop_t *poll_loop = NULL;
+
+	__disable_irq();
+
+	if(poll_loop_map == NULL) {
+		poll_loop_map = map_utils_alloc(NULL);
+	}
+
+	__enable_irq();
+
+	poll_loop = (poll_loop_t *)map_utils_get_or_alloc_value(poll_loop_map, id, (map_utils_value_alloc_t)alloc_poll_loop, (map_utils_value_free_t)free_poll_loop);
+
+	return poll_loop;
+}
+
