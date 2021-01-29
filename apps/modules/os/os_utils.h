@@ -6,7 +6,7 @@
  *   文件名称：os_utils.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分36秒
- *   修改日期：2021年01月29日 星期五 16时01分38秒
+ *   修改日期：2021年01月29日 星期五 23时04分11秒
  *   描    述：
  *
  *================================================================*/
@@ -261,11 +261,19 @@ static inline uint8_t get_u8_bits(uint8_t v, uint8_t offset)
 	} \
 } while(0)
 
+void app_panic(void);
+osMutexId mutex_create(void);
+void mutex_delete(osMutexId mutex);
+void mutex_lock(osMutexId mutex);
+void mutex_unlock(osMutexId mutex);
+osMessageQId signal_create(void);
+void signal_delete(osMessageQId signal);
+int signal_wait(osMessageQId signal, uint32_t timeout);
+int signal_send(osMessageQId signal);
 void get_mem_info(size_t *size, size_t *count, size_t *max_size);
 uint32_t get_total_heap_size(void);
 void *os_alloc(size_t size);
 void os_free(void *p);
-void app_panic(void);
 unsigned char mem_is_set(char *values, size_t size, char value);
 unsigned int str_hash(const char *s);
 unsigned char calc_crc8(const void *data, size_t size);
