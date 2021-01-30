@@ -6,7 +6,7 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2020年06月02日 星期二 17时54分00秒
+ *   修改日期：2021年01月30日 星期六 08时25分41秒
  *   描    述：
  *
  *================================================================*/
@@ -76,16 +76,12 @@ static charger_info_t *get_charger_info(channel_info_config_t *channel_info_conf
 {
 	charger_info_t *charger_info = NULL;
 	charger_info_t *charger_info_item = NULL;
-	osStatus os_status;
 
 	if(charger_info_list_mutex == NULL) {
 		return charger_info;
 	}
 
-	os_status = osMutexWait(charger_info_list_mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
+	mutex_lock(charger_info_list_mutex);
 
 	list_for_each_entry(charger_info_item, &charger_info_list, charger_info_t, list) {
 		if(charger_info_item->channel_info_config == channel_info_config) {
@@ -94,18 +90,13 @@ static charger_info_t *get_charger_info(channel_info_config_t *channel_info_conf
 		}
 	}
 
-	os_status = osMutexRelease(charger_info_list_mutex);
-
-	if(os_status != osOK) {
-	}
+	mutex_unlock(charger_info_list_mutex);
 
 	return charger_info;
 }
 
 void free_charger_info(charger_info_t *charger_info)
 {
-	osStatus os_status;
-
 	if(charger_info == NULL) {
 		return;
 	}
@@ -114,24 +105,15 @@ void free_charger_info(charger_info_t *charger_info)
 		return;
 	}
 
-	os_status = osMutexWait(charger_info_list_mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
+	mutex_lock(charger_info_list_mutex);
 
 	list_del(&charger_info->list);
 
-	os_status = osMutexRelease(charger_info_list_mutex);
+	mutex_unlock(charger_info_list_mutex);
 
-	if(os_status != osOK) {
-	}
+	mutex_delete(charger_info_list_mutex);
 
-	if(charger_info->handle_mutex) {
-		os_status = osMutexDelete(charger_info->handle_mutex);
-
-		if(osOK != os_status) {
-		}
-	}
+	mutex_delete(charger_info->handle_mutex);
 
 	if(charger_info->settings) {
 		os_free(charger_info->settings);
@@ -390,8 +372,6 @@ static int charger_info_set_channel_config(charger_info_t *charger_info, channel
 charger_info_t *get_or_alloc_charger_info(channel_info_config_t *channel_info_config)
 {
 	charger_info_t *charger_info = NULL;
-	osMutexDef(handle_mutex);
-	osStatus os_status;
 
 	charger_info = get_charger_info(channel_info_config);
 
@@ -400,8 +380,7 @@ charger_info_t *get_or_alloc_charger_info(channel_info_config_t *channel_info_co
 	}
 
 	if(charger_info_list_mutex == NULL) {
-		osMutexDef(charger_info_list_mutex);
-		charger_info_list_mutex = osMutexCreate(osMutex(charger_info_list_mutex));
+		charger_info_list_mutex = mutex_create();
 
 		if(charger_info_list_mutex == NULL) {
 			return charger_info;
@@ -433,19 +412,13 @@ charger_info_t *get_or_alloc_charger_info(channel_info_config_t *channel_info_co
 	}
 
 	charger_info->state = CHARGER_STATE_IDLE;
-	charger_info->handle_mutex = osMutexCreate(osMutex(handle_mutex));
+	charger_info->handle_mutex = mutex_create();
 
-	os_status = osMutexWait(charger_info_list_mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
+	mutex_lock(charger_info_list_mutex);
 
 	list_add_tail(&charger_info->list, &charger_info_list);
 
-	os_status = osMutexRelease(charger_info_list_mutex);
-
-	if(os_status != osOK) {
-	}
+	mutex_unlock(charger_info_list_mutex);
 
 	if(charger_info_set_channel_config(charger_info, channel_info_config) != 0) {
 		goto failed;
@@ -523,61 +496,39 @@ void set_charger_state(charger_info_t *charger_info, charger_state_t state)
 void charger_handle_request(charger_info_t *charger_info)
 {
 	charger_state_handler_t *handler = charger_get_state_handler(charger_info->state);
-	osStatus os_status;
 	int ret = 0;
 
 	if(handler == NULL) {
 		return;
 	}
 
-	if(charger_info->handle_mutex) {
-		os_status = osMutexWait(charger_info->handle_mutex, osWaitForever);
-
-		if(os_status != osOK) {
-		}
-	}
+	mutex_lock(charger_info->handle_mutex);
 
 	ret = handler->handle_request(charger_info);
 
 	if(ret != 0) {
 	}
 
-	if(charger_info->handle_mutex) {
-		os_status = osMutexRelease(charger_info->handle_mutex);
-
-		if(os_status != osOK) {
-		}
-	}
+	mutex_unlock(charger_info->handle_mutex);
 }
 
 void charger_handle_response(charger_info_t *charger_info)
 {
 	charger_state_handler_t *handler = charger_get_state_handler(charger_info->state);
-	osStatus os_status;
 	int ret = 0;
 
 	if(handler == NULL) {
 		return;
 	}
 
-	if(charger_info->handle_mutex) {
-		os_status = osMutexWait(charger_info->handle_mutex, osWaitForever);
-
-		if(os_status != osOK) {
-		}
-	}
+	mutex_lock(charger_info->handle_mutex);
 
 	ret = handler->handle_response(charger_info);
 
 	if(ret != 0) {
 	}
 
-	if(charger_info->handle_mutex) {
-		os_status = osMutexRelease(charger_info->handle_mutex);
-
-		if(os_status != osOK) {
-		}
-	}
+	mutex_unlock(charger_info->handle_mutex);
 }
 
 void set_auxiliary_power_state(charger_info_t *charger_info, uint8_t state)

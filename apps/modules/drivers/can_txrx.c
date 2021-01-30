@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时07分55秒
- *   修改日期：2021年01月25日 星期一 10时34分59秒
+ *   修改日期：2021年01月30日 星期六 09时05分15秒
  *   描    述：
  *
  *================================================================*/
@@ -21,46 +21,19 @@ static map_utils_t *can_map = NULL;
 
 static void free_can_info(can_info_t *can_info)
 {
-	osStatus os_status;
-
 	if(can_info == NULL) {
 		return;
 	}
 
-	if(can_info->hcan_mutex != NULL) {
-		os_status = osMutexWait(can_info->hcan_mutex, osWaitForever);
+	mutex_lock(can_info->hcan_mutex);
 
-		if(osOK != os_status) {
-		}
-	}
+	signal_delete(can_info->rx_msg_q);
 
-	if(can_info->rx_msg_q != NULL) {
-		os_status = osMessageDelete(can_info->rx_msg_q);
+	signal_delete(can_info->tx_msg_q);
 
-		if(osOK != os_status) {
-		}
-	}
+	mutex_unlock(can_info->hcan_mutex);
 
-	if(can_info->tx_msg_q != NULL) {
-		os_status = osMessageDelete(can_info->tx_msg_q);
-
-		if(osOK != os_status) {
-		}
-	}
-
-	if(can_info->hcan_mutex != NULL) {
-		os_status = osMutexRelease(can_info->hcan_mutex);
-
-		if(osOK != os_status) {
-		}
-	}
-
-	if(can_info->hcan_mutex != NULL) {
-		os_status = osMutexDelete(can_info->hcan_mutex);
-
-		if(osOK != os_status) {
-		}
-	}
+	mutex_delete(can_info->hcan_mutex);
 
 	os_free(can_info);
 }
@@ -129,9 +102,6 @@ static can_info_t *alloc_can_info(CAN_HandleTypeDef *hcan)
 	can_info_t *can_info = NULL;
 	can_config_t *can_config = NULL;
 
-	osMutexDef(hcan_mutex);
-	osMessageQDef(tx_msg_q, 1, uint16_t);
-	osMessageQDef(rx_msg_q, 1, uint16_t);
 
 	if(hcan == NULL) {
 		return can_info;
@@ -153,9 +123,9 @@ static can_info_t *alloc_can_info(CAN_HandleTypeDef *hcan)
 
 	can_info->hcan = hcan;
 	can_info->can_config = can_config;
-	can_info->hcan_mutex = osMutexCreate(osMutex(hcan_mutex));
-	can_info->tx_msg_q = osMessageCreate(osMessageQ(tx_msg_q), NULL);
-	can_info->rx_msg_q = osMessageCreate(osMessageQ(rx_msg_q), NULL);
+	can_info->hcan_mutex = mutex_create();
+	can_info->tx_msg_q = signal_create();
+	can_info->rx_msg_q = signal_create();
 
 	can_info->receive_init = receive_init;
 	can_info->rx_msg_r = 0;
@@ -213,12 +183,7 @@ static void can_rxfifo_pending_callback(CAN_HandleTypeDef *hcan)
 		rx_msg->DLC = rx_header.DLC;
 	}
 
-	if(can_info->rx_msg_q != NULL) {
-		osStatus status = osMessagePut(can_info->rx_msg_q, 0, 0);
-
-		if(status != osOK) {
-		}
-	}
+	signal_send(can_info->rx_msg_q);
 }
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
@@ -250,7 +215,6 @@ int can_tx_data(can_info_t *can_info, can_tx_msg_t *msg, uint32_t timeout)
 	uint32_t stamp = osKernelSysTick();
 	HAL_StatusTypeDef status;
 	CAN_TxHeaderTypeDef tx_header;
-	osStatus os_status;
 
 	msg->tx_mailbox = 0;
 	tx_header.StdId = msg->StdId;
@@ -263,17 +227,11 @@ int can_tx_data(can_info_t *can_info, can_tx_msg_t *msg, uint32_t timeout)
 	status = HAL_BUSY;
 
 	while(status != HAL_OK) {
-		os_status = osMutexWait(can_info->hcan_mutex, osWaitForever);
-
-		if(osOK != os_status) {
-		}
+		mutex_lock(can_info->hcan_mutex);
 
 		status = HAL_CAN_AddTxMessage(can_info->hcan, &tx_header, msg->Data, &msg->tx_mailbox);
 
-		os_status = osMutexRelease(can_info->hcan_mutex);
-
-		if(osOK != os_status) {
-		}
+		mutex_unlock(can_info->hcan_mutex);
 
 		if(osKernelSysTick() - stamp >= timeout) {
 			break;
@@ -312,13 +270,7 @@ int can_rx_data(can_info_t *can_info, uint32_t timeout)
 	rx_msg_w = can_info->rx_msg_w;
 
 	if(can_info->rx_msg_r == rx_msg_w) {//没有数据
-		if(can_info->rx_msg_q != NULL) {
-			osEvent event = osMessageGet(can_info->rx_msg_q, timeout);
-
-			if(event.status == osEventMessage) {//等到数据
-				ret = 0;
-			}
-		}
+		ret = signal_wait(can_info->rx_msg_q, timeout);
 	} else {//有数据
 		ret = 0;
 	}

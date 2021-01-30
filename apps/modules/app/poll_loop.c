@@ -6,7 +6,7 @@
  *   文件名称：poll_loop.c
  *   创 建 者：肖飞
  *   创建日期：2020年08月11日 星期二 09时54分20秒
- *   修改日期：2021年01月29日 星期五 21时55分00秒
+ *   修改日期：2021年01月30日 星期六 09时28分06秒
  *   描    述：
  *
  *================================================================*/
@@ -44,17 +44,13 @@ void free_poll_ctx(poll_ctx_t *poll_ctx)
 int add_poll_loop_ctx_item(poll_loop_t *poll_loop, poll_ctx_t *poll_ctx)
 {
 	int ret = -1;
-	osStatus os_status;
 	poll_ctx_t *poll_ctx_item;
 	struct list_head *head;
 	uint8_t found = 0;
 
 	head = &poll_loop->poll_ctx_list;
 
-	os_status = osMutexWait(poll_loop->poll_ctx_list_mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
+	mutex_lock(poll_loop->poll_ctx_list_mutex);
 
 	list_for_each_entry(poll_ctx_item, head, poll_ctx_t, list) {
 		if(poll_ctx_item == poll_ctx) {
@@ -67,10 +63,7 @@ int add_poll_loop_ctx_item(poll_loop_t *poll_loop, poll_ctx_t *poll_ctx)
 		ret = 0;
 	}
 
-	os_status = osMutexRelease(poll_loop->poll_ctx_list_mutex);
-
-	if(os_status != osOK) {
-	}
+	mutex_unlock(poll_loop->poll_ctx_list_mutex);
 
 	return ret;
 }
@@ -78,20 +71,13 @@ int add_poll_loop_ctx_item(poll_loop_t *poll_loop, poll_ctx_t *poll_ctx)
 int remove_poll_loop_ctx_item(poll_loop_t *poll_loop, poll_ctx_t *poll_ctx)
 {
 	int ret = -1;
-	osStatus os_status;
 
-	os_status = osMutexWait(poll_loop->poll_ctx_list_mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
+	mutex_lock(poll_loop->poll_ctx_list_mutex);
 
 	list_del(&poll_ctx->list);
 	ret = 0;
 
-	os_status = osMutexRelease(poll_loop->poll_ctx_list_mutex);
-
-	if(os_status != osOK) {
-	}
+	mutex_unlock(poll_loop->poll_ctx_list_mutex);
 
 	return ret;
 }
@@ -104,7 +90,6 @@ static int poll_loop_poll(poll_loop_t *poll_loop)
 	struct fd_set efds;
 	struct timeval tv = {0, 1000 * 50};
 	int max_fd = -1;
-	osStatus os_status;
 	struct list_head *head;
 	poll_ctx_t *poll_ctx;
 
@@ -114,10 +99,7 @@ static int poll_loop_poll(poll_loop_t *poll_loop)
 	FD_ZERO(&wfds);
 	FD_ZERO(&efds);
 
-	os_status = osMutexWait(poll_loop->poll_ctx_list_mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
+	mutex_lock(poll_loop->poll_ctx_list_mutex);
 
 	list_for_each_entry(poll_ctx, head, poll_ctx_t, list) {
 		poll_fd_t *poll_fd = &poll_ctx->poll_fd;
@@ -147,10 +129,7 @@ static int poll_loop_poll(poll_loop_t *poll_loop)
 		}
 	}
 
-	os_status = osMutexRelease(poll_loop->poll_ctx_list_mutex);
-
-	if(os_status != osOK) {
-	}
+	mutex_unlock(poll_loop->poll_ctx_list_mutex);
 
 	max_fd += 1;
 
@@ -162,10 +141,7 @@ static int poll_loop_poll(poll_loop_t *poll_loop)
 	}
 
 	if(ret >= 0) {
-		os_status = osMutexWait(poll_loop->poll_ctx_list_mutex, osWaitForever);
-
-		if(os_status != osOK) {
-		}
+	mutex_lock(poll_loop->poll_ctx_list_mutex);
 
 		list_for_each_entry(poll_ctx, head, poll_ctx_t, list) {
 			poll_fd_t *poll_fd = &poll_ctx->poll_fd;
@@ -199,10 +175,7 @@ static int poll_loop_poll(poll_loop_t *poll_loop)
 			}
 		}
 
-		os_status = osMutexRelease(poll_loop->poll_ctx_list_mutex);
-
-		if(os_status != osOK) {
-		}
+	mutex_unlock(poll_loop->poll_ctx_list_mutex);
 	} else {
 		debug("ret:%d, errno:%d\n", ret, errno);
 	}
@@ -212,7 +185,6 @@ static int poll_loop_poll(poll_loop_t *poll_loop)
 
 static void poll_loop_periodic(poll_loop_t *poll_loop)
 {
-	osStatus os_status;
 	struct list_head *pos;
 	struct list_head *next;
 	struct list_head *head;
@@ -220,10 +192,7 @@ static void poll_loop_periodic(poll_loop_t *poll_loop)
 
 	head = &poll_loop->poll_ctx_list;
 
-	os_status = osMutexWait(poll_loop->poll_ctx_list_mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
+	mutex_lock(poll_loop->poll_ctx_list_mutex);
 
 	list_for_each_safe(pos, next, head) {
 		poll_ctx = list_entry(pos, poll_ctx_t, list);
@@ -234,10 +203,7 @@ static void poll_loop_periodic(poll_loop_t *poll_loop)
 		}
 	}
 
-	os_status = osMutexRelease(poll_loop->poll_ctx_list_mutex);
-
-	if(os_status != osOK) {
-	}
+	mutex_unlock(poll_loop->poll_ctx_list_mutex);
 }
 
 static uint8_t dump_poll_ctx = 0;
@@ -249,7 +215,6 @@ void set_dump_poll_ctx(void)
 
 static void task_poll_dump_poll_ctx(poll_loop_t *poll_loop)
 {
-	osStatus os_status;
 	struct list_head *head;
 	poll_ctx_t *poll_ctx;
 
@@ -261,10 +226,7 @@ static void task_poll_dump_poll_ctx(poll_loop_t *poll_loop)
 
 	head = &poll_loop->poll_ctx_list;
 
-	os_status = osMutexWait(poll_loop->poll_ctx_list_mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
+	mutex_lock(poll_loop->poll_ctx_list_mutex);
 
 	list_for_each_entry(poll_ctx, head, poll_ctx_t, list) {
 		debug("%p, name:%s, fd:%d, available:%d, in:%d, out:%d, err:%d\n",
@@ -277,10 +239,7 @@ static void task_poll_dump_poll_ctx(poll_loop_t *poll_loop)
 		      poll_ctx->poll_fd.config.s.poll_err);
 	}
 
-	os_status = osMutexRelease(poll_loop->poll_ctx_list_mutex);
-
-	if(os_status != osOK) {
-	}
+	mutex_unlock(poll_loop->poll_ctx_list_mutex);
 }
 
 static void task_poll_loop(void const *argument)
@@ -309,18 +268,11 @@ static void task_poll_loop(void const *argument)
 
 void free_poll_loop(poll_loop_t *poll_loop)
 {
-	osStatus status;
-
 	if(poll_loop == NULL) {
 		return;
 	}
 
-	if(poll_loop->poll_ctx_list_mutex  != NULL) {
-		status = osMutexWait(poll_loop->poll_ctx_list_mutex , osWaitForever);
-
-		if(status != osOK) {
-		}
-	}
+	mutex_lock(poll_loop->poll_ctx_list_mutex);
 
 	if(!list_empty(&poll_loop->poll_ctx_list)) {
 		struct list_head *pos;
@@ -331,20 +283,9 @@ void free_poll_loop(poll_loop_t *poll_loop)
 		}
 	}
 
-	if(poll_loop->poll_ctx_list_mutex  != NULL) {
-		status = osMutexRelease(poll_loop->poll_ctx_list_mutex);
+	mutex_unlock(poll_loop->poll_ctx_list_mutex);
 
-		if(status != osOK) {
-		}
-	}
-
-
-	if(poll_loop->poll_ctx_list_mutex != NULL) {
-		status = osMutexDelete(poll_loop->poll_ctx_list_mutex);
-
-		if(osOK != status) {
-		}
-	}
+	mutex_delete(poll_loop->poll_ctx_list_mutex);
 
 	os_free(poll_loop);
 }
@@ -352,7 +293,6 @@ void free_poll_loop(poll_loop_t *poll_loop)
 static poll_loop_t *alloc_poll_loop(uint8_t id)
 {
 	poll_loop_t *poll_loop = NULL;
-	osMutexDef(poll_ctx_list_mutex);
 
 	poll_loop = (poll_loop_t *)os_alloc(sizeof(poll_loop_t));
 
@@ -365,7 +305,7 @@ static poll_loop_t *alloc_poll_loop(uint8_t id)
 	poll_loop->id = id;
 	INIT_LIST_HEAD(&poll_loop->poll_ctx_list);
 
-	poll_loop->poll_ctx_list_mutex = osMutexCreate(osMutex(poll_ctx_list_mutex));
+	poll_loop->poll_ctx_list_mutex = mutex_create();
 
 	if(poll_loop->poll_ctx_list_mutex == NULL) {
 		goto failed;

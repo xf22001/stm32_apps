@@ -6,7 +6,7 @@
  *   文件名称：ftp_client.c
  *   创 建 者：肖飞
  *   创建日期：2020年09月15日 星期二 09时32分10秒
- *   修改日期：2020年10月10日 星期六 09时00分47秒
+ *   修改日期：2021年01月30日 星期六 09时27分26秒
  *   描    述：
  *
  *================================================================*/
@@ -159,12 +159,7 @@ static void set_ftp_client_data_request_state(ftp_client_info_t *ftp_client_info
 
 static void set_ftp_client_server_info(ftp_client_info_t *ftp_client_info, const char *host, const char *port, const char *path, const char *user, const char *password)
 {
-	osStatus status;
-
-	status = osMutexWait(ftp_client_info->ftp_server_path.mutex, osWaitForever);
-
-	if(status != osOK) {
-	}
+	mutex_lock(ftp_client_info->ftp_server_path.mutex);
 
 	snprintf(ftp_client_info->ftp_server_path.host, sizeof(ftp_client_info->ftp_server_path.host), "%s", host);
 	snprintf(ftp_client_info->ftp_server_path.port, sizeof(ftp_client_info->ftp_server_path.port), "%s", port);
@@ -172,25 +167,18 @@ static void set_ftp_client_server_info(ftp_client_info_t *ftp_client_info, const
 	snprintf(ftp_client_info->ftp_server_path.user, sizeof(ftp_client_info->ftp_server_path.user), "%s", user);
 	snprintf(ftp_client_info->ftp_server_path.password, sizeof(ftp_client_info->ftp_server_path.password), "%s", password);
 
-	status = osMutexRelease(ftp_client_info->ftp_server_path.mutex);
-
-	if(status != osOK) {
-	}
+	mutex_unlock(ftp_client_info->ftp_server_path.mutex);
 }
 
 static void get_ftp_client_cmd_addr_info(ftp_client_info_t *ftp_client_info)
 {
 	int ret;
-	osStatus status;
 	struct list_head *list_head;
 
 	list_head = &ftp_client_info->cmd.addr_info.socket_addr_info_list;
 	ftp_client_info->cmd.addr_info.socket_addr_info = NULL;
 
-	status = osMutexWait(ftp_client_info->ftp_server_path.mutex, osWaitForever);
-
-	if(status != osOK) {
-	}
+	mutex_lock(ftp_client_info->ftp_server_path.mutex);
 
 	ret = update_addr_info_list(list_head,
 	                            ftp_client_info->ftp_server_path.host,
@@ -198,10 +186,7 @@ static void get_ftp_client_cmd_addr_info(ftp_client_info_t *ftp_client_info)
 	                            SOCK_STREAM,
 	                            IPPROTO_TCP);
 
-	status = osMutexRelease(ftp_client_info->ftp_server_path.mutex);
-
-	if(status != osOK) {
-	}
+	mutex_unlock(ftp_client_info->ftp_server_path.mutex);
 
 	if(ret == 0) {
 		ftp_client_info->cmd.addr_info.socket_addr_info = get_next_socket_addr_info(list_head, ftp_client_info->cmd.addr_info.socket_addr_info);
@@ -947,8 +932,7 @@ void ftp_client_add_poll_loop(poll_loop_t *poll_loop)
 	ftp_client_info->data.sock_fd = -1;
 
 	{
-		osMutexDef(mutex);
-		ftp_client_info->ftp_server_path.mutex = osMutexCreate(osMutex(mutex));
+		ftp_client_info->ftp_server_path.mutex = mutex_create();
 
 		if(ftp_client_info->ftp_server_path.mutex == NULL) {
 			app_panic();

@@ -6,7 +6,7 @@
  *   文件名称：eeprom.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月14日 星期四 09时01分36秒
- *   修改日期：2021年01月29日 星期五 16时11分01秒
+ *   修改日期：2021年01月30日 星期六 09时28分58秒
  *   描    述：
  *
  *================================================================*/
@@ -22,18 +22,11 @@ static map_utils_t *eeprom_map = NULL;
 
 static void free_eeprom_info(eeprom_info_t *eeprom_info)
 {
-	osStatus os_status;
-
 	if(eeprom_info == NULL) {
 		return;
 	}
 
-	if(eeprom_info->mutex != NULL) {
-		os_status = osMutexDelete(eeprom_info->mutex);
-
-		if(os_status != osOK) {
-		}
-	}
+	mutex_delete(eeprom_info->mutex);
 
 	if(eeprom_info->spi_info) {
 		eeprom_info->spi_info = NULL;
@@ -45,7 +38,6 @@ static void free_eeprom_info(eeprom_info_t *eeprom_info)
 static eeprom_info_t *alloc_eeprom_info(spi_info_t *spi_info)
 {
 	eeprom_info_t *eeprom_info = NULL;
-	osMutexDef(eeprom_mutex);
 
 	if(spi_info == NULL) {
 		return eeprom_info;
@@ -61,7 +53,7 @@ static eeprom_info_t *alloc_eeprom_info(spi_info_t *spi_info)
 
 	eeprom_info->spi_info = spi_info;
 
-	eeprom_info->mutex = osMutexCreate(osMutex(eeprom_mutex));
+	eeprom_info->mutex = mutex_create();
 
 	if(eeprom_info->mutex == NULL) {
 		goto failed;
@@ -208,7 +200,6 @@ static uint8_t eeprom_read_byte(eeprom_info_t *eeprom_info, uint32_t start, uint
 uint8_t eeprom_read(eeprom_info_t *eeprom_info, uint32_t start, uint8_t *data, uint16_t size)
 {
 	uint8_t state = 0;
-	osStatus os_status;
 	uint16_t i;
 
 	//debug("start:%d, size:%d\n", start, size);
@@ -217,19 +208,13 @@ uint8_t eeprom_read(eeprom_info_t *eeprom_info, uint32_t start, uint8_t *data, u
 		return state;
 	}
 
-	os_status = osMutexWait(eeprom_info->mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
+	mutex_lock(eeprom_info->mutex);
 
 	for(i = 0; i < size; i++) {
 		eeprom_read_byte(eeprom_info, start + i, data + i);
 	}
 
-	os_status = osMutexRelease(eeprom_info->mutex);
-
-	if(os_status != osOK) {
-	}
+	mutex_unlock(eeprom_info->mutex);
 
 	//_hexdump("read", data, size);
 
@@ -281,18 +266,13 @@ uint8_t eeprom_write(eeprom_info_t *eeprom_info, uint32_t start, uint8_t *data, 
 	uint16_t left = size;
 	uint32_t addr = start;
 
-	osStatus os_status;
-
 	//debug("start:%d, size:%d\n", start, size);
 
 	if(eeprom_info == NULL) {
 		return state;
 	}
 
-	os_status = osMutexWait(eeprom_info->mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
+	mutex_lock(eeprom_info->mutex);
 
 	while(left > 0) {
 		uint16_t write_size = EEPROM_1024_PAGE - (addr % EEPROM_1024_PAGE);
@@ -307,10 +287,7 @@ uint8_t eeprom_write(eeprom_info_t *eeprom_info, uint32_t start, uint8_t *data, 
 		left -= write_size;
 	}
 
-	os_status = osMutexRelease(eeprom_info->mutex);
-
-	if(os_status != osOK) {
-	}
+	mutex_unlock(eeprom_info->mutex);
 
 	//_hexdump("write", data, size);
 

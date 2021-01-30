@@ -6,7 +6,7 @@
  *   文件名称：os_utils.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分17秒
- *   修改日期：2021年01月29日 星期五 23时05分35秒
+ *   修改日期：2021年01月30日 星期六 09时32分13秒
  *   描    述：
  *
  *================================================================*/
@@ -145,15 +145,15 @@ int signal_wait(os_signal_t signal, uint32_t timeout)
 int signal_send(os_signal_t signal)
 {
 	int ret = -1;
-	osStatus status;
+	osStatus os_status;
 
 	if(signal == NULL) {
 		app_panic();
 	}
 
-	status = osMessagePut(signal, 0, 0);
+	os_status = osMessagePut(signal, 0, 0);
 
-	if(status == osOK) {
+	if(os_status == osOK) {
 		ret = 0;
 	}
 

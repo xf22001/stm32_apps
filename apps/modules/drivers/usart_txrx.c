@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2021年01月29日 星期五 15时11分02秒
+ *   修改日期：2021年01月30日 星期六 09时28分49秒
  *   描    述：
  *
  *================================================================*/
@@ -28,71 +28,28 @@ static uart_info_t *log_uart_info = NULL;
 
 static void free_uart_info(uart_info_t *uart_info)
 {
-	osStatus os_status;
-
 	if(uart_info == NULL) {
 		return;
 	}
 
-	if(uart_info->huart_mutex != NULL) {
-		os_status = osMutexWait(uart_info->huart_mutex, osWaitForever);
+	mutex_lock(uart_info->huart_mutex);
 
-		if(os_status != osOK) {
-		}
-	}
-
-	if(uart_info->log_mutex != NULL) {
-		os_status = osMutexWait(uart_info->log_mutex, osWaitForever);
-
-		if(os_status != osOK) {
-		}
-	}
+	mutex_lock(uart_info->log_mutex);
 
 	if(log_uart_info == uart_info) {
 		log_uart_info = NULL;
 	}
 
-	if(uart_info->log_mutex != NULL) {
-		os_status = osMutexRelease(uart_info->log_mutex);
+	mutex_unlock(uart_info->log_mutex);
 
-		if(os_status != osOK) {
-		}
-	}
+	mutex_delete(uart_info->log_mutex);
 
-	if(uart_info->log_mutex) {
-		os_status = osMutexDelete(uart_info->log_mutex);
+	signal_delete(uart_info->tx_msg_q);
+	signal_delete(uart_info->rx_msg_q);
 
-		if(osOK != os_status) {
-		}
-	}
+	mutex_unlock(uart_info->huart_mutex);
 
-	if(uart_info->tx_msg_q) {
-		os_status = osMessageDelete(uart_info->tx_msg_q);
-
-		if(osOK != os_status) {
-		}
-	}
-
-	if(uart_info->rx_msg_q) {
-		os_status = osMessageDelete(uart_info->rx_msg_q);
-
-		if(osOK != os_status) {
-		}
-	}
-
-	if(uart_info->huart_mutex != NULL) {
-		os_status = osMutexRelease(uart_info->huart_mutex);
-
-		if(os_status != osOK) {
-		}
-	}
-
-	if(uart_info->huart_mutex) {
-		os_status = osMutexDelete(uart_info->huart_mutex);
-
-		if(osOK != os_status) {
-		}
-	}
+	mutex_delete(uart_info->huart_mutex);
 
 	os_free(uart_info);
 }
@@ -100,11 +57,6 @@ static void free_uart_info(uart_info_t *uart_info)
 static uart_info_t *alloc_uart_info(UART_HandleTypeDef *huart)
 {
 	uart_info_t *uart_info = NULL;
-
-	osMessageQDef(tx_msg_q, 1, uint16_t);
-	osMessageQDef(rx_msg_q, 1, uint16_t);
-	osMutexDef(huart_mutex);
-	osMutexDef(log_mutex);
 
 	if(huart == NULL) {
 		return uart_info;
@@ -119,10 +71,10 @@ static uart_info_t *alloc_uart_info(UART_HandleTypeDef *huart)
 	memset(uart_info, 0, sizeof(uart_info_t));
 
 	uart_info->huart = huart;
-	uart_info->tx_msg_q = osMessageCreate(osMessageQ(tx_msg_q), NULL);
-	uart_info->rx_msg_q = osMessageCreate(osMessageQ(rx_msg_q), NULL);
-	uart_info->huart_mutex = osMutexCreate(osMutex(huart_mutex));
-	uart_info->log_mutex = osMutexCreate(osMutex(log_mutex));
+	uart_info->tx_msg_q = signal_create();
+	uart_info->rx_msg_q = signal_create();
+	uart_info->huart_mutex = mutex_create();
+	uart_info->log_mutex = mutex_create();
 	uart_info->rx_poll_interval = 5;
 	uart_info->max_pending_duration = 50;
 
@@ -175,12 +127,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 		return;
 	}
 
-	if(uart_info->tx_msg_q != NULL) {
-		osStatus os_status = osMessagePut(uart_info->tx_msg_q, 0, 0);
-
-		if(os_status != osOK) {
-		}
-	}
+	signal_send(uart_info->tx_msg_q);
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
@@ -191,12 +138,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 		return;
 	}
 
-	if(uart_info->rx_msg_q != NULL) {
-		osStatus os_status = osMessagePut(uart_info->rx_msg_q, 0, 0);
-
-		if(os_status != osOK) {
-		}
-	}
+	signal_send(uart_info->rx_msg_q);
 }
 
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
@@ -239,12 +181,8 @@ int uart_tx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t 
 {
 	int ret = 0;
 	HAL_StatusTypeDef status;
-	osStatus os_status;
 
-	os_status = osMutexWait(uart_info->huart_mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
+	mutex_lock(uart_info->huart_mutex);
 
 	status = HAL_UART_Transmit_DMA(uart_info->huart, data, size);
 
@@ -252,19 +190,13 @@ int uart_tx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t 
 		debug("\n");
 	}
 
-	os_status = osMutexRelease(uart_info->huart_mutex);
+	mutex_unlock(uart_info->huart_mutex);
 
-	if(os_status != osOK) {
-	}
-
-	if(uart_info->tx_msg_q != NULL) {
-		osEvent event = osMessageGet(uart_info->tx_msg_q, timeout);
-
+	if(signal_wait(uart_info->tx_msg_q, timeout) == 0) {
 		ret = get_uart_sent(uart_info);
-
-		if(event.status == osEventTimeout) {
-			HAL_UART_AbortTransmit(uart_info->huart);
-		}
+	} else {
+		ret = get_uart_sent(uart_info);
+		HAL_UART_AbortTransmit(uart_info->huart);
 	}
 
 	return ret;
@@ -287,12 +219,7 @@ static uint16_t wait_for_uart_receive(uart_info_t *uart_info, uint16_t size, uin
 			wait_ticks = uart_info->rx_poll_interval;
 		}
 
-		if(uart_info->rx_msg_q != NULL) {
-			osEvent event = osMessageGet(uart_info->rx_msg_q, wait_ticks);
-
-			if(event.status == osEventTimeout) {
-			}
-		}
+		signal_wait(uart_info->rx_msg_q, wait_ticks);
 
 		cur_ticks = osKernelSysTick();
 
@@ -335,12 +262,8 @@ int uart_rx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t 
 {
 	int ret = 0;
 	HAL_StatusTypeDef status;
-	osStatus os_status;
 
-	os_status = osMutexWait(uart_info->huart_mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
+	mutex_lock(uart_info->huart_mutex);
 
 	status = HAL_UART_Receive_DMA(uart_info->huart, data, size);
 
@@ -348,10 +271,7 @@ int uart_rx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t 
 		debug("\n");
 	}
 
-	os_status = osMutexRelease(uart_info->huart_mutex);
-
-	if(os_status != osOK) {
-	}
+	mutex_unlock(uart_info->huart_mutex);
 
 	ret = wait_for_uart_receive(uart_info, size, timeout);
 
@@ -362,12 +282,8 @@ int uart_tx_rx_data(uart_info_t *uart_info, uint8_t *tx_data, uint16_t tx_size, 
 {
 	int ret = 0;
 	HAL_StatusTypeDef status;
-	osStatus os_status;
 
-	os_status = osMutexWait(uart_info->huart_mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
+	mutex_lock(uart_info->huart_mutex);
 
 	status = HAL_UART_Receive_DMA(uart_info->huart, rx_data, rx_size);
 
@@ -380,19 +296,12 @@ int uart_tx_rx_data(uart_info_t *uart_info, uint8_t *tx_data, uint16_t tx_size, 
 	if(status != HAL_OK) {
 	}
 
-	os_status = osMutexRelease(uart_info->huart_mutex);
-
-	if(os_status != osOK) {
-	}
+	mutex_unlock(uart_info->huart_mutex);
 
 	ret = wait_for_uart_receive(uart_info, rx_size, timeout);
 
-	if(uart_info->tx_msg_q != NULL) {
-		osEvent event = osMessageGet(uart_info->tx_msg_q, 0);
-
-		if(event.status == osEventTimeout) {
-			HAL_UART_AbortTransmit(uart_info->huart);
-		}
+	if(signal_wait(uart_info->tx_msg_q, timeout) != 0) {
+		HAL_UART_AbortTransmit(uart_info->huart);
 	}
 
 	return ret;
@@ -412,7 +321,6 @@ int log_uart_data(uint32_t log_mask, void *data, size_t size)
 {
 	int ret = 0;
 	uart_info_t *uart_info = get_log_uart_info();
-	osStatus os_status;
 	u_log_mask_t *u_log_mask = (u_log_mask_t *)&log_mask;
 
 	if(uart_info == NULL) {
@@ -424,17 +332,11 @@ int log_uart_data(uint32_t log_mask, void *data, size_t size)
 		return ret;
 	}
 
-	os_status = osMutexWait(uart_info->log_mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
+	mutex_lock(uart_info->log_mutex);
 
 	ret = uart_tx_data(uart_info, (uint8_t *)data, size, 100);
 
-	os_status = osMutexRelease(uart_info->log_mutex);
-
-	if(os_status != osOK) {
-	}
+	mutex_unlock(uart_info->log_mutex);
 
 	return ret;
 }

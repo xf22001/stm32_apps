@@ -6,7 +6,7 @@
  *   文件名称：relay_boards_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年07月06日 星期一 14时29分27秒
- *   修改日期：2020年07月09日 星期四 10时36分39秒
+ *   修改日期：2021年01月30日 星期六 09时28分34秒
  *   描    述：
  *
  *================================================================*/
@@ -94,16 +94,12 @@ static relay_boards_com_info_t *get_relay_boards_com_info(channels_info_config_t
 {
 	relay_boards_com_info_t *relay_boards_com_info = NULL;
 	relay_boards_com_info_t *relay_boards_com_info_item = NULL;
-	osStatus os_status;
 
 	if(relay_boards_com_info_list_mutex == NULL) {
 		return relay_boards_com_info;
 	}
 
-	os_status = osMutexWait(relay_boards_com_info_list_mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
+	mutex_lock(relay_boards_com_info_list_mutex);
 
 	list_for_each_entry(relay_boards_com_info_item, &relay_boards_com_info_list, relay_boards_com_info_t, list) {
 		if(relay_boards_com_info_item->channels_info_config == channels_info_config) {
@@ -112,17 +108,13 @@ static relay_boards_com_info_t *get_relay_boards_com_info(channels_info_config_t
 		}
 	}
 
-	os_status = osMutexRelease(relay_boards_com_info_list_mutex);
-
-	if(os_status != osOK) {
-	}
+	mutex_unlock(relay_boards_com_info_list_mutex);
 
 	return relay_boards_com_info;
 }
 
 void free_relay_boards_com_info(relay_boards_com_info_t *relay_boards_com_info)
 {
-	osStatus os_status;
 
 	if(relay_boards_com_info == NULL) {
 		return;
@@ -132,17 +124,11 @@ void free_relay_boards_com_info(relay_boards_com_info_t *relay_boards_com_info)
 		return;
 	}
 
-	os_status = osMutexWait(relay_boards_com_info_list_mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
+	mutex_lock(relay_boards_com_info_list_mutex);
 
 	list_del(&relay_boards_com_info->list);
 
-	os_status = osMutexRelease(relay_boards_com_info_list_mutex);
-
-	if(os_status != osOK) {
-	}
+	mutex_unlock(relay_boards_com_info_list_mutex);
 
 	if(relay_boards_com_info->cmd_ctx != NULL) {
 		os_free(relay_boards_com_info->cmd_ctx);
@@ -245,7 +231,6 @@ static int relay_boards_com_info_set_channels_config(relay_boards_com_info_t *re
 relay_boards_com_info_t *get_or_alloc_relay_boards_com_info(channels_info_config_t *channels_info_config)
 {
 	relay_boards_com_info_t *relay_boards_com_info = NULL;
-	osStatus os_status;
 
 	relay_boards_com_info = get_relay_boards_com_info(channels_info_config);
 
@@ -254,8 +239,7 @@ relay_boards_com_info_t *get_or_alloc_relay_boards_com_info(channels_info_config
 	}
 
 	if(relay_boards_com_info_list_mutex == NULL) {
-		osMutexDef(relay_boards_com_info_list_mutex);
-		relay_boards_com_info_list_mutex = osMutexCreate(osMutex(relay_boards_com_info_list_mutex));
+		relay_boards_com_info_list_mutex = mutex_create();
 
 		if(relay_boards_com_info_list_mutex == NULL) {
 			return relay_boards_com_info;
@@ -272,17 +256,11 @@ relay_boards_com_info_t *get_or_alloc_relay_boards_com_info(channels_info_config
 
 	relay_boards_com_info->channels_info_config = channels_info_config;
 
-	os_status = osMutexWait(relay_boards_com_info_list_mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
+	mutex_lock(relay_boards_com_info_list_mutex);
 
 	list_add_tail(&relay_boards_com_info->list, &relay_boards_com_info_list);
 
-	os_status = osMutexRelease(relay_boards_com_info_list_mutex);
-
-	if(os_status != osOK) {
-	}
+	mutex_unlock(relay_boards_com_info_list_mutex);
 
 	if(relay_boards_com_info_set_channels_config(relay_boards_com_info, channels_info_config) != 0) {
 		goto failed;

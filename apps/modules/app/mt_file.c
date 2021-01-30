@@ -6,7 +6,7 @@
  *   文件名称：mt_file.c
  *   创 建 者：肖飞
  *   创建日期：2020年11月03日 星期二 12时20分46秒
- *   修改日期：2021年01月30日 星期六 08时05分20秒
+ *   修改日期：2021年01月30日 星期六 08时31分58秒
  *   描    述：
  *
  *================================================================*/
@@ -20,9 +20,7 @@ static os_mutex_t mt_file_mutex = NULL;
 int mt_file_environment_init(void)
 {
 	int ret = -1;
-	osMutexDef(mt_file_mutex);
-
-	mt_file_mutex = osMutexCreate(osMutex(mt_file_mutex));
+	mt_file_mutex = mutex_create();
 
 	if(mt_file_mutex != NULL) {
 		ret = 0;
@@ -33,34 +31,17 @@ int mt_file_environment_init(void)
 
 void mt_file_environment_uninit(void)
 {
-	if(mt_file_mutex != NULL) {
-		osStatus status = osMutexDelete(mt_file_mutex);
-
-		if(osOK != status) {
-		}
-	}
+	mutex_delete(mt_file_mutex);
 }
 
 void mt_file_mutex_lock(void)
 {
-	if(mt_file_mutex) {
-		osStatus status;
-		status = osMutexWait(mt_file_mutex, osWaitForever);
-
-		if(status != osOK) {
-		}
-	}
+	mutex_lock(mt_file_mutex);
 }
 
 void mt_file_mutex_unlock(void)
 {
-	if(mt_file_mutex) {
-		osStatus status;
-		status = osMutexRelease(mt_file_mutex);
-
-		if(status != osOK) {
-		}
-	}
+	mutex_unlock(mt_file_mutex);
 }
 
 FRESULT mt_f_mkdir(const TCHAR* path)								/* Create a sub directory */

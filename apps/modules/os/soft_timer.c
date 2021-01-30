@@ -6,7 +6,7 @@
  *   文件名称：soft_timer.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月22日 星期五 10时28分46秒
- *   修改日期：2021年01月29日 星期五 16时13分17秒
+ *   修改日期：2021年01月30日 星期六 09时27分10秒
  *   描    述：
  *
  *================================================================*/
@@ -27,19 +27,13 @@ static void soft_timer_update_timeout(soft_timer_info_t *soft_timer_info, uint32
 	}
 
 	if(wakeup != 0) {
-		osStatus status = osMessagePut(soft_timer_info->wakeup, 0, 0);
-
-		if(status != osOK) {
-		}
+		signal_send(soft_timer_info->wakeup);
 	}
 }
 
 static void soft_timer_delay(soft_timer_info_t *soft_timer_info, uint32_t timeout)
 {
-	osEvent event = osMessageGet(soft_timer_info->wakeup, timeout);
-
-	if(event.status == osEventMessage) {//被唤醒
-	}
+	signal_wait(soft_timer_info->wakeup, timeout);
 }
 
 static void common_soft_timer_fn(void *fn_ctx, void *chain_ctx)
@@ -47,7 +41,6 @@ static void common_soft_timer_fn(void *fn_ctx, void *chain_ctx)
 	soft_timer_ctx_t *soft_timer_ctx = (soft_timer_ctx_t *)fn_ctx;
 	uint32_t ticks = osKernelSysTick();
 	uint32_t delay;
-	osStatus os_status;
 
 	if(ticks - soft_timer_ctx->stamp >= soft_timer_ctx->period) {
 		soft_timer_ctx->stamp = ticks;
@@ -67,17 +60,11 @@ static void common_soft_timer_fn(void *fn_ctx, void *chain_ctx)
 			break;
 
 			default: {
-				os_status = osMutexWait(soft_timer_ctx->soft_timer_info->mutex, osWaitForever);
-
-				if(os_status != osOK) {
-				}
+				mutex_lock(soft_timer_ctx->soft_timer_info->mutex);
 
 				list_move_tail(&soft_timer_ctx->list, &soft_timer_ctx->soft_timer_info->deactive_timers);
 
-				os_status = osMutexRelease(soft_timer_ctx->soft_timer_info->mutex);
-
-				if(os_status != osOK) {
-				}
+				mutex_unlock(soft_timer_ctx->soft_timer_info->mutex);
 			}
 			break;
 		}
@@ -155,24 +142,17 @@ failed:
 int start_soft_timer(soft_timer_ctx_t *soft_timer_ctx)
 {
 	int ret = -1;
-	osStatus os_status;
 
 	if(soft_timer_ctx == NULL) {
 		return ret;
 	}
 
-	os_status = osMutexWait(soft_timer_ctx->soft_timer_info->mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
+	mutex_lock(soft_timer_ctx->soft_timer_info->mutex);
 
 	soft_timer_ctx->stamp = osKernelSysTick();
 	list_move_tail(&soft_timer_ctx->list, &soft_timer_ctx->soft_timer_info->active_timers);
 
-	os_status = osMutexRelease(soft_timer_ctx->soft_timer_info->mutex);
-
-	if(os_status != osOK) {
-	}
+	mutex_unlock(soft_timer_ctx->soft_timer_info->mutex);
 
 	soft_timer_update_timeout(soft_timer_ctx->soft_timer_info, soft_timer_ctx->period, 1);
 
@@ -184,23 +164,16 @@ int start_soft_timer(soft_timer_ctx_t *soft_timer_ctx)
 int stop_soft_timer(soft_timer_ctx_t *soft_timer_ctx)
 {
 	int ret = -1;
-	osStatus os_status;
 
 	if(soft_timer_ctx == NULL) {
 		return ret;
 	}
 
-	os_status = osMutexWait(soft_timer_ctx->soft_timer_info->mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
+	mutex_lock(soft_timer_ctx->soft_timer_info->mutex);
 
 	list_move_tail(&soft_timer_ctx->list, &soft_timer_ctx->soft_timer_info->deactive_timers);
 
-	os_status = osMutexRelease(soft_timer_ctx->soft_timer_info->mutex);
-
-	if(os_status != osOK) {
-	}
+	mutex_unlock(soft_timer_ctx->soft_timer_info->mutex);
 
 	soft_timer_update_timeout(soft_timer_ctx->soft_timer_info, 0, 1);
 
@@ -212,23 +185,16 @@ int stop_soft_timer(soft_timer_ctx_t *soft_timer_ctx)
 int remove_soft_timer(soft_timer_ctx_t *soft_timer_ctx)
 {
 	int ret = -1;
-	osStatus os_status;
 
 	if(soft_timer_ctx == NULL) {
 		return ret;
 	}
 
-	os_status = osMutexWait(soft_timer_ctx->soft_timer_info->mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
+	mutex_lock(soft_timer_ctx->soft_timer_info->mutex);
 
 	list_move_tail(&soft_timer_ctx->list, &soft_timer_ctx->soft_timer_info->delete_timers);
 
-	os_status = osMutexRelease(soft_timer_ctx->soft_timer_info->mutex);
-
-	if(os_status != osOK) {
-	}
+	mutex_unlock(soft_timer_ctx->soft_timer_info->mutex);
 
 	ret = 0;
 
@@ -240,12 +206,8 @@ static void active_deactive_timers(soft_timer_info_t *soft_timer_info)
 	struct list_head *head;
 	struct list_head *pos;
 	struct list_head *n;
-	osStatus os_status;
 
-	os_status = osMutexWait(soft_timer_info->mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
+	mutex_lock(soft_timer_info->mutex);
 
 	head = &soft_timer_info->deactive_timers;
 	list_for_each_safe(pos, n, head) {
@@ -283,10 +245,7 @@ static void active_deactive_timers(soft_timer_info_t *soft_timer_info)
 		os_free(soft_timer_ctx);
 	}
 
-	os_status = osMutexRelease(soft_timer_info->mutex);
-
-	if(os_status != osOK) {
-	}
+	mutex_unlock(soft_timer_info->mutex);
 }
 
 static void soft_timer_task(void const *argument)
@@ -313,8 +272,6 @@ static void soft_timer_task(void const *argument)
 
 static void free_soft_timer_info(soft_timer_info_t *soft_timer_info)
 {
-	osStatus os_status;
-
 	if(soft_timer_info == NULL) {
 		return;
 	}
@@ -323,19 +280,9 @@ static void free_soft_timer_info(soft_timer_info_t *soft_timer_info)
 		free_callback_chain(soft_timer_info->timer_cb_chain);
 	}
 
-	if(soft_timer_info->mutex != NULL) {
-		os_status = osMutexDelete(soft_timer_info->mutex);
+	mutex_delete(soft_timer_info->mutex);
 
-		if(osOK != os_status) {
-		}
-	}
-
-	if(soft_timer_info->wakeup != NULL) {
-		os_status = osMessageDelete(soft_timer_info->wakeup);
-
-		if(osOK != os_status) {
-		}
-	}
+	signal_delete(soft_timer_info->wakeup);
 
 	os_free(soft_timer_info);
 }
@@ -343,8 +290,6 @@ static void free_soft_timer_info(soft_timer_info_t *soft_timer_info)
 static soft_timer_info_t *alloc_soft_timer_info(uint32_t id)
 {
 	soft_timer_info_t *soft_timer_info = NULL;
-	osMutexDef(mutex);
-	osMessageQDef(wakeup, 1, uint16_t);
 
 	soft_timer_info = (soft_timer_info_t *)os_alloc(sizeof(soft_timer_info_t));
 
@@ -367,14 +312,14 @@ static soft_timer_info_t *alloc_soft_timer_info(uint32_t id)
 		goto failed;
 	}
 
-	soft_timer_info->wakeup = osMessageCreate(osMessageQ(wakeup), NULL);
+	soft_timer_info->wakeup = signal_create();
 
 	if(soft_timer_info->wakeup == NULL) {
 		debug("\n");
 		goto failed;
 	}
 
-	soft_timer_info->mutex = osMutexCreate(osMutex(mutex));
+	soft_timer_info->mutex = mutex_create();
 
 	if(soft_timer_info->mutex == NULL) {
 		debug("\n");

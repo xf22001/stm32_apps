@@ -6,7 +6,7 @@
  *   文件名称：bitmap_ops.c
  *   创 建 者：肖飞
  *   创建日期：2020年01月19日 星期日 13时14分10秒
- *   修改日期：2021年01月25日 星期一 10时41分30秒
+ *   修改日期：2021年01月30日 星期六 09时29分05秒
  *   描    述：
  *
  *================================================================*/
@@ -20,8 +20,6 @@ bitmap_t *alloc_bitmap(int size)
 	bitmap_t *bitmap = NULL;
 	cell_type_t *data = NULL;
 	uint16_t cell_size = (size + BIT_PER_CELL - 1) / BIT_PER_CELL;
-
-	osMutexDef(bitmap_mutex);
 
 	if(size <= 0) {
 		return bitmap;
@@ -43,35 +41,23 @@ bitmap_t *alloc_bitmap(int size)
 
 	bitmap->size = size;
 	bitmap->data = data;
-	bitmap->bitmap_mutex = osMutexCreate(osMutex(bitmap_mutex));
+	bitmap->bitmap_mutex = mutex_create();
 
 	return bitmap;
 }
 
 void free_bitmap(bitmap_t *bitmap)
 {
-	osStatus os_status;
-
 	if(bitmap == NULL) {
 		return;
 	}
 
-	if(bitmap->bitmap_mutex) {
-		os_status = osMutexWait(bitmap->bitmap_mutex, osWaitForever);
-
-		if(os_status != osOK) {
-		}
-	}
+	mutex_lock(bitmap->bitmap_mutex);
 
 	os_free(bitmap->data);
 	bitmap->data = NULL;
 
-	if(bitmap->bitmap_mutex) {
-		os_status = osMutexRelease(bitmap->bitmap_mutex);
-
-		if(os_status != osOK) {
-		}
-	}
+	mutex_unlock(bitmap->bitmap_mutex);
 
 	os_free(bitmap);
 }
@@ -99,16 +85,12 @@ int get_first_value_index(bitmap_t *bitmap, uint8_t value)
 	int ret = -1;
 	int loops;
 	int i;
-	osStatus os_status;
 
 	if(bitmap == NULL) {
 		return ret;
 	}
 
-	os_status = osMutexWait(bitmap->bitmap_mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
+	mutex_lock(bitmap->bitmap_mutex);
 
 	loops = (bitmap->size + BIT_PER_CELL - 1) / BIT_PER_CELL;
 
@@ -121,10 +103,7 @@ int get_first_value_index(bitmap_t *bitmap, uint8_t value)
 		}
 	}
 
-	os_status = osMutexRelease(bitmap->bitmap_mutex);
-
-	if(os_status != osOK) {
-	}
+	mutex_unlock(bitmap->bitmap_mutex);
 
 	return ret;
 }
@@ -135,16 +114,12 @@ int set_bitmap_value(bitmap_t *bitmap, int index, uint8_t value)
 	cell_type_t *cell;
 	int cell_index;
 	int cell_offset;
-	osStatus os_status;
 
 	if(bitmap == NULL) {
 		return ret;
 	}
 
-	os_status = osMutexWait(bitmap->bitmap_mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
+	mutex_lock(bitmap->bitmap_mutex);
 
 	if(index >= bitmap->size) {
 		return ret;
@@ -161,10 +136,7 @@ int set_bitmap_value(bitmap_t *bitmap, int index, uint8_t value)
 		*cell &= ~(1 << cell_offset);
 	}
 
-	os_status = osMutexRelease(bitmap->bitmap_mutex);
-
-	if(os_status != osOK) {
-	}
+	mutex_unlock(bitmap->bitmap_mutex);
 
 	ret = 0;
 

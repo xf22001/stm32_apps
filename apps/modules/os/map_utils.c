@@ -6,7 +6,7 @@
  *   文件名称：map_utils.c
  *   创 建 者：肖飞
  *   创建日期：2020年12月29日 星期二 11时40分50秒
- *   修改日期：2021年01月29日 星期五 12时30分25秒
+ *   修改日期：2021年01月30日 星期六 09时29分47秒
  *   描    述：
  *
  *================================================================*/
@@ -17,7 +17,6 @@
 
 void map_utils_free(map_utils_t *map_utils)
 {
-	osStatus os_status;
 
 	if(map_utils == NULL) {
 		return;
@@ -25,12 +24,7 @@ void map_utils_free(map_utils_t *map_utils)
 
 	__disable_irq();
 
-	if(map_utils->mutex != NULL) {
-		os_status = osMutexWait(map_utils->mutex, osWaitForever);
-
-		if(os_status != osOK) {
-		}
-	}
+	mutex_lock(map_utils->mutex);
 
 	if(!list_empty(&map_utils->list)) {
 		struct list_head *pos;
@@ -43,21 +37,11 @@ void map_utils_free(map_utils_t *map_utils)
 		}
 	}
 
-	if(map_utils->mutex != NULL) {
-		os_status = osMutexRelease(map_utils->mutex);
-
-		if(os_status != osOK) {
-		}
-	}
+	mutex_unlock(map_utils->mutex);
 
 	__enable_irq();
 
-	if(map_utils->mutex != NULL) {
-		os_status = osMutexDelete(map_utils->mutex);
-
-		if(osOK != os_status) {
-		}
-	}
+	mutex_delete(map_utils->mutex);
 
 	os_free(map_utils);
 }
@@ -77,8 +61,6 @@ map_utils_t *map_utils_alloc(key_match_t match)
 {
 	map_utils_t *map_utils = NULL;
 
-	osMutexDef(mutex);
-
 	if(__get_IPSR() != 0) {
 		return map_utils;
 	}
@@ -89,7 +71,7 @@ map_utils_t *map_utils_alloc(key_match_t match)
 		return map_utils;
 	}
 
-	map_utils->mutex = osMutexCreate(osMutex(mutex));
+	map_utils->mutex = mutex_create();
 
 	if(map_utils->mutex == NULL) {
 		goto failed;
@@ -115,7 +97,6 @@ failed:
 int map_utils_add_key_value(map_utils_t *map_utils, void *key, void *value)
 {
 	int ret = -1;
-	osStatus os_status;
 	map_utils_item_t *map_utils_item = NULL;
 	uint8_t found = 0;
 
@@ -131,10 +112,7 @@ int map_utils_add_key_value(map_utils_t *map_utils, void *key, void *value)
 
 	__disable_irq();
 
-	os_status = osMutexWait(map_utils->mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
+	mutex_lock(map_utils->mutex);
 
 	if(!list_empty(&map_utils->list)) {
 		struct list_head *pos;
@@ -157,10 +135,7 @@ int map_utils_add_key_value(map_utils_t *map_utils, void *key, void *value)
 		ret = 0;
 	}
 
-	os_status = osMutexRelease(map_utils->mutex);
-
-	if(os_status != osOK) {
-	}
+	mutex_unlock(map_utils->mutex);
 
 	__enable_irq();
 
@@ -173,7 +148,6 @@ int map_utils_add_key_value(map_utils_t *map_utils, void *key, void *value)
 
 void *map_utils_get_value(map_utils_t *map_utils, void *key)
 {
-	osStatus os_status;
 	void *value = NULL;
 
 	if(map_utils == NULL) {
@@ -182,10 +156,7 @@ void *map_utils_get_value(map_utils_t *map_utils, void *key)
 
 	__disable_irq();
 
-	os_status = osMutexWait(map_utils->mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
+	mutex_lock(map_utils->mutex);
 
 	if(!list_empty(&map_utils->list)) {
 		struct list_head *pos;
@@ -201,10 +172,7 @@ void *map_utils_get_value(map_utils_t *map_utils, void *key)
 		}
 	}
 
-	os_status = osMutexRelease(map_utils->mutex);
-
-	if(os_status != osOK) {
-	}
+	mutex_unlock(map_utils->mutex);
 
 	__enable_irq();
 
@@ -214,7 +182,6 @@ void *map_utils_get_value(map_utils_t *map_utils, void *key)
 int map_utils_remove_value(map_utils_t *map_utils, void *key)
 {
 	int ret = -1;
-	osStatus os_status;
 
 	if(map_utils == NULL) {
 		return ret;
@@ -222,10 +189,7 @@ int map_utils_remove_value(map_utils_t *map_utils, void *key)
 
 	__disable_irq();
 
-	os_status = osMutexWait(map_utils->mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
+	mutex_lock(map_utils->mutex);
 
 	if(!list_empty(&map_utils->list)) {
 		struct list_head *pos;
@@ -242,10 +206,7 @@ int map_utils_remove_value(map_utils_t *map_utils, void *key)
 		}
 	}
 
-	os_status = osMutexRelease(map_utils->mutex);
-
-	if(os_status != osOK) {
-	}
+	mutex_unlock(map_utils->mutex);
 
 	__enable_irq();
 
@@ -256,7 +217,6 @@ int map_utils_get_keys(map_utils_t *map_utils, void **pkey, size_t *size)
 {
 	int ret = -1;
 	size_t index = 0;
-	osStatus os_status;
 
 	if(map_utils == NULL) {
 		return ret;
@@ -272,10 +232,7 @@ int map_utils_get_keys(map_utils_t *map_utils, void **pkey, size_t *size)
 
 	__disable_irq();
 
-	os_status = osMutexWait(map_utils->mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
+	mutex_lock(map_utils->mutex);
 
 	if(!list_empty(&map_utils->list)) {
 		struct list_head *pos;
@@ -294,10 +251,7 @@ int map_utils_get_keys(map_utils_t *map_utils, void **pkey, size_t *size)
 		}
 	}
 
-	os_status = osMutexRelease(map_utils->mutex);
-
-	if(os_status != osOK) {
-	}
+	mutex_unlock(map_utils->mutex);
 
 	__enable_irq();
 
@@ -310,7 +264,6 @@ int map_utils_get_values(map_utils_t *map_utils, void **pvalue, size_t *size)
 {
 	int ret = -1;
 	size_t index = 0;
-	osStatus os_status;
 
 	if(map_utils == NULL) {
 		return ret;
@@ -326,10 +279,7 @@ int map_utils_get_values(map_utils_t *map_utils, void **pvalue, size_t *size)
 
 	__disable_irq();
 
-	os_status = osMutexWait(map_utils->mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
+	mutex_lock(map_utils->mutex);
 
 	if(!list_empty(&map_utils->list)) {
 		struct list_head *pos;
@@ -348,10 +298,7 @@ int map_utils_get_values(map_utils_t *map_utils, void **pvalue, size_t *size)
 		}
 	}
 
-	os_status = osMutexRelease(map_utils->mutex);
-
-	if(os_status != osOK) {
-	}
+	mutex_unlock(map_utils->mutex);
 
 	__enable_irq();
 
@@ -363,7 +310,6 @@ int map_utils_get_values(map_utils_t *map_utils, void **pvalue, size_t *size)
 size_t map_utils_get_size(map_utils_t *map_utils)
 {
 	size_t size = 0;
-	osStatus os_status;
 
 	if(map_utils == NULL) {
 		return size;
@@ -371,10 +317,7 @@ size_t map_utils_get_size(map_utils_t *map_utils)
 
 	__disable_irq();
 
-	os_status = osMutexWait(map_utils->mutex, osWaitForever);
-
-	if(os_status != osOK) {
-	}
+	mutex_lock(map_utils->mutex);
 
 	if(!list_empty(&map_utils->list)) {
 		struct list_head *pos;
@@ -386,10 +329,7 @@ size_t map_utils_get_size(map_utils_t *map_utils)
 		}
 	}
 
-	os_status = osMutexRelease(map_utils->mutex);
-
-	if(os_status != osOK) {
-	}
+	mutex_unlock(map_utils->mutex);
 
 	__enable_irq();
 
