@@ -6,7 +6,7 @@
  *   文件名称：callback_chain.h
  *   创 建 者：肖飞
  *   创建日期：2020年03月20日 星期五 08时20分40秒
- *   修改日期：2021年01月29日 星期五 19时40分07秒
+ *   修改日期：2021年01月30日 星期六 08时09分48秒
  *   描    述：
  *
  *================================================================*/
@@ -19,7 +19,7 @@ extern "C"
 
 #include "app_platform.h"
 #include "cmsis_os.h"
-
+#include "os_utils.h"
 #include "list_utils.h"
 
 #ifdef __cplusplus

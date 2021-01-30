@@ -6,7 +6,7 @@
  *   文件名称：eeprom.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月14日 星期四 09时01分48秒
- *   修改日期：2020年12月30日 星期三 15时55分16秒
+ *   修改日期：2021年01月30日 星期六 08时04分39秒
  *   描    述：
  *
  *================================================================*/
@@ -24,7 +24,7 @@ extern "C"
 #include "app_platform.h"
 #include "main.h"
 #include "spi_txrx.h"
-#include "list_utils.h"
+#include "os_utils.h"
 
 typedef struct {
 	spi_info_t *spi_info;

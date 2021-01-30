@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时29分22秒
- *   修改日期：2021年01月21日 星期四 08时50分39秒
+ *   修改日期：2021年01月30日 星期六 08时05分00秒
  *   描    述：
  *
  *================================================================*/
@@ -24,7 +24,7 @@ extern "C"
 #include "app_platform.h"
 #include "cmsis_os.h"
 
-#include "list_utils.h"
+#include "os_utils.h"
 #include "can_config.h"
 
 typedef struct {

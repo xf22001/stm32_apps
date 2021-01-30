@@ -6,7 +6,7 @@
  *   文件名称：bitmap_ops.h
  *   创 建 者：肖飞
  *   创建日期：2020年01月19日 星期日 13时16分54秒
- *   修改日期：2020年04月12日 星期日 13时34分37秒
+ *   修改日期：2021年01月30日 星期六 08时06分33秒
  *   描    述：
  *
  *================================================================*/
@@ -17,9 +17,9 @@ extern "C"
 {
 #endif
 
-#include <stddef.h>
-#include <stdint.h>
+#include "app_platform.h"
 #include "cmsis_os.h"
+#include "os_utils.h"
 
 #ifdef __cplusplus
 }

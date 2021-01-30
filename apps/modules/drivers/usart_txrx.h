@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分40秒
- *   修改日期：2021年01月29日 星期五 15时18分23秒
+ *   修改日期：2021年01月30日 星期六 08时08分40秒
  *   描    述：
  *
  *================================================================*/
@@ -17,13 +17,14 @@ extern "C"
 {
 #endif
 
+#include "cmsis_os.h"
+#include "app_platform.h"
+#include "os_utils.h"
+#include "list_utils.h"
+
 #ifdef __cplusplus
 }
 #endif
-
-#include "cmsis_os.h"
-#include "app_platform.h"
-#include "list_utils.h"
 
 typedef struct {
 	UART_HandleTypeDef *huart;
