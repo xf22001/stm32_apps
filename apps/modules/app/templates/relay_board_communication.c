@@ -88,7 +88,7 @@ typedef struct {
 } command_item_t;
 
 static LIST_HEAD(relay_board_com_info_list);
-static osMutexId relay_board_com_info_list_mutex = NULL;
+static os_mutex_t relay_board_com_info_list_mutex = NULL;
 
 static relay_board_com_info_t *get_relay_board_com_info(channel_info_config_t *channel_info_config)
 {

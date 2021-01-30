@@ -30,7 +30,7 @@ extern "C"
 
 typedef struct {
 	struct list_head list;
-	osMutexId handle_mutex;
+	os_mutex_t handle_mutex;
 	can_info_t *can_info;
 	can_tx_msg_t can_tx_msg;
 	can_rx_msg_t *can_rx_msg;

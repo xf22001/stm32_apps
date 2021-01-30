@@ -35,7 +35,7 @@ typedef struct {
 } callback_item_t;
 
 typedef struct {
-	osMutexId callback_mutex;
+	os_mutex_t callback_mutex;
 	struct list_head list_callback;
 } callback_chain_t;
 

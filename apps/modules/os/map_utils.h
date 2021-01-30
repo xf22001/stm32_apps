@@ -32,7 +32,7 @@ typedef void *(*map_utils_value_free_t)(void *vlue);
 
 typedef struct {
 	struct list_head list;
-	osMutexId mutex;
+	os_mutex_t mutex;
 	key_match_t match;
 } map_utils_t;
 

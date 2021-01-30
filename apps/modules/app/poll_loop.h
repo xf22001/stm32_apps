@@ -60,7 +60,7 @@ typedef struct {
 	struct list_head list;
 
 	uint8_t id;
-	osMutexId poll_ctx_list_mutex;
+	os_mutex_t poll_ctx_list_mutex;
 	struct list_head poll_ctx_list;
 } poll_loop_t;
 

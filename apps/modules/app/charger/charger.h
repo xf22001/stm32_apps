@@ -109,7 +109,7 @@ typedef struct {
 	can_info_t *can_info;
 	charger_state_t state;
 	charger_request_state_t charger_request_state;
-	osMutexId handle_mutex;
+	os_mutex_t handle_mutex;
 
 	channel_info_config_t *channel_info_config;
 	void *a_f_b_info;

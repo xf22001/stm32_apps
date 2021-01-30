@@ -27,7 +27,7 @@ typedef struct {
 
 typedef struct {
 	uint8_t init;
-	osMutexId os_utils_mutex;
+	os_mutex_t os_utils_mutex;
 	size_t size;
 	size_t count;
 	size_t max_size;
@@ -44,9 +44,9 @@ void app_panic(void)
 	while(1);
 }
 
-osMutexId mutex_create(void)
+os_mutex_t mutex_create(void)
 {
-	osMutexId mutex = NULL;
+	os_mutex_t mutex = NULL;
 	osMutexDef(mutex);
 
 	mutex = osMutexCreate(osMutex(mutex));
@@ -54,7 +54,7 @@ osMutexId mutex_create(void)
 	return mutex;
 }
 
-void mutex_delete(osMutexId mutex)
+void mutex_delete(os_mutex_t mutex)
 {
 	osStatus os_status;
 
@@ -69,7 +69,7 @@ void mutex_delete(osMutexId mutex)
 	}
 }
 
-void mutex_lock(osMutexId mutex)
+void mutex_lock(os_mutex_t mutex)
 {
 	osStatus os_status;
 
@@ -85,7 +85,7 @@ void mutex_lock(osMutexId mutex)
 	}
 }
 
-void mutex_unlock(osMutexId mutex)
+void mutex_unlock(os_mutex_t mutex)
 {
 	osStatus os_status;
 
@@ -100,9 +100,9 @@ void mutex_unlock(osMutexId mutex)
 	}
 }
 
-osMessageQId signal_create(void)
+os_signal_t signal_create(void)
 {
-	osMessageQId signal = NULL;
+	os_signal_t signal = NULL;
 	osMessageQDef(signal, 1, uint16_t);
 
 	signal = osMessageCreate(osMessageQ(signal), NULL);
@@ -110,7 +110,7 @@ osMessageQId signal_create(void)
 	return signal;
 }
 
-void signal_delete(osMessageQId signal)
+void signal_delete(os_signal_t signal)
 {
 	osStatus os_status;
 
@@ -125,7 +125,7 @@ void signal_delete(osMessageQId signal)
 	}
 }
 
-int signal_wait(osMessageQId signal, uint32_t timeout)
+int signal_wait(os_signal_t signal, uint32_t timeout)
 {
 	int ret = -1;
 
@@ -142,7 +142,7 @@ int signal_wait(osMessageQId signal, uint32_t timeout)
 	return ret;
 }
 
-int signal_send(osMessageQId signal)
+int signal_send(os_signal_t signal)
 {
 	int ret = -1;
 	osStatus status;

@@ -27,12 +27,12 @@ extern "C"
 
 typedef struct {
 	uint32_t id;
-	osMutexId mutex;
+	os_mutex_t mutex;
 	struct list_head deactive_timers;
 	struct list_head active_timers;
 	struct list_head delete_timers;
 	callback_chain_t *timer_cb_chain;
-	osMessageQId wakeup;
+	os_signal_t wakeup;
 	uint32_t delay;
 } soft_timer_info_t;
 

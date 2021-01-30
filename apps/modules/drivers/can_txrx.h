@@ -75,9 +75,9 @@ typedef void (*receive_init_t)(void *ctx);
 typedef struct {
 	CAN_HandleTypeDef *hcan;
 	CAN_HandleTypeDef *config_can;
-	osMutexId hcan_mutex;
-	osMessageQId tx_msg_q;
-	osMessageQId rx_msg_q;
+	os_mutex_t hcan_mutex;
+	os_signal_t tx_msg_q;
+	os_signal_t rx_msg_q;
 
 	uint32_t receive_fifo;
 	can_config_t *can_config;

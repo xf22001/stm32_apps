@@ -32,8 +32,8 @@ typedef struct {
 } event_item_t;
 
 typedef struct {
-	osMutexId mutex;//保护消息链数据
-	osMessageQId queue;
+	os_mutex_t mutex;//保护消息链数据
+	os_signal_t queue;
 	struct list_head list_event;
 } event_pool_t;
 

@@ -22,7 +22,7 @@
 #include "log.h"
 
 static LIST_HEAD(charger_info_list);
-static osMutexId charger_info_list_mutex = NULL;
+static os_mutex_t charger_info_list_mutex = NULL;
 
 static void bms_data_settings_init(bms_data_settings_t *settings)
 {

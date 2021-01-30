@@ -78,7 +78,7 @@ typedef struct {
 } data_ctx_t;
 
 static LIST_HEAD(relay_boards_com_info_list);
-static osMutexId relay_boards_com_info_list_mutex = NULL;
+static os_mutex_t relay_boards_com_info_list_mutex = NULL;
 
 typedef int (*request_callback_t)(relay_boards_com_info_t *relay_boards_com_info);
 typedef int (*response_callback_t)(relay_boards_com_info_t *relay_boards_com_info);

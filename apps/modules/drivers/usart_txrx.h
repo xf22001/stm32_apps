@@ -27,10 +27,10 @@ extern "C"
 
 typedef struct {
 	UART_HandleTypeDef *huart;
-	osMessageQId tx_msg_q;
-	osMessageQId rx_msg_q;
-	osMutexId huart_mutex;
-	osMutexId log_mutex;
+	os_signal_t tx_msg_q;
+	os_signal_t rx_msg_q;
+	os_mutex_t huart_mutex;
+	os_mutex_t log_mutex;
 	uint32_t rx_poll_interval; //ticks
 	uint32_t max_pending_duration; //ticks
 } uart_info_t;

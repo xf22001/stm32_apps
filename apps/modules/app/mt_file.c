@@ -14,7 +14,7 @@
 
 #include <stdarg.h>
 
-static osMutexId mt_file_mutex = NULL;
+static os_mutex_t mt_file_mutex = NULL;
 
 int mt_file_environment_init(void)
 {

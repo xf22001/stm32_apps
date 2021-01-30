@@ -87,7 +87,7 @@ typedef enum {
 } ftp_client_state_t;
 
 typedef struct {
-	osMutexId mutex;//保护回调链数据
+	os_mutex_t mutex;//保护回调链数据
 
 	char host[256];
 	char port[8];

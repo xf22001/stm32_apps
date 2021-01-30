@@ -28,7 +28,7 @@ extern "C"
 
 typedef struct {
 	spi_info_t *spi_info;
-	osMutexId mutex;
+	os_mutex_t mutex;
 
 	GPIO_TypeDef *gpio_port_spi_cs;
 	uint16_t gpio_pin_spi_cs;

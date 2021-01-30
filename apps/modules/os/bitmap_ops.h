@@ -32,7 +32,7 @@ typedef uint32_t cell_type_t;
 typedef struct {
 	int size;
 	cell_type_t *data;
-	osMutexId bitmap_mutex;
+	os_mutex_t bitmap_mutex;
 } bitmap_t;
 
 bitmap_t *alloc_bitmap(int size);
