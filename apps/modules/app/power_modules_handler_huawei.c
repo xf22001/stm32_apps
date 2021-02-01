@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_huawei.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 17时23分55秒
- *   修改日期：2020年11月10日 星期二 08时23分35秒
+ *   修改日期：2021年02月01日 星期一 09时52分06秒
  *   描    述：
  *
  *================================================================*/
@@ -846,7 +846,7 @@ static void power_modules_request_periodic(power_modules_info_t *power_modules_i
 	int i;
 	uint32_t ticks = osKernelSysTick();
 
-	if(ticks - power_modules_info->periodic_stamp < 50) {
+	if(abs(ticks - power_modules_info->periodic_stamp) < 50) {
 		return;
 	}
 
@@ -862,7 +862,7 @@ static void power_modules_request_periodic(power_modules_info_t *power_modules_i
 			can_com_cmd_ctx_t *cmd_ctx = module_cmd_ctx + item->cmd;
 
 			if(cmd_ctx->state == CAN_COM_STATE_RESPONSE) {//超时
-				if(ticks - cmd_ctx->send_stamp >= RESPONSE_TIMEOUT) {
+				if(abs(ticks - cmd_ctx->send_stamp) >= RESPONSE_TIMEOUT) {
 					can_com_set_connect_state(connect_state, 0);
 					debug("cmd %d(%s), module_id %d timeout, connect state:%d\n",
 					      item->cmd,

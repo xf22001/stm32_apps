@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2021年01月30日 星期六 09时28分49秒
+ *   修改日期：2021年02月01日 星期一 10时06分48秒
  *   描    述：
  *
  *================================================================*/
@@ -233,7 +233,7 @@ static uint16_t wait_for_uart_receive(uart_info_t *uart_info, uint16_t size, uin
 
 			if(pre_received == received) {//没有新数据进来
 				//pending for a long time(poll interval)
-				if(cur_ticks - pre_received_ticks >= uart_info->max_pending_duration) {
+				if(abs(cur_ticks - pre_received_ticks) >= uart_info->max_pending_duration) {
 					debug("pending duration:%d\n", cur_ticks - pre_received_ticks);
 					HAL_UART_AbortReceive(uart_info->huart);
 					break;

@@ -6,7 +6,7 @@
  *   文件名称：command_status.h
  *   创 建 者：肖飞
  *   创建日期：2020年06月17日 星期三 15时40分38秒
- *   修改日期：2020年06月17日 星期三 16时04分14秒
+ *   修改日期：2021年02月01日 星期一 10时01分44秒
  *   描    述：
  *
  *================================================================*/
@@ -47,7 +47,7 @@ static inline int validate_command_status(command_status_t *status, uint32_t tic
 		return ret;
 	}
 
-	if(ticks - status->update_stamp >= timeout) {
+	if(abs(ticks - status->update_stamp) >= timeout) {
 		status->available = 0;
 		return ret;
 	}

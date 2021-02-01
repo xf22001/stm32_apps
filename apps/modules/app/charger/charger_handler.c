@@ -6,7 +6,7 @@
  *   文件名称：charger_handler.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 14时18分42秒
- *   修改日期：2020年06月02日 星期二 13时14分28秒
+ *   修改日期：2021年02月01日 星期一 10时01分30秒
  *   描    述：
  *
  *================================================================*/
@@ -200,7 +200,7 @@ static int handle_state_chm_request(charger_info_t *charger_info)
 	uint32_t ticks = osKernelSysTick();
 	int op_ret = 0;
 
-	if(ticks - charger_info->stamp >= BMS_GENERIC_TIMEOUT) {
+	if(abs(ticks - charger_info->stamp) >= BMS_GENERIC_TIMEOUT) {
 		set_charger_state(charger_info, CHARGER_STATE_CRM);
 	}
 
@@ -209,7 +209,7 @@ static int handle_state_chm_request(charger_info_t *charger_info)
 		set_charger_state(charger_info, CHARGER_STATE_CST);
 	}
 
-	if(ticks - charger_info->send_stamp >= FN_CHM_SEND_PERIOD) {
+	if(abs(ticks - charger_info->send_stamp) >= FN_CHM_SEND_PERIOD) {
 		send_chm(charger_info);
 		charger_info->send_stamp = ticks;
 	}
@@ -292,7 +292,7 @@ static int handle_state_chm_request(charger_info_t *charger_info)
 		break;
 
 		case CHM_OP_STATE_INSULATION_CHECK_DELAY_1: {//绝缘检查预充结束延时
-			if(ticks - charger_info->stamp_1 >= 1000) {
+			if(abs(ticks - charger_info->stamp_1) >= 1000) {
 
 				charger_info->charger_op_ctx.state = 0;
 
@@ -327,7 +327,7 @@ static int handle_state_chm_request(charger_info_t *charger_info)
 		break;
 
 		case CHM_OP_STATE_INSULATION_CHECK_DELAY_2: {//绝缘检查停止预充延时
-			if(ticks - charger_info->stamp_1 >= 500) {
+			if(abs(ticks - charger_info->stamp_1) >= 500) {
 
 				charger_info->charger_op_ctx.state = 0;
 
@@ -499,7 +499,7 @@ static int handle_state_crm_request(charger_info_t *charger_info)
 	int ret = 0;
 	uint32_t ticks = osKernelSysTick();
 
-	if(ticks - charger_info->stamp >= BMS_GENERIC_TIMEOUT) {
+	if(abs(ticks - charger_info->stamp) >= BMS_GENERIC_TIMEOUT) {
 		if(charger_info->brm_received == 0) {
 			charger_info->settings->cem_data.u1.s.brm_timeout = 0x01;
 			charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_BRM_TIMEOUT);
@@ -516,7 +516,7 @@ static int handle_state_crm_request(charger_info_t *charger_info)
 		set_charger_state(charger_info, CHARGER_STATE_CST);
 	}
 
-	if(ticks - charger_info->send_stamp >= FN_CRM_SEND_PERIOD) {
+	if(abs(ticks - charger_info->send_stamp) >= FN_CRM_SEND_PERIOD) {
 		send_crm(charger_info);
 		charger_info->send_stamp = ticks;
 	}
@@ -639,11 +639,11 @@ static int handle_state_cts_cml_request(charger_info_t *charger_info)
 	int ret = 0;
 	uint32_t ticks = osKernelSysTick();
 
-	if(ticks - charger_info->stamp >= BMS_GENERIC_TIMEOUT) {//定时发送
+	if(abs(ticks - charger_info->stamp) >= BMS_GENERIC_TIMEOUT) {//定时发送
 		charger_info->settings->cem_data.u2.s.bro_timeout = 0x01;
 		charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_BRO_TIMEOUT);
 		set_charger_state(charger_info, CHARGER_STATE_CSD_CEM);
-	} else if(ticks - charger_info->stamp_1 >= FN_BRO_0xAA_TIMEOUT) {
+	} else if(abs(ticks - charger_info->stamp_1) >= FN_BRO_0xAA_TIMEOUT) {
 		charger_info->settings->cem_data.u2.s.bro_timeout = 0x01;
 		charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_BRO_TIMEOUT);
 		set_charger_state(charger_info, CHARGER_STATE_CSD_CEM);
@@ -654,12 +654,12 @@ static int handle_state_cts_cml_request(charger_info_t *charger_info)
 		set_charger_state(charger_info, CHARGER_STATE_CST);
 	}
 
-	if(ticks - charger_info->send_stamp >= FN_CTS_SEND_PERIOD) {
+	if(abs(ticks - charger_info->send_stamp) >= FN_CTS_SEND_PERIOD) {
 		send_cts(charger_info);
 		charger_info->send_stamp = ticks;
 	}
 
-	if(ticks - charger_info->send_stamp_1 >= FN_CML_SEND_PERIOD) {
+	if(abs(ticks - charger_info->send_stamp_1) >= FN_CML_SEND_PERIOD) {
 		send_cml(charger_info);
 		charger_info->send_stamp_1 = ticks;
 	}
@@ -759,11 +759,11 @@ static int handle_state_cro_request(charger_info_t *charger_info)
 	uint32_t ticks = osKernelSysTick();
 
 	if(charger_info->settings->cro_data.cro_result == 0xaa) {
-		if(ticks - charger_info->stamp >= FN_BCL_TIMEOUT) {//定时发送
+		if(abs(ticks - charger_info->stamp) >= FN_BCL_TIMEOUT) {//定时发送
 			charger_info->settings->cem_data.u3.s.bcl_timeout = 0x01;
 			charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_BCL_TIMEOUT);
 			set_charger_state(charger_info, CHARGER_STATE_CSD_CEM);
-		} else if(ticks - charger_info->stamp_1 >= BMS_GENERIC_TIMEOUT) {//定时发送
+		} else if(abs(ticks - charger_info->stamp_1) >= BMS_GENERIC_TIMEOUT) {//定时发送
 			charger_info->settings->cem_data.u3.s.bcs_timeout = 0x01;
 			charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_BCS_TIMEOUT);
 			set_charger_state(charger_info, CHARGER_STATE_CSD_CEM);
@@ -775,7 +775,7 @@ static int handle_state_cro_request(charger_info_t *charger_info)
 		set_charger_state(charger_info, CHARGER_STATE_CST);
 	}
 
-	if(ticks - charger_info->send_stamp >= FN_CRO_SEND_PERIOD) {
+	if(abs(ticks - charger_info->send_stamp) >= FN_CRO_SEND_PERIOD) {
 		send_cro(charger_info);
 		charger_info->send_stamp = ticks;
 	}
@@ -842,7 +842,7 @@ static int handle_state_cro_request(charger_info_t *charger_info)
 		break;
 
 		case CRO_OP_STATE_PRECHARGE_DELAY_1: {//预充后等待2s,打开输出继电器
-			if(ticks - charger_info->stamp_2 >= (2 * 1000)) {
+			if(abs(ticks - charger_info->stamp_2) >= (2 * 1000)) {
 				set_power_output_enable(charger_info, 1);//打开输出
 
 				charger_info->precharge_action = PRECHARGE_ACTION_STOP;//打开继电器后，停止预充
@@ -857,7 +857,7 @@ static int handle_state_cro_request(charger_info_t *charger_info)
 		break;
 
 		case CRO_OP_STATE_PRECHARGE_DELAY_2: {//等待1s
-			if(ticks - charger_info->stamp_2 >= (1 * 1000)) {
+			if(abs(ticks - charger_info->stamp_2) >= (1 * 1000)) {
 				charger_info->stamp = ticks;
 				charger_info->stamp_1 = ticks;
 
@@ -978,11 +978,11 @@ static int handle_state_ccs_request(charger_info_t *charger_info)
 	int ret = 0;
 	uint32_t ticks = osKernelSysTick();
 
-	if(ticks - charger_info->stamp >= FN_BCL_TIMEOUT) {//bcl timeout
+	if(abs(ticks - charger_info->stamp) >= FN_BCL_TIMEOUT) {//bcl timeout
 		charger_info->settings->cem_data.u3.s.bcl_timeout = 0x01;
 		charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_BCL_TIMEOUT);
 		set_charger_state(charger_info, CHARGER_STATE_CSD_CEM);
-	} else if(ticks - charger_info->stamp_1 >= BMS_GENERIC_TIMEOUT) {//bcs timeout
+	} else if(abs(ticks - charger_info->stamp_1) >= BMS_GENERIC_TIMEOUT) {//bcs timeout
 		charger_info->settings->cem_data.u3.s.bcs_timeout = 0x01;
 		set_charger_state(charger_info, CHARGER_STATE_CSD_CEM);
 		charger_info_report_status(charger_info, charger_info->state, CHARGER_INFO_STATUS_BCS_TIMEOUT);
@@ -993,7 +993,7 @@ static int handle_state_ccs_request(charger_info_t *charger_info)
 		set_charger_state(charger_info, CHARGER_STATE_CST);
 	}
 
-	if(ticks - charger_info->send_stamp >= FN_CCS_SEND_PERIOD) {
+	if(abs(ticks - charger_info->send_stamp) >= FN_CCS_SEND_PERIOD) {
 		send_ccs(charger_info);
 		charger_info->send_stamp = ticks;
 	}
@@ -1003,7 +1003,7 @@ static int handle_state_ccs_request(charger_info_t *charger_info)
 			charger_info->stamp_2 = ticks;
 		}
 
-		if(ticks - charger_info->stamp_2 >= (10 * 60 * 1000)) {//车端暂停时间大于10分钟，结束充电
+		if(abs(ticks - charger_info->stamp_2) >= (10 * 60 * 1000)) {//车端暂停时间大于10分钟，结束充电
 			set_charger_state(charger_info, CHARGER_STATE_CST);
 		}
 	}
@@ -1110,12 +1110,12 @@ static int handle_state_cst_request(charger_info_t *charger_info)
 	int ret = 0;
 	uint32_t ticks = osKernelSysTick();
 
-	if(ticks - charger_info->stamp >= BMS_GENERIC_TIMEOUT) {//超时
+	if(abs(ticks - charger_info->stamp) >= BMS_GENERIC_TIMEOUT) {//超时
 		charger_info->settings->cem_data.u3.s.bst_timeout = 0x01;
 		set_charger_state(charger_info, CHARGER_STATE_CSD_CEM);
 	}
 
-	if(ticks - charger_info->send_stamp >= FN_CST_SEND_PERIOD) {
+	if(abs(ticks - charger_info->send_stamp) >= FN_CST_SEND_PERIOD) {
 		send_cst(charger_info);
 		charger_info->send_stamp = ticks;
 	}
@@ -1287,7 +1287,7 @@ static int handle_state_csd_cem_request(charger_info_t *charger_info)
 	int op_ret = 0;
 	uint32_t ticks = osKernelSysTick();
 
-	if(ticks - charger_info->start_send_cst_stamp >= FN_BSD_TIMEOUT) {//累计10s没收到bsd,充电时序结束
+	if(abs(ticks - charger_info->start_send_cst_stamp) >= FN_BSD_TIMEOUT) {//累计10s没收到bsd,充电时序结束
 		charger_info->settings->cem_data.u4.s.bsd_timeout = 0x01;
 
 		if(charger_info->csd_cem_op_state == CSD_CEM_OP_STATE_NONE) {
@@ -1298,14 +1298,14 @@ static int handle_state_csd_cem_request(charger_info_t *charger_info)
 	}
 
 	if(charger_info->bsd_received == 1) {
-		if(ticks - charger_info->send_stamp >= FN_CSD_SEND_PERIOD) {
+		if(abs(ticks - charger_info->send_stamp) >= FN_CSD_SEND_PERIOD) {
 			send_csd(charger_info);
 			charger_info->send_stamp = ticks;
 		}
 	}
 
 	if(is_cem_valid(charger_info) == 1) {
-		if(ticks - charger_info->send_stamp_1 >= FN_CEM_SEND_PERIOD) {
+		if(abs(ticks - charger_info->send_stamp_1) >= FN_CEM_SEND_PERIOD) {
 			send_cem(charger_info);
 			charger_info->send_stamp_1 = ticks;
 		}
@@ -1335,7 +1335,7 @@ static int handle_state_csd_cem_request(charger_info_t *charger_info)
 		break;
 
 		case CSD_CEM_OP_STATE_DISABLE_OUTPUT_DELAY: {
-			if(ticks - charger_info->stamp_1 >= 500) {
+			if(abs(ticks - charger_info->stamp_1) >= 500) {
 				set_power_output_enable(charger_info, 0);//关闭输出
 
 				charger_info->charger_op_ctx.state = 0;

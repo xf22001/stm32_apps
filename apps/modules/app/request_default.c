@@ -6,7 +6,7 @@
  *   文件名称：request_default.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月05日 星期四 10时09分49秒
- *   修改日期：2020年09月10日 星期四 08时32分48秒
+ *   修改日期：2021年02月01日 星期一 10时05分07秒
  *   描    述：
  *
  *================================================================*/
@@ -101,7 +101,7 @@ static void request_periodic(void *ctx, uint8_t *send_buffer, uint16_t send_buff
 	uint32_t ticks = osKernelSysTick();
 	net_client_info_t *net_client_info = (net_client_info_t *)ctx;
 
-	if(ticks - send_stamp < 1 * 1000) {
+	if(abs(ticks - send_stamp) < 1 * 1000) {
 		return;
 	}
 

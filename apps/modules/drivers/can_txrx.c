@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时07分55秒
- *   修改日期：2021年01月30日 星期六 09时05分15秒
+ *   修改日期：2021年02月01日 星期一 09时49分51秒
  *   描    述：
  *
  *================================================================*/
@@ -233,7 +233,7 @@ int can_tx_data(can_info_t *can_info, can_tx_msg_t *msg, uint32_t timeout)
 
 		mutex_unlock(can_info->hcan_mutex);
 
-		if(osKernelSysTick() - stamp >= timeout) {
+		if(abs(osKernelSysTick() - stamp) >= timeout) {
 			break;
 		}
 

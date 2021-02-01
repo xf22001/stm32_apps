@@ -6,7 +6,7 @@
  *   文件名称：relay_boards_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年07月06日 星期一 14时29分27秒
- *   修改日期：2021年01月30日 星期六 09时28分34秒
+ *   修改日期：2021年02月01日 星期一 09时53分15秒
  *   描    述：
  *
  *================================================================*/
@@ -561,7 +561,7 @@ static void relay_boards_com_request_periodic(relay_boards_com_info_t *relay_boa
 	int j;
 	uint32_t ticks = osKernelSysTick();
 
-	if(ticks - relay_boards_com_info->periodic_stamp < 50) {
+	if(abs(ticks - relay_boards_com_info->periodic_stamp) < 50) {
 		return;
 	}
 
@@ -576,7 +576,7 @@ static void relay_boards_com_request_periodic(relay_boards_com_info_t *relay_boa
 			can_com_cmd_ctx_t *cmd_ctx = relay_boards_com_info->cmd_ctx + cmd_ctx_index;
 
 			if(cmd_ctx->state == CAN_COM_STATE_RESPONSE) {//超时
-				if(ticks - cmd_ctx->send_stamp >= RESPONSE_TIMEOUT) {
+				if(abs(ticks - cmd_ctx->send_stamp) >= RESPONSE_TIMEOUT) {
 					relay_boards_com_set_connect_state(relay_boards_com_info, j, 0);
 					debug("cmd %d(%s), index %d, relay_board %d timeout, connect state:%d\n",
 					      item->cmd,
@@ -600,7 +600,7 @@ static void relay_boards_com_request_periodic(relay_boards_com_info_t *relay_boa
 				continue;
 			}
 
-			if(ticks - cmd_ctx->stamp >= item->request_period) {
+			if(abs(ticks - cmd_ctx->stamp) >= item->request_period) {
 				cmd_ctx->stamp = ticks;
 
 				cmd_ctx->index = 0;

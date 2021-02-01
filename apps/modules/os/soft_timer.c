@@ -6,7 +6,7 @@
  *   文件名称：soft_timer.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月22日 星期五 10时28分46秒
- *   修改日期：2021年01月30日 星期六 09时27分10秒
+ *   修改日期：2021年02月01日 星期一 10时09分24秒
  *   描    述：
  *
  *================================================================*/
@@ -42,7 +42,7 @@ static void common_soft_timer_fn(void *fn_ctx, void *chain_ctx)
 	uint32_t ticks = osKernelSysTick();
 	uint32_t delay;
 
-	if(ticks - soft_timer_ctx->stamp >= soft_timer_ctx->period) {
+	if(abs(ticks - soft_timer_ctx->stamp) >= soft_timer_ctx->period) {
 		soft_timer_ctx->stamp = ticks;
 		delay = osWaitForever;
 

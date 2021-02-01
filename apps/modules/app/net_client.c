@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2021年01月29日 星期五 15时17分56秒
+ *   修改日期：2021年02月01日 星期一 10时06分06秒
  *   描    述：
  *
  *================================================================*/
@@ -203,7 +203,7 @@ static void blink_led_lan(net_client_info_t *net_client_info, uint32_t periodic)
 		return;
 	}
 
-	if((ticks - led_lan_stamp) < periodic) {
+	if(abs(ticks - led_lan_stamp) < periodic) {
 		return;
 	}
 
@@ -403,7 +403,7 @@ static int before_create_server_connect(net_client_info_t *net_client_info)
 		return ret;
 	}
 
-	if((ticks - net_client_info->connect_stamp) >= TASK_NET_CLIENT_CONNECT_PERIODIC) {
+	if(abs(ticks - net_client_info->connect_stamp) >= TASK_NET_CLIENT_CONNECT_PERIODIC) {
 		ret = 0;
 		net_client_info->connect_stamp = ticks;
 
@@ -615,7 +615,7 @@ void net_client_periodic(void *ctx)
 	//处理周期性事件
 	//约100ms调用一次
 	//这个函数中，不能保证net client已经连接到服务端，需要用get_client_state()来确认
-	if(ticks - net_client_info->periodic_stamp >= TASK_NET_CLIENT_PERIODIC) {
+	if(abs(ticks - net_client_info->periodic_stamp) >= TASK_NET_CLIENT_PERIODIC) {
 		default_periodic(net_client_info, net_client_info->send_message_buffer.buffer, NET_MESSAGE_BUFFER_SIZE);
 		net_client_info->periodic_stamp = ticks;
 	}
@@ -652,7 +652,7 @@ void net_client_periodic(void *ctx)
 		break;
 
 		case CLIENT_CONNECT_CONFIRM: {
-			if(ticks - net_client_info->connect_confirm_stamp >= (30 * TASK_NET_CLIENT_CONNECT_PERIODIC)) {
+			if(abs(ticks - net_client_info->connect_confirm_stamp) >= (30 * TASK_NET_CLIENT_CONNECT_PERIODIC)) {
 				debug("connect failed!\n");
 				set_client_state(net_client_info, CLIENT_RESET);
 			}
