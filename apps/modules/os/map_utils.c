@@ -6,7 +6,7 @@
  *   文件名称：map_utils.c
  *   创 建 者：肖飞
  *   创建日期：2020年12月29日 星期二 11时40分50秒
- *   修改日期：2021年01月31日 星期日 10时56分59秒
+ *   修改日期：2021年02月01日 星期一 15时52分29秒
  *   描    述：
  *
  *================================================================*/
@@ -250,6 +250,59 @@ int map_utils_get_keys(map_utils_t *map_utils, void **pkey, size_t *size, key_fi
 			if(index < *size) {
 				if(filter(map_utils_item->key) == 0) {
 					pkey[index++] = map_utils_item->key;
+				}
+			} else {
+				break;
+			}
+		}
+	}
+
+	mutex_unlock(map_utils->mutex);
+
+	__enable_irq();
+
+	*size = index;
+
+	return ret;
+}
+
+int map_utils_get_values(map_utils_t *map_utils, void **pvalue, size_t *size, value_filter_t filter)
+{
+	int ret = -1;
+	size_t index = 0;
+
+	if(map_utils == NULL) {
+		return ret;
+	}
+
+	if(pvalue == NULL) {
+		return ret;
+	}
+
+	if(size == NULL) {
+		return ret;
+	}
+
+	if(filter == NULL) {
+		return ret;
+	}
+
+	__disable_irq();
+
+	mutex_lock(map_utils->mutex);
+
+	if(!list_empty(&map_utils->list)) {
+		struct list_head *pos;
+		struct list_head *n;
+
+		ret = 0;
+
+		list_for_each_safe(pos, n, &map_utils->list) {
+			map_utils_item_t *map_utils_item = list_entry(pos, map_utils_item_t, list);
+
+			if(index < *size) {
+				if(filter(map_utils_item->value) == 0) {
+					pvalue[index++] = map_utils_item->value;
 				}
 			} else {
 				break;
