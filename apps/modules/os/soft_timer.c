@@ -6,7 +6,7 @@
  *   文件名称：soft_timer.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月22日 星期五 10时28分46秒
- *   修改日期：2021年02月01日 星期一 11时01分27秒
+ *   修改日期：2021年02月01日 星期一 12时21分31秒
  *   描    述：
  *
  *================================================================*/
@@ -28,7 +28,7 @@ static void soft_timer_update_timeout(soft_timer_info_t *soft_timer_info, uint32
 	}
 
 	if(wakeup != 0) {
-		signal_send(soft_timer_info->wakeup);
+		signal_send(soft_timer_info->wakeup, 0);
 	}
 }
 
