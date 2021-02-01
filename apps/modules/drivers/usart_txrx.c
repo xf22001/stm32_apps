@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2021年02月01日 星期一 10时16分41秒
+ *   修改日期：2021年02月01日 星期一 11时41分12秒
  *   描    述：
  *
  *================================================================*/
@@ -128,7 +128,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 		return;
 	}
 
-	signal_send(uart_info->tx_msg_q);
+	signal_send(uart_info->tx_msg_q, 0);
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
@@ -139,7 +139,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 		return;
 	}
 
-	signal_send(uart_info->rx_msg_q);
+	signal_send(uart_info->rx_msg_q, 0);
 }
 
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)

@@ -6,7 +6,7 @@
  *   文件名称：os_utils.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分36秒
- *   修改日期：2021年01月30日 星期六 08时11分34秒
+ *   修改日期：2021年02月01日 星期一 11时40分11秒
  *   描    述：
  *
  *================================================================*/
@@ -272,7 +272,7 @@ void mutex_unlock(os_mutex_t mutex);
 os_signal_t signal_create(void);
 void signal_delete(os_signal_t signal);
 int signal_wait(os_signal_t signal, uint32_t timeout);
-int signal_send(os_signal_t signal);
+int signal_send(os_signal_t signal, uint32_t timeout);
 void get_mem_info(size_t *size, size_t *count, size_t *max_size);
 uint32_t get_total_heap_size(void);
 void *os_alloc(size_t size);
