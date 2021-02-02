@@ -6,7 +6,7 @@
  *   文件名称：object_class.c
  *   创 建 者：肖飞
  *   创建日期：2021年02月02日 星期二 08时56分26秒
- *   修改日期：2021年02月02日 星期二 11时01分28秒
+ *   修改日期：2021年02月02日 星期二 12时30分21秒
  *   描    述：
  *
  *================================================================*/
@@ -117,9 +117,9 @@ int object_class_add_object(object_class_t *object_class, object_filter_t filter
 		struct list_head *n;
 
 		list_for_each_safe(pos, n, &object_class->list) {
-			object_class_item_t *item = list_entry(pos, object_class_item_t, list);
+			object_class_item_t *entry = list_entry(pos, object_class_item_t, list);
 
-			if(filter(item->o, ctx) == 0) {
+			if(filter(entry->o, ctx) == 0) {
 				found = 1;
 			}
 		}
@@ -143,7 +143,6 @@ int object_class_add_object(object_class_t *object_class, object_filter_t filter
 	return ret;
 }
 
-
 void *object_class_get_object(object_class_t *object_class, object_filter_t filter, void *ctx)
 {
 	void *o = NULL;
@@ -165,10 +164,10 @@ void *object_class_get_object(object_class_t *object_class, object_filter_t filt
 		struct list_head *n;
 
 		list_for_each_safe(pos, n, &object_class->list) {
-			object_class_item_t *item = list_entry(pos, object_class_item_t, list);
+			object_class_item_t *entry = list_entry(pos, object_class_item_t, list);
 
-			if(filter(item->o, ctx) == 0) {
-				o = item->o;
+			if(filter(entry->o, ctx) == 0) {
+				o = entry->o;
 				break;
 			}
 		}
@@ -211,14 +210,14 @@ int object_class_get_objects(object_class_t *object_class, object_filter_t filte
 		struct list_head *n;
 
 		list_for_each_safe(pos, n, &object_class->list) {
-			object_class_item_t *item = list_entry(pos, object_class_item_t, list);
+			object_class_item_t *entry = list_entry(pos, object_class_item_t, list);
 
 			if(index >= *size) {
 				break;
 			}
 
-			if(filter(item->o, ctx) == 0) {
-				po[index++] = item->o;
+			if(filter(entry->o, ctx) == 0) {
+				po[index++] = entry->o;
 				ret = 0;
 			}
 		}
