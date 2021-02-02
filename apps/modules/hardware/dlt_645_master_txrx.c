@@ -6,16 +6,16 @@
  *   文件名称：dlt_645_master_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月21日 星期四 10时19分55秒
- *   修改日期：2021年01月20日 星期三 10时55分17秒
+ *   修改日期：2021年02月02日 星期二 13时48分15秒
  *   描    述：
  *
  *================================================================*/
 #include "dlt_645_master_txrx.h"
 #include <string.h>
-#include "map_utils.h"
+#include "object_class.h"
 #include "log.h"
 
-static map_utils_t *dlt_645_master_map = NULL;
+static object_class_t *dlt_645_master_class = NULL;
 
 static void free_dlt_645_master_info(dlt_645_master_info_t *dlt_645_master_info)
 {
@@ -55,19 +55,32 @@ static dlt_645_master_info_t *get_or_alloc_dlt_645_master_info(uart_info_t *uart
 	return dlt_645_master_info;
 }
 
+static int object_filter(void *o, void *ctx)
+{
+	int ret = -1;
+	dlt_645_master_info_t *dlt_645_master_info = (dlt_645_master_info_t *)o;
+	uart_info_t *uart_info = (uart_info_t *)ctx;
+
+	if(dlt_645_master_info->uart_info == uart_info) {
+		ret = 0;
+	}
+
+	return ret;
+}
+
 dlt_645_master_info_t *get_or_alloc_dlt_645_master_info(uart_info_t *uart_info)
 {
 	dlt_645_master_info_t *dlt_645_master_info = NULL;
 
 	__disable_irq();
 
-	if(dlt_645_master_map == NULL) {
-		dlt_645_master_map = map_utils_alloc(NULL);
+	if(dlt_645_master_class == NULL) {
+		dlt_645_master_class = object_class_alloc();
 	}
 
 	__enable_irq();
 
-	dlt_645_master_info = (dlt_645_master_info_t *)map_utils_get_or_alloc_value(dlt_645_master_map, uart_info, (map_utils_value_alloc_t)get_or_alloc_dlt_645_master_info, (map_utils_value_free_t)free_dlt_645_master_info);
+	dlt_645_master_info = (dlt_645_master_info_t *)object_class_get_or_alloc_object(dlt_645_master_class, object_filter, uart_info, (object_alloc_t)get_or_alloc_dlt_645_master_info, (object_free_t)free_dlt_645_master_info);
 
 	return dlt_645_master_info;
 }

@@ -6,7 +6,7 @@
  *   文件名称：power_modules.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时34分29秒
- *   修改日期：2021年01月21日 星期四 16时42分49秒
+ *   修改日期：2021年02月02日 星期二 13时35分15秒
  *   描    述：
  *
  *================================================================*/
@@ -15,7 +15,7 @@
 #include <string.h>
 
 #include "os_utils.h"
-#include "map_utils.h"
+#include "object_class.h"
 #include "power_modules_handler_huawei.h"
 #include "power_modules_handler_increase.h"
 #include "power_modules_handler_pseudo.h"
@@ -25,7 +25,7 @@
 //#define LOG_NONE
 #include "log.h"
 
-static map_utils_t *power_modules_map = NULL;
+static object_class_t *power_modules_class = NULL;
 
 static power_modules_handler_t *power_modules_handler_sz[] = {
 	&power_modules_handler_huawei,
@@ -379,10 +379,9 @@ static int power_modules_set_channels_info_config(power_modules_info_t *power_mo
 	return ret;
 }
 
-static power_modules_info_t *alloc_power_modules_info(void *ctx)
+static power_modules_info_t *alloc_power_modules_info(channels_info_t *channels_info)
 {
 	power_modules_info_t *power_modules_info = NULL;
-	channels_info_t *channels_info = (channels_info_t *)ctx;
 
 	power_modules_info = (power_modules_info_t *)os_alloc(sizeof(power_modules_info_t));
 
@@ -409,19 +408,32 @@ failed:
 	return power_modules_info;
 }
 
+static int object_filter(void *o, void *ctx)
+{
+	int ret = -1;
+	power_modules_info_t *power_modules_info = (power_modules_info_t *)o;
+	channels_info_t *channels_info = (channels_info_t *)ctx;
+
+	if(power_modules_info->channels_info == channels_info) {
+		ret = 0;
+	}
+
+	return ret;
+}
+
 power_modules_info_t *get_or_alloc_power_modules_info(void *ctx)
 {
 	power_modules_info_t *power_modules_info = NULL;
 
 	__disable_irq();
 
-	if(power_modules_map == NULL) {
-		power_modules_map = map_utils_alloc(NULL);
+	if(power_modules_class == NULL) {
+		power_modules_class = object_class_alloc();
 	}
 
 	__enable_irq();
 
-	power_modules_info = (power_modules_info_t *)map_utils_get_or_alloc_value(power_modules_map, ctx, (map_utils_value_alloc_t)alloc_power_modules_info, (map_utils_value_free_t)free_power_modules_info);
+	power_modules_info = (power_modules_info_t *)object_class_get_or_alloc_object(power_modules_class, object_filter, ctx, (object_alloc_t)alloc_power_modules_info, (object_free_t)free_power_modules_info);
 
 	return power_modules_info;
 }

@@ -6,7 +6,7 @@
  *   文件名称：modbus_master_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月20日 星期一 15时28分52秒
- *   修改日期：2021年01月30日 星期六 10时02分38秒
+ *   修改日期：2021年02月02日 星期二 13时15分15秒
  *   描    述：
  *
  *================================================================*/
@@ -15,12 +15,12 @@
 #include <string.h>
 
 #include "os_utils.h"
-#include "map_utils.h"
+#include "object_class.h"
 
 #define LOG_NONE
 #include "log.h"
 
-static map_utils_t *modbus_master_map = NULL;
+static object_class_t *modbus_master_class = NULL;
 
 static void free_modbus_master_info(modbus_master_info_t *modbus_master_info)
 {
@@ -59,19 +59,33 @@ static modbus_master_info_t *alloc_modbus_master_info(uart_info_t *uart_info)
 
 	return modbus_master_info;
 }
+
+static int object_filter(void *o, void *ctx)
+{
+	int ret = -1;
+	modbus_master_info_t *modbus_master_info = (modbus_master_info_t *)o;
+	uart_info_t *uart_info = (uart_info_t *)ctx;
+
+	if(modbus_master_info->uart_info == uart_info) {
+		ret = 0;
+	}
+
+	return ret;
+}
+
 modbus_master_info_t *get_or_alloc_modbus_master_info(uart_info_t *uart_info)
 {
 	modbus_master_info_t *modbus_master_info = NULL;
 
 	__disable_irq();
 
-	if(modbus_master_map == NULL) {
-		modbus_master_map = map_utils_alloc(NULL);
+	if(modbus_master_class == NULL) {
+		modbus_master_class = object_class_alloc();
 	}
 
 	__enable_irq();
 
-	modbus_master_info = (modbus_master_info_t *)map_utils_get_or_alloc_value(modbus_master_map, uart_info, (map_utils_value_alloc_t)alloc_modbus_master_info, (map_utils_value_free_t)free_modbus_master_info);
+	modbus_master_info = (modbus_master_info_t *)object_class_get_or_alloc_object(modbus_master_class, object_filter, uart_info, (object_alloc_t)alloc_modbus_master_info, (object_free_t)free_modbus_master_info);
 
 	return modbus_master_info;
 }

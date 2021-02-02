@@ -6,18 +6,18 @@
  *   文件名称：uart_data_task.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月25日 星期一 12时51分31秒
- *   修改日期：2021年01月25日 星期一 13时16分11秒
+ *   修改日期：2021年02月02日 星期二 13时10分24秒
  *   描    述：
  *
  *================================================================*/
 #include "uart_data_task.h"
 #include <string.h>
 
-#include "map_utils.h"
+#include "object_class.h"
 #include "os_utils.h"
 #include "log.h"
 
-static map_utils_t *uart_data_task_map = NULL;
+static object_class_t *uart_data_task_class = NULL;
 
 int add_uart_data_task_info_cb(uart_data_task_info_t *uart_data_task_info, callback_item_t *callback_item)
 {
@@ -100,19 +100,32 @@ failed:
 	return uart_data_task_info;
 }
 
+static int object_filter(void *o, void *ctx)
+{
+	int ret = -1;
+	uart_data_task_info_t *uart_data_task_info = (uart_data_task_info_t *)o;
+	UART_HandleTypeDef *huart = (UART_HandleTypeDef *)ctx;
+
+	if(uart_data_task_info->uart_info->huart == huart) {
+		ret = 0;
+	}
+
+	return ret;
+}
+
 uart_data_task_info_t *get_or_alloc_uart_data_task_info(UART_HandleTypeDef *huart)
 {
 	uart_data_task_info_t *uart_data_task_info = NULL;
 
 	__disable_irq();
 
-	if(uart_data_task_map == NULL) {
-		uart_data_task_map = map_utils_alloc(NULL);
+	if(uart_data_task_class == NULL) {
+		uart_data_task_class = object_class_alloc();
 	}
 
 	__enable_irq();
 
-	uart_data_task_info = (uart_data_task_info_t *)map_utils_get_or_alloc_value(uart_data_task_map, huart, (map_utils_value_alloc_t)alloc_uart_data_task_info, (map_utils_value_free_t)free_uart_data_task_info);
+	uart_data_task_info = (uart_data_task_info_t *)object_class_get_or_alloc_object(uart_data_task_class, object_filter, huart, (object_alloc_t)alloc_uart_data_task_info, (object_free_t)free_uart_data_task_info);
 
 	return uart_data_task_info;
 }
