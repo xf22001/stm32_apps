@@ -6,7 +6,7 @@
  *   文件名称：poll_loop.c
  *   创 建 者：肖飞
  *   创建日期：2020年08月11日 星期二 09时54分20秒
- *   修改日期：2021年01月30日 星期六 09时28分06秒
+ *   修改日期：2021年02月02日 星期二 11时24分58秒
  *   描    述：
  *
  *================================================================*/
@@ -14,11 +14,11 @@
 #include <string.h>
 #include <lwip/sockets.h>
 
-#include "map_utils.h"
+#include "object_class.h"
 
 #include "log.h"
 
-static map_utils_t *poll_loop_map = NULL;
+static object_class_t *poll_loop_class = NULL;
 
 poll_ctx_t *alloc_poll_ctx(void)
 {
@@ -322,19 +322,32 @@ failed:
 	return poll_loop;
 }
 
+static int object_filter(void *o, void *ctx)
+{
+	int ret = -1;
+	poll_loop_t *poll_loop = (poll_loop_t *)o;
+	uint32_t id = (uint32_t)ctx;
+
+	if(poll_loop->id == id) {
+		ret = 0;
+	}
+
+	return ret;
+}
+
 poll_loop_t *get_or_alloc_poll_loop(uint32_t id)
 {
 	poll_loop_t *poll_loop = NULL;
 
 	__disable_irq();
 
-	if(poll_loop_map == NULL) {
-		poll_loop_map = map_utils_alloc(NULL);
+	if(poll_loop_class == NULL) {
+		poll_loop_class = object_class_alloc();
 	}
 
 	__enable_irq();
 
-	poll_loop = (poll_loop_t *)map_utils_get_or_alloc_value(poll_loop_map, id, (map_utils_value_alloc_t)alloc_poll_loop, (map_utils_value_free_t)free_poll_loop);
+	poll_loop = (poll_loop_t *)object_class_get_or_alloc_object(poll_loop_class, object_filter, (void *)id, (object_alloc_t)alloc_poll_loop, (object_free_t)free_poll_loop);
 
 	return poll_loop;
 }

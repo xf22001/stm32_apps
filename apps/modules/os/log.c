@@ -6,7 +6,7 @@
  *   文件名称：log.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月29日 星期五 12时45分56秒
- *   修改日期：2021年01月29日 星期五 20时34分27秒
+ *   修改日期：2021年02月02日 星期二 11时45分00秒
  *   描    述：
  *
  *================================================================*/
@@ -17,7 +17,6 @@
 #include <stdarg.h>
 
 #include "os_utils.h"
-#include "map_utils.h"
 #include "callback_chain.h"
 
 #define LOG_BUFFER_SIZE (1024)
@@ -30,7 +29,6 @@ typedef struct {
 
 typedef struct {
 	callback_chain_t *log_chain;
-	map_utils_t *log_callback_map;
 } log_info_t;
 
 log_info_t *static_log_info = NULL;
@@ -43,10 +41,6 @@ static void free_log_info(log_info_t *log_info)
 
 	if(log_info->log_chain != NULL) {
 		free_callback_chain(log_info->log_chain);
-	}
-
-	if(log_info->log_callback_map != NULL) {
-		map_utils_free(log_info->log_callback_map);
 	}
 
 	os_free(log_info);
@@ -71,12 +65,6 @@ static log_info_t *alloc_log_info(void)
 	log_info->log_chain = alloc_callback_chain();
 
 	if(log_info->log_chain == NULL) {
-		goto failed;
-	}
-
-	log_info->log_callback_map = map_utils_alloc(NULL);
-
-	if(log_info->log_callback_map == NULL) {
 		goto failed;
 	}
 
@@ -142,12 +130,6 @@ int add_log_handler(log_fn_t fn)
 	callback_item->fn = common_log_fn;
 	callback_item->fn_ctx = fn;
 
-	ret = map_utils_add_key_value(log_info->log_callback_map, fn, callback_item);
-
-	if(ret != 0) {
-		goto failed;
-	}
-
 	ret = register_callback(log_info->log_chain, callback_item);
 
 	if(ret != 0) {
@@ -165,6 +147,18 @@ failed:
 	return ret;
 }
 
+static int callback_item_filter(callback_item_t *callback_item, void *ctx)
+{
+	int ret = -1;
+	log_fn_t fn = (log_fn_t)ctx;
+
+	if(callback_item->fn_ctx == fn) {
+		ret = 0;
+	}
+
+	return ret;
+}
+
 int remove_log_handler(log_fn_t fn)
 {
 	int ret = -1;
@@ -175,7 +169,7 @@ int remove_log_handler(log_fn_t fn)
 		return ret;
 	}
 
-	callback_item = (callback_item_t *)map_utils_get_value(log_info->log_callback_map, fn);
+	callback_item = get_callback(log_info->log_chain, callback_item_filter, fn);
 
 	if(callback_item == NULL) {
 		return ret;
@@ -186,8 +180,6 @@ int remove_log_handler(log_fn_t fn)
 	if(ret != 0) {
 		return ret;
 	}
-
-	ret = map_utils_remove_value(log_info->log_callback_map, fn);
 
 	os_free(callback_item);
 

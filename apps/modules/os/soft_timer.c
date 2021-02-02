@@ -6,7 +6,7 @@
  *   文件名称：soft_timer.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月22日 星期五 10时28分46秒
- *   修改日期：2021年02月01日 星期一 12时21分31秒
+ *   修改日期：2021年02月02日 星期二 11时24分50秒
  *   描    述：
  *
  *================================================================*/
@@ -15,11 +15,11 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "map_utils.h"
+#include "object_class.h"
 #include "os_utils.h"
 #include "log.h"
 
-static map_utils_t *soft_timer_map = NULL;
+static object_class_t *soft_timer_class = NULL;
 
 static void soft_timer_update_timeout(soft_timer_info_t *soft_timer_info, uint32_t delay, uint8_t wakeup)
 {
@@ -337,19 +337,32 @@ failed:
 	return soft_timer_info;
 }
 
+static int object_filter(void *o, void *ctx)
+{
+	int ret = -1;
+	soft_timer_info_t *soft_timer_info = (soft_timer_info_t *)o;
+	uint32_t id = (uint32_t)ctx;
+
+	if(soft_timer_info->id == id) {
+		ret = 0;
+	}
+
+	return ret;
+}
+
 soft_timer_info_t *get_or_alloc_soft_timer_info(uint32_t id)
 {
 	soft_timer_info_t *soft_timer_info = NULL;
 
 	__disable_irq();
 
-	if(soft_timer_map == NULL) {
-		soft_timer_map = map_utils_alloc(NULL);
+	if(soft_timer_class == NULL) {
+		soft_timer_class = object_class_alloc();
 	}
 
 	__enable_irq();
 
-	soft_timer_info = (soft_timer_info_t *)map_utils_get_or_alloc_value(soft_timer_map, id, (map_utils_value_alloc_t)alloc_soft_timer_info, (map_utils_value_free_t)free_soft_timer_info);
+	soft_timer_info = (soft_timer_info_t *)object_class_get_or_alloc_object(soft_timer_class, object_filter, (void *)id, (object_alloc_t)alloc_soft_timer_info, (object_free_t)free_soft_timer_info);
 
 	return soft_timer_info;
 }

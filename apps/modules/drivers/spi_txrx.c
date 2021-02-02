@@ -6,7 +6,7 @@
  *   文件名称：spi_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 10时30分48秒
- *   修改日期：2021年01月20日 星期三 10时53分26秒
+ *   修改日期：2021年02月02日 星期二 11时18分57秒
  *   描    述：
  *
  *================================================================*/
@@ -15,9 +15,9 @@
 #include <string.h>
 
 #include "os_utils.h"
-#include "map_utils.h"
+#include "object_class.h"
 
-static map_utils_t *spi_map = NULL;
+static object_class_t *spi_class = NULL;
 
 static void free_spi_info(spi_info_t *spi_info)
 {
@@ -49,19 +49,32 @@ static spi_info_t *alloc_spi_info(SPI_HandleTypeDef *hspi)
 	return spi_info;
 }
 
+static int object_filter(void *o, void *ctx)
+{
+	int ret = -1;
+	spi_info_t *spi_info = (spi_info_t *)o;
+	SPI_HandleTypeDef *hspi = (SPI_HandleTypeDef *)ctx;
+
+	if(spi_info->hspi == hspi) {
+		ret = 0;
+	}
+
+	return ret;
+}
+
 spi_info_t *get_or_alloc_spi_info(SPI_HandleTypeDef *hspi)
 {
 	spi_info_t *spi_info = NULL;
 
 	__disable_irq();
 
-	if(spi_map == NULL) {
-		spi_map = map_utils_alloc(NULL);
+	if(spi_class == NULL) {
+		spi_class = object_class_alloc();
 	}
 
 	__enable_irq();
 
-	spi_info = (spi_info_t *)map_utils_get_or_alloc_value(spi_map, hspi, (map_utils_value_alloc_t)alloc_spi_info, (map_utils_value_free_t)free_spi_info);
+	spi_info = (spi_info_t *)object_class_get_or_alloc_object(spi_class, object_filter, hspi, (object_alloc_t)alloc_spi_info, (object_free_t)free_spi_info);
 
 	return spi_info;
 }

@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时07分55秒
- *   修改日期：2021年02月01日 星期一 11时45分02秒
+ *   修改日期：2021年02月02日 星期二 11时22分43秒
  *   描    述：
  *
  *================================================================*/
@@ -16,9 +16,9 @@
 #include <stdlib.h>
 
 #include "os_utils.h"
-#include "map_utils.h"
+#include "object_class.h"
 
-static map_utils_t *can_map = NULL;
+static object_class_t *can_class = NULL;
 
 static void free_can_info(can_info_t *can_info)
 {
@@ -139,19 +139,32 @@ static can_info_t *alloc_can_info(CAN_HandleTypeDef *hcan)
 	return can_info;
 }
 
+static int object_filter(void *o, void *ctx)
+{
+	int ret = -1;
+	can_info_t *can_info = (can_info_t *)o;
+	CAN_HandleTypeDef *hcan = (CAN_HandleTypeDef *)ctx;
+
+	if(can_info->hcan == hcan) {
+		ret = 0;
+	}
+
+	return ret;
+}
+
 can_info_t *get_or_alloc_can_info(CAN_HandleTypeDef *hcan)
 {
 	can_info_t *can_info = NULL;
 
 	__disable_irq();
 
-	if(can_map == NULL) {
-		can_map = map_utils_alloc(NULL);
+	if(can_class == NULL) {
+		can_class = object_class_alloc();
 	}
 
 	__enable_irq();
 
-	can_info = (can_info_t *)map_utils_get_or_alloc_value(can_map, hcan, (map_utils_value_alloc_t)alloc_can_info, (map_utils_value_free_t)free_can_info);
+	can_info = (can_info_t *)object_class_get_or_alloc_object(can_class, object_filter, hcan, (object_alloc_t)alloc_can_info, (object_free_t)free_can_info);
 
 	return can_info;
 }

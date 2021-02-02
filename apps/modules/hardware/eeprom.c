@@ -6,7 +6,7 @@
  *   文件名称：eeprom.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月14日 星期四 09时01分36秒
- *   修改日期：2021年01月30日 星期六 09时28分58秒
+ *   修改日期：2021年02月02日 星期二 11时16分33秒
  *   描    述：
  *
  *================================================================*/
@@ -15,10 +15,10 @@
 #include <string.h>
 
 #include "os_utils.h"
-#include "map_utils.h"
+#include "object_class.h"
 #include "log.h"
 
-static map_utils_t *eeprom_map = NULL;
+static object_class_t *eeprom_class = NULL;
 
 static void free_eeprom_info(eeprom_info_t *eeprom_info)
 {
@@ -78,19 +78,32 @@ static void set_eeprom_gpio_pins(eeprom_info_t *eeprom_info, GPIO_TypeDef *gpio_
 	eeprom_info->gpio_pin_spi_wp = gpio_pin_spi_wp;
 }
 
+static int object_filter(void *o, void *ctx)
+{
+	int ret = -1;
+	eeprom_info_t *eeprom_info = (eeprom_info_t *)o;
+	spi_info_t *spi_info = (spi_info_t *)ctx;
+
+	if(eeprom_info->spi_info == spi_info) {
+		ret = 0;
+	}
+
+	return ret;
+}
+
 eeprom_info_t *get_or_alloc_eeprom_info(spi_info_t *spi_info, GPIO_TypeDef *gpio_port_spi_cs, uint16_t gpio_pin_spi_cs, GPIO_TypeDef *gpio_port_spi_wp, uint16_t gpio_pin_spi_wp)
 {
 	eeprom_info_t *eeprom_info = NULL;
 
 	__disable_irq();
 
-	if(eeprom_map == NULL) {
-		eeprom_map = map_utils_alloc(NULL);
+	if(eeprom_class == NULL) {
+		eeprom_class = object_class_alloc();
 	}
 
 	__enable_irq();
 
-	eeprom_info = (eeprom_info_t *)map_utils_get_or_alloc_value(eeprom_map, spi_info, (map_utils_value_alloc_t)alloc_eeprom_info, (map_utils_value_free_t)free_eeprom_info);
+	eeprom_info = (eeprom_info_t *)object_class_get_or_alloc_object(eeprom_class, object_filter, spi_info, (object_alloc_t)alloc_eeprom_info, (object_free_t)free_eeprom_info);
 
 	if(eeprom_info != NULL) {
 		set_eeprom_gpio_pins(eeprom_info, gpio_port_spi_cs, gpio_pin_spi_cs, gpio_port_spi_wp, gpio_pin_spi_wp);

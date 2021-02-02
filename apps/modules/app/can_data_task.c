@@ -6,18 +6,17 @@
  *   文件名称：can_data_task.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月19日 星期二 16时15分20秒
- *   修改日期：2021年01月22日 星期五 12时53分23秒
+ *   修改日期：2021年02月02日 星期二 11时13分17秒
  *   描    述：
  *
  *================================================================*/
 #include "can_data_task.h"
 #include <string.h>
 
-#include "map_utils.h"
-#include "os_utils.h"
+#include "object_class.h"
 #include "log.h"
 
-static map_utils_t *can_data_task_map = NULL;
+static object_class_t *can_data_task_class = NULL;
 
 int add_can_data_task_info_request_cb(can_data_task_info_t *can_data_task_info, callback_item_t *callback_item)
 {
@@ -146,19 +145,32 @@ failed:
 	return can_data_task_info;
 }
 
+static int object_filter(void *o, void *ctx)
+{
+	int ret = -1;
+	can_data_task_info_t *can_data_task_info = (can_data_task_info_t *)o;
+	CAN_HandleTypeDef *hcan = (CAN_HandleTypeDef *)ctx;
+
+	if(can_data_task_info->can_info->hcan == hcan) {
+		ret = 0;
+	}
+
+	return ret;
+}
+
 can_data_task_info_t *get_or_alloc_can_data_task_info(CAN_HandleTypeDef *hcan)
 {
 	can_data_task_info_t *can_data_task_info = NULL;
 
 	__disable_irq();
 
-	if(can_data_task_map == NULL) {
-		can_data_task_map = map_utils_alloc(NULL);
+	if(can_data_task_class == NULL) {
+		can_data_task_class = object_class_alloc();
 	}
 
 	__enable_irq();
 
-	can_data_task_info = (can_data_task_info_t *)map_utils_get_or_alloc_value(can_data_task_map, hcan, (map_utils_value_alloc_t)alloc_can_data_task_info, (map_utils_value_free_t)free_can_data_task_info);
+	can_data_task_info = (can_data_task_info_t *)object_class_get_or_alloc_object(can_data_task_class, object_filter, hcan, (object_alloc_t)alloc_can_data_task_info, (object_free_t)free_can_data_task_info);
 
 	return can_data_task_info;
 }

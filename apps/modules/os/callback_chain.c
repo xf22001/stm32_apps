@@ -6,7 +6,7 @@
  *   文件名称：callback_chain.c
  *   创 建 者：肖飞
  *   创建日期：2020年03月20日 星期五 08时20分36秒
- *   修改日期：2021年01月30日 星期六 09时29分22秒
+ *   修改日期：2021年02月02日 星期二 11时35分49秒
  *   描    述：
  *
  *================================================================*/
@@ -98,6 +98,37 @@ int register_callback(callback_chain_t *callback_chain, callback_item_t *callbac
 	return ret;
 }
 
+callback_item_t *get_callback(callback_chain_t *callback_chain, callback_item_filter_t filter, void *ctx)
+{
+	callback_item_t *callback_item = NULL;
+
+	if(callback_chain == NULL) {
+		return callback_item;
+	}
+
+	if(filter == NULL) {
+		return callback_item;
+	}
+
+	mutex_lock(callback_chain->callback_mutex);
+
+	if(!list_empty(&callback_chain->list_callback)) {
+		struct list_head *pos;
+		list_for_each(pos, &callback_chain->list_callback) {
+			callback_item_t *entry = list_entry(pos, callback_item_t, list_head);
+
+			if(filter(entry, ctx) == 0) {
+				callback_item = entry;
+				break;
+			}
+		}
+	}
+
+	mutex_unlock(callback_chain->callback_mutex);
+
+	return callback_item;
+}
+
 int remove_callback(callback_chain_t *callback_chain, callback_item_t *callback_item)
 {
 	int ret = -1;
@@ -172,6 +203,6 @@ int callback_chain_empty(callback_chain_t *callback_chain)
 	ret = list_empty(&callback_chain->list_callback);
 
 	mutex_unlock(callback_chain->callback_mutex);
-	
+
 	return ret;
 }

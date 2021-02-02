@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2021年02月01日 星期一 11时41分12秒
+ *   修改日期：2021年02月02日 星期二 11时20分47秒
  *   描    述：
  *
  *================================================================*/
@@ -18,14 +18,13 @@
 #include <stdlib.h>
 
 #include "os_utils.h"
-#include "map_utils.h"
+#include "object_class.h"
 
 #define LOG_NONE
 #include "log.h"
 
-static map_utils_t *uart_map = NULL;
+static object_class_t *uart_class = NULL;
 static uart_info_t *log_uart_info = NULL;
-
 
 static void free_uart_info(uart_info_t *uart_info)
 {
@@ -103,19 +102,32 @@ failed:
 	return uart_info;
 }
 
+static int object_filter(void *o, void *ctx)
+{
+	int ret = -1;
+	uart_info_t *uart_info = (uart_info_t *)o;
+	UART_HandleTypeDef *huart = (UART_HandleTypeDef *)ctx;
+
+	if(uart_info->huart == huart) {
+		ret = 0;
+	}
+
+	return ret;
+}
+
 uart_info_t *get_or_alloc_uart_info(UART_HandleTypeDef *huart)
 {
 	uart_info_t *uart_info = NULL;
 
 	__disable_irq();
 
-	if(uart_map == NULL) {
-		uart_map = map_utils_alloc(NULL);
+	if(uart_class == NULL) {
+		uart_class = object_class_alloc();
 	}
 
 	__enable_irq();
 
-	uart_info = (uart_info_t *)map_utils_get_or_alloc_value(uart_map, huart, (map_utils_value_alloc_t)alloc_uart_info, (map_utils_value_free_t)free_uart_info);
+	uart_info = (uart_info_t *)object_class_get_or_alloc_object(uart_class, object_filter, huart, (object_alloc_t)alloc_uart_info, (object_free_t)free_uart_info);
 
 	return uart_info;
 }
