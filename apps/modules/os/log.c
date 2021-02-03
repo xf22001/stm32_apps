@@ -6,7 +6,7 @@
  *   文件名称：log.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月29日 星期五 12时45分56秒
- *   修改日期：2021年02月02日 星期二 11时45分00秒
+ *   修改日期：2021年02月03日 星期三 08时30分43秒
  *   描    述：
  *
  *================================================================*/
@@ -108,6 +108,18 @@ static void common_log_fn(void *fn_ctx, void *chain_ctx)
 	}
 }
 
+static int callback_item_filter(callback_item_t *callback_item, void *ctx)
+{
+	int ret = -1;
+	log_fn_t fn = (log_fn_t)ctx;
+
+	if(callback_item->fn_ctx == fn) {
+		ret = 0;
+	}
+
+	return ret;
+}
+
 int add_log_handler(log_fn_t fn)
 {
 	int ret = -1;
@@ -116,6 +128,12 @@ int add_log_handler(log_fn_t fn)
 	callback_item_t *callback_item;
 
 	if(log_info == NULL) {
+		return ret;
+	}
+
+	callback_item = get_callback(log_info->log_chain, callback_item_filter, fn);
+
+	if(callback_item != NULL) {
 		return ret;
 	}
 
@@ -142,18 +160,6 @@ failed:
 
 	if(callback_item != NULL) {
 		os_free(callback_item);
-	}
-
-	return ret;
-}
-
-static int callback_item_filter(callback_item_t *callback_item, void *ctx)
-{
-	int ret = -1;
-	log_fn_t fn = (log_fn_t)ctx;
-
-	if(callback_item->fn_ctx == fn) {
-		ret = 0;
 	}
 
 	return ret;
