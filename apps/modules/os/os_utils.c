@@ -6,7 +6,7 @@
  *   文件名称：os_utils.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分17秒
- *   修改日期：2021年02月01日 星期一 11时39分25秒
+ *   修改日期：2021年02月03日 星期三 16时23分14秒
  *   描    述：
  *
  *================================================================*/
@@ -157,6 +157,65 @@ int signal_send(os_signal_t signal, uint32_t timeout)
 		ret = 0;
 	}
 
+	return ret;
+}
+
+os_sem_t sem_create(int32_t value)
+{
+	os_sem_t sem = NULL;
+	osSemaphoreDef(sem);
+
+	sem = osSemaphoreCreate(osSemaphore(sem), value);
+
+	return sem;
+}
+
+void sem_delete(os_sem_t sem)
+{
+	osStatus os_status;
+
+	if(sem == NULL) {
+		app_panic();
+	}
+
+	os_status = osSemaphoreDelete(sem);
+
+	if(os_status == osOK) {
+		app_panic();
+	}
+}
+
+int sem_take(os_sem_t sem, uint32_t timeout)
+{
+	int ret = -1;
+	osStatus os_status;
+
+	if(sem == NULL) {
+		app_panic();
+	}
+
+	os_status = osSemaphoreWait(sem, timeout);
+
+	if(os_status == osOK) {
+		ret = 0;
+	}
+	return ret;
+}
+
+int sem_release(os_sem_t sem)
+{
+	int ret = -1;
+	osStatus os_status;
+
+	if(sem == NULL) {
+		app_panic();
+	}
+
+	os_status = osSemaphoreRelease(sem);
+
+	if(os_status == osOK) {
+		ret = 0;
+	}
 	return ret;
 }
 
