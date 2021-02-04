@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2021年02月02日 星期二 11时20分47秒
+ *   修改日期：2021年02月04日 星期四 10时40分38秒
  *   描    述：
  *
  *================================================================*/
@@ -140,7 +140,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 		return;
 	}
 
-	signal_send(uart_info->tx_msg_q, 0);
+	signal_send(uart_info->tx_msg_q, 0, 0);
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
@@ -151,7 +151,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 		return;
 	}
 
-	signal_send(uart_info->rx_msg_q, 0);
+	signal_send(uart_info->rx_msg_q, 0, 0);
 }
 
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
@@ -205,7 +205,7 @@ int uart_tx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t 
 
 	mutex_unlock(uart_info->huart_mutex);
 
-	if(signal_wait(uart_info->tx_msg_q, timeout) == 0) {
+	if(signal_wait(uart_info->tx_msg_q, NULL, timeout) == 0) {
 		ret = get_uart_sent(uart_info);
 	} else {
 		ret = get_uart_sent(uart_info);
@@ -232,7 +232,7 @@ static uint16_t wait_for_uart_receive(uart_info_t *uart_info, uint16_t size, uin
 			wait_ticks = uart_info->rx_poll_interval;
 		}
 
-		signal_wait(uart_info->rx_msg_q, wait_ticks);
+		signal_wait(uart_info->rx_msg_q, NULL, wait_ticks);
 
 		cur_ticks = osKernelSysTick();
 
@@ -313,7 +313,7 @@ int uart_tx_rx_data(uart_info_t *uart_info, uint8_t *tx_data, uint16_t tx_size, 
 
 	ret = wait_for_uart_receive(uart_info, rx_size, timeout);
 
-	if(signal_wait(uart_info->tx_msg_q, timeout) != 0) {
+	if(signal_wait(uart_info->tx_msg_q, NULL, timeout) != 0) {
 		HAL_UART_AbortTransmit(uart_info->huart);
 	}
 

@@ -6,7 +6,7 @@
  *   文件名称：event_helper.c
  *   创 建 者：肖飞
  *   创建日期：2020年01月07日 星期二 09时56分01秒
- *   修改日期：2021年02月01日 星期一 11时45分57秒
+ *   修改日期：2021年02月04日 星期四 10时40分16秒
  *   描    述：
  *
  *================================================================*/
@@ -109,7 +109,7 @@ int event_pool_put_event(event_pool_t *event_pool, void *event, uint32_t timeout
 
 	mutex_unlock(event_pool->mutex);
 
-	signal_send(event_pool->queue, timeout);
+	signal_send(event_pool->queue, 0, timeout);
 
 	return ret;
 }
@@ -122,7 +122,7 @@ int event_pool_wait_event(event_pool_t *event_pool, uint32_t timeout)
 		return ret;
 	}
 
-	ret = signal_wait(event_pool->queue, timeout);
+	ret = signal_wait(event_pool->queue, NULL, timeout);
 
 	return ret;
 }

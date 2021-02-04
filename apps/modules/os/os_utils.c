@@ -6,7 +6,7 @@
  *   文件名称：os_utils.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分17秒
- *   修改日期：2021年02月03日 星期三 16时23分14秒
+ *   修改日期：2021年02月04日 星期四 11时24分03秒
  *   描    述：
  *
  *================================================================*/
@@ -16,9 +16,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "cmsis_os.h"
 #include "list_utils.h"
-#include "FreeRTOSConfig.h"
 
 typedef struct {
 	size_t size;
@@ -103,7 +101,7 @@ void mutex_unlock(os_mutex_t mutex)
 os_signal_t signal_create(void)
 {
 	os_signal_t signal = NULL;
-	osMessageQDef(signal, 1, uint16_t);
+	osMessageQDef(signal, 1, uint32_t);
 
 	signal = osMessageCreate(osMessageQ(signal), NULL);
 
@@ -125,7 +123,7 @@ void signal_delete(os_signal_t signal)
 	}
 }
 
-int signal_wait(os_signal_t signal, uint32_t timeout)
+int signal_wait(os_signal_t signal, uint32_t *pvalue, uint32_t timeout)
 {
 	int ret = -1;
 
@@ -136,13 +134,17 @@ int signal_wait(os_signal_t signal, uint32_t timeout)
 	osEvent event = osMessageGet(signal, timeout);
 
 	if(event.status == osEventMessage) {
+		if(pvalue != NULL) {
+			*pvalue = event.value.v;
+		}
+
 		ret = 0;
 	}
 
 	return ret;
 }
 
-int signal_send(os_signal_t signal, uint32_t timeout)
+int signal_send(os_signal_t signal, uint32_t value, uint32_t timeout)
 {
 	int ret = -1;
 	osStatus os_status;
@@ -151,7 +153,7 @@ int signal_send(os_signal_t signal, uint32_t timeout)
 		app_panic();
 	}
 
-	os_status = osMessagePut(signal, 0, timeout);
+	os_status = osMessagePut(signal, value, timeout);
 
 	if(os_status == osOK) {
 		ret = 0;
@@ -199,6 +201,7 @@ int sem_take(os_sem_t sem, uint32_t timeout)
 	if(os_status == osOK) {
 		ret = 0;
 	}
+
 	return ret;
 }
 
@@ -216,7 +219,25 @@ int sem_release(os_sem_t sem)
 	if(os_status == osOK) {
 		ret = 0;
 	}
+
 	return ret;
+}
+
+__weak void *port_malloc(size_t size)
+{
+	app_panic();
+	return NULL;
+}
+
+__weak void port_free(void *p)
+{
+	app_panic();
+}
+
+__weak uint32_t get_total_heap_size(void)
+{
+	app_panic();
+	return 0;
 }
 
 static int init_mem_info(void)
@@ -255,7 +276,7 @@ static void *xmalloc(size_t size)
 
 	mutex_lock(mem_info.os_utils_mutex);
 
-	mem_node_info = (mem_node_info_t *)pvPortMalloc(sizeof(mem_node_info_t) + size);
+	mem_node_info = (mem_node_info_t *)port_malloc(sizeof(mem_node_info_t) + size);
 
 	if(mem_node_info != NULL) {
 		mem_info.size += size;
@@ -291,7 +312,7 @@ static void xfree(void *p)
 		mem_info.count -= 1;
 
 		list_del(&mem_node_info->list);
-		vPortFree(mem_node_info);
+		port_free(mem_node_info);
 	}
 
 	mutex_unlock(mem_info.os_utils_mutex);
@@ -322,11 +343,6 @@ void get_mem_info(size_t *size, size_t *count, size_t *max_size)
 	}
 
 	mutex_unlock(mem_info.os_utils_mutex);
-}
-
-uint32_t get_total_heap_size(void)
-{
-	return (uint32_t)configTOTAL_HEAP_SIZE;
 }
 
 void *os_alloc(size_t size)

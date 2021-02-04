@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时07分55秒
- *   修改日期：2021年02月02日 星期二 11时22分43秒
+ *   修改日期：2021年02月04日 星期四 10时39分46秒
  *   描    述：
  *
  *================================================================*/
@@ -197,7 +197,7 @@ static void can_rxfifo_pending_callback(CAN_HandleTypeDef *hcan)
 		rx_msg->DLC = rx_header.DLC;
 	}
 
-	signal_send(can_info->rx_msg_q, 0);
+	signal_send(can_info->rx_msg_q, 0, 0);
 }
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
@@ -284,7 +284,7 @@ int can_rx_data(can_info_t *can_info, uint32_t timeout)
 	rx_msg_w = can_info->rx_msg_w;
 
 	if(can_info->rx_msg_r == rx_msg_w) {//没有数据
-		ret = signal_wait(can_info->rx_msg_q, timeout);
+		ret = signal_wait(can_info->rx_msg_q, NULL, timeout);
 	} else {//有数据
 		ret = 0;
 	}

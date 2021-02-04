@@ -6,7 +6,7 @@
  *   文件名称：os_utils.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分36秒
- *   修改日期：2021年02月03日 星期三 15时53分48秒
+ *   修改日期：2021年02月04日 星期四 10时39分08秒
  *   描    述：
  *
  *================================================================*/
@@ -272,17 +272,18 @@ void mutex_lock(os_mutex_t mutex);
 void mutex_unlock(os_mutex_t mutex);
 os_signal_t signal_create(void);
 void signal_delete(os_signal_t signal);
-int signal_wait(os_signal_t signal, uint32_t timeout);
-int signal_send(os_signal_t signal, uint32_t timeout);
+int signal_wait(os_signal_t signal, uint32_t *pvalue, uint32_t timeout);
+int signal_send(os_signal_t signal, uint32_t value, uint32_t timeout);
 os_sem_t sem_create(int32_t value);
 void sem_delete(os_sem_t sem);
 int sem_take(os_sem_t sem, uint32_t timeout);
 int sem_release(os_sem_t sem);
-void get_mem_info(size_t *size, size_t *count, size_t *max_size);
 uint32_t get_total_heap_size(void);
+void get_mem_info(size_t *size, size_t *count, size_t *max_size);
 void *os_alloc(size_t size);
 void os_free(void *p);
 unsigned char mem_is_set(char *values, size_t size, char value);
 unsigned int str_hash(const char *s);
 unsigned char calc_crc8(const void *data, size_t size);
+
 #endif //_OS_UTILS_H
