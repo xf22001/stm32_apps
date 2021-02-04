@@ -6,7 +6,7 @@
  *   文件名称：os_utils.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分17秒
- *   修改日期：2021年02月04日 星期四 11时24分03秒
+ *   修改日期：2021年02月04日 星期四 11时54分20秒
  *   描    述：
  *
  *================================================================*/
@@ -98,12 +98,15 @@ void mutex_unlock(os_mutex_t mutex)
 	}
 }
 
-os_signal_t signal_create(void)
+os_signal_t signal_create(size_t size)
 {
 	os_signal_t signal = NULL;
-	osMessageQDef(signal, 1, uint32_t);
+	osMessageQDef_t msg_queue = {0};
 
-	signal = osMessageCreate(osMessageQ(signal), NULL);
+	msg_queue.queue_sz = size;
+	msg_queue.item_sz = sizeof(uint32_t);
+
+	signal = osMessageCreate(&msg_queue, NULL);
 
 	return signal;
 }

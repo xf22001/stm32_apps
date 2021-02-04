@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2021年02月04日 星期四 10时40分38秒
+ *   修改日期：2021年02月04日 星期四 11时52分00秒
  *   描    述：
  *
  *================================================================*/
@@ -71,8 +71,8 @@ static uart_info_t *alloc_uart_info(UART_HandleTypeDef *huart)
 	memset(uart_info, 0, sizeof(uart_info_t));
 
 	uart_info->huart = huart;
-	uart_info->tx_msg_q = signal_create();
-	uart_info->rx_msg_q = signal_create();
+	uart_info->tx_msg_q = signal_create(1);
+	uart_info->rx_msg_q = signal_create(1);
 	uart_info->huart_mutex = mutex_create();
 	uart_info->log_mutex = mutex_create();
 	uart_info->rx_poll_interval = 5;

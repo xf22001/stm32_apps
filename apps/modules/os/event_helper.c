@@ -6,7 +6,7 @@
  *   文件名称：event_helper.c
  *   创 建 者：肖飞
  *   创建日期：2020年01月07日 星期二 09时56分01秒
- *   修改日期：2021年02月04日 星期四 10时40分16秒
+ *   修改日期：2021年02月04日 星期四 11时52分28秒
  *   描    述：
  *
  *================================================================*/
@@ -53,7 +53,7 @@ event_pool_t *alloc_event_pool(void)
 		return event_pool;
 	}
 
-	event_pool->queue = signal_create();
+	event_pool->queue = signal_create(1);
 
 	if(event_pool->queue == NULL) {
 		goto failed;

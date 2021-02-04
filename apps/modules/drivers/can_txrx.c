@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时07分55秒
- *   修改日期：2021年02月04日 星期四 10时39分46秒
+ *   修改日期：2021年02月04日 星期四 11时52分16秒
  *   描    述：
  *
  *================================================================*/
@@ -125,8 +125,8 @@ static can_info_t *alloc_can_info(CAN_HandleTypeDef *hcan)
 	can_info->hcan = hcan;
 	can_info->can_config = can_config;
 	can_info->hcan_mutex = mutex_create();
-	can_info->tx_msg_q = signal_create();
-	can_info->rx_msg_q = signal_create();
+	can_info->tx_msg_q = signal_create(1);
+	can_info->rx_msg_q = signal_create(1);
 
 	can_info->receive_init = receive_init;
 	can_info->rx_msg_r = 0;
