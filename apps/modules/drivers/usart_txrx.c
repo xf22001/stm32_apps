@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2021年02月07日 星期日 15时10分12秒
+ *   修改日期：2021年02月08日 星期一 00时03分06秒
  *   描    述：
  *
  *================================================================*/
@@ -77,6 +77,7 @@ static uart_info_t *alloc_uart_info(UART_HandleTypeDef *huart)
 	uart_info->log_mutex = mutex_create();
 	uart_info->rx_poll_interval = 5;
 	uart_info->max_pending_duration = 50;
+	uart_info->uart_rx_mode = UART_RX_MODE_NORMAL;
 
 	if(uart_info->tx_msg_q == NULL) {
 		goto failed;
@@ -151,7 +152,49 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 		return;
 	}
 
-	signal_send(uart_info->rx_msg_q, 0, 0);
+	switch(uart_info->uart_rx_mode) {
+		case UART_RX_MODE_NORMAL: {
+			uart_info->uart_rx_line.pos++;
+
+			if(uart_info->uart_rx_line.pos >= uart_info->uart_rx_line.size) {
+				signal_send(uart_info->rx_msg_q, 0, 0);
+			} else {
+				if(uart_info->uart_rx_line.pos >= uart_info->uart_rx_line.length) {
+					int i;
+					uint8_t *data = uart_info->uart_rx_line.data + uart_info->uart_rx_line.pos - uart_info->uart_rx_line.length;
+					uint8_t *match = uart_info->uart_rx_line.match;
+					uint16_t length = uart_info->uart_rx_line.length;
+
+					for(i = 0; i < length; i++) {
+						if(data[i] != match[i]) {
+							break;
+						}
+					}
+
+					if(i == length) {
+						signal_send(uart_info->rx_msg_q, 0, 0);
+					} else {
+						HAL_StatusTypeDef status;
+						status = HAL_UART_Receive_DMA(uart_info->huart, uart_info->uart_rx_line.data + uart_info->uart_rx_line.pos, 1);
+
+						if(status != HAL_OK) {
+							signal_send(uart_info->rx_msg_q, 0, 0);
+						}
+					}
+				}
+			}
+		}
+		break;
+
+		case UART_RX_MODE_MATCH: {
+			signal_send(uart_info->rx_msg_q, 0, 0);
+		}
+		break;
+
+		default: {
+		}
+		break;
+	}
 }
 
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
@@ -203,14 +246,14 @@ int uart_tx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t 
 		//debug("\n");
 	}
 
-	mutex_unlock(uart_info->huart_mutex);
-
 	if(signal_wait(uart_info->tx_msg_q, NULL, timeout) == 0) {
 		ret = get_uart_sent(uart_info);
 	} else {
 		ret = get_uart_sent(uart_info);
 		HAL_UART_AbortTransmit(uart_info->huart);
 	}
+
+	mutex_unlock(uart_info->huart_mutex);
 
 	return ret;
 }
@@ -290,9 +333,9 @@ int uart_rx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t 
 		//debug("\n");
 	}
 
-	mutex_unlock(uart_info->huart_mutex);
-
 	ret = wait_for_uart_receive(uart_info, size, timeout);
+
+	mutex_unlock(uart_info->huart_mutex);
 
 	return ret;
 }
@@ -315,13 +358,46 @@ int uart_tx_rx_data(uart_info_t *uart_info, uint8_t *tx_data, uint16_t tx_size, 
 	if(status != HAL_OK) {
 	}
 
-	mutex_unlock(uart_info->huart_mutex);
-
 	ret = wait_for_uart_receive(uart_info, rx_size, timeout);
 
 	if(signal_wait(uart_info->tx_msg_q, NULL, timeout) != 0) {
 		HAL_UART_AbortTransmit(uart_info->huart);
 	}
+
+	mutex_unlock(uart_info->huart_mutex);
+
+	return ret;
+}
+
+int uart_rx_line(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint8_t *match, uint16_t length, uint32_t timeout)
+{
+	int ret = 0;
+	HAL_StatusTypeDef status;
+
+	mutex_lock(uart_info->huart_mutex);
+
+	uart_info->uart_rx_mode = UART_RX_MODE_MATCH;
+	uart_info->uart_rx_line.data = data;
+	uart_info->uart_rx_line.size = size;
+	uart_info->uart_rx_line.pos = 0;
+	uart_info->uart_rx_line.match = match;
+	uart_info->uart_rx_line.length = length;
+
+	status = HAL_UART_Receive_DMA(uart_info->huart, data, 1);
+
+	if(status == HAL_OK) {
+		if(signal_wait(uart_info->rx_msg_q, NULL, timeout) != 0) {
+			HAL_UART_AbortTransmit(uart_info->huart);
+		}
+	} else {
+		//debug("\n");
+	}
+
+	uart_info->uart_rx_mode = UART_RX_MODE_NORMAL;
+
+	ret = uart_info->uart_rx_line.pos;
+
+	mutex_unlock(uart_info->huart_mutex);
 
 	return ret;
 }
