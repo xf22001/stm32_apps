@@ -6,7 +6,7 @@
  *   文件名称：log.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月29日 星期五 12时45分56秒
- *   修改日期：2021年02月03日 星期三 08时30分43秒
+ *   修改日期：2021年02月07日 星期日 14时51分28秒
  *   描    述：
  *
  *================================================================*/
@@ -432,11 +432,11 @@ void log_hexdump(uint32_t log_mask, const char *label, const char *data, int len
 	out:
 
 		if(__get_IPSR() != 0) {
-			ret = log_fn(log_mask, log_buffer, ret);
+			ret = log_fn(log_mask, log_buffer, BUFFER_LEN - left);
 		} else {
 			log_ctx.log_mask = log_mask;
 			log_ctx.buffer = log_buffer;
-			log_ctx.size = ret;
+			log_ctx.size = BUFFER_LEN - left;
 			do_callback_chain(log_info->log_chain, &log_ctx);
 		}
 

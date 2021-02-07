@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2021年02月04日 星期四 11时52分00秒
+ *   修改日期：2021年02月07日 星期日 15时10分12秒
  *   描    述：
  *
  *================================================================*/
@@ -200,7 +200,7 @@ int uart_tx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t 
 	status = HAL_UART_Transmit_DMA(uart_info->huart, data, size);
 
 	if(status != HAL_OK) {
-		debug("\n");
+		//debug("\n");
 	}
 
 	mutex_unlock(uart_info->huart_mutex);
@@ -217,57 +217,63 @@ int uart_tx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t 
 
 static uint16_t wait_for_uart_receive(uart_info_t *uart_info, uint16_t size, uint32_t timeout)
 {
-	uint16_t pre_received = 0;
 	uint16_t received = get_uart_received(uart_info);
-	uint32_t cur_ticks = osKernelSysTick();
-	uint32_t enter_ticks = cur_ticks;
-	uint32_t pre_received_ticks = cur_ticks;
-	uint32_t duration = 0;
+	uint16_t pre_received = received;
+	uint32_t left_ticks = timeout;
 	uint32_t wait_ticks;
+	int ret;
 
-	while(duration < timeout) {
-		wait_ticks = timeout - duration;
+	while(received < size) {
+		wait_ticks = left_ticks;
 
 		if(wait_ticks > uart_info->rx_poll_interval) {
 			wait_ticks = uart_info->rx_poll_interval;
 		}
 
-		signal_wait(uart_info->rx_msg_q, NULL, wait_ticks);
+		left_ticks -= wait_ticks;
 
-		cur_ticks = osKernelSysTick();
+		//debug("left_ticks:%d\n", left_ticks);
+
+		ret = signal_wait(uart_info->rx_msg_q, NULL, wait_ticks);
 
 		received = get_uart_received(uart_info);
 
-		if(received > 0) {
-			if(received == size) {//接收完成
-				HAL_UART_AbortReceive(uart_info->huart);
-				break;
-			}
-
-			if(pre_received == received) {//没有新数据进来
-				//pending for a long time(poll interval)
-				if(abs(cur_ticks - pre_received_ticks) >= uart_info->max_pending_duration) {
-					debug("pending duration:%d\n", cur_ticks - pre_received_ticks);
+		if(ret == 0) {//接收完成
+			//debug("completed!\n");
+			break;
+		} else {//接收超时
+			if(left_ticks == 0) {//等待超时
+				if(pre_received == received) {//等待超时，没有新数据进来,返回
+					//debug("timeout!\n");
 					HAL_UART_AbortReceive(uart_info->huart);
 					break;
-				}
-			} else {//有新数据进来
-				if(pre_received == 0) {//如果是刚刚有数据进来，重新设定进入时间，保证在接收完一帧数据前不超时
-					enter_ticks = cur_ticks;
-				}
+				} else {//等待超时，有新数据进来,再等最多一个poll interval
+					left_ticks = uart_info->rx_poll_interval;
 
-				pre_received_ticks = cur_ticks;
-				pre_received = received;
+					if(left_ticks > timeout) {
+						left_ticks = timeout;
+					}
+
+					pre_received = received;
+				}
+			} else {//等待未超时
+				if(pre_received == received) {//等待未超时,没有新数据进来
+					//pending for a long time(poll interval)
+					if(received != 0) {//有数据,立即返回
+						//debug("pending duration:%d\n", wait_ticks);
+						HAL_UART_AbortReceive(uart_info->huart);
+						break;
+					} else {//没有数据,继续等
+					}
+				} else {//等待未超时,有新数据进来,继续收
+					pre_received = received;
+				}
 			}
 		}
 
-		duration = cur_ticks - enter_ticks;
 	}
 
-	if(duration >= timeout) {
-		HAL_UART_AbortReceive(uart_info->huart);
-	}
-
+	//debug("received:%d!\n", received);
 	return received;
 }
 
@@ -281,7 +287,7 @@ int uart_rx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t 
 	status = HAL_UART_Receive_DMA(uart_info->huart, data, size);
 
 	if(status != HAL_OK) {
-		debug("\n");
+		//debug("\n");
 	}
 
 	mutex_unlock(uart_info->huart_mutex);
@@ -301,7 +307,7 @@ int uart_tx_rx_data(uart_info_t *uart_info, uint8_t *tx_data, uint16_t tx_size, 
 	status = HAL_UART_Receive_DMA(uart_info->huart, rx_data, rx_size);
 
 	if(status != HAL_OK) {
-		debug("\n");
+		//debug("\n");
 	}
 
 	status = HAL_UART_Transmit_DMA(uart_info->huart, tx_data, tx_size);
