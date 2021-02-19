@@ -6,7 +6,7 @@
  *   文件名称：uart_debug.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月13日 星期三 10时45分00秒
- *   修改日期：2021年02月19日 星期五 14时55分34秒
+ *   修改日期：2021年02月19日 星期五 15时07分05秒
  *   描    述：
  *
  *================================================================*/
@@ -80,7 +80,7 @@ void task_uart_debug(void const *argument)
 
 		debug_get_line(uart_info, buffer, DEBUG_BUFFER_SIZE);
 
-		_hexdump("buffer", (const char *)buffer, received);
+		//_hexdump("buffer", (const char *)buffer, received);
 
 		if(received >= 1) {
 			buffer[received - 1] = 0;
