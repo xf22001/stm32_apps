@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2021年02月19日 星期五 10时09分00秒
+ *   修改日期：2021年02月19日 星期五 14时47分52秒
  *   描    述：
  *
  *================================================================*/
@@ -157,7 +157,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 			uart_info->uart_rx_line.pos++;
 
 			if(uart_info->uart_rx_line.pos >= uart_info->uart_rx_line.size) {
-				uart_info->uart_rx_line.pos = uart_info->uart_rx_line.size - 1;
 				signal_send(uart_info->rx_msg_q, 0, 0);
 			} else {
 				if(uart_info->uart_rx_line.pos >= uart_info->uart_rx_line.match_length) {
@@ -173,7 +172,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 					}
 
 					if(i == match_length) {
-						uart_info->uart_rx_line.pos -= uart_info->uart_rx_line.match_length;
 						signal_send(uart_info->rx_msg_q, 0, 0);
 					} else {
 						HAL_StatusTypeDef status;
@@ -183,6 +181,14 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 							HAL_UART_AbortReceive(uart_info->huart);
 							signal_send(uart_info->rx_msg_q, 0, 0);
 						}
+					}
+				} else {
+					HAL_StatusTypeDef status;
+					status = HAL_UART_Receive_DMA(uart_info->huart, uart_info->uart_rx_line.data + uart_info->uart_rx_line.pos, 1);
+
+					if(status != HAL_OK) {
+						HAL_UART_AbortReceive(uart_info->huart);
+						signal_send(uart_info->rx_msg_q, 0, 0);
 					}
 				}
 			}
@@ -202,6 +208,17 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 {
+	uart_info_t *uart_info = get_or_alloc_uart_info(huart);
+
+	if(uart_info == NULL) {
+		return;
+	}
+
+	HAL_UART_AbortTransmit(uart_info->huart);
+	HAL_UART_AbortReceive(uart_info->huart);
+
+	signal_send(uart_info->rx_msg_q, 0, 0);
+	signal_send(uart_info->tx_msg_q, 0, 0);
 }
 
 void HAL_UART_AbortCpltCallback (UART_HandleTypeDef *huart)

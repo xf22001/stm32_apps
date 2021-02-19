@@ -6,7 +6,7 @@
  *   文件名称：uart_debug.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月13日 星期三 10时45分00秒
- *   修改日期：2021年02月19日 星期五 10时15分22秒
+ *   修改日期：2021年02月19日 星期五 14时55分34秒
  *   描    述：
  *
  *================================================================*/
@@ -60,7 +60,6 @@ static void debug_get_line(uart_info_t *uart_info, char *buffer, size_t size)
 static void debug_get_line(uart_info_t *uart_info, char *buffer, size_t size)
 {
 	received = uart_rx_line(uart_info, (uint8_t *)buffer, size, (uint8_t *)"\r", 1);
-	buffer[received] = 0;
 }
 
 void task_uart_debug(void const *argument)
@@ -74,14 +73,18 @@ void task_uart_debug(void const *argument)
 		app_panic();
 	}
 
-	received = 0;
-
 	while(1) {
-		debug_get_line(uart_info, buffer, DEBUG_BUFFER_SIZE);
-
-		//_hexdump("buffer", (const char *)buffer, received);
+		received = 0;
 
 		buffer[received] = 0;
+
+		debug_get_line(uart_info, buffer, DEBUG_BUFFER_SIZE);
+
+		_hexdump("buffer", (const char *)buffer, received);
+
+		if(received >= 1) {
+			buffer[received - 1] = 0;
+		}
 
 		ret = sscanf(buffer, "%d%n", &fn, &catched);
 
@@ -110,7 +113,5 @@ void task_uart_debug(void const *argument)
 		} else {
 			debug("invalid command:\'%s\'\n", buffer);
 		}
-
-		received = 0;
 	}
 }
