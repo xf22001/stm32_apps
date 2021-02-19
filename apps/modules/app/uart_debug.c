@@ -6,7 +6,7 @@
  *   文件名称：uart_debug.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月13日 星期三 10时45分00秒
- *   修改日期：2020年12月28日 星期一 13时24分13秒
+ *   修改日期：2021年02月19日 星期五 10时15分22秒
  *   描    述：
  *
  *================================================================*/
@@ -19,19 +19,11 @@
 static char buffer[DEBUG_BUFFER_SIZE];
 static uint8_t received = 0;
 
-void task_uart_debug(void const *argument)
+/*
+static void debug_get_line(uart_info_t *uart_info, char *buffer, size_t size)
 {
 	int ret = 0;
-	int fn;
-	int catched;
 	char c;
-	uart_info_t *uart_info = (uart_info_t *)argument;
-
-	if(uart_info == NULL) {
-		app_panic();
-	}
-
-	received = 0;
 
 	while(1) {
 		ret = uart_rx_data(uart_info, (uint8_t *)buffer + received, 1, 1000);
@@ -49,15 +41,43 @@ void task_uart_debug(void const *argument)
 
 		received += ret;
 
-		if(received < DEBUG_BUFFER_SIZE - 1) {
+		if(received < size - 1) {
 			if(c != 0) {
 				continue;
+			} else {
+				break;
 			}
 		} else {
 			debug("\n");
 
 			received = DEBUG_BUFFER_SIZE - 1;
+			break;
 		}
+	}
+}
+*/
+
+static void debug_get_line(uart_info_t *uart_info, char *buffer, size_t size)
+{
+	received = uart_rx_line(uart_info, (uint8_t *)buffer, size, (uint8_t *)"\r", 1);
+	buffer[received] = 0;
+}
+
+void task_uart_debug(void const *argument)
+{
+	int ret = 0;
+	int fn;
+	int catched;
+	uart_info_t *uart_info = (uart_info_t *)argument;
+
+	if(uart_info == NULL) {
+		app_panic();
+	}
+
+	received = 0;
+
+	while(1) {
+		debug_get_line(uart_info, buffer, DEBUG_BUFFER_SIZE);
 
 		//_hexdump("buffer", (const char *)buffer, received);
 

@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2021年02月08日 星期一 00时03分06秒
+ *   修改日期：2021年02月19日 星期五 10时09分00秒
  *   描    述：
  *
  *================================================================*/
@@ -20,7 +20,7 @@
 #include "os_utils.h"
 #include "object_class.h"
 
-#define LOG_NONE
+#define LOG_UDP
 #include "log.h"
 
 static object_class_t *uart_class = NULL;
@@ -153,31 +153,34 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	}
 
 	switch(uart_info->uart_rx_mode) {
-		case UART_RX_MODE_NORMAL: {
+		case UART_RX_MODE_MATCH: {
 			uart_info->uart_rx_line.pos++;
 
 			if(uart_info->uart_rx_line.pos >= uart_info->uart_rx_line.size) {
+				uart_info->uart_rx_line.pos = uart_info->uart_rx_line.size - 1;
 				signal_send(uart_info->rx_msg_q, 0, 0);
 			} else {
-				if(uart_info->uart_rx_line.pos >= uart_info->uart_rx_line.length) {
+				if(uart_info->uart_rx_line.pos >= uart_info->uart_rx_line.match_length) {
 					int i;
-					uint8_t *data = uart_info->uart_rx_line.data + uart_info->uart_rx_line.pos - uart_info->uart_rx_line.length;
+					uint8_t *data = uart_info->uart_rx_line.data + uart_info->uart_rx_line.pos - uart_info->uart_rx_line.match_length;
 					uint8_t *match = uart_info->uart_rx_line.match;
-					uint16_t length = uart_info->uart_rx_line.length;
+					uint16_t match_length = uart_info->uart_rx_line.match_length;
 
-					for(i = 0; i < length; i++) {
+					for(i = 0; i < match_length; i++) {
 						if(data[i] != match[i]) {
 							break;
 						}
 					}
 
-					if(i == length) {
+					if(i == match_length) {
+						uart_info->uart_rx_line.pos -= uart_info->uart_rx_line.match_length;
 						signal_send(uart_info->rx_msg_q, 0, 0);
 					} else {
 						HAL_StatusTypeDef status;
 						status = HAL_UART_Receive_DMA(uart_info->huart, uart_info->uart_rx_line.data + uart_info->uart_rx_line.pos, 1);
 
 						if(status != HAL_OK) {
+							HAL_UART_AbortReceive(uart_info->huart);
 							signal_send(uart_info->rx_msg_q, 0, 0);
 						}
 					}
@@ -186,7 +189,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 		}
 		break;
 
-		case UART_RX_MODE_MATCH: {
+		case UART_RX_MODE_NORMAL: {
 			signal_send(uart_info->rx_msg_q, 0, 0);
 		}
 		break;
@@ -242,6 +245,8 @@ int uart_tx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t 
 
 	status = HAL_UART_Transmit_DMA(uart_info->huart, data, size);
 
+	mutex_unlock(uart_info->huart_mutex);
+
 	if(status != HAL_OK) {
 		//debug("\n");
 	}
@@ -252,8 +257,6 @@ int uart_tx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t 
 		ret = get_uart_sent(uart_info);
 		HAL_UART_AbortTransmit(uart_info->huart);
 	}
-
-	mutex_unlock(uart_info->huart_mutex);
 
 	return ret;
 }
@@ -329,13 +332,14 @@ int uart_rx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t 
 
 	status = HAL_UART_Receive_DMA(uart_info->huart, data, size);
 
+	mutex_unlock(uart_info->huart_mutex);
+
 	if(status != HAL_OK) {
-		//debug("\n");
+		HAL_UART_AbortReceive(uart_info->huart);
+		//debug("status:%d\n", status);
 	}
 
 	ret = wait_for_uart_receive(uart_info, size, timeout);
-
-	mutex_unlock(uart_info->huart_mutex);
 
 	return ret;
 }
@@ -350,26 +354,28 @@ int uart_tx_rx_data(uart_info_t *uart_info, uint8_t *tx_data, uint16_t tx_size, 
 	status = HAL_UART_Receive_DMA(uart_info->huart, rx_data, rx_size);
 
 	if(status != HAL_OK) {
-		//debug("\n");
+		HAL_UART_AbortReceive(uart_info->huart);
 	}
 
 	status = HAL_UART_Transmit_DMA(uart_info->huart, tx_data, tx_size);
 
 	if(status != HAL_OK) {
-	}
-
-	ret = wait_for_uart_receive(uart_info, rx_size, timeout);
-
-	if(signal_wait(uart_info->tx_msg_q, NULL, timeout) != 0) {
 		HAL_UART_AbortTransmit(uart_info->huart);
 	}
 
 	mutex_unlock(uart_info->huart_mutex);
 
+	ret = wait_for_uart_receive(uart_info, rx_size, timeout);
+
+	if(signal_wait(uart_info->tx_msg_q, NULL, timeout) != 0) {
+		HAL_UART_AbortTransmit(uart_info->huart);
+		HAL_UART_AbortReceive(uart_info->huart);
+	}
+
 	return ret;
 }
 
-int uart_rx_line(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint8_t *match, uint16_t length, uint32_t timeout)
+int uart_rx_line(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint8_t *match, uint16_t match_length)
 {
 	int ret = 0;
 	HAL_StatusTypeDef status;
@@ -381,23 +387,24 @@ int uart_rx_line(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint8_t *
 	uart_info->uart_rx_line.size = size;
 	uart_info->uart_rx_line.pos = 0;
 	uart_info->uart_rx_line.match = match;
-	uart_info->uart_rx_line.length = length;
+	uart_info->uart_rx_line.match_length = match_length;
 
 	status = HAL_UART_Receive_DMA(uart_info->huart, data, 1);
 
+	mutex_unlock(uart_info->huart_mutex);
+
 	if(status == HAL_OK) {
-		if(signal_wait(uart_info->rx_msg_q, NULL, timeout) != 0) {
-			HAL_UART_AbortTransmit(uart_info->huart);
+		if(signal_wait(uart_info->rx_msg_q, NULL, osWaitForever) != 0) {
+			HAL_UART_AbortReceive(uart_info->huart);
 		}
 	} else {
-		//debug("\n");
+		HAL_UART_AbortReceive(uart_info->huart);
+		//debug("status:%d\n", status);
 	}
 
 	uart_info->uart_rx_mode = UART_RX_MODE_NORMAL;
 
 	ret = uart_info->uart_rx_line.pos;
-
-	mutex_unlock(uart_info->huart_mutex);
 
 	return ret;
 }
