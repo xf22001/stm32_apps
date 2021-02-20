@@ -6,7 +6,7 @@
  *   文件名称：uart_debug.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月13日 星期三 10时45分00秒
- *   修改日期：2021年02月19日 星期五 15时07分05秒
+ *   修改日期：2021年02月20日 星期六 14时56分17秒
  *   描    述：
  *
  *================================================================*/
@@ -57,9 +57,23 @@ static void debug_get_line(uart_info_t *uart_info, char *buffer, size_t size)
 }
 */
 
+static int line_matcher(uint8_t *buffer, uint16_t size)
+{
+	int ret = -1;
+	uint16_t pos = size - 1;
+
+	if(buffer[pos] == '\r') {
+		ret = 0;
+	} else if(buffer[pos] == '\n') {
+		ret = 0;
+	}
+
+	return ret;
+}
+
 static void debug_get_line(uart_info_t *uart_info, char *buffer, size_t size)
 {
-	received = uart_rx_line(uart_info, (uint8_t *)buffer, size, (uint8_t *)"\r", 1);
+	received = uart_rx_line(uart_info, (uint8_t *)buffer, size, (line_matcher_t)line_matcher);
 }
 
 void task_uart_debug(void const *argument)

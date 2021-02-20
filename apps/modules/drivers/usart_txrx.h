@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分40秒
- *   修改日期：2021年02月19日 星期五 09时52分07秒
+ *   修改日期：2021年02月20日 星期六 15时00分52秒
  *   描    述：
  *
  *================================================================*/
@@ -31,13 +31,13 @@ typedef enum {
 	UART_RX_MODE_MATCH,
 } uart_rx_mode_t;
 
+typedef int (*line_matcher_t)(uint8_t *data, uint16_t size);
+
 typedef struct {
 	uint8_t *data;
 	uint16_t size;
-	uint16_t pos;
-
-	uint8_t *match;
-	uint16_t match_length;
+	uint16_t received;
+	line_matcher_t matcher;
 } uart_rx_line_t;
 
 typedef struct {
@@ -64,7 +64,7 @@ void set_max_pending_duration(uart_info_t *uart_info, uint32_t max_pending_durat
 int uart_tx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t timeout);
 int uart_rx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t timeout);
 int uart_tx_rx_data(uart_info_t *uart_info, uint8_t *tx_data, uint16_t tx_size, uint8_t *rx_data, uint16_t rx_size, uint32_t timeout);
-int uart_rx_line(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint8_t *match, uint16_t length);
+int uart_rx_line(uart_info_t *uart_info, uint8_t *data, uint16_t size, line_matcher_t matcher);
 void set_log_uart_info(uart_info_t *uart_info);
 int log_uart_data(uint32_t log_mask, void *data, size_t size);
 #endif //_USART_TXRX_H
