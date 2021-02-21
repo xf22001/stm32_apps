@@ -6,7 +6,7 @@
  *   文件名称：charger.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 12时57分41秒
- *   修改日期：2021年02月01日 星期一 09时55分31秒
+ *   修改日期：2021年02月21日 星期日 19时34分35秒
  *   描    述：
  *
  *================================================================*/
@@ -564,7 +564,7 @@ int set_gun_lock_state(charger_info_t *charger_info, uint8_t state, charger_op_c
 
 	switch(charger_op_ctx->state) {
 		case 0: {
-			if(abs(ticks - charger_op_ctx->stamp) >= 5 * 1000) {
+			if(ticks_duration(ticks, charger_op_ctx->stamp) >= 5 * 1000) {
 				charger_info->gun_lock_state = state;
 
 				HAL_GPIO_WritePin(gpio_port, gpio_pin, GPIO_PIN_SET);
@@ -579,7 +579,7 @@ int set_gun_lock_state(charger_info_t *charger_info, uint8_t state, charger_op_c
 		break;
 
 		case 1: {
-			if(abs(ticks - charger_op_ctx->stamp) >= 180) {
+			if(ticks_duration(ticks, charger_op_ctx->stamp) >= 180) {
 				HAL_GPIO_WritePin(gpio_port, gpio_pin, GPIO_PIN_RESET);
 				debug("state:%d, gun state(0:unlock, 1:lock):%d\n", charger_op_ctx->state, state);
 				ret = 0;
@@ -634,7 +634,7 @@ int discharge(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)
 			break;
 
 			case 1: {
-				if(abs(ticks - charger_op_ctx->stamp) >= (15 * 1000)) {
+				if(ticks_duration(ticks, charger_op_ctx->stamp) >= (15 * 1000)) {
 					ret = -1;
 				} else {
 					if(response_discharge(a_f_b_info) == 0) {
@@ -647,7 +647,7 @@ int discharge(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)
 			break;
 
 			case 2: {
-				if(abs(ticks - charger_op_ctx->stamp) >= (10 * 1000)) {
+				if(ticks_duration(ticks, charger_op_ctx->stamp) >= (10 * 1000)) {
 					ret = -1;
 				} else {
 					if(response_discharge_running_status(a_f_b_info) == 0) {
@@ -691,7 +691,7 @@ int precharge(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)
 			break;
 
 			case 1: {
-				if(abs(ticks - charger_op_ctx->stamp) >= (20 * 1000)) {
+				if(ticks_duration(ticks, charger_op_ctx->stamp) >= (20 * 1000)) {
 					ret = -1;
 				} else {
 					if(abs(charger_info->module_output_voltage - charger_info->precharge_voltage) <= 20) {
@@ -728,7 +728,7 @@ int relay_endpoint_overvoltage_status(charger_info_t *charger_info, charger_op_c
 		break;
 
 		case 1: {
-			if(abs(ticks - charger_op_ctx->stamp) >= (10 * 1000)) {
+			if(ticks_duration(ticks, charger_op_ctx->stamp) >= (10 * 1000)) {
 				ret = -1;
 			} else {
 				uint8_t state = get_battery_available_state(a_f_b_info);
@@ -765,7 +765,7 @@ int insulation_check(charger_info_t *charger_info, charger_op_ctx_t *charger_op_
 			break;
 
 			case 1: {
-				if(abs(ticks - charger_op_ctx->stamp) >= (15 * 1000)) {
+				if(ticks_duration(ticks, charger_op_ctx->stamp) >= (15 * 1000)) {
 					ret = -1;
 				} else {
 					if(response_insulation_check(a_f_b_info) == 0) {
@@ -778,7 +778,7 @@ int insulation_check(charger_info_t *charger_info, charger_op_ctx_t *charger_op_
 			break;
 
 			case 2: {
-				if(abs(ticks - charger_op_ctx->stamp) >= (15 * 1000)) {
+				if(ticks_duration(ticks, charger_op_ctx->stamp) >= (15 * 1000)) {
 					ret = -1;
 				} else {
 					//>1 warning
@@ -824,7 +824,7 @@ int battery_voltage_status(charger_info_t *charger_info, charger_op_ctx_t *charg
 		break;
 
 		case 1: {
-			if(abs(ticks - charger_op_ctx->stamp) >= (15 * 1000)) {
+			if(ticks_duration(ticks, charger_op_ctx->stamp) >= (15 * 1000)) {
 				ret = -1;
 			} else {
 				uint8_t state = get_battery_available_state(a_f_b_info);
@@ -895,7 +895,7 @@ static void channel_update_gun_state(charger_info_t *charger_info)//100ms
 	uint8_t state;
 	uint32_t ticks = osKernelSysTick();
 
-	if(abs(ticks - charger_info->gun_connect_state_update_stamp) < 100) {
+	if(ticks_duration(ticks, charger_info->gun_connect_state_update_stamp) < 100) {
 		return;
 	}
 

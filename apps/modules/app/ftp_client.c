@@ -6,7 +6,7 @@
  *   文件名称：ftp_client.c
  *   创 建 者：肖飞
  *   创建日期：2020年09月15日 星期二 09时32分10秒
- *   修改日期：2021年02月01日 星期一 09时51分18秒
+ *   修改日期：2021年02月21日 星期日 19时30分34秒
  *   描    述：
  *
  *================================================================*/
@@ -663,7 +663,7 @@ static void ftp_client_cmd_periodic(void *ctx)
 		break;
 
 		case FTP_CLIENT_CMD_STATE_CONNECT_CONFIRM: {
-			if(abs(ticks - ftp_client_info->stamp) >= FTP_SESSION_TIMEOUT) {
+			if(ticks_duration(ticks, ftp_client_info->stamp) >= FTP_SESSION_TIMEOUT) {
 				debug("FTP_CLIENT_CMD_STATE_CONNECT_CONFIRM timeout!\n");
 				set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
 			}
@@ -671,7 +671,7 @@ static void ftp_client_cmd_periodic(void *ctx)
 		break;
 
 		case FTP_CLIENT_CMD_STATE_CONNECTED: {
-			if(abs(ticks - ftp_client_info->stamp) >= FTP_SESSION_TIMEOUT) {
+			if(ticks_duration(ticks, ftp_client_info->stamp) >= FTP_SESSION_TIMEOUT) {
 				debug("FTP_CLIENT_CMD_STATE_CONNECTED timeout!\n");
 				set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
 			} else {
@@ -717,7 +717,7 @@ static void ftp_client_data_download(void *ctx)
 		case 0: {
 			ftp_client_info->download_size += ftp_client_info->data.rx_size;
 
-			if((abs(ticks - ftp_client_info->debug_stamp) >= 1 * 1000) ||
+			if((ticks_duration(ticks, ftp_client_info->debug_stamp) >= 1 * 1000) ||
 			   (ftp_client_info->file_size == ftp_client_info->download_size)) {
 				uint32_t duration = (ticks - ftp_client_info->download_stamp);
 
@@ -859,7 +859,7 @@ static void ftp_client_data_periodic(void *ctx)
 		break;
 
 		case FTP_CLIENT_DATA_STATE_CONNECT_CONFIRM: {
-			if(abs(ticks - ftp_client_info->stamp) >= FTP_SESSION_TIMEOUT) {
+			if(ticks_duration(ticks, ftp_client_info->stamp) >= FTP_SESSION_TIMEOUT) {
 				debug("FTP_CLIENT_DATA_STATE_CONNECT_CONFIRM timeout!\n");
 				set_ftp_client_data_state(ftp_client_info, FTP_CLIENT_DATA_STATE_DISCONNECT);
 			}
@@ -867,7 +867,7 @@ static void ftp_client_data_periodic(void *ctx)
 		break;
 
 		case FTP_CLIENT_DATA_STATE_CONNECTED: {
-			if(abs(ticks - ftp_client_info->stamp) >= FTP_SESSION_TIMEOUT) {
+			if(ticks_duration(ticks, ftp_client_info->stamp) >= FTP_SESSION_TIMEOUT) {
 				debug("FTP_CLIENT_DATA_STATE_CONNECTED timeout!\n");
 				set_ftp_client_data_state(ftp_client_info, FTP_CLIENT_DATA_STATE_DISCONNECT);
 			} else {

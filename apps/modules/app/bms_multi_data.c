@@ -6,7 +6,7 @@
  *   文件名称：bms_multi_data.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月09日 星期四 13时04分55秒
- *   修改日期：2021年02月01日 星期一 10时30分31秒
+ *   修改日期：2021年02月21日 星期日 19时30分54秒
  *   描    述：
  *
  *================================================================*/
@@ -337,7 +337,7 @@ int send_multi_packets(can_info_t *can_info, multi_packets_info_t *multi_packets
 				ret = 0;
 			}
 		} else {
-			if(abs(ticks - multi_packets_des->start_stamp) >= period) {
+			if(ticks_duration(ticks, multi_packets_des->start_stamp) >= period) {
 				debug("handle_multi_data_response FN_MULTI_DATA_RESPONSE_TYPE timeout!\n");
 				multi_packets_des->bms_data_multi_fn = FN_INVALID;
 			}

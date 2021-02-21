@@ -6,7 +6,7 @@
  *   文件名称：os_utils.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分17秒
- *   修改日期：2021年02月04日 星期四 11时54分20秒
+ *   修改日期：2021年02月21日 星期日 19时14分16秒
  *   描    述：
  *
  *================================================================*/
@@ -405,4 +405,12 @@ unsigned char calc_crc8(const void *data, size_t size)
 	}
 
 	return crc;
+}
+
+uint32_t ticks_duration(uint32_t a, uint32_t b)
+{
+	uint32_t duration_1 = a - b;
+	uint32_t duration_2 = b - a;
+
+	return (duration_1 <= duration_2) ? duration_1 : duration_2;
 }

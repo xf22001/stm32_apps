@@ -447,7 +447,7 @@ static void ftpd_thread_entry(void const *argument)
 				}
 
 				if(session->pasv_server_sockfd != -1) {
-					if(abs(rt_tick_get() - session->pasv_server_stamp) >= rt_tick_from_millisecond(3000)) {
+					if(ticks_duration(rt_tick_get(), session->pasv_server_stamp) >= rt_tick_from_millisecond(3000)) {
 						closesocket(session->pasv_server_sockfd);
 						session->pasv_server_sockfd = -1;
 						rt_sprintf(buffer, "425 Can't open data connection.\r\n");
@@ -477,7 +477,7 @@ static void ftpd_thread_entry(void const *argument)
 				}
 
 				if(session->data_sockfd != -1) {
-					if(abs(rt_tick_get() - session->data_stamp) >= rt_tick_from_millisecond(3000)) {
+					if(ticks_duration(rt_tick_get(), session->data_stamp) >= rt_tick_from_millisecond(3000)) {
 						if(session->filefd != NULL) {
 							mt_f_close(session->filefd);
 							session->filefd = NULL;
