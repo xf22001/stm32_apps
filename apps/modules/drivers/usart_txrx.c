@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2021年02月20日 星期六 15时01分08秒
+ *   修改日期：2021年02月26日 星期五 08时12分45秒
  *   描    述：
  *
  *================================================================*/
@@ -385,11 +385,15 @@ int uart_rx_line(uart_info_t *uart_info, uint8_t *data, uint16_t size, line_matc
 
 	mutex_lock(uart_info->huart_mutex);
 
+	__disable_irq();
+
 	uart_info->uart_rx_mode = UART_RX_MODE_MATCH;
 	uart_info->uart_rx_line.data = data;
 	uart_info->uart_rx_line.size = size;
 	uart_info->uart_rx_line.received = 0;
 	uart_info->uart_rx_line.matcher = matcher;
+
+	__enable_irq();
 
 	status = HAL_UART_Receive_DMA(uart_info->huart, data, 1);
 
