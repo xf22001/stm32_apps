@@ -6,7 +6,7 @@
  *   文件名称：object_class.c
  *   创 建 者：肖飞
  *   创建日期：2021年02月02日 星期二 08时56分26秒
- *   修改日期：2021年02月02日 星期二 12时30分21秒
+ *   修改日期：2021年03月04日 星期四 16时52分57秒
  *   描    述：
  *
  *================================================================*/
@@ -18,7 +18,7 @@ void object_class_free(object_class_t *object_class)
 		return;
 	}
 
-	__disable_irq();
+	os_enter_critical();
 
 	mutex_lock(object_class->mutex);
 
@@ -42,7 +42,7 @@ void object_class_free(object_class_t *object_class)
 
 	mutex_unlock(object_class->mutex);
 
-	__enable_irq();
+	os_leave_critical();
 
 	mutex_delete(object_class->mutex);
 
@@ -108,7 +108,7 @@ int object_class_add_object(object_class_t *object_class, object_filter_t filter
 		return ret;
 	}
 
-	__disable_irq();
+	os_enter_critical();
 
 	mutex_lock(object_class->mutex);
 
@@ -134,7 +134,7 @@ int object_class_add_object(object_class_t *object_class, object_filter_t filter
 
 	mutex_unlock(object_class->mutex);
 
-	__enable_irq();
+	os_leave_critical();
 
 	if(ret != 0) {
 		os_free(object_class_item);
@@ -155,7 +155,7 @@ void *object_class_get_object(object_class_t *object_class, object_filter_t filt
 		return o;
 	}
 
-	__disable_irq();
+	os_enter_critical();
 
 	mutex_lock(object_class->mutex);
 
@@ -175,7 +175,7 @@ void *object_class_get_object(object_class_t *object_class, object_filter_t filt
 
 	mutex_unlock(object_class->mutex);
 
-	__enable_irq();
+	os_leave_critical();
 
 	return o;
 }
@@ -201,7 +201,7 @@ int object_class_get_objects(object_class_t *object_class, object_filter_t filte
 		return ret;
 	}
 
-	__disable_irq();
+	os_enter_critical();
 
 	mutex_lock(object_class->mutex);
 
@@ -227,7 +227,7 @@ int object_class_get_objects(object_class_t *object_class, object_filter_t filte
 
 	mutex_unlock(object_class->mutex);
 
-	__enable_irq();
+	os_leave_critical();
 
 	return ret;
 }
@@ -244,7 +244,7 @@ int object_class_remove_object(object_class_t *object_class, void *o)
 		return ret;
 	}
 
-	__disable_irq();
+	os_enter_critical();
 
 	mutex_lock(object_class->mutex);
 
@@ -272,7 +272,7 @@ int object_class_remove_object(object_class_t *object_class, void *o)
 
 	mutex_unlock(object_class->mutex);
 
-	__enable_irq();
+	os_leave_critical();
 
 	return ret;
 }
@@ -285,7 +285,7 @@ size_t object_class_size(object_class_t *object_class)
 		return size;
 	}
 
-	__disable_irq();
+	os_enter_critical();
 
 	mutex_lock(object_class->mutex);
 
@@ -300,7 +300,7 @@ size_t object_class_size(object_class_t *object_class)
 
 	mutex_unlock(object_class->mutex);
 
-	__enable_irq();
+	os_leave_critical();
 
 	return size;
 }

@@ -162,13 +162,13 @@ can_data_task_info_t *get_or_alloc_can_data_task_info(CAN_HandleTypeDef *hcan)
 {
 	can_data_task_info_t *can_data_task_info = NULL;
 
-	__disable_irq();
+	os_enter_critical();
 
 	if(can_data_task_class == NULL) {
 		can_data_task_class = object_class_alloc();
 	}
 
-	__enable_irq();
+	os_leave_critical();
 
 	can_data_task_info = (can_data_task_info_t *)object_class_get_or_alloc_object(can_data_task_class, object_filter, hcan, (object_alloc_t)alloc_can_data_task_info, (object_free_t)free_can_data_task_info);
 

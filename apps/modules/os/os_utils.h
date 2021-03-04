@@ -6,7 +6,7 @@
  *   文件名称：os_utils.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分36秒
- *   修改日期：2021年02月21日 星期日 19时14分58秒
+ *   修改日期：2021年03月04日 星期四 15时57分55秒
  *   描    述：
  *
  *================================================================*/
@@ -278,6 +278,9 @@ os_sem_t sem_create(int32_t value);
 void sem_delete(os_sem_t sem);
 int sem_take(os_sem_t sem, uint32_t timeout);
 int sem_release(os_sem_t sem);
+uint8_t get_os_critical_state(void);
+void os_enter_critical(void);
+void os_leave_critical(void);
 uint32_t get_total_heap_size(void);
 void get_mem_info(size_t *size, size_t *count, size_t *max_size);
 void *os_alloc(size_t size);

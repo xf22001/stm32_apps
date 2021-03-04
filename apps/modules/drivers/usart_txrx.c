@@ -120,13 +120,13 @@ uart_info_t *get_or_alloc_uart_info(UART_HandleTypeDef *huart)
 {
 	uart_info_t *uart_info = NULL;
 
-	__disable_irq();
+	os_enter_critical();
 
 	if(uart_class == NULL) {
 		uart_class = object_class_alloc();
 	}
 
-	__enable_irq();
+	os_leave_critical();
 
 	uart_info = (uart_info_t *)object_class_get_or_alloc_object(uart_class, object_filter, huart, (object_alloc_t)alloc_uart_info, (object_free_t)free_uart_info);
 
@@ -385,7 +385,7 @@ int uart_rx_line(uart_info_t *uart_info, uint8_t *data, uint16_t size, line_matc
 
 	mutex_lock(uart_info->huart_mutex);
 
-	__disable_irq();
+	os_enter_critical();
 
 	uart_info->uart_rx_mode = UART_RX_MODE_MATCH;
 	uart_info->uart_rx_line.data = data;
@@ -393,7 +393,7 @@ int uart_rx_line(uart_info_t *uart_info, uint8_t *data, uint16_t size, line_matc
 	uart_info->uart_rx_line.received = 0;
 	uart_info->uart_rx_line.matcher = matcher;
 
-	__enable_irq();
+	os_leave_critical();
 
 	status = HAL_UART_Receive_DMA(uart_info->huart, data, 1);
 

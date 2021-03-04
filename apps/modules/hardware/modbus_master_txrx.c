@@ -77,13 +77,13 @@ modbus_master_info_t *get_or_alloc_modbus_master_info(uart_info_t *uart_info)
 {
 	modbus_master_info_t *modbus_master_info = NULL;
 
-	__disable_irq();
+	os_enter_critical();
 
 	if(modbus_master_class == NULL) {
 		modbus_master_class = object_class_alloc();
 	}
 
-	__enable_irq();
+	os_leave_critical();
 
 	modbus_master_info = (modbus_master_info_t *)object_class_get_or_alloc_object(modbus_master_class, object_filter, uart_info, (object_alloc_t)alloc_modbus_master_info, (object_free_t)free_modbus_master_info);
 

@@ -89,13 +89,13 @@ modbus_slave_info_t *get_or_alloc_modbus_slave_info(uart_info_t *uart_info)
 {
 	modbus_slave_info_t *modbus_slave_info = NULL;
 
-	__disable_irq();
+	os_enter_critical();
 
 	if(modbus_slave_class == NULL) {
 		modbus_slave_class = object_class_alloc();
 	}
 
-	__enable_irq();
+	os_leave_critical();
 
 	modbus_slave_info = (modbus_slave_info_t *)object_class_get_or_alloc_object(modbus_slave_class, object_filter, uart_info, (object_alloc_t)alloc_modbus_slave_info, (object_free_t)free_modbus_slave_info);
 

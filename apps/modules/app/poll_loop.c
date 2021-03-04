@@ -339,13 +339,13 @@ poll_loop_t *get_or_alloc_poll_loop(uint32_t id)
 {
 	poll_loop_t *poll_loop = NULL;
 
-	__disable_irq();
+	os_enter_critical();
 
 	if(poll_loop_class == NULL) {
 		poll_loop_class = object_class_alloc();
 	}
 
-	__enable_irq();
+	os_leave_critical();
 
 	poll_loop = (poll_loop_t *)object_class_get_or_alloc_object(poll_loop_class, object_filter, (void *)id, (object_alloc_t)alloc_poll_loop, (object_free_t)free_poll_loop);
 

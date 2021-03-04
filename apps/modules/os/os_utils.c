@@ -6,7 +6,7 @@
  *   文件名称：os_utils.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分17秒
- *   修改日期：2021年02月21日 星期日 19时14分16秒
+ *   修改日期：2021年03月04日 星期四 17时20分24秒
  *   描    述：
  *
  *================================================================*/
@@ -226,6 +226,20 @@ int sem_release(os_sem_t sem)
 	return ret;
 }
 
+void os_enter_critical(void)
+{
+	if(__get_IPSR() == 0) {
+		taskENTER_CRITICAL();
+	}
+}
+
+void os_leave_critical(void)
+{
+	if(__get_IPSR() == 0) {
+		taskEXIT_CRITICAL();
+	}
+}
+
 __weak void *port_malloc(size_t size)
 {
 	app_panic();
@@ -273,9 +287,9 @@ static void *xmalloc(size_t size)
 {
 	mem_node_info_t *mem_node_info;
 
-	__disable_irq();
+	os_enter_critical();
 	init_mem_info();
-	__enable_irq();
+	os_leave_critical();
 
 	mutex_lock(mem_info.os_utils_mutex);
 
@@ -300,9 +314,9 @@ static void *xmalloc(size_t size)
 
 static void xfree(void *p)
 {
-	__disable_irq();
+	os_enter_critical();
 	init_mem_info();
-	__enable_irq();
+	os_leave_critical();
 
 	mutex_lock(mem_info.os_utils_mutex);
 
@@ -330,9 +344,9 @@ void get_mem_info(size_t *size, size_t *count, size_t *max_size)
 	*count = 0;
 	*max_size = 0;
 
-	__disable_irq();
+	os_enter_critical();
 	init_mem_info();
-	__enable_irq();
+	os_leave_critical();
 
 	mutex_lock(mem_info.os_utils_mutex);
 

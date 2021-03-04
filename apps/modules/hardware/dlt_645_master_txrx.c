@@ -72,13 +72,13 @@ dlt_645_master_info_t *get_or_alloc_dlt_645_master_info(uart_info_t *uart_info)
 {
 	dlt_645_master_info_t *dlt_645_master_info = NULL;
 
-	__disable_irq();
+	os_enter_critical();
 
 	if(dlt_645_master_class == NULL) {
 		dlt_645_master_class = object_class_alloc();
 	}
 
-	__enable_irq();
+	os_leave_critical();
 
 	dlt_645_master_info = (dlt_645_master_info_t *)object_class_get_or_alloc_object(dlt_645_master_class, object_filter, uart_info, (object_alloc_t)get_or_alloc_dlt_645_master_info, (object_free_t)free_dlt_645_master_info);
 

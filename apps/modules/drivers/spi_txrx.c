@@ -66,13 +66,13 @@ spi_info_t *get_or_alloc_spi_info(SPI_HandleTypeDef *hspi)
 {
 	spi_info_t *spi_info = NULL;
 
-	__disable_irq();
+	os_enter_critical();
 
 	if(spi_class == NULL) {
 		spi_class = object_class_alloc();
 	}
 
-	__enable_irq();
+	os_leave_critical();
 
 	spi_info = (spi_info_t *)object_class_get_or_alloc_object(spi_class, object_filter, hspi, (object_alloc_t)alloc_spi_info, (object_free_t)free_spi_info);
 

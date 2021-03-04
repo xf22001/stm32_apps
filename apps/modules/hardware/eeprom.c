@@ -95,13 +95,13 @@ eeprom_info_t *get_or_alloc_eeprom_info(spi_info_t *spi_info, GPIO_TypeDef *gpio
 {
 	eeprom_info_t *eeprom_info = NULL;
 
-	__disable_irq();
+	os_enter_critical();
 
 	if(eeprom_class == NULL) {
 		eeprom_class = object_class_alloc();
 	}
 
-	__enable_irq();
+	os_leave_critical();
 
 	eeprom_info = (eeprom_info_t *)object_class_get_or_alloc_object(eeprom_class, object_filter, spi_info, (object_alloc_t)alloc_eeprom_info, (object_free_t)free_eeprom_info);
 

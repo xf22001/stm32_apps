@@ -156,13 +156,13 @@ can_info_t *get_or_alloc_can_info(CAN_HandleTypeDef *hcan)
 {
 	can_info_t *can_info = NULL;
 
-	__disable_irq();
+	os_enter_critical();
 
 	if(can_class == NULL) {
 		can_class = object_class_alloc();
 	}
 
-	__enable_irq();
+	os_leave_critical();
 
 	can_info = (can_info_t *)object_class_get_or_alloc_object(can_class, object_filter, hcan, (object_alloc_t)alloc_can_info, (object_free_t)free_can_info);
 

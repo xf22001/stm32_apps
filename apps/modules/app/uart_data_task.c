@@ -117,13 +117,13 @@ uart_data_task_info_t *get_or_alloc_uart_data_task_info(UART_HandleTypeDef *huar
 {
 	uart_data_task_info_t *uart_data_task_info = NULL;
 
-	__disable_irq();
+	os_enter_critical();
 
 	if(uart_data_task_class == NULL) {
 		uart_data_task_class = object_class_alloc();
 	}
 
-	__enable_irq();
+	os_leave_critical();
 
 	uart_data_task_info = (uart_data_task_info_t *)object_class_get_or_alloc_object(uart_data_task_class, object_filter, huart, (object_alloc_t)alloc_uart_data_task_info, (object_free_t)free_uart_data_task_info);
 

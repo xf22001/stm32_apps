@@ -354,13 +354,13 @@ soft_timer_info_t *get_or_alloc_soft_timer_info(uint32_t id)
 {
 	soft_timer_info_t *soft_timer_info = NULL;
 
-	__disable_irq();
+	os_enter_critical();
 
 	if(soft_timer_class == NULL) {
 		soft_timer_class = object_class_alloc();
 	}
 
-	__enable_irq();
+	os_leave_critical();
 
 	soft_timer_info = (soft_timer_info_t *)object_class_get_or_alloc_object(soft_timer_class, object_filter, (void *)id, (object_alloc_t)alloc_soft_timer_info, (object_free_t)free_soft_timer_info);
 

@@ -425,13 +425,13 @@ power_modules_info_t *get_or_alloc_power_modules_info(void *ctx)
 {
 	power_modules_info_t *power_modules_info = NULL;
 
-	__disable_irq();
+	os_enter_critical();
 
 	if(power_modules_class == NULL) {
 		power_modules_class = object_class_alloc();
 	}
 
-	__enable_irq();
+	os_leave_critical();
 
 	power_modules_info = (power_modules_info_t *)object_class_get_or_alloc_object(power_modules_class, object_filter, ctx, (object_alloc_t)alloc_power_modules_info, (object_free_t)free_power_modules_info);
 

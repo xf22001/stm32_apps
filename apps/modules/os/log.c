@@ -77,13 +77,13 @@ failed:
 
 static log_info_t *get_log_info(void)
 {
-	__disable_irq();
+	os_enter_critical();
 
 	if(static_log_info == NULL) {
 		static_log_info = alloc_log_info();
 	}
 
-	__enable_irq();
+	os_leave_critical();
 
 	return static_log_info;
 }
