@@ -6,7 +6,7 @@
  *   文件名称：os_utils.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分17秒
- *   修改日期：2021年03月05日 星期五 13时33分49秒
+ *   修改日期：2021年03月05日 星期五 21时34分28秒
  *   描    述：
  *
  *================================================================*/
@@ -25,16 +25,16 @@ typedef struct {
 
 typedef struct {
 	uint8_t init;
-	os_mutex_t os_utils_mutex;
+	os_mutex_t mutex;
 	size_t size;
 	size_t count;
 	size_t max_size;
-	struct list_head mem_info_list;
+	struct list_head list;
 } mem_info_t;
 
 static mem_info_t mem_info = {
 	.init = 0,
-	.os_utils_mutex = NULL,
+	.mutex = NULL,
 };
 
 void app_panic(void)
@@ -275,16 +275,16 @@ static int init_mem_info(void)
 		return ret;
 	}
 
-	mem_info.os_utils_mutex = mutex_create();
+	mem_info.mutex = mutex_create();
 
-	if(mem_info.os_utils_mutex == NULL) {
+	if(mem_info.mutex == NULL) {
 		app_panic();
 	}
 
 	mem_info.size = 0;
 	mem_info.count = 0;
 	mem_info.max_size = 0;
-	INIT_LIST_HEAD(&mem_info.mem_info_list);
+	INIT_LIST_HEAD(&mem_info.list);
 
 	mem_info.init = 1;
 	ret = 0;
@@ -300,7 +300,7 @@ static void *xmalloc(size_t size)
 	init_mem_info();
 	os_leave_critical();
 
-	mutex_lock(mem_info.os_utils_mutex);
+	mutex_lock(mem_info.mutex);
 
 	mem_node_info = (mem_node_info_t *)port_malloc(sizeof(mem_node_info_t) + size);
 
@@ -313,10 +313,10 @@ static void *xmalloc(size_t size)
 		}
 
 		mem_node_info->size = size;
-		list_add_tail(&mem_node_info->list, &mem_info.mem_info_list);
+		list_add_tail(&mem_node_info->list, &mem_info.list);
 	}
 
-	mutex_unlock(mem_info.os_utils_mutex);
+	mutex_unlock(mem_info.mutex);
 
 	return (mem_node_info != NULL) ? (mem_node_info + 1) : NULL;
 }
@@ -327,7 +327,7 @@ static void xfree(void *p)
 	init_mem_info();
 	os_leave_critical();
 
-	mutex_lock(mem_info.os_utils_mutex);
+	mutex_lock(mem_info.mutex);
 
 	if(p != NULL) {
 		mem_node_info_t *mem_node_info = (mem_node_info_t *)p;
@@ -341,7 +341,7 @@ static void xfree(void *p)
 		port_free(mem_node_info);
 	}
 
-	mutex_unlock(mem_info.os_utils_mutex);
+	mutex_unlock(mem_info.mutex);
 }
 
 void get_mem_info(size_t *size, size_t *count, size_t *max_size)
@@ -357,18 +357,18 @@ void get_mem_info(size_t *size, size_t *count, size_t *max_size)
 	init_mem_info();
 	os_leave_critical();
 
-	mutex_lock(mem_info.os_utils_mutex);
+	mutex_lock(mem_info.mutex);
 
 	*size = mem_info.size;
 	*count = mem_info.count;
 	*max_size = mem_info.max_size;
 
-	head = &mem_info.mem_info_list;
+	head = &mem_info.list;
 
 	list_for_each_entry(mem_node_info, head, mem_node_info_t, list) {
 	}
 
-	mutex_unlock(mem_info.os_utils_mutex);
+	mutex_unlock(mem_info.mutex);
 }
 
 void *os_alloc(size_t size)
