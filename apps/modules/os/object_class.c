@@ -6,7 +6,7 @@
  *   文件名称：object_class.c
  *   创 建 者：肖飞
  *   创建日期：2021年02月02日 星期二 08时56分26秒
- *   修改日期：2021年03月04日 星期四 16时52分57秒
+ *   修改日期：2021年03月05日 星期五 09时53分28秒
  *   描    述：
  *
  *================================================================*/
@@ -95,10 +95,6 @@ int object_class_add_object(object_class_t *object_class, object_filter_t filter
 	}
 
 	if(o == NULL) {
-		return ret;
-	}
-
-	if(object_free == NULL) {
 		return ret;
 	}
 

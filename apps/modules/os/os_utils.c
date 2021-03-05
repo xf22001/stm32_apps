@@ -6,7 +6,7 @@
  *   文件名称：os_utils.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分17秒
- *   修改日期：2021年03月04日 星期四 17时20分24秒
+ *   修改日期：2021年03月05日 星期五 10时19分28秒
  *   描    述：
  *
  *================================================================*/
@@ -226,10 +226,18 @@ int sem_release(os_sem_t sem)
 	return ret;
 }
 
+static uint32_t os_critical_state = 0;
+
+uint32_t get_os_critical_state(void)
+{
+	return os_critical_state;
+}
+
 void os_enter_critical(void)
 {
 	if(__get_IPSR() == 0) {
 		taskENTER_CRITICAL();
+		os_critical_state++;
 	}
 }
 
@@ -237,6 +245,7 @@ void os_leave_critical(void)
 {
 	if(__get_IPSR() == 0) {
 		taskEXIT_CRITICAL();
+		os_critical_state--;
 	}
 }
 
