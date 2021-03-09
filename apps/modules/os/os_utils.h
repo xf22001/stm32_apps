@@ -6,7 +6,7 @@
  *   文件名称：os_utils.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分36秒
- *   修改日期：2021年03月05日 星期五 10时20分23秒
+ *   修改日期：2021年03月09日 星期二 17时33分18秒
  *   描    述：
  *
  *================================================================*/
@@ -281,10 +281,14 @@ int sem_release(os_sem_t sem);
 uint32_t get_os_critical_state(void);
 void os_enter_critical(void);
 void os_leave_critical(void);
+void *port_malloc(size_t size);
+void port_free(void *p);
 uint32_t get_total_heap_size(void);
 void get_mem_info(size_t *size, size_t *count, size_t *max_size);
 void *os_alloc(size_t size);
 void os_free(void *p);
+void *os_realloc(void *p, size_t size);
+void *os_calloc(size_t n, size_t size);
 unsigned char mem_is_set(char *values, size_t size, char value);
 unsigned int str_hash(const char *s);
 unsigned char calc_crc8(const void *data, size_t size);

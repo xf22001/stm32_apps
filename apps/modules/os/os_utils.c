@@ -6,7 +6,7 @@
  *   文件名称：os_utils.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分17秒
- *   修改日期：2021年03月05日 星期五 21时34分28秒
+ *   修改日期：2021年03月09日 星期二 17时26分29秒
  *   描    述：
  *
  *================================================================*/
@@ -383,6 +383,47 @@ void *os_alloc(size_t size)
 void os_free(void *p)
 {
 	xfree(p);
+}
+
+void *os_realloc(void *p, size_t size)
+{
+	void *old = p;
+
+	if(size != 0) {
+		p = xmalloc(size);
+	} else {
+		xfree(p);
+		old = NULL;
+		p = NULL;
+	}
+
+	if(p != NULL) {
+		if(old != NULL) {
+			mem_node_info_t *mem_node_info = (mem_node_info_t *)old;
+			mem_node_info -= 1;
+
+			if(size > mem_node_info->size) {
+				size = mem_node_info->size;
+			}
+
+			memcpy(p, old, size);
+		}
+	} else {
+		p = old;
+	}
+
+	return p;
+}
+
+void *os_calloc(size_t n, size_t size)
+{
+	void *p = xmalloc(n * size);
+
+	if(p != NULL) {
+		memset(p, 0, n * size);
+	}
+
+	return p;
 }
 
 unsigned char mem_is_set(char *values, size_t size, char value)
