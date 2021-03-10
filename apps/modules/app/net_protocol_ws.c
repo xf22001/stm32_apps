@@ -6,7 +6,7 @@
  *   文件名称：net_protocol_ws.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月23日 星期日 12时23分31秒
- *   修改日期：2021年03月09日 星期二 17时36分35秒
+ *   修改日期：2021年03月10日 星期三 16时37分38秒
  *   描    述：
  *
  *================================================================*/
@@ -93,6 +93,7 @@ static int ws_client_connect(void *ctx)
 	//char *url = "wss://35.201.125.176:433/SSECHINAEVSE";
 	//char *url = "https://216.58.199.110";
 	//char *url = "wss://ocpp-16-json.dev-plugitcloud.com/SSECHINAEVSE";
+	//char *url = "wss://iot-ebus-ocpp-v16-server-test.azurewebsites.net/ws/test123";
 
 	if(get_connect_enable() != 1) {
 		debug("\n");
