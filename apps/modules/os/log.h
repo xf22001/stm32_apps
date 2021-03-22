@@ -6,7 +6,7 @@
  *   文件名称：log.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月29日 星期五 14时29分33秒
- *   修改日期：2021年03月22日 星期一 16时18分29秒
+ *   修改日期：2021年03月22日 星期一 16时51分12秒
  *   描    述：
  *
  *================================================================*/
@@ -19,6 +19,10 @@ extern "C"
 
 #include "app_platform.h"
 #include "cmsis_os.h"
+
+#if defined(LOG_CONFIG_FILE)
+#include LOG_CONFIG_FILE
+#endif
 
 #ifdef __cplusplus
 }

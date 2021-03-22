@@ -6,7 +6,7 @@
  *   文件名称：test_https.c
  *   创 建 者：肖飞
  *   创建日期：2020年01月27日 星期一 12时22分23秒
- *   修改日期：2021年01月29日 星期五 17时03分56秒
+ *   修改日期：2021年03月22日 星期一 16时54分09秒
  *   描    述：
  *
  *================================================================*/
@@ -22,14 +22,12 @@
 static HTTP_INFO hi;
 static BOOL verify_cert = FALSE;
 
-static void *os_calloc(size_t nmemb, size_t size)
+static void *_os_calloc(size_t nmemb, size_t size)
 {
-	void *ptr = os_alloc(nmemb * size);
+	void *ptr = os_calloc(nmemb, size);
 	if(ptr == NULL) {
-		while(1);
+		app_panic();
 	}
-
-	memset(ptr, 0, nmemb * size);
 
 	return ptr;
 }
