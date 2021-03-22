@@ -6,7 +6,7 @@
  *   文件名称：log.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月29日 星期五 14时29分33秒
- *   修改日期：2021年01月29日 星期五 16时33分32秒
+ *   修改日期：2021年03月22日 星期一 16时18分29秒
  *   描    述：
  *
  *================================================================*/
@@ -72,7 +72,7 @@ typedef int (*log_fn_t)(uint32_t log_mask, const char *buffer, size_t size);
 #define _hexdump(label, data, len) log_hexdump(LOG_MASK, label, data, len)
 #define _puts(s) log_puts(LOG_MASK, s)
 
-#define debug(fmt, ...) _printf("[%s:%s:%d] " fmt, __FILE__, __func__, __LINE__, ## __VA_ARGS__)
+#define debug(fmt, ...) _printf("[%s:%s:%d] " fmt "\n", __FILE__, __func__, __LINE__, ## __VA_ARGS__)
 
 int add_log_handler(log_fn_t fn);
 int remove_log_handler(log_fn_t fn);

@@ -21,7 +21,7 @@ uint16_t modbus_calc_crc(uint8_t *data, uint16_t size)
 	uint16_t crc = 0xFFFF;
 	uint16_t i;
 
-	debug("modbus_calc_crc size:%d\n", size);
+	debug("modbus_calc_crc size:%d", size);
 
 	for(i = 0; i < size; i++) {
 		uint16_t loop;

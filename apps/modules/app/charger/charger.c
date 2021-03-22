@@ -464,7 +464,7 @@ void charger_info_report_status(charger_info_t *charger_info, charger_state_t st
 	charger_report_status.state = state;
 	charger_report_status.status = status;
 
-	debug("state:%s, status:%s\n", get_charger_state_des(state), get_charger_status_des(status));
+	debug("state:%s, status:%s", get_charger_state_des(state), get_charger_status_des(status));
 
 	do_callback_chain(charger_info->report_status_chain, &charger_report_status);
 }
@@ -482,7 +482,7 @@ void set_charger_state(charger_info_t *charger_info, charger_state_t state)
 		return;
 	}
 
-	debug("change to state:%s!\n", get_charger_state_des(state));
+	debug("change to state:%s!", get_charger_state_des(state));
 
 	charger_info_report_status(charger_info, state, CHARGER_INFO_STATUS_CHANGE);
 
@@ -549,7 +549,7 @@ void set_auxiliary_power_state(charger_info_t *charger_info, uint8_t state)
 		                  GPIO_PIN_SET);
 	}
 
-	debug("state:%d\n", state);
+	debug("state:%d", state);
 }
 
 int set_gun_lock_state(charger_info_t *charger_info, uint8_t state, charger_op_ctx_t *charger_op_ctx)
@@ -571,7 +571,7 @@ int set_gun_lock_state(charger_info_t *charger_info, uint8_t state, charger_op_c
 				charger_op_ctx->state = 1;
 				charger_op_ctx->stamp = ticks;
 
-				debug("state:%d, gun state(0:unlock, 1:lock):%d\n", charger_op_ctx->state, state);
+				debug("state:%d, gun state(0:unlock, 1:lock):%d", charger_op_ctx->state, state);
 			} else {
 				HAL_GPIO_WritePin(gpio_port, gpio_pin, GPIO_PIN_RESET);
 			}
@@ -581,7 +581,7 @@ int set_gun_lock_state(charger_info_t *charger_info, uint8_t state, charger_op_c
 		case 1: {
 			if(ticks_duration(ticks, charger_op_ctx->stamp) >= 180) {
 				HAL_GPIO_WritePin(gpio_port, gpio_pin, GPIO_PIN_RESET);
-				debug("state:%d, gun state(0:unlock, 1:lock):%d\n", charger_op_ctx->state, state);
+				debug("state:%d, gun state(0:unlock, 1:lock):%d", charger_op_ctx->state, state);
 				ret = 0;
 			}
 		}
@@ -592,7 +592,7 @@ int set_gun_lock_state(charger_info_t *charger_info, uint8_t state, charger_op_c
 	}
 
 
-	//debug("state:%d, ret:%d\n", charger_op_ctx->state, ret);
+	//debug("state:%d, ret:%d", charger_op_ctx->state, ret);
 
 	return ret;
 }
@@ -615,7 +615,7 @@ void set_power_output_enable(charger_info_t *charger_info, uint8_t state)
 		                  GPIO_PIN_SET);
 	}
 
-	debug("state:%d\n", state);
+	debug("state:%d", state);
 }
 
 int discharge(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)
@@ -665,7 +665,7 @@ int discharge(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)
 	}
 
 	ret = 0;
-	debug("state:%d, ret:%d\n", charger_op_ctx->state, ret);
+	debug("state:%d, ret:%d", charger_op_ctx->state, ret);
 	return ret;
 }
 
@@ -709,7 +709,7 @@ int precharge(charger_info_t *charger_info, charger_op_ctx_t *charger_op_ctx)
 	}
 
 	ret = 0;
-	debug("state:%d, ret:%d\n", charger_op_ctx->state, ret);
+	debug("state:%d, ret:%d", charger_op_ctx->state, ret);
 	return ret;
 }
 
@@ -745,7 +745,7 @@ int relay_endpoint_overvoltage_status(charger_info_t *charger_info, charger_op_c
 	}
 
 	ret = 0;
-	debug("state:%d, ret:%d\n", charger_op_ctx->state, ret);
+	debug("state:%d, ret:%d", charger_op_ctx->state, ret);
 	return ret;
 }
 
@@ -805,7 +805,7 @@ int insulation_check(charger_info_t *charger_info, charger_op_ctx_t *charger_op_
 	}
 
 	ret = 0;
-	debug("state:%d, ret:%d\n", charger_op_ctx->state, ret);
+	debug("state:%d, ret:%d", charger_op_ctx->state, ret);
 	return ret;
 }
 
@@ -841,7 +841,7 @@ int battery_voltage_status(charger_info_t *charger_info, charger_op_ctx_t *charg
 	}
 
 	ret = 0;
-	debug("state:%d, ret:%d\n", charger_op_ctx->state, ret);
+	debug("state:%d, ret:%d", charger_op_ctx->state, ret);
 	return ret;
 }
 
@@ -854,7 +854,7 @@ int wait_no_current(charger_info_t *charger_info, charger_op_ctx_t *charger_op_c
 	}
 
 	ret = 0;
-	debug("state:%d, ret:%d\n", charger_op_ctx->state, ret);
+	debug("state:%d, ret:%d", charger_op_ctx->state, ret);
 	return ret;
 }
 
@@ -863,7 +863,7 @@ static void channel_update_door_state(charger_info_t *charger_info)
 	GPIO_PinState state = HAL_GPIO_ReadPin(charger_info->channel_info_config->gpio_port_door,
 	                                       charger_info->channel_info_config->gpio_pin_door);
 
-	//debug("state:%d\n", state);
+	//debug("state:%d", state);
 
 	if(state == GPIO_PIN_RESET) {
 		charger_info->door_state = 0;
@@ -881,7 +881,7 @@ static uint8_t get_gun_connect_state(charger_info_t *charger_info)
 	GPIO_PinState state = HAL_GPIO_ReadPin(charger_info->channel_info_config->gpio_port_gun_state,
 	                                       charger_info->channel_info_config->gpio_pin_gun_state);
 
-	//debug("state:%d\n", state);
+	//debug("state:%d", state);
 
 	if(state == GPIO_PIN_RESET) {
 		return 0;
@@ -909,7 +909,7 @@ static void channel_update_gun_state(charger_info_t *charger_info)//100ms
 		if(charger_info->gun_connect_state_debounce_count >= 3) {
 			charger_info->gun_connect_state_debounce_count = 0;
 			charger_info->gun_connect_state = state;
-			//debug("state:%d\n", state);
+			//debug("state:%d", state);
 		}
 	} else {
 		charger_info->gun_connect_state_debounce_count = 0;
@@ -923,7 +923,7 @@ static void channel_update_error_stop_state(charger_info_t *charger_info)
 	GPIO_PinState state = HAL_GPIO_ReadPin(charger_info->channel_info_config->gpio_port_error_stop,
 	                                       charger_info->channel_info_config->gpio_pin_error_stop);
 
-	//debug("state:%d\n", state);
+	//debug("state:%d", state);
 
 	if(state == GPIO_PIN_RESET) {
 		charger_info->error_stop_state = 0;

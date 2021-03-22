@@ -59,7 +59,7 @@ static int udp_client_close(void *ctx)
 		return ret;
 	}
 
-	debug("close socket %d\n", net_client_info->sock_fd);
+	debug("close socket %d", net_client_info->sock_fd);
 
 	ret = close(net_client_info->sock_fd);
 	net_client_info->sock_fd = -1;

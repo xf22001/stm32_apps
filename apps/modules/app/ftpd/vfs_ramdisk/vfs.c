@@ -142,7 +142,7 @@ vfs_file_t *vfs_open(vfs_t *vfs, const char *filename, const char *mode)
 	FRESULT r = f_open(f, filename, flags);
 
 	if (FR_OK != r) {
-		debug("\n");
+		debug("");
 		os_free(f);
 		return NULL;
 	}
@@ -156,7 +156,7 @@ char *vfs_getcwd(vfs_t *vfs, void *dummy1, int dummy2)
 	FRESULT r = f_getcwd(cwd, 255);
 
 	if (r != FR_OK) {
-		debug("\n");
+		debug("");
 		os_free(cwd);
 		return NULL;
 	}
@@ -170,7 +170,7 @@ vfs_dir_t *vfs_opendir(vfs_t *vfs, const char *path)
 	FRESULT r = f_opendir(dir, path);
 
 	if (FR_OK != r) {
-		debug("\n");
+		debug("");
 		os_free(dir);
 		return NULL;
 	}
@@ -217,7 +217,7 @@ static int get_free_capicity(DWORD *total_size, DWORD *free_size)
 		*total_size = ((pfs->n_fatent - 2) * pfs->csize / 2) * 512; //总容量 单位byte
 		*free_size = (free_clust * pfs->csize / 2) * 512; // 可用容量 单位byte
 	} else {
-		debug("ret:%d\n", ret);
+		debug("ret:%d", ret);
 	}
 
 	return ret;
@@ -234,7 +234,7 @@ void vfs_init()
 	ret = f_mount(pfs, "", 0);
 
 	if(ret != FR_OK) {
-		debug("ret:%d\n", ret);
+		debug("ret:%d", ret);
 		app_panic();
 	}
 
@@ -242,10 +242,10 @@ void vfs_init()
 	ret = f_mkfs("", 0, 0);
 
 	if(ret != FR_OK) {
-		debug("ret:%d\n", ret);
+		debug("ret:%d", ret);
 		app_panic();
 	}
 
 	get_free_capicity(&total_size, &free_size);
-	debug("total_size:%d, free_size:%d\n", total_size, free_size);
+	debug("total_size:%d, free_size:%d", total_size, free_size);
 }

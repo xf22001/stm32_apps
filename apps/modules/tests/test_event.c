@@ -30,18 +30,18 @@ void try_get_test_event()
 	ret = event_pool_wait_event(event_pool, 0);
 
 	if(ret != 0) {
-		debug("no event!\n");
+		debug("no event!");
 		return;
 	}
 
 	test_event = (test_event_t *)event_pool_get_event(event_pool);
 
 	if(test_event == NULL) {
-		debug("get event error!\n");
+		debug("get event error!");
 		return;
 	}
 
-	debug("get event %d!\n", test_event->count);
+	debug("get event %d!", test_event->count);
 }
 
 static void task_test_event(void const *argument)
@@ -61,7 +61,7 @@ static void task_test_event(void const *argument)
 		test_event_t *test_event = os_alloc(sizeof(test_event_t));
 
 		if(test_event == NULL) {
-			debug("os_alloc error!\n");
+			debug("os_alloc error!");
 			continue;
 		}
 
@@ -71,11 +71,11 @@ static void task_test_event(void const *argument)
 		ret = event_pool_put_event(event_pool, test_event, osWaitForever);
 
 		if(ret != 0) {
-			debug("event_pool_put_event error!\n");
+			debug("event_pool_put_event error!");
 			os_free(test_event);
 		}
 
-		debug("sent event %d!\n", test_event->count);
+		debug("sent event %d!", test_event->count);
 		count++;
 	}
 }

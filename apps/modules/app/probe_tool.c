@@ -53,14 +53,14 @@ static int init_probe_broadcast_socket(probe_broadcast_info_t *probe_broadcast_i
 	sock = socket(AF_INET, SOCK_DGRAM, 0);
 
 	if(sock == -1) {
-		debug("socket error:%d\n", sock);
+		debug("socket error:%d", sock);
 		return sock;
 	}
 
 	ret = setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char *)&opt, sizeof(opt)); //设置套接字类型
 
 	if(ret == -1) {
-		debug("setsockopt ret:%d\n", ret);
+		debug("setsockopt ret:%d", ret);
 		close(sock);
 		sock = -1;
 
@@ -87,7 +87,7 @@ static void probe_broadcast_periodic(void *ctx)
 
 	probe_broadcast_info->stamp = ticks;
 
-	//debug("state:%s\n", get_probe_broadcast_state_des(probe_broadcast_info->state));
+	//debug("state:%s", get_probe_broadcast_state_des(probe_broadcast_info->state));
 
 	switch(probe_broadcast_info->state) {
 		case PROBE_BROADCAST_STATE_INIT: {
@@ -110,7 +110,7 @@ static void probe_broadcast_periodic(void *ctx)
 			int ret = sendto(poll_ctx->poll_fd.fd, msg, len, 0, (struct sockaddr *)&probe_broadcast_info->broadcast_addr, sizeof(struct sockaddr_in)); //向广播地址发布消息
 
 			if(ret < 0) {
-				debug("ret:%d\n", ret);
+				debug("ret:%d", ret);
 			}
 		}
 		break;
@@ -272,7 +272,7 @@ static int init_server_socket(probe_server_info_t *probe_server_info)
 	ret = bind(sock, (struct sockaddr *)&probe_server_info->client_addr, sizeof(struct sockaddr_in));
 
 	if(ret < 0) {
-		debug("bind error:%d\n", ret);
+		debug("bind error:%d", ret);
 		close(sock);
 		sock = -1;
 	}
@@ -310,7 +310,7 @@ static void probe_server_process_message(probe_server_info_t *probe_server_info)
 	request_decode(probe_server_info->recv_buffer, probe_server_info->recv_size, RECV_BUFFER_SIZE, (char **)&request_buffer, &request_size);
 
 	if(request_size == 0) {
-		debug("\n");
+		debug("");
 		return;
 	}
 
@@ -367,16 +367,16 @@ static void probe_server_handler(void *ctx)
 
 			probe_server_process_message(probe_server_info);
 		} else {
-			debug("ret:%d\n", ret);
+			debug("ret:%d", ret);
 		}
 	}
 
 	if(poll_ctx->poll_fd.status.s.poll_out == 1) {
-		debug("\n");
+		debug("");
 	}
 
 	if(poll_ctx->poll_fd.status.s.poll_err == 1) {
-		debug("\n");
+		debug("");
 	}
 }
 
@@ -392,7 +392,7 @@ static void probe_server_periodic(void *ctx)
 
 	probe_server_info->stamp = ticks;
 
-	//debug("state:%s\n", get_probe_server_state_des(probe_server_info->state));
+	//debug("state:%s", get_probe_server_state_des(probe_server_info->state));
 
 	switch(probe_server_info->state) {
 		case PROBE_SERVER_STATE_INIT: {

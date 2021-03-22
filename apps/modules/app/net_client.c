@@ -54,16 +54,16 @@ char *get_net_client_state_des(client_state_t state)
 void set_net_client_protocol_if(net_client_info_t *net_client_info, protocol_if_t *protocol_if)
 {
 	if(net_client_info == NULL) {
-		debug("\n");
+		debug("");
 		return;
 	}
 
 	if(protocol_if == NULL) {
-		debug("\n");
+		debug("");
 		return;
 	}
 
-	debug("select protocol %s\n", protocol_if->name);
+	debug("select protocol %s", protocol_if->name);
 
 	net_client_info->protocol_if = protocol_if;
 }
@@ -71,16 +71,16 @@ void set_net_client_protocol_if(net_client_info_t *net_client_info, protocol_if_
 void set_net_client_request_callback(net_client_info_t *net_client_info, request_callback_t *request_callback)
 {
 	if(net_client_info == NULL) {
-		debug("\n");
+		debug("");
 		return;
 	}
 
 	if(request_callback == NULL) {
-		debug("\n");
+		debug("");
 		return;
 	}
 
-	debug("select net request_callback %s\n", request_callback->name);
+	debug("select net request_callback %s", request_callback->name);
 	net_client_info->request_callback = request_callback;
 }
 
@@ -110,7 +110,7 @@ static void get_addr_info(net_client_info_t *net_client_info)
 
 	//u_uint32_bytes_t backstage_ip;
 	if(net_client_info == NULL) {
-		debug("\n");
+		debug("");
 		return;
 	}
 
@@ -125,7 +125,7 @@ static void get_addr_info(net_client_info_t *net_client_info)
 	ret = get_addr_host_port_service(net_client_info, &host, &port, &path);
 
 	if(ret != 0) {
-		debug("\n");
+		debug("");
 		return;
 	}
 
@@ -164,7 +164,7 @@ static uint8_t is_display_connected(void)
 void set_client_state(net_client_info_t *net_client_info, client_state_t state)
 {
 	if(net_client_info == NULL) {
-		debug("\n");
+		debug("");
 		return;
 	}
 
@@ -174,7 +174,7 @@ void set_client_state(net_client_info_t *net_client_info, client_state_t state)
 client_state_t get_client_state(net_client_info_t *net_client_info)
 {
 	if(net_client_info == NULL) {
-		debug("\n");
+		debug("");
 		return CLIENT_DISCONNECT;
 	}
 
@@ -183,13 +183,13 @@ client_state_t get_client_state(net_client_info_t *net_client_info)
 
 static void default_init(net_client_info_t *net_client_info)
 {
-	debug("\n");
+	debug("");
 	srand(osKernelSysTick());
 
 	if(net_client_info->request_callback->init != NULL) {
 		net_client_info->request_callback->init(net_client_info);
 	} else {
-		debug("\n");
+		debug("");
 	}
 }
 
@@ -218,70 +218,70 @@ static void blink_led_lan(net_client_info_t *net_client_info, uint32_t periodic)
 	if(net_client_info->request_callback->set_lan_led_state != NULL) {
 		net_client_info->request_callback->set_lan_led_state(net_client_info, led_lan_state);
 	} else {
-		//debug("\n");
+		//debug("");
 	}
 }
 
 static void default_before_create_server_connect(net_client_info_t *net_client_info)
 {
 	if(net_client_info == NULL) {
-		debug("\n");
+		debug("");
 		return;
 	}
 
 	if(net_client_info->request_callback->before_connect != NULL) {
 		net_client_info->request_callback->before_connect(net_client_info);
 	} else {
-		debug("\n");
+		debug("");
 	}
 }
 
 static void default_after_create_server_connect(net_client_info_t *net_client_info)
 {
 	if(net_client_info == NULL) {
-		debug("\n");
+		debug("");
 		return;
 	}
 
 	if(net_client_info->request_callback->after_connect != NULL) {
 		net_client_info->request_callback->after_connect(net_client_info);
 	} else {
-		debug("\n");
+		debug("");
 	}
 }
 
 static void default_before_close_server_connect(net_client_info_t *net_client_info)
 {
 	if(net_client_info == NULL) {
-		debug("\n");
+		debug("");
 		return;
 	}
 
 	if(net_client_info->request_callback->before_close != NULL) {
 		net_client_info->request_callback->before_close(net_client_info);
 	} else {
-		debug("\n");
+		debug("");
 	}
 }
 
 static void default_after_close_server_connect(net_client_info_t *net_client_info)
 {
 	if(net_client_info == NULL) {
-		debug("\n");
+		debug("");
 		return;
 	}
 
 	if(net_client_info->request_callback->after_close != NULL) {
 		net_client_info->request_callback->after_close(net_client_info);
 	} else {
-		debug("\n");
+		debug("");
 	}
 }
 
 static void default_parse(net_client_info_t *net_client_info, char *buffer, size_t size, size_t max_request_size, char **prequest, size_t *request_size)
 {
 	if(net_client_info == NULL) {
-		debug("\n");
+		debug("");
 		return;
 	}
 
@@ -290,42 +290,42 @@ static void default_parse(net_client_info_t *net_client_info, char *buffer, size
 	} else {
 		*prequest = buffer;
 		*request_size = size;
-		debug("\n");
+		debug("");
 	}
 }
 
 static void default_process(net_client_info_t *net_client_info, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
 	if(net_client_info == NULL) {
-		debug("\n");
+		debug("");
 		return;
 	}
 
 	if(net_client_info->request_callback->process != NULL) {
 		net_client_info->request_callback->process(net_client_info, request, request_size, send_buffer, send_buffer_size);
 	} else {
-		debug("\n");
+		debug("");
 	}
 }
 
 static void default_periodic(net_client_info_t *net_client_info, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
 	if(net_client_info == NULL) {
-		debug("\n");
+		debug("");
 		return;
 	}
 
 	if(net_client_info->request_callback->periodic != NULL) {
 		net_client_info->request_callback->periodic(net_client_info, send_buffer, send_buffer_size);
 	} else {
-		debug("\n");
+		debug("");
 	}
 }
 
 uint32_t get_net_client_connect_id(net_client_info_t *net_client_info)
 {
 	if(net_client_info == NULL) {
-		debug("\n");
+		debug("");
 		return 0;
 	}
 
@@ -339,7 +339,7 @@ static int create_server_connect(net_client_info_t *net_client_info)
 	uint32_t ticks = osKernelSysTick();
 
 	if(net_client_info == NULL) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -353,7 +353,7 @@ static int create_server_connect(net_client_info_t *net_client_info)
 
 	if(net_client_info->net_client_addr_info.socket_addr_info == NULL) {
 		get_addr_info(net_client_info);
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -367,7 +367,7 @@ static int create_server_connect(net_client_info_t *net_client_info)
 		net_client_info->retry_count = 0;
 	} else {
 		get_addr_info(net_client_info);
-		debug("\n");
+		debug("");
 	}
 
 	return ret;
@@ -378,7 +378,7 @@ static int close_server_connect(net_client_info_t *net_client_info)
 	int ret = -1;
 
 	if(net_client_info == NULL) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -387,7 +387,7 @@ static int close_server_connect(net_client_info_t *net_client_info)
 	ret = net_client_info->protocol_if->net_close(net_client_info);
 
 	if(net_client_info->sock_fd != -1) {
-		debug("bug!!! net_client_info->sock_fd:%d\n", net_client_info->sock_fd);
+		debug("bug!!! net_client_info->sock_fd:%d", net_client_info->sock_fd);
 	}
 
 	return ret;
@@ -399,7 +399,7 @@ static int before_create_server_connect(net_client_info_t *net_client_info)
 	uint32_t ticks = osKernelSysTick();
 
 	if(net_client_info == NULL) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -430,7 +430,7 @@ static int create_connect(net_client_info_t *net_client_info)
 	ret = before_create_server_connect(net_client_info);
 
 	if(ret != 0) {
-		//debug("\n");
+		//debug("");
 		return ret;
 	}
 
@@ -439,14 +439,14 @@ static int create_connect(net_client_info_t *net_client_info)
 	ret = create_server_connect(net_client_info);
 
 	if(ret != 0) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
 	ret = after_create_server_connect(net_client_info);
 
 	if(ret != 0) {
-		debug("\n");
+		debug("");
 	}
 
 	return ret;
@@ -500,7 +500,7 @@ static void process_server_message(net_client_info_t *net_client_info, net_messa
 	size_t left = recv->used;
 	uint8_t *buffer = recv->buffer;
 
-	debug("net client %d bytes available\n", left);
+	debug("net client %d bytes available", left);
 	//_hexdump(NULL, (const char *)buffer, left);
 
 	while(left >= sizeof(request_t)) {
@@ -508,7 +508,7 @@ static void process_server_message(net_client_info_t *net_client_info, net_messa
 
 		if(request != NULL) {//可能有效包
 			if(request_size != 0) {//有效包
-				debug("net client process %d bytes\n", request_size);
+				debug("net client process %d bytes", request_size);
 				blink_led_lan(net_client_info, 0);
 				default_process(net_client_info, (uint8_t *)request, (uint16_t)request_size, send->buffer, NET_MESSAGE_BUFFER_SIZE);
 				buffer += request_size;
@@ -523,7 +523,7 @@ static void process_server_message(net_client_info_t *net_client_info, net_messa
 
 	}
 
-	debug("net client left %d bytes\n", left);
+	debug("net client left %d bytes", left);
 
 	if(left > 0) {
 		if(recv->buffer != buffer) {
@@ -558,7 +558,7 @@ static void net_client_handler(void *ctx)
 			        NET_MESSAGE_BUFFER_SIZE - net_client_info->recv_message_buffer.used);
 
 			if(ret <= 0) {
-				debug("close connect.\n");
+				debug("close connect.");
 				set_client_state(net_client_info, CLIENT_RESET);
 			} else {
 				net_client_info->recv_message_buffer.used += ret;
@@ -582,7 +582,7 @@ int send_to_server(net_client_info_t *net_client_info, uint8_t *buffer, size_t l
 			ret = net_client_info->protocol_if->net_send(net_client_info, buffer, len);
 
 			if(ret <= 0) {
-				debug("net_send error(%d)!\n", errno);
+				debug("net_send error(%d)!", errno);
 				ret = 0;
 			}
 		} else {
@@ -610,7 +610,7 @@ void net_client_periodic(void *ctx)
 		return;
 	}
 
-	//debug("state:%s\n", get_net_client_state_des(get_client_state()));
+	//debug("state:%s", get_net_client_state_des(get_client_state()));
 
 	//处理周期性事件
 	//约100ms调用一次
@@ -653,7 +653,7 @@ void net_client_periodic(void *ctx)
 
 		case CLIENT_CONNECT_CONFIRM: {
 			if(ticks_duration(ticks, net_client_info->connect_confirm_stamp) >= (30 * TASK_NET_CLIENT_CONNECT_PERIODIC)) {
-				debug("connect failed!\n");
+				debug("connect failed!");
 				set_client_state(net_client_info, CLIENT_RESET);
 			}
 		}
@@ -668,7 +668,7 @@ void net_client_periodic(void *ctx)
 
 		case CLIENT_RESET: {
 			get_addr_info(net_client_info);
-			debug("\n");
+			debug("");
 			poll_ctx->poll_fd.available = 0;
 
 			close_connect(net_client_info);
@@ -689,7 +689,7 @@ void net_client_periodic(void *ctx)
 		break;
 
 		case CLIENT_SUSPEND: {
-			debug("state:%s\n", get_net_client_state_des(get_client_state(net_client_info)));
+			debug("state:%s", get_net_client_state_des(get_client_state(net_client_info)));
 		}
 		break;
 

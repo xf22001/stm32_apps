@@ -169,7 +169,7 @@ static int poll_loop_poll(poll_loop_t *poll_loop)
 			}
 
 			if(poll_ctx->poll_handler != NULL) {
-				//debug("handler for %s\n", poll_ctx->name);
+				//debug("handler for %s", poll_ctx->name);
 				poll_ctx->poll_handler(poll_ctx);
 
 			}
@@ -177,7 +177,7 @@ static int poll_loop_poll(poll_loop_t *poll_loop)
 
 	mutex_unlock(poll_loop->poll_ctx_list_mutex);
 	} else {
-		debug("ret:%d, errno:%d\n", ret, errno);
+		debug("ret:%d, errno:%d", ret, errno);
 	}
 
 	return ret;
@@ -198,7 +198,7 @@ static void poll_loop_periodic(poll_loop_t *poll_loop)
 		poll_ctx = list_entry(pos, poll_ctx_t, list);
 
 		if(poll_ctx->poll_periodic != NULL) {
-			//debug("periodic for %s\n", poll_ctx->name);
+			//debug("periodic for %s", poll_ctx->name);
 			poll_ctx->poll_periodic(poll_ctx);
 		}
 	}
@@ -229,7 +229,7 @@ static void task_poll_dump_poll_ctx(poll_loop_t *poll_loop)
 	mutex_lock(poll_loop->poll_ctx_list_mutex);
 
 	list_for_each_entry(poll_ctx, head, poll_ctx_t, list) {
-		debug("%p, name:%s, fd:%d, available:%d, in:%d, out:%d, err:%d\n",
+		debug("%p, name:%s, fd:%d, available:%d, in:%d, out:%d, err:%d",
 		      poll_ctx,
 		      poll_ctx->name,
 		      poll_ctx->poll_fd.fd,
@@ -256,7 +256,7 @@ static void task_poll_loop(void const *argument)
 		ret = poll_loop_poll(poll_loop);
 
 		if(ret < 0) {
-			//debug("poll result:%d\n", ret);
+			//debug("poll result:%d", ret);
 			//dump_poll_ctx = 1;
 		}
 

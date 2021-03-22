@@ -20,7 +20,7 @@ static void fn(void *fn_ctx, void *chain_ctx)
 {
 	char *des = (char *)fn_ctx;
 
-	debug("%s run in %p\n", des, chain_ctx);
+	debug("%s run in %p", des, chain_ctx);
 }
 
 typedef struct {
@@ -36,19 +36,19 @@ static void fn1(void *fn_ctx, void *chain_ctx)
 	int ret;
 	uint32_t period;
 
-	debug("%s run in %p\n", fn1_ctx->des, chain_ctx);
+	debug("%s run in %p", fn1_ctx->des, chain_ctx);
 
-	debug("remove %s\n", fn1_ctx->des);
+	debug("remove %s", fn1_ctx->des);
 	ret = remove_soft_timer(soft_timer_ctx);
 
 	if(ret != 0) {
-		debug("remove %s error\n", fn1_ctx->des);
+		debug("remove %s error", fn1_ctx->des);
 		return;
 	}
 
 	period = HAL_RNG_GetRandomNumber(&hrng) % 1000;
 
-	debug("period:%d\n", period);
+	debug("period:%d", period);
 
 	fn1_ctx->ctx = add_soft_timer(soft_timer_info,
 	                              fn1,
@@ -56,16 +56,16 @@ static void fn1(void *fn_ctx, void *chain_ctx)
 	                              period, SOFT_TIMER_FN_TYPE_ONESHOT);
 
 	if(fn1_ctx->ctx == NULL) {
-		debug("create %s failed\n", fn1_ctx->des);
+		debug("create %s failed", fn1_ctx->des);
 		return;
 	}
 
-	debug("start %s\n", fn1_ctx->des);
+	debug("start %s", fn1_ctx->des);
 	ret = start_soft_timer(fn1_ctx->ctx);
 
 	if(ret != 0) {
-		debug("\n");
-		debug("start %s error\n", fn1_ctx->des);
+		debug("");
+		debug("start %s error", fn1_ctx->des);
 	}
 }
 
@@ -103,107 +103,107 @@ void test_soft_timer(void)
 	                                      1000, SOFT_TIMER_FN_TYPE_ONESHOT);
 
 	if(ctx_0_timer_0 == NULL) {
-		debug("\n");
+		debug("");
 		return;
 	}
 
 	if(ctx_1_timer_0 == NULL) {
-		debug("\n");
+		debug("");
 		return;
 	}
 
 	if(ctx_2_timer_1 == NULL) {
-		debug("\n");
+		debug("");
 		return;
 	}
 
 	if(ctx_3_timer_1 == NULL) {
-		debug("\n");
+		debug("");
 		return;
 	}
 
 	fn1_ctx.des = "ctx_3_timer_1";
 	fn1_ctx.ctx = ctx_3_timer_1;
 
-	debug("start ctx_0_timer_0\n");
+	debug("start ctx_0_timer_0");
 	ret = start_soft_timer(ctx_0_timer_0);
 
 	if(ret != 0) {
-		debug("start ctx_0_timer_0 error\n");
+		debug("start ctx_0_timer_0 error");
 	}
 
 
-	debug("start ctx_1_timer_0\n");
+	debug("start ctx_1_timer_0");
 	ret = start_soft_timer(ctx_1_timer_0);
 
 	if(ret != 0) {
-		debug("start ctx_1_timer_0 error\n");
+		debug("start ctx_1_timer_0 error");
 	}
 
 
-	debug("start ctx_2_timer_1\n");
+	debug("start ctx_2_timer_1");
 	ret = start_soft_timer(ctx_2_timer_1);
 
 	if(ret != 0) {
-		debug("start ctx_2_timer_1 error\n");
+		debug("start ctx_2_timer_1 error");
 	}
 
 
-	debug("start ctx_3_timer_1\n");
+	debug("start ctx_3_timer_1");
 	ret = start_soft_timer(ctx_3_timer_1);
 
 	if(ret != 0) {
-		debug("start ctx_3_timer_1 error\n");
+		debug("start ctx_3_timer_1 error");
 	}
 
 
 	osDelay(5000);
 
-	debug("stop ctx_0_timer_0\n");
+	debug("stop ctx_0_timer_0");
 	ret = stop_soft_timer(ctx_0_timer_0);
 
 	if(ret != 0) {
-		debug("stop ctx_0_timer_0 error\n");
+		debug("stop ctx_0_timer_0 error");
 	}
 
 
-	debug("stop ctx_1_timer_0\n");
+	debug("stop ctx_1_timer_0");
 	ret = stop_soft_timer(ctx_1_timer_0);
 
 	if(ret != 0) {
-		debug("stop ctx_1_timer_0 error\n");
+		debug("stop ctx_1_timer_0 error");
 	}
 
 
-	debug("stop ctx_2_timer_1\n");
+	debug("stop ctx_2_timer_1");
 	ret = stop_soft_timer(ctx_2_timer_1);
 
 	if(ret != 0) {
-		debug("stop ctx_2_timer_1 error\n");
+		debug("stop ctx_2_timer_1 error");
 	}
 
 
-	debug("remove ctx_0_timer_0\n");
+	debug("remove ctx_0_timer_0");
 	ret = remove_soft_timer(ctx_0_timer_0);
 
 	if(ret != 0) {
-		debug("remove ctx_0_timer_0 error\n");
+		debug("remove ctx_0_timer_0 error");
 	}
 
 
-	debug("remove ctx_1_timer_0\n");
+	debug("remove ctx_1_timer_0");
 	ret = remove_soft_timer(ctx_1_timer_0);
 
 	if(ret != 0) {
-		debug("remove ctx_1_timer_0 error\n");
+		debug("remove ctx_1_timer_0 error");
 	}
 
 
-	debug("remove ctx_2_timer_1\n");
+	debug("remove ctx_2_timer_1");
 	ret = remove_soft_timer(ctx_2_timer_1);
 
 	if(ret != 0) {
-		debug("remove ctx_2_timer_1 error\n");
+		debug("remove ctx_2_timer_1 error");
 	}
 
 	for(i = 0; i < 10; i++) {
@@ -214,32 +214,32 @@ void test_soft_timer(void)
 		                    50, SOFT_TIMER_FN_TYPE_REPEAT);
 
 		if(ctx_1_timer_0 == NULL) {
-			debug("\n");
+			debug("");
 			return;
 		}
 
 
-		debug("start ctx_1_timer_0\n");
+		debug("start ctx_1_timer_0");
 		ret = start_soft_timer(ctx_1_timer_0);
 
 		if(ret != 0) {
-			debug("start ctx_1_timer_0 error\n");
+			debug("start ctx_1_timer_0 error");
 		}
 
 		osDelay(500);
 
-		debug("stop ctx_1_timer_0\n");
+		debug("stop ctx_1_timer_0");
 		ret = stop_soft_timer(ctx_1_timer_0);
 
 		if(ret != 0) {
-			debug("stop ctx_1_timer_0 error\n");
+			debug("stop ctx_1_timer_0 error");
 		}
 
-		debug("remove ctx_1_timer_0\n");
+		debug("remove ctx_1_timer_0");
 		ret = remove_soft_timer(ctx_1_timer_0);
 
 		if(ret != 0) {
-			debug("remove ctx_1_timer_0 error\n");
+			debug("remove ctx_1_timer_0 error");
 		}
 	}
 }

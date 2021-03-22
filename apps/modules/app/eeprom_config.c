@@ -21,10 +21,10 @@ int eeprom_load_config_item(eeprom_info_t *eeprom_info, const char *label, void 
 	unsigned char crc;
 	eeprom_config_item_head_t eeprom_config_item_head;
 
-	///debug("offset:%d, size:%d\n", offset, size);
+	///debug("offset:%d, size:%d", offset, size);
 
 	if(detect_eeprom(eeprom_info) != 0) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -32,7 +32,7 @@ int eeprom_load_config_item(eeprom_info_t *eeprom_info, const char *label, void 
 	offset += sizeof(eeprom_config_item_head_t);
 
 	if(eeprom_config_item_head.payload_size != size) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -47,7 +47,7 @@ int eeprom_load_config_item(eeprom_info_t *eeprom_info, const char *label, void 
 	crc += calc_crc8(config, size);
 
 	if(crc != eeprom_config_item_head.crc) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -62,10 +62,10 @@ int eeprom_save_config_item(eeprom_info_t *eeprom_info, const char *label, void 
 	unsigned char crc;
 	eeprom_config_item_head_t eeprom_config_item_head;
 
-	//debug("offset:%d, size:%d\n", offset, size);
+	//debug("offset:%d, size:%d", offset, size);
 
 	if(detect_eeprom(eeprom_info) != 0) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 

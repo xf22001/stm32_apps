@@ -6,7 +6,7 @@
  *   文件名称：net_protocol_ws.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月23日 星期日 12时23分31秒
- *   修改日期：2021年03月10日 星期三 16时37分38秒
+ *   修改日期：2021年03月22日 星期一 09时12分12秒
  *   描    述：
  *
  *================================================================*/
@@ -31,40 +31,12 @@ static BOOL verify_cert = FALSE;
 //static HTTP_INFO *hi = &hi_instance;
 static HTTP_INFO *hi = NULL;
 
-void *malloc_1(size_t size);
-void free_1(void *p);
-
-static void *os_alloc_1(size_t size)
-{
-	//return malloc_1(size);
-	return os_alloc(size);
-}
-
-static void os_free_1(void *p)
-{
-	//free_1(p);
-	os_free(p);
-}
-
-static void *os_calloc_1(size_t nmemb, size_t size)
+static void *_os_calloc(size_t nmemb, size_t size)
 {
 	void *ptr = os_calloc(nmemb, size);
-	//uint32_t total_heap_size = get_total_heap_size();
-	//size_t heap_size = 0;
-	//size_t heap_count = 0;
-	//size_t heap_max_size = 0;
-
 	if(ptr == NULL) {
-		while(1);
+		app_panic();
 	}
-
-	//get_mem_info(&heap_size, &heap_count,  &heap_max_size);
-	//debug("total heap size:%d, free heap size:%d, used:%d, heap count:%d, max heap size:%d\n",
-	//      get_total_heap_size(),
-	//      xPortGetFreeHeapSize(),
-	//      heap_size,
-	//      heap_count,
-	//      heap_max_size);
 
 	return ptr;
 }
@@ -96,24 +68,24 @@ static int ws_client_connect(void *ctx)
 	//char *url = "wss://iot-ebus-ocpp-v16-server-test.azurewebsites.net/ws/test123";
 
 	if(get_connect_enable() != 1) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
 	//test_https();
 
 	if(hi == NULL) {
-		hi = (HTTP_INFO *)os_calloc_1(1, sizeof(HTTP_INFO));
+		hi = (HTTP_INFO *)_os_calloc(1, sizeof(HTTP_INFO));
 
 		if(hi == NULL) {
-			debug("\n");
+			debug("");
 			return ret;
 		}
 	}
 
 	http_init(hi, verify_cert);
 
-	mbedtls_platform_set_calloc_free(os_calloc_1, os_free_1);
+	mbedtls_platform_set_calloc_free(_os_calloc, os_free);
 
 	ret = http_open(hi, url);
 
@@ -121,7 +93,7 @@ static int ws_client_connect(void *ctx)
 		http_close(hi);
 		net_client_info->sock_fd = -1;
 		set_connect_enable(0);
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -135,7 +107,7 @@ static int ws_client_connect(void *ctx)
 		http_close(hi);
 		net_client_info->sock_fd = -1;
 		set_connect_enable(0);
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -145,7 +117,7 @@ static int ws_client_connect(void *ctx)
 		http_close(hi);
 		net_client_info->sock_fd = -1;
 		set_connect_enable(0);
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -179,7 +151,7 @@ static int ws_client_close(void *ctx)
 	if(hi != NULL) {
 		ret = http_close(hi);
 		net_client_info->sock_fd = -1;
-		os_free_1(hi);
+		os_free(hi);
 		hi = NULL;
 	}
 

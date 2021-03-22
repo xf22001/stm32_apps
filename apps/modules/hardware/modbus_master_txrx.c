@@ -113,10 +113,10 @@ int modbus_master_read_items(modbus_master_info_t *modbus_master_info, uint8_t s
 	uint16_t crc;
 	int i;
 
-	debug("station:%d, addr:%d, number:%d\n", station, addr, number);
+	debug("station:%d, addr:%d, number:%d", station, addr, number);
 
 	if(number == 0) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -133,7 +133,7 @@ int modbus_master_read_items(modbus_master_info_t *modbus_master_info, uint8_t s
 	modbus_master_info->rx_size = sizeof(modbus_master_response_0x03_head_t) + number * sizeof(modbus_data_item_t) + sizeof(modbus_crc_t);
 
 	if(modbus_master_info->rx_size > MODBUS_BUFFER_SIZE) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -143,24 +143,24 @@ int modbus_master_read_items(modbus_master_info_t *modbus_master_info, uint8_t s
 	                          modbus_master_info->rx_timeout);
 
 	if(rx_size != modbus_master_info->rx_size) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
 	//_hexdump("modbus_master_info->rx_buffer", (const char *)modbus_master_response_0x03_head, modbus_master_info->rx_size);
 
 	if(modbus_master_response_0x03_head->head.station != station) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
 	if(modbus_master_response_0x03_head->head.fn != 0x03) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
 	if(modbus_master_response_0x03_head->bytes_size != number * sizeof(modbus_data_item_t)) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -172,7 +172,7 @@ int modbus_master_read_items(modbus_master_info_t *modbus_master_info, uint8_t s
 	modbus_crc = (modbus_crc_t *)(data_item + number);
 
 	if(crc != get_modbus_crc(modbus_crc)) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -180,7 +180,7 @@ int modbus_master_read_items(modbus_master_info_t *modbus_master_info, uint8_t s
 
 	for(i = 0; i < number; i++) {
 		uint16_t value = get_modbus_data_item(data_item + i);
-		debug("read addr:%d, data:%d(%x)\n", addr + i, value, value);
+		debug("read addr:%d, data:%d(%x)", addr + i, value, value);
 		values[i] = value;
 	}
 
@@ -210,13 +210,13 @@ int modbus_master_write_one_item(modbus_master_info_t *modbus_master_info, uint8
 	modbus_crc_t *modbus_crc = NULL;
 	uint16_t crc;
 
-	debug("station:%d, addr:%d, value:%d\n", station, addr, value);
+	debug("station:%d, addr:%d, value:%d", station, addr, value);
 
 	request_0x06->head.station = station;
 	request_0x06->head.fn = 0x06;
 	set_modbus_addr(&request_0x06->addr, addr);
 	set_modbus_data_item(&request_0x06->data, value);
-	debug("write addr:%d, data:%d(%x)\n", addr, value, value);
+	debug("write addr:%d, data:%d(%x)", addr, value, value);
 	modbus_crc = &request_0x06->crc;
 	crc = modbus_calc_crc((uint8_t *)request_0x06,
 	                      (uint8_t *)modbus_crc - (uint8_t *)request_0x06);
@@ -226,7 +226,7 @@ int modbus_master_write_one_item(modbus_master_info_t *modbus_master_info, uint8
 	modbus_master_info->rx_size = sizeof(modbus_master_response_0x06_t);
 
 	if(modbus_master_info->rx_size > MODBUS_BUFFER_SIZE) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -236,29 +236,29 @@ int modbus_master_write_one_item(modbus_master_info_t *modbus_master_info, uint8
 	                          modbus_master_info->rx_timeout);
 
 	if(rx_size != modbus_master_info->rx_size) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
 	//_hexdump("modbus_master_info->tx_buffer", (const char *)request_0x06, modbus_master_info->tx_size);
 
 	if(modbus_master_response_0x06->head.station != station) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
 	if(modbus_master_response_0x06->head.fn != 0x06) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
 	if(addr != get_modbus_addr(&modbus_master_response_0x06->addr)) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
 	if(value != get_modbus_data_item(&modbus_master_response_0x06->data)) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -268,7 +268,7 @@ int modbus_master_write_one_item(modbus_master_info_t *modbus_master_info, uint8
 	modbus_crc = (modbus_crc_t *)&modbus_master_response_0x06->crc;
 
 	if(crc != get_modbus_crc(modbus_crc)) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -301,10 +301,10 @@ int modbus_master_write_items(modbus_master_info_t *modbus_master_info, uint8_t 
 	uint16_t crc;
 	int i;
 
-	debug("station:%d, addr:%d, number:%d\n", station, addr, number);
+	debug("station:%d, addr:%d, number:%d", station, addr, number);
 
 	if(number == 0) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -317,7 +317,7 @@ int modbus_master_write_items(modbus_master_info_t *modbus_master_info, uint8_t 
 
 	for(i = 0; i < number; i++) {
 		uint16_t value = values[i];
-		debug("multi-write addr:%d, data:%d(%x)\n", addr + i, value, value);
+		debug("multi-write addr:%d, data:%d(%x)", addr + i, value, value);
 		set_modbus_data_item(data_item + i, value);
 	}
 
@@ -331,7 +331,7 @@ int modbus_master_write_items(modbus_master_info_t *modbus_master_info, uint8_t 
 	modbus_master_info->rx_size = sizeof(modbus_master_response_0x10_t);
 
 	if(modbus_master_info->rx_size > MODBUS_BUFFER_SIZE) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -341,29 +341,29 @@ int modbus_master_write_items(modbus_master_info_t *modbus_master_info, uint8_t 
 	                          modbus_master_info->rx_timeout);
 
 	if(rx_size != modbus_master_info->rx_size) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
 	//_hexdump("modbus_master_info->rx_buffer", (const char *)modbus_master_response_0x10, modbus_master_info->rx_size);
 
 	if(modbus_master_response_0x10->head.station != station) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
 	if(modbus_master_response_0x10->head.fn != 0x10) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
 	if(addr != get_modbus_addr(&modbus_master_response_0x10->addr)) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
 	if(number != get_modbus_number(&modbus_master_response_0x10->number)) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -373,7 +373,7 @@ int modbus_master_write_items(modbus_master_info_t *modbus_master_info, uint8_t 
 	modbus_crc = &modbus_master_response_0x10->crc;
 
 	if(crc != get_modbus_crc(modbus_crc)) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 

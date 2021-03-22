@@ -6,7 +6,7 @@
  *   文件名称：soft_timer.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月22日 星期五 10时28分46秒
- *   修改日期：2021年02月21日 星期日 19时41分16秒
+ *   修改日期：2021年03月22日 星期一 15时52分11秒
  *   描    述：
  *
  *================================================================*/
@@ -215,7 +215,7 @@ static void active_deactive_timers(soft_timer_info_t *soft_timer_info)
 		soft_timer_ctx_t *soft_timer_ctx = list_entry(pos, soft_timer_ctx_t, list);
 
 		if(remove_callback(soft_timer_ctx->soft_timer_info->timer_cb_chain, soft_timer_ctx->callback_item) != 0) {
-			//debug("remove_callback %p in %p failed\n", soft_timer_ctx->callback_item, soft_timer_ctx->soft_timer_info);
+			//debug("remove_callback %p in %p failed", soft_timer_ctx->callback_item, soft_timer_ctx->soft_timer_info);
 		}
 
 		list_del(pos);
@@ -226,7 +226,7 @@ static void active_deactive_timers(soft_timer_info_t *soft_timer_info)
 		soft_timer_ctx_t *soft_timer_ctx = list_entry(pos, soft_timer_ctx_t, list);
 
 		if(register_callback(soft_timer_ctx->soft_timer_info->timer_cb_chain, soft_timer_ctx->callback_item) != 0) {
-			//debug("register_callback %p in %p failed\n", soft_timer_ctx->callback_item, soft_timer_ctx->soft_timer_info);
+			//debug("register_callback %p in %p failed", soft_timer_ctx->callback_item, soft_timer_ctx->soft_timer_info);
 		}
 
 		list_del(pos);
@@ -237,7 +237,7 @@ static void active_deactive_timers(soft_timer_info_t *soft_timer_info)
 		soft_timer_ctx_t *soft_timer_ctx = list_entry(pos, soft_timer_ctx_t, list);
 
 		if(remove_callback(soft_timer_ctx->soft_timer_info->timer_cb_chain, soft_timer_ctx->callback_item) != 0) {
-			//debug("remove_callback %p in %p failed\n", soft_timer_ctx->callback_item, soft_timer_ctx->soft_timer_info);
+			//debug("remove_callback %p in %p failed", soft_timer_ctx->callback_item, soft_timer_ctx->soft_timer_info);
 		}
 
 		list_del(pos);
@@ -259,11 +259,12 @@ static void soft_timer_task(void const *argument)
 
 	for(;;) {
 		if(callback_chain_empty(soft_timer_info->timer_cb_chain)) {
+			debug("%p idle delay", soft_timer_info);
 			soft_timer_delay(soft_timer_info, osWaitForever);
 		} else {
 			soft_timer_info->delay = osWaitForever;
 			do_callback_chain(soft_timer_info->timer_cb_chain, soft_timer_info);
-			//debug("%p delay:%d\n", soft_timer_info, soft_timer_info->delay);
+			//debug("%p delay:%d", soft_timer_info, soft_timer_info->delay);
 			soft_timer_delay(soft_timer_info, soft_timer_info->delay);
 		}
 
@@ -309,21 +310,21 @@ static soft_timer_info_t *alloc_soft_timer_info(uint32_t id)
 	soft_timer_info->timer_cb_chain = alloc_callback_chain();
 
 	if(soft_timer_info->timer_cb_chain == NULL) {
-		debug("\n");
+		debug("");
 		goto failed;
 	}
 
 	soft_timer_info->wakeup = signal_create(1);
 
 	if(soft_timer_info->wakeup == NULL) {
-		debug("\n");
+		debug("");
 		goto failed;
 	}
 
 	soft_timer_info->mutex = mutex_create();
 
 	if(soft_timer_info->mutex == NULL) {
-		debug("\n");
+		debug("");
 		goto failed;
 	}
 

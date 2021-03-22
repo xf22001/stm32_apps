@@ -865,7 +865,7 @@ static void power_modules_request_periodic(power_modules_info_t *power_modules_i
 			if(cmd_ctx->state == CAN_COM_STATE_RESPONSE) {//超时
 				if(ticks_duration(ticks, cmd_ctx->send_stamp) >= RESPONSE_TIMEOUT) {
 					can_com_set_connect_state(connect_state, 0);
-					debug("cmd %d(%s), module_id %d timeout, connect state:%d\n",
+					debug("cmd %d(%s), module_id %d timeout, connect state:%d",
 					      item->cmd,
 					      get_power_module_cmd_des(item->cmd),
 					      module_id,
@@ -917,7 +917,7 @@ static void power_modules_request_huawei(power_modules_info_t *power_modules_inf
 			ret = item->request_callback(power_modules_info, module_id);
 
 			if(ret != 0) {
-				debug("module_id %d cmd %d(%s) request error!\n",
+				debug("module_id %d cmd %d(%s) request error!",
 				      module_id,
 				      item->cmd,
 				      get_power_module_cmd_des(item->cmd));
@@ -930,7 +930,7 @@ static void power_modules_request_huawei(power_modules_info_t *power_modules_inf
 				cmd_ctx->state = CAN_COM_STATE_REQUEST;
 
 				can_com_set_connect_state(connect_state, 0);
-				debug("send module_id %d cmd %d(%s) error!\n",
+				debug("send module_id %d cmd %d(%s) error!",
 				      module_id,
 				      item->cmd,
 				      get_power_module_cmd_des(item->cmd));
@@ -991,7 +991,7 @@ static int power_modules_response_huawei(power_modules_info_t *power_modules_inf
 		ret = item->response_callback(power_modules_info, module_id);
 
 		if(ret != 0) {
-			debug("module_id %d cmd %d(%s) response error!\n",
+			debug("module_id %d cmd %d(%s) response error!",
 			      module_id,
 			      item->cmd,
 			      get_power_module_cmd_des(item->cmd));

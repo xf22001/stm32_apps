@@ -77,7 +77,7 @@ int power_modules_set_type(power_modules_info_t *power_modules_info, power_modul
 	power_modules_handler = get_power_modules_handler(power_module_type);
 
 	if(power_modules_handler == NULL) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -99,7 +99,7 @@ void set_out_voltage_current(power_modules_info_t *power_modules_info, int modul
 	power_modules_handler_t *power_modules_handler = (power_modules_handler_t *)power_modules_info->power_modules_handler;
 
 	if(module_id >= power_modules_info->power_module_number) {
-		debug("\n");
+		debug("");
 		return;
 	}
 
@@ -119,7 +119,7 @@ void set_poweroff(power_modules_info_t *power_modules_info, int module_id, uint8
 	power_modules_handler_t *power_modules_handler = (power_modules_handler_t *)power_modules_info->power_modules_handler;
 
 	if(module_id >= power_modules_info->power_module_number) {
-		debug("\n");
+		debug("");
 		return;
 	}
 
@@ -139,7 +139,7 @@ void query_status(power_modules_info_t *power_modules_info, int module_id)
 	power_modules_handler_t *power_modules_handler = (power_modules_handler_t *)power_modules_info->power_modules_handler;
 
 	if(module_id >= power_modules_info->power_module_number) {
-		debug("\n");
+		debug("");
 		return;
 	}
 
@@ -159,7 +159,7 @@ void query_a_line_input_voltage(power_modules_info_t *power_modules_info, int mo
 	power_modules_handler_t *power_modules_handler = (power_modules_handler_t *)power_modules_info->power_modules_handler;
 
 	if(module_id >= power_modules_info->power_module_number) {
-		debug("\n");
+		debug("");
 		return;
 	}
 
@@ -179,7 +179,7 @@ void query_b_line_input_voltage(power_modules_info_t *power_modules_info, int mo
 	power_modules_handler_t *power_modules_handler = (power_modules_handler_t *)power_modules_info->power_modules_handler;
 
 	if(module_id >= power_modules_info->power_module_number) {
-		debug("\n");
+		debug("");
 		return;
 	}
 
@@ -199,7 +199,7 @@ void query_c_line_input_voltage(power_modules_info_t *power_modules_info, int mo
 	power_modules_handler_t *power_modules_handler = (power_modules_handler_t *)power_modules_info->power_modules_handler;
 
 	if(module_id >= power_modules_info->power_module_number) {
-		debug("\n");
+		debug("");
 		return;
 	}
 
@@ -319,19 +319,19 @@ static int power_modules_set_channels_info_config(power_modules_info_t *power_mo
 
 	power_modules_info->channels_info = channels_info;
 
-	debug("power_module_number:%d\n", channels_info->channels_info_config->power_module_number);
+	debug("power_module_number:%d", channels_info->channels_info_config->power_module_number);
 
 	power_modules_info->power_module_number = channels_info->channels_info_config->power_module_number;
 
 	if(power_modules_info->power_module_number == 0) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
 	can_info = get_or_alloc_can_info(channels_info->channels_info_config->hcan_power);
 
 	if(can_info == NULL) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -340,7 +340,7 @@ static int power_modules_set_channels_info_config(power_modules_info_t *power_mo
 	power_module_info = (power_module_info_t *)os_alloc(sizeof(power_module_info_t) * power_modules_info->power_module_number);
 
 	if(power_module_info == NULL) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -354,7 +354,7 @@ static int power_modules_set_channels_info_config(power_modules_info_t *power_mo
 		power_module_info->cmd_ctx = (can_com_cmd_ctx_t *)os_alloc(sizeof(can_com_cmd_ctx_t) * max_cmd_size);
 
 		if(power_module_info->cmd_ctx == NULL) {
-			debug("\n");
+			debug("");
 			return ret;
 		}
 
@@ -386,14 +386,14 @@ static power_modules_info_t *alloc_power_modules_info(channels_info_t *channels_
 	power_modules_info = (power_modules_info_t *)os_alloc(sizeof(power_modules_info_t));
 
 	if(power_modules_info == NULL) {
-		debug("\n");
+		debug("");
 		return power_modules_info;
 	}
 
 	memset(power_modules_info, 0, sizeof(power_modules_info_t));
 
 	if(power_modules_set_channels_info_config(power_modules_info, channels_info) != 0) {
-		debug("\n");
+		debug("");
 		goto failed;
 	}
 

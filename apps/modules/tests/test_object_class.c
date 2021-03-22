@@ -74,7 +74,7 @@ void test_object_class(void)
 	object_class = object_class_alloc();
 
 	if(object_class == NULL) {
-		debug("object_class_alloc failed!\n");
+		debug("object_class_alloc failed!");
 		return;
 	}
 
@@ -94,15 +94,15 @@ void test_object_class(void)
 	object_class_get_or_alloc_object(object_class, object_filter, (void *)1, (object_alloc_t)test_object_alloc, (object_free_t)test_object_free);
 
 	size = object_class_size(object_class);
-	debug("object_class_size:%d\n", size);
+	debug("object_class_size:%d", size);
 
 	for(i = 0; i < 10; i++) {
 		test_object_t *o = object_class_get_object(object_class, object_filter, (void *)i);
 
 		if(o != NULL ) {
-			debug("get object id %d success(%d)!\n", i, o->id);
+			debug("get object id %d success(%d)!", i, o->id);
 		} else {
-			debug("get object id %d failed!\n", i);
+			debug("get object id %d failed!", i);
 		}
 	}
 
@@ -110,19 +110,19 @@ void test_object_class(void)
 
 	if(objects != NULL) {
 		ret = object_class_get_objects(object_class, object_filter_no_filter, NULL, (void **)objects, &size);
-		debug("object_class_get_objects size:%d, ret:%d\n", size, ret);
+		debug("object_class_get_objects size:%d, ret:%d", size, ret);
 
 		for(i = 0; i < size; i++) {
 			uint32_t id = objects[i]->id;
 			ret = object_class_remove_object(object_class, objects[i]);
-			debug("remove object id:%d, ret:%d\n", id, ret);
+			debug("remove object id:%d, ret:%d", id, ret);
 		}
 
 		os_free(objects);
 	}
 
 	size = object_class_size(object_class);
-	debug("object_class_size:%d\n", size);
+	debug("object_class_size:%d", size);
 
 	object_class_free(object_class);
 }

@@ -62,27 +62,27 @@ static void request_set_lan_led_state(void *ctx, uint32_t state)
 
 static void request_init(void *ctx)
 {
-	debug("\n");
+	debug("");
 }
 
 static void request_before_create_server_connect(void *ctx)
 {
-	debug("\n");
+	debug("");
 }
 
 static void request_after_create_server_connect(void *ctx)
 {
-	debug("\n");
+	debug("");
 }
 
 static void request_before_close_server_connect(void *ctx)
 {
-	debug("\n");
+	debug("");
 }
 
 static void request_after_close_server_connect(void *ctx)
 {
-	debug("\n");
+	debug("");
 }
 
 static void request_parse(void *ctx, char *buffer, size_t size, size_t max_request_size, char **prequest, size_t *request_size)
@@ -107,7 +107,7 @@ static void request_periodic(void *ctx, uint8_t *send_buffer, uint16_t send_buff
 
 	send_stamp = ticks;
 
-	debug("\n");
+	debug("");
 
 	if(get_client_state(net_client_info) == CLIENT_CONNECTED) {
 		chunk_sendto(net_client_info, 1, 0, (void *)0x8000000, 128, (char *)send_buffer, send_buffer_size);

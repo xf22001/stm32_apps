@@ -1387,7 +1387,7 @@ static err_t ftpd_msgrecv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t 
 
 			*pt = '\0';
 
-			debug("cmd: \'%s\'\n", cmd);
+			debug("cmd: \'%s\'", cmd);
 
 			for (ftpd_cmd = ftpd_commands; ftpd_cmd->cmd != NULL; ftpd_cmd++) {
 				if (!strcmp(ftpd_cmd->cmd, cmd)) {
@@ -1509,7 +1509,7 @@ void ftpd_init(void)
 	int ret = vfs_init();
 
 	if(ret != 0) {
-		debug("vfs_init ret:%d\n", ret);
+		debug("vfs_init ret:%d", ret);
 	}
 
 	pcb = tcp_new();

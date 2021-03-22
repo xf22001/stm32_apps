@@ -19,27 +19,27 @@
 
 static void request_init(void *ctx)
 {
-	debug("\n");
+	debug("");
 }
 
 static void request_before_create_server_connect(void *ctx)
 {
-	debug("\n");
+	debug("");
 }
 
 static void request_after_create_server_connect(void *ctx)
 {
-	debug("\n");
+	debug("");
 }
 
 static void request_before_close_server_connect(void *ctx)
 {
-	debug("\n");
+	debug("");
 }
 
 static void request_after_close_server_connect(void *ctx)
 {
-	debug("\n");
+	debug("");
 }
 
 static void request_parse(void *ctx, char *buffer, size_t size, size_t max_request_size, char **prequest, size_t *request_size)
@@ -55,7 +55,7 @@ static void request_process(void *ctx, uint8_t *request, uint16_t request_size, 
 
 static void request_periodic(void *ctx, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
-	//debug("\n");
+	//debug("");
 }
 
 request_callback_t request_callback_ws = {

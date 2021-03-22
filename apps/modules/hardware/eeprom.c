@@ -215,7 +215,7 @@ uint8_t eeprom_read(eeprom_info_t *eeprom_info, uint32_t start, uint8_t *data, u
 	uint8_t state = 0;
 	uint16_t i;
 
-	//debug("start:%d, size:%d\n", start, size);
+	//debug("start:%d, size:%d", start, size);
 
 	if(eeprom_info == NULL) {
 		return state;
@@ -279,7 +279,7 @@ uint8_t eeprom_write(eeprom_info_t *eeprom_info, uint32_t start, uint8_t *data, 
 	uint16_t left = size;
 	uint32_t addr = start;
 
-	//debug("start:%d, size:%d\n", start, size);
+	//debug("start:%d, size:%d", start, size);
 
 	if(eeprom_info == NULL) {
 		return state;

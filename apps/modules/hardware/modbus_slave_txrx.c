@@ -151,7 +151,7 @@ static int fn_0x03(modbus_slave_info_t *modbus_slave_info)//read some number
 	int i;
 
 	if(modbus_slave_info->rx_size < sizeof(modbus_slave_request_0x03_t)) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -160,7 +160,7 @@ static int fn_0x03(modbus_slave_info_t *modbus_slave_info)//read some number
 	                      (uint8_t *)modbus_crc - (uint8_t *)request_0x03);
 
 	if(crc != get_modbus_crc(modbus_crc)) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -168,7 +168,7 @@ static int fn_0x03(modbus_slave_info_t *modbus_slave_info)//read some number
 	number = get_modbus_number(&request_0x03->number);
 
 	if(modbus_slave_info->modbus_slave_data_info->valid(modbus_slave_info->modbus_slave_data_info->ctx, addr, number) == 0) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -180,7 +180,7 @@ static int fn_0x03(modbus_slave_info_t *modbus_slave_info)//read some number
 	for(i = 0; i < number; i++) {
 		uint16_t value;
 		value = modbus_slave_info->modbus_slave_data_info->get(modbus_slave_info->modbus_slave_data_info->ctx, addr + i);
-		//debug("request read addr:%d, data:%d(%x)\n", addr + i, value, value);
+		//debug("request read addr:%d, data:%d(%x)", addr + i, value, value);
 
 		set_modbus_data_item(data_item + i, value);
 	}
@@ -228,7 +228,7 @@ static int fn_0x06(modbus_slave_info_t *modbus_slave_info)//write one number
 	int i;
 
 	if(modbus_slave_info->rx_size < sizeof(modbus_slave_request_0x06_t)) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -237,7 +237,7 @@ static int fn_0x06(modbus_slave_info_t *modbus_slave_info)//write one number
 	                      (uint8_t *)modbus_crc - (uint8_t *)request_0x06);
 
 	if(crc != get_modbus_crc(modbus_crc)) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -246,14 +246,14 @@ static int fn_0x06(modbus_slave_info_t *modbus_slave_info)//write one number
 	data_item = &request_0x06->data;
 
 	if(modbus_slave_info->modbus_slave_data_info->valid(modbus_slave_info->modbus_slave_data_info->ctx, addr, 1) == 0) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
 	//wite one number
 	for(i = 0; i < 1; i++) {
 		uint16_t value = get_modbus_data_item(data_item + i);
-		//debug("request write addr:%d, data:%d(%x)\n", addr + i, value, value);
+		//debug("request write addr:%d, data:%d(%x)", addr + i, value, value);
 		modbus_slave_info->modbus_slave_data_info->set(modbus_slave_info->modbus_slave_data_info->ctx,
 		        addr + i,
 		        value);
@@ -314,7 +314,7 @@ static int fn_0x10(modbus_slave_info_t *modbus_slave_info)//write more number
 	int i;
 
 	if(modbus_slave_info->rx_size < sizeof(modbus_slave_request_0x10_head_t)) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -322,7 +322,7 @@ static int fn_0x10(modbus_slave_info_t *modbus_slave_info)//write more number
 	number = get_modbus_number(&modbus_slave_request_0x10_head->number);
 
 	if(modbus_slave_info->modbus_slave_data_info->valid(modbus_slave_info->modbus_slave_data_info->ctx, addr, number) == 0) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -334,7 +334,7 @@ static int fn_0x10(modbus_slave_info_t *modbus_slave_info)//write more number
 	                      (uint8_t *)modbus_crc - (uint8_t *)modbus_slave_request_0x10_head);
 
 	if(crc != get_modbus_crc(modbus_crc)) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -342,7 +342,7 @@ static int fn_0x10(modbus_slave_info_t *modbus_slave_info)//write more number
 	for(i = 0; i < number; i++) {
 		uint16_t value = get_modbus_data_item(data_item + i);
 
-		//debug("request multi-write addr:%d, data:%d(%x)\n", addr + i, value, value);
+		//debug("request multi-write addr:%d, data:%d(%x)", addr + i, value, value);
 		modbus_slave_info->modbus_slave_data_info->set(modbus_slave_info->modbus_slave_data_info->ctx, addr + i, value);
 	}
 
@@ -402,13 +402,13 @@ static int modubs_decode_request(modbus_slave_info_t *modbus_slave_info)
 		return ret;
 	}
 
-	//debug("\nmodbus_slave_info->rx_size:%d\n", modbus_slave_info->rx_size);
+	//debug("\nmodbus_slave_info->rx_size:%d", modbus_slave_info->rx_size);
 	//_hexdump("modbus_slave_info->rx_buffer", (const char *)modbus_slave_info->rx_buffer, modbus_slave_info->rx_size);
 
 	head = (modbus_head_t *)modbus_slave_info->rx_buffer;
 
-	//debug("head->station:%02x\n", head->station);
-	//debug("head->fn:%02x\n", head->fn);
+	//debug("head->station:%02x", head->station);
+	//debug("head->fn:%02x", head->fn);
 
 	if(modbus_slave_info->modbus_slave_data_info == NULL) {
 		return ret;
@@ -423,7 +423,7 @@ static int modubs_decode_request(modbus_slave_info_t *modbus_slave_info)
 		}
 	}
 
-	//debug("modbus decode duration:%0d\n", osKernelSysTick() - ticks);
+	//debug("modbus decode duration:%0d", osKernelSysTick() - ticks);
 
 	return ret;
 }

@@ -79,14 +79,14 @@ static uart_data_task_info_t *alloc_uart_data_task_info(UART_HandleTypeDef *huar
 	uart_data_task_info->uart_info = get_or_alloc_uart_info(huart);
 
 	if(uart_data_task_info->uart_info == NULL) {
-		debug("\n");
+		debug("");
 		goto failed;
 	}
 
 	uart_data_task_info->uart_data_chain = alloc_callback_chain();
 
 	if(uart_data_task_info->uart_data_chain == NULL) {
-		debug("\n");
+		debug("");
 		goto failed;
 	}
 

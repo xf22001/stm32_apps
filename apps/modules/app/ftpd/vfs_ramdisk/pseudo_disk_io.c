@@ -27,7 +27,7 @@ DRESULT disk_ioctl (BYTE pdrv, BYTE cmd, void *buff)
 	DSTATUS ret = RES_NOTRDY;
 
 	if (pdrv != 0) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -77,7 +77,7 @@ DSTATUS disk_initialize(BYTE pdrv)
 	DSTATUS ret = STA_NOINIT;
 
 	if (pdrv != 0) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -89,7 +89,7 @@ DSTATUS disk_initialize(BYTE pdrv)
 		if(disk != NULL) {
 			ret = RES_OK;
 		} else {
-			debug("\n");
+			debug("");
 		}
 	} else {
 		ret = RES_OK;
@@ -103,7 +103,7 @@ DSTATUS disk_status (BYTE pdrv)
 	DSTATUS ret = STA_NOINIT;
 
 	if (pdrv != 0) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
@@ -119,20 +119,20 @@ DRESULT disk_write(BYTE pdrv, const BYTE *buff, DWORD sector, UINT count)
 	size_t len = SECTOR_SIZE * count;
 
 	if (pdrv != 0) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
 	ret = RES_NOTRDY;
 
 	if((offset >= DISK_SIZE) || (offset + len > DISK_SIZE)) {
-		debug("\n");
+		debug("");
 	} else {
 		memcpy(disk + offset, buff, len);
 		ret = RES_OK;
 	}
 
-	debug("offset:%d, len:%d, ret:%d\n", offset, len, ret);
+	debug("offset:%d, len:%d, ret:%d", offset, len, ret);
 
 	return ret;
 }
@@ -144,20 +144,20 @@ DRESULT disk_read(BYTE pdrv, BYTE *buff, DWORD sector, UINT count)
 	size_t len = SECTOR_SIZE * count;
 
 	if (pdrv != 0) {
-		debug("\n");
+		debug("");
 		return ret;
 	}
 
 	ret = RES_NOTRDY;
 
 	if((offset >= DISK_SIZE) || (offset + len >= DISK_SIZE)) {
-		debug("\n");
+		debug("");
 	} else {
 		memcpy(buff, disk + offset, len);
 		ret = RES_OK;
 	}
 
-	debug("offset:%d, len:%d, ret:%d\n", offset, len, ret);
+	debug("offset:%d, len:%d, ret:%d", offset, len, ret);
 
 	return ret;
 }

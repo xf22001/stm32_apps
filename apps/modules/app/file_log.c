@@ -66,7 +66,7 @@ int open_log(void)
 	if(FR_OK == ret || FR_EXIST == ret) {
 		ret = 0;
 	} else {
-		debug("mt_f_mkdir ret:%d\n", ret);
+		debug("mt_f_mkdir ret:%d", ret);
 		ret = -1;
 		return ret;
 	}
@@ -82,7 +82,7 @@ int open_log(void)
 	               tm->tm_mon,
 	               tm->tm_mday);
 
-	debug("open file %s...\n", filepath);
+	debug("open file %s...", filepath);
 #if defined(FA_OPEN_APPEND)
 	ret = mt_f_open(&file_log_info.s_log_file, filepath, FA_OPEN_APPEND | FA_WRITE);
 #else
@@ -94,7 +94,7 @@ int open_log(void)
 		ret = mt_f_lseek(&file_log_info.s_log_file, file_log_info.s_log_file.fsize);
 
 		if(ret != FR_OK) {
-			debug("mt_f_lseek ret:%d\n", ret);
+			debug("mt_f_lseek ret:%d", ret);
 		}
 
 #endif
@@ -102,7 +102,7 @@ int open_log(void)
 		file_log_info.log_file_stamp = get_log_file_stamp();
 		ret = 0;
 	} else {
-		debug("mt_f_open ret:%d\n", ret);
+		debug("mt_f_open ret:%d", ret);
 	}
 
 	os_free(filepath);
@@ -126,7 +126,7 @@ void sync_log(void)
 		ret = mt_f_sync(file_log_info.log_file);
 
 		if(ret != FR_OK) {
-			debug("mt_f_sync ret:%d\n", ret);
+			debug("mt_f_sync ret:%d", ret);
 		}
 	}
 }
@@ -186,10 +186,10 @@ void handle_open_log(void)
 		stamps = ticks;
 
 		if(get_log_file() == NULL) {
-			//debug("check file log...\n");
+			//debug("check file log...");
 			open_log();
 		} else if(is_log_file_out_of_date() == 1) {
-			//debug("check file log...\n");
+			//debug("check file log...");
 			close_log();
 			open_log();
 		} else {
@@ -200,7 +200,7 @@ void handle_open_log(void)
 	ret = log_printf((1 << LOG_MASK_FILE_OFFSET), "test %d\n", count++);
 
 	if(ret < 0) {
-		//debug("file log ret:%d\n", ret);
+		//debug("file log ret:%d", ret);
 	}
 }
 

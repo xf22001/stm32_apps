@@ -66,7 +66,7 @@ static void can_data_request(void *fn_ctx, void *chain_ctx)
 
 	if(ticks_duration(ticks, ctx->recv_stamp) >= 10) {
 		ctx->recv_stamp = ticks;
-		debug("%s rx timeout!\n", ctx->des);
+		debug("%s rx timeout!", ctx->des);
 	}
 
 	if(ticks_duration(ticks, ctx->stamp) < 5) {
@@ -84,9 +84,9 @@ static void can_data_request(void *fn_ctx, void *chain_ctx)
 			ctx->send.d1++;
 		}
 
-		//debug("%s tx done!\n", ctx->des);
+		//debug("%s tx done!", ctx->des);
 	} else {
-		debug("%s tx error!\n", ctx->des);
+		debug("%s tx error!", ctx->des);
 	}
 }
 
@@ -102,26 +102,26 @@ static void can_data_response(void *fn_ctx, void *chain_ctx)
 		if(ctx->recv.d0 + 1 == can_data->d0) {
 			if(can_data->d0 == 0) {
 				if(ctx->recv.d1 + 1 == can_data->d1) {
-					//debug("%s rx done!\n", ctx->des);
+					//debug("%s rx done!", ctx->des);
 				} else {
-					debug("%s ctx->recv.d1:%d, can_data->d1:%d!\n", ctx->des, ctx->recv.d1, can_data->d1);
-					debug("%s rx error!\n", ctx->des);
+					debug("%s ctx->recv.d1:%d, can_data->d1:%d!", ctx->des, ctx->recv.d1, can_data->d1);
+					debug("%s rx error!", ctx->des);
 				}
 			} else {
 				if(ctx->recv.d1 == can_data->d1) {
-					//debug("%s rx done!\n", ctx->des);
+					//debug("%s rx done!", ctx->des);
 				} else {
-					debug("%s ctx->recv.d1:%d, can_data->d1:%d!\n", ctx->des, ctx->recv.d1, can_data->d1);
-					debug("%s rx error!\n", ctx->des);
+					debug("%s ctx->recv.d1:%d, can_data->d1:%d!", ctx->des, ctx->recv.d1, can_data->d1);
+					debug("%s rx error!", ctx->des);
 				}
 			}
 		} else {
-			debug("%s ctx->recv.d0:%d, can_data->d0:%d!\n", ctx->des, ctx->recv.d0, can_data->d0);
-			debug("%s rx error!\n", ctx->des);
+			debug("%s ctx->recv.d0:%d, can_data->d0:%d!", ctx->des, ctx->recv.d0, can_data->d0);
+			debug("%s rx error!", ctx->des);
 		}
 	} else {
-		debug("%s can_rx_msg->ExtId:%08x!\n", ctx->des, can_rx_msg->ExtId);
-		debug("%s rx error!\n", ctx->des);
+		debug("%s can_rx_msg->ExtId:%08x!", ctx->des, can_rx_msg->ExtId);
+		debug("%s rx error!", ctx->des);
 	}
 
 	ctx->recv = *can_data;

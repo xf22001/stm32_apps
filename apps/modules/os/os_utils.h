@@ -6,7 +6,7 @@
  *   文件名称：os_utils.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分36秒
- *   修改日期：2021年03月09日 星期二 17时33分18秒
+ *   修改日期：2021年03月22日 星期一 15时06分21秒
  *   描    述：
  *
  *================================================================*/
@@ -260,6 +260,9 @@ static inline uint8_t get_u8_bits(uint8_t v, uint8_t offset)
 		app_panic(); \
 	} \
 } while(0)
+
+#define milliseconds_to_ticks(ms) (ms * configTICK_RATE_HZ / 1000)
+#define ticks_to_milliseconds(ticks) (ticks * 1000 / configTICK_RATE_HZ)
 
 typedef osMutexId os_mutex_t;
 typedef osMessageQId os_signal_t;

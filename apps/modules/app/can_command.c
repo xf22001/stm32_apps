@@ -65,7 +65,7 @@ int can_com_prepare_tx_request(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_c
 	can_com_cmd_common->index = index;
 
 	if(sent >= data_size) {
-		debug("sent:%d, data_size:%d\n", sent, data_size);
+		debug("sent:%d, data_size:%d", sent, data_size);
 		return ret;
 	}
 
@@ -78,7 +78,7 @@ int can_com_prepare_tx_request(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_c
 	//填状态数据
 	memcpy(buffer, data + sent, send);
 
-	//debug("sent %d/%d\n", sent + send, data_size);
+	//debug("sent %d/%d", sent + send, data_size);
 
 	can_com_cmd_ctx->state = CAN_COM_STATE_RESPONSE;
 
@@ -96,7 +96,7 @@ int can_com_process_rx_response(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_
 
 	//检查index
 	if(index != can_com_cmd_response->index) {
-		debug("index %d, can_com_cmd_response->index %d\n", index, can_com_cmd_response->index);
+		debug("index %d, can_com_cmd_response->index %d", index, can_com_cmd_response->index);
 		return ret;
 	}
 
@@ -108,12 +108,12 @@ int can_com_process_rx_response(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_
 			can_com_cmd_ctx->index++;
 			can_com_cmd_ctx->state = CAN_COM_STATE_REQUEST;//没发完,切换到准备请求数据 发
 		} else {
-			debug("can_com_cmd_response->response_status:%s\n", get_can_com_response_status_des(can_com_cmd_response->response_status));
+			debug("can_com_cmd_response->response_status:%s", get_can_com_response_status_des(can_com_cmd_response->response_status));
 			return ret;
 		}
 	} else {
 		if(can_com_cmd_response->response_status == CAN_COM_RESPONSE_STATUS_WAIT) {//发完，返回空闲状态
-			debug("can_com_cmd_response->response_status:%s\n", get_can_com_response_status_des(can_com_cmd_response->response_status));
+			debug("can_com_cmd_response->response_status:%s", get_can_com_response_status_des(can_com_cmd_response->response_status));
 			return ret;
 		} else {
 			can_com_cmd_ctx->state = CAN_COM_STATE_IDLE;
@@ -163,7 +163,7 @@ int can_com_process_rx_request(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_c
 	uint8_t receive;
 
 	if(received >= data_size) {
-		debug("received:%d, data_size:%d\n", received, data_size);
+		debug("received:%d, data_size:%d", received, data_size);
 		return ret;
 	}
 
@@ -175,7 +175,7 @@ int can_com_process_rx_request(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_c
 
 	memcpy(data + received, buffer, receive);
 
-	//debug("received %d/%d\n", received + receive, data_size);
+	//debug("received %d/%d", received + receive, data_size);
 
 	can_com_cmd_ctx->index = index;
 	can_com_cmd_ctx->state = CAN_COM_STATE_REQUEST;
@@ -201,7 +201,7 @@ int can_com_prepare_tx_request_broadcast(can_com_cmd_ctx_t *can_com_cmd_ctx, can
 
 	if(sent >= data_size) {
 		can_com_cmd_ctx->state = CAN_COM_STATE_IDLE;
-		debug("sent:%d, data_size:%d\n", sent, data_size);
+		debug("sent:%d, data_size:%d", sent, data_size);
 		return ret;
 	}
 
@@ -214,7 +214,7 @@ int can_com_prepare_tx_request_broadcast(can_com_cmd_ctx_t *can_com_cmd_ctx, can
 	//填状态数据
 	memcpy(buffer, data + sent, send);
 
-	//debug("sent %d/%d\n", sent + send, data_size);
+	//debug("sent %d/%d", sent + send, data_size);
 
 	if(sent + send >= data_size) {
 		can_com_cmd_ctx->state = CAN_COM_STATE_IDLE;

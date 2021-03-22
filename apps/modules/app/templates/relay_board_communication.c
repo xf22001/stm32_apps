@@ -190,8 +190,8 @@ static int relay_board_com_info_set_channel_config(relay_board_com_info_t *relay
 	com_can_rx_id->flag = 0x10;
 	com_can_rx_mask_id->flag = 0x1f;
 
-	debug("can_info->can_config->filter_id:%08x\n", can_info->can_config->filter_id);
-	debug("can_info->can_config->filter_mask_id:%08x\n", can_info->can_config->filter_mask_id);
+	debug("can_info->can_config->filter_id:%08x", can_info->can_config->filter_id);
+	debug("can_info->can_config->filter_mask_id:%08x", can_info->can_config->filter_mask_id);
 
 	can_info->receive_init(can_info->hcan);
 
@@ -360,7 +360,7 @@ static int request_relay_boards_heartbeat(relay_board_com_info_t *relay_board_co
 
 		for(i = 0; i < sizeof(relay_boards_heartbeat_t); i++) {
 			if(data_ctx->relay_boards_heartbeat.buffer[i] != i) {
-				debug("relay_boards_heartbeat data[%d] == %d\n", i, data_ctx->relay_boards_heartbeat.buffer[i]);
+				debug("relay_boards_heartbeat data[%d] == %d", i, data_ctx->relay_boards_heartbeat.buffer[i]);
 				break;
 			}
 		}
@@ -426,7 +426,7 @@ static void relay_board_com_request_periodic(relay_board_com_info_t *relay_board
 		if(cmd_ctx->state == CAN_COM_STATE_RESPONSE) {
 			if(ticks_duration(ticks, cmd_ctx->send_stamp) >= RESPONSE_TIMEOUT) {//超时
 				relay_board_com_set_connect_state(relay_board_com_info, 0);
-				debug("cmd %d(%s) index %d timeout, connect state:%d\n",
+				debug("cmd %d(%s) index %d timeout, connect state:%d",
 				      item->cmd,
 				      get_relay_board_cmd_des(item->cmd),
 				      cmd_ctx->index,
@@ -450,7 +450,7 @@ static void relay_board_com_request_periodic(relay_board_com_info_t *relay_board
 		if(ticks_duration(ticks, cmd_ctx->stamp) >= item->request_period) {
 			cmd_ctx->stamp = ticks;
 
-			//debug("start cmd %d(%s)\n", item->cmd, get_relay_board_cmd_des(item->cmd));
+			//debug("start cmd %d(%s)", item->cmd, get_relay_board_cmd_des(item->cmd));
 			cmd_ctx->index = 0;
 			cmd_ctx->state = CAN_COM_STATE_REQUEST;
 		}
@@ -494,7 +494,7 @@ void task_relay_board_com_request(void const *argument)
 			relay_board_com_info->can_tx_msg.RTR = CAN_RTR_DATA;
 			relay_board_com_info->can_tx_msg.DLC = 8;
 
-			//debug("request cmd %d(%s), index:%d\n", item->cmd, get_relay_board_cmd_des(item->cmd), can_com_cmd_common->index);
+			//debug("request cmd %d(%s), index:%d", item->cmd, get_relay_board_cmd_des(item->cmd), can_com_cmd_common->index);
 
 			memset(relay_board_com_info->can_tx_msg.Data, 0, 8);
 
@@ -503,7 +503,7 @@ void task_relay_board_com_request(void const *argument)
 			ret = item->request_callback(relay_board_com_info);
 
 			if(ret != 0) {
-				debug("process request cmd %d(%s) error!\n", item->cmd, get_relay_board_cmd_des(item->cmd));
+				debug("process request cmd %d(%s) error!", item->cmd, get_relay_board_cmd_des(item->cmd));
 				continue;
 			}
 
@@ -512,7 +512,7 @@ void task_relay_board_com_request(void const *argument)
 			ret = can_tx_data(relay_board_com_info->can_info, &relay_board_com_info->can_tx_msg, 10);
 
 			if(ret != 0) {//发送失败
-				debug("send request cmd %d(%s) error!\n", item->cmd, get_relay_board_cmd_des(item->cmd));
+				debug("send request cmd %d(%s) error!", item->cmd, get_relay_board_cmd_des(item->cmd));
 				relay_board_com_set_connect_state(relay_board_com_info, 0);
 				cmd_ctx->state = CAN_COM_STATE_REQUEST;
 			}
@@ -548,7 +548,7 @@ void task_relay_board_com_response(void const *argument)
 		u_com_can_rx_id = (u_com_can_rx_id_t *)&relay_board_com_info->can_rx_msg->ExtId;
 
 		if(relay_board_id != u_com_can_rx_id->s.src_id) {
-			debug("relay_board_id:%d, u_com_can_rx_id->s.src_id:%d\n", relay_board_id, u_com_can_rx_id->s.src_id);
+			debug("relay_board_id:%d, u_com_can_rx_id->s.src_id:%d", relay_board_id, u_com_can_rx_id->s.src_id);
 			continue;
 		}
 
@@ -557,14 +557,14 @@ void task_relay_board_com_response(void const *argument)
 			can_com_cmd_common_t *can_com_cmd_common = (can_com_cmd_common_t *)relay_board_com_info->can_rx_msg->Data;
 
 			if(can_com_cmd_common->cmd == item->cmd) {
-				//debug("response cmd %d(%s), index:%d\n", item->cmd, get_relay_board_cmd_des(item->cmd), can_com_cmd_common->index);
+				//debug("response cmd %d(%s), index:%d", item->cmd, get_relay_board_cmd_des(item->cmd), can_com_cmd_common->index);
 
 				ret = item->response_callback(relay_board_com_info);
 
 				if(ret == 0) {//收到响应
 					relay_board_com_set_connect_state(relay_board_com_info, 1);
 				} else {
-					debug("process response cmd %d(%s) error!\n", item->cmd, get_relay_board_cmd_des(item->cmd));
+					debug("process response cmd %d(%s) error!", item->cmd, get_relay_board_cmd_des(item->cmd));
 				}
 
 				break;

@@ -148,7 +148,7 @@ int handle_multi_data_response(can_info_t *can_info, multi_packets_info_t *multi
 					multi_packets_des_t *multi_packets_des = &multi_packets_info->tx_des;
 					bms_multi_data_response_t *data = (bms_multi_data_response_t *)rx_msg->Data;
 
-					debug("%s process fn %02x data response\n",
+					debug("%s process fn %02x data response",
 					      (can_info->hcan == &hcan1) ? "hcan1" : "hcan2",
 					      data->fn);
 
@@ -185,7 +185,7 @@ int handle_multi_data_response(can_info_t *can_info, multi_packets_info_t *multi
 					if(data->index < multi_packets_des->bms_data_multi_packets) {
 						multi_packets_des->bms_data_multi_next_index++;
 					} else if(data->index == multi_packets_des->bms_data_multi_packets) {
-						debug("%s send fn %02x data response\n",
+						debug("%s send fn %02x data response",
 						      (can_info->hcan == &hcan1) ? "hcan1" : "hcan2",
 						      multi_packets_des->bms_data_multi_fn);
 						send_bms_multi_data_response(can_info, multi_packets_des, settings);
@@ -289,7 +289,7 @@ static int send_multi_data(can_info_t *can_info, multi_packets_des_t *multi_pack
 
 		osDelay(3);
 
-		debug("%s send fn:%02x, index:%d, ret:%d\n",
+		debug("%s send fn:%02x, index:%d, ret:%d",
 		      (can_info->hcan == &hcan1) ? "hcan1" : "hcan2",
 		      multi_packets_des->bms_data_multi_fn,
 		      multi_packets_des->bms_data_multi_next_index,
@@ -323,7 +323,7 @@ int send_multi_packets(can_info_t *can_info, multi_packets_info_t *multi_packets
 		ret = send_multi_request(can_info, multi_packets_des, settings);
 
 		if(ret != 0) {
-			debug("send_multi_request error!\n");
+			debug("send_multi_request error!");
 			multi_packets_des->bms_data_multi_fn = FN_INVALID;
 		} else {
 			ret = -1;
@@ -338,7 +338,7 @@ int send_multi_packets(can_info_t *can_info, multi_packets_info_t *multi_packets
 			}
 		} else {
 			if(ticks_duration(ticks, multi_packets_des->start_stamp) >= period) {
-				debug("handle_multi_data_response FN_MULTI_DATA_RESPONSE_TYPE timeout!\n");
+				debug("handle_multi_data_response FN_MULTI_DATA_RESPONSE_TYPE timeout!");
 				multi_packets_des->bms_data_multi_fn = FN_INVALID;
 			}
 		}

@@ -116,12 +116,12 @@ vfs_file_t *vfs_open(vfs_t *vfs, const char *filename, const char *mode)
 
 	while (*mode != '\0') {
 		if (*mode == 'r') {
-			debug("\n");
+			debug("");
 			flags |= FA_READ;
 		}
 
 		if (*mode == 'w') {
-			debug("\n");
+			debug("");
 			flags |= FA_WRITE | FA_CREATE_ALWAYS;
 		}
 
@@ -131,7 +131,7 @@ vfs_file_t *vfs_open(vfs_t *vfs, const char *filename, const char *mode)
 	FRESULT r = mt_f_open(f, filename, flags);
 
 	if (FR_OK != r) {
-		debug("r:%d\n", r);
+		debug("r:%d", r);
 
 		if(r == FR_LOCKED) {
 			try_to_close_log();
@@ -150,7 +150,7 @@ char *vfs_getcwd(vfs_t *vfs, void *dummy1, int dummy2)
 	FRESULT r = mt_f_getcwd(cwd, 255);
 
 	if (r != FR_OK) {
-		debug("\n");
+		debug("");
 		os_free(cwd);
 		return NULL;
 	}
@@ -164,7 +164,7 @@ vfs_dir_t *vfs_opendir(vfs_t *vfs, const char *path)
 	FRESULT r = mt_f_opendir(dir, path);
 
 	if (FR_OK != r) {
-		debug("r:%d\n", r);
+		debug("r:%d", r);
 		os_free(dir);
 		return NULL;
 	}
@@ -199,7 +199,7 @@ static int get_free_capicity(DWORD *total_size, DWORD *free_size)
 		*total_size = ((pfs->n_fatent - 2) * pfs->csize / 2) * 512; //总容量 单位byte
 		*free_size = (free_clust * pfs->csize / 2) * 512; // 可用容量 单位byte
 	} else {
-		debug("ret:%d\n", ret);
+		debug("ret:%d", ret);
 	}
 
 	return ret;
@@ -229,11 +229,11 @@ int vfs_init()
 	ret = get_free_capicity(&total_size, &free_size);
 
 	if(ret != FR_OK) {
-		debug("ret:%d\n", ret);
+		debug("ret:%d", ret);
 		return ret;
 	}
 
-	debug("total_size:%d, free_size:%d\n", total_size, free_size);
+	debug("total_size:%d, free_size:%d", total_size, free_size);
 
 	return ret;
 }

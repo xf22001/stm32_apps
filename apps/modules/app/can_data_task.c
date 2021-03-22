@@ -114,21 +114,21 @@ static can_data_task_info_t *alloc_can_data_task_info(CAN_HandleTypeDef *hcan)
 	can_data_task_info->can_info = get_or_alloc_can_info(hcan);
 
 	if(can_data_task_info->can_info == NULL) {
-		debug("\n");
+		debug("");
 		goto failed;
 	}
 
 	can_data_task_info->can_data_request_chain = alloc_callback_chain();
 
 	if(can_data_task_info->can_data_request_chain == NULL) {
-		debug("\n");
+		debug("");
 		goto failed;
 	}
 
 	can_data_task_info->can_data_response_chain = alloc_callback_chain();
 
 	if(can_data_task_info->can_data_response_chain == NULL) {
-		debug("\n");
+		debug("");
 		goto failed;
 	}
 

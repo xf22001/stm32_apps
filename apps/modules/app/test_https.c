@@ -61,8 +61,8 @@ int test_https(void)
 
 	ret = http_read_chunked(&hi, response, 1024);
 
-	debug("return code: %d \n", ret);
-	debug("return body: %s \n", response);
+	debug("return code: %d ", ret);
+	debug("return body: %s ", response);
 
 	http_close(&hi);
 

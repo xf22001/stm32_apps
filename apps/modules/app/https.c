@@ -207,14 +207,14 @@ static int http_parse(HTTP_INFO *hi)
 				*p2 = 0;
 
 				if(len > 0) {
-					// debug("header: %s(%ld)\n", p1, len);
+					// debug("header: %s(%ld)", p1, len);
 
 					http_header(hi, p1);
 					p1 = p2 + 2;    // skip CR+LF
 				} else {
 					hi->header_end = TRUE; // reach the header-end.
 
-					// debug("header_end .... \n");
+					// debug("header_end .... ");
 
 					p1 = p2 + 2;    // skip CR+LF
 
@@ -384,7 +384,7 @@ static int https_init(HTTP_INFO *hi, BOOL https, BOOL verify)
 	hi->tls.verify = verify;
 	hi->url.https = https;
 
-//  debug("https_init ... \n");
+//  debug("https_init ... ");
 
 	return 0;
 }
@@ -406,7 +406,7 @@ static int https_close(HTTP_INFO *hi)
 		mbedtls_entropy_free(&hi->tls.entropy);
 	}
 
-//  debug("https_close ... \n");
+//  debug("https_close ... ");
 
 	return 0;
 }
@@ -537,7 +537,7 @@ static int https_connect(HTTP_INFO *hi, char *host, char *port)
 		ret = mbedtls_ctr_drbg_seed( &hi->tls.ctr_drbg, mbedtls_entropy_func, &hi->tls.entropy, NULL, 0);
 
 		if( ret != 0 ) {
-			debug("ret:%d\n", ret);
+			debug("ret:%d", ret);
 			return ret;
 		}
 
@@ -724,7 +724,7 @@ int http_get(HTTP_INFO *hi, char *url, char *response, int size)
 		return -1;
 	}
 
-//  debug("request: %s \r\n\r\n", request);
+//  debug("request: %s", request);
 
 	hi->response.status = 0;
 	hi->response.content_length = 0;
@@ -758,8 +758,8 @@ int http_get(HTTP_INFO *hi, char *url, char *response, int size)
 		hi->r_len += ret;
 		hi->r_buf[hi->r_len] = 0;
 
-		// debug("read(%ld): |%s| \n", hi->r_len, hi->r_buf);
-		// debug("read(%ld) ... \n", hi->r_len);
+		// debug("read(%ld): |%s| ", hi->r_len, hi->r_buf);
+		// debug("read(%ld) ... ", hi->r_len);
 
 		if(http_parse(hi) != 0) {
 			break;
@@ -775,12 +775,12 @@ int http_get(HTTP_INFO *hi, char *url, char *response, int size)
 	}
 
 	/*
-	debug("status: %d \n", hi->response.status);
-	debug("cookie: %s \n", hi->response.cookie);
-	debug("location: %s \n", hi->response.location);
-	debug("referrer: %s \n", hi->response.referrer);
-	debug("length: %ld \n", hi->response.content_length);
-	debug("body: %ld \n", hi->body_len);
+	debug("status: %d ", hi->response.status);
+	debug("cookie: %s ", hi->response.cookie);
+	debug("location: %s ", hi->response.location);
+	debug("referrer: %s ", hi->response.referrer);
+	debug("length: %ld ", hi->response.content_length);
+	debug("body: %ld ", hi->body_len);
 	*/
 
 	return hi->response.status;
@@ -842,7 +842,7 @@ int http_post(HTTP_INFO *hi, char *url, char *data, char *response, int size)
 		}
 
 //      else
-//          debug("socket reuse: %d \n", sock_fd);
+//          debug("socket reuse: %d ", sock_fd);
 	}
 
 	/* Send HTTP request. */
@@ -871,7 +871,7 @@ int http_post(HTTP_INFO *hi, char *url, char *data, char *response, int size)
 		return -1;
 	}
 
-//  debug("request: %s \r\n\r\n", request);
+//  debug("request: %s", request);
 
 	hi->response.status = 0;
 	hi->response.content_length = 0;
@@ -907,8 +907,8 @@ int http_post(HTTP_INFO *hi, char *url, char *data, char *response, int size)
 		hi->r_len += ret;
 		hi->r_buf[hi->r_len] = 0;
 
-//        debug("read(%ld): %s \n", hi->r_len, hi->r_buf);
-//        debug("read(%ld) \n", hi->r_len);
+//        debug("read(%ld): %s ", hi->r_len, hi->r_buf);
+//        debug("read(%ld) ", hi->r_len);
 
 		if(http_parse(hi) != 0) {
 			break;
@@ -924,12 +924,12 @@ int http_post(HTTP_INFO *hi, char *url, char *data, char *response, int size)
 	}
 
 	/*
-	    debug("status: %d \n", hi->response.status);
-	    debug("cookie: %s \n", hi->response.cookie);
-	    debug("location: %s \n", hi->response.location);
-	    debug("referrer: %s \n", hi->response.referrer);
-	    debug("length: %d \n", hi->response.content_length);
-	    debug("body: %d \n", hi->body_len);
+	    debug("status: %d ", hi->response.status);
+	    debug("cookie: %s ", hi->response.cookie);
+	    debug("location: %s ", hi->response.location);
+	    debug("referrer: %s ", hi->response.referrer);
+	    debug("length: %d ", hi->response.content_length);
+	    debug("body: %d ", hi->body_len);
 	*/
 
 	return hi->response.status;
@@ -952,7 +952,7 @@ int http_open(HTTP_INFO *hi, char *url)
 
 
 	if (NULL == hi) {
-		debug("\n");
+		debug("");
 		return -1;
 	}
 
@@ -973,7 +973,7 @@ int http_open(HTTP_INFO *hi, char *url)
 
 			_error = ret;
 
-			debug("\n");
+			debug("");
 			return -1;
 		}
 	} else {
@@ -991,13 +991,13 @@ int http_open(HTTP_INFO *hi, char *url)
 
 				_error = ret;
 
-				debug("\n");
+				debug("");
 				return -1;
 			}
 		}
 
 //      else
-//          debug("socket reuse: %d \n", sock_fd);
+//          debug("socket reuse: %d ", sock_fd);
 	}
 
 	strncpy(hi->url.host, host, strlen(host));
@@ -1221,7 +1221,7 @@ int http_read_chunked(HTTP_INFO *hi, char *response, int size)
 		return -1;
 	}
 
-//  debug("request: %s \r\n\r\n", request);
+//  debug("request: %s", request);
 
 	hi->response.status = 0;
 	hi->response.content_length = 0;
@@ -1254,8 +1254,8 @@ int http_read_chunked(HTTP_INFO *hi, char *response, int size)
 		hi->r_len += ret;
 		hi->r_buf[hi->r_len] = 0;
 
-//        debug("read(%ld): %s \n", hi->r_len, hi->r_buf);
-//        debug("read(%ld) \n", hi->r_len);
+//        debug("read(%ld): %s ", hi->r_len, hi->r_buf);
+//        debug("read(%ld) ", hi->r_len);
 
 		if(http_parse(hi) != 0) {
 			break;
@@ -1267,12 +1267,12 @@ int http_read_chunked(HTTP_INFO *hi, char *response, int size)
 	}
 
 	/*
-	    debug("status: %d \n", hi->status);
-	    debug("cookie: %s \n", hi->cookie);
-	    debug("location: %s \n", hi->location);
-	    debug("referrer: %s \n", hi->referrer);
-	    debug("length: %d \n", hi->content_length);
-	    debug("body: %d \n", hi->body_len);
+	    debug("status: %d ", hi->status);
+	    debug("cookie: %s ", hi->cookie);
+	    debug("location: %s ", hi->location);
+	    debug("referrer: %s ", hi->referrer);
+	    debug("length: %d ", hi->content_length);
+	    debug("body: %d ", hi->body_len);
 	*/
 
 	return hi->response.status;

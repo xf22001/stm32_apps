@@ -23,10 +23,10 @@ static void set_out_voltage_current_pseudo(power_modules_info_t *power_modules_i
 	power_modules_info->power_module_info[module_id].setting_current = current;
 
 	power_modules_info->power_module_info[module_id].output_voltage = power_modules_info->power_module_info[module_id].setting_voltage / 100;
-	debug("module_id %d output voltage:%d\n", module_id, power_modules_info->power_module_info[module_id].setting_voltage / 100);
+	debug("module_id %d output voltage:%d", module_id, power_modules_info->power_module_info[module_id].setting_voltage / 100);
 
 	power_modules_info->power_module_info[module_id].output_current = power_modules_info->power_module_info[module_id].setting_current / 100;
-	debug("module_id %d output current:%d\n", module_id, power_modules_info->power_module_info[module_id].setting_current / 100);
+	debug("module_id %d output current:%d", module_id, power_modules_info->power_module_info[module_id].setting_current / 100);
 }
 
 static void set_poweroff_pseudo(power_modules_info_t *power_modules_info, int module_id, uint8_t poweroff)
@@ -36,7 +36,7 @@ static void set_poweroff_pseudo(power_modules_info_t *power_modules_info, int mo
 
 	power_modules_info->power_module_info[module_id].power_module_status.poweroff = power_modules_info->power_module_info[module_id].poweroff;
 	power_modules_info->power_module_info[module_id].power_module_status.setting_poweroff = power_modules_info->power_module_info[module_id].poweroff;
-	debug("module_id %d poweroff:%d\n", module_id, power_modules_info->power_module_info[module_id].poweroff);
+	debug("module_id %d poweroff:%d", module_id, power_modules_info->power_module_info[module_id].poweroff);
 }
 
 static void query_status_pseudo(power_modules_info_t *power_modules_info, int module_id)
@@ -52,17 +52,17 @@ static void query_status_pseudo(power_modules_info_t *power_modules_info, int mo
 	power_modules_info->power_module_info[module_id].power_module_status.protect_overcurrent = 0;
 	power_modules_info->power_module_info[module_id].power_module_status.protect_overtemperature = 0;
 
-	debug("module_id %d poweroff:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.poweroff);
-	debug("module_id %d fault:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.fault);
-	debug("module_id %d output_state:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.output_state);
-	debug("module_id %d fan_state:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.fan_state);
-	debug("module_id %d input_overvoltage:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.input_overvoltage);
-	debug("module_id %d input_lowvoltage:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.input_lowvoltage);
-	debug("module_id %d output_overvoltage:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.output_overvoltage);
-	debug("module_id %d output_lowvoltage:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.output_lowvoltage);
-	debug("module_id %d protect_overcurrent:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.protect_overcurrent);
-	debug("module_id %d protect_overtemperature:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.protect_overtemperature);
-	debug("module_id %d setting_poweroff:%d\n", module_id, power_modules_info->power_module_info[module_id].power_module_status.setting_poweroff);
+	debug("module_id %d poweroff:%d", module_id, power_modules_info->power_module_info[module_id].power_module_status.poweroff);
+	debug("module_id %d fault:%d", module_id, power_modules_info->power_module_info[module_id].power_module_status.fault);
+	debug("module_id %d output_state:%d", module_id, power_modules_info->power_module_info[module_id].power_module_status.output_state);
+	debug("module_id %d fan_state:%d", module_id, power_modules_info->power_module_info[module_id].power_module_status.fan_state);
+	debug("module_id %d input_overvoltage:%d", module_id, power_modules_info->power_module_info[module_id].power_module_status.input_overvoltage);
+	debug("module_id %d input_lowvoltage:%d", module_id, power_modules_info->power_module_info[module_id].power_module_status.input_lowvoltage);
+	debug("module_id %d output_overvoltage:%d", module_id, power_modules_info->power_module_info[module_id].power_module_status.output_overvoltage);
+	debug("module_id %d output_lowvoltage:%d", module_id, power_modules_info->power_module_info[module_id].power_module_status.output_lowvoltage);
+	debug("module_id %d protect_overcurrent:%d", module_id, power_modules_info->power_module_info[module_id].power_module_status.protect_overcurrent);
+	debug("module_id %d protect_overtemperature:%d", module_id, power_modules_info->power_module_info[module_id].power_module_status.protect_overtemperature);
+	debug("module_id %d setting_poweroff:%d", module_id, power_modules_info->power_module_info[module_id].power_module_status.setting_poweroff);
 }
 
 static void query_a_line_input_voltage_pseudo(power_modules_info_t *power_modules_info, int module_id)

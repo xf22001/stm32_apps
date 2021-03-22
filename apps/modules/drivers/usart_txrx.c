@@ -6,7 +6,7 @@
  *   文件名称：usart_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月25日 星期五 22时38分35秒
- *   修改日期：2021年02月26日 星期五 08时12分45秒
+ *   修改日期：2021年03月12日 星期五 15时28分45秒
  *   描    述：
  *
  *================================================================*/
@@ -160,7 +160,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 				signal_send(uart_info->rx_msg_q, 0, 0);
 			} else {
 				if(uart_info->uart_rx_line.matcher != NULL) {
-					if(uart_info->uart_rx_line.matcher(uart_info->uart_rx_line.data, uart_info->uart_rx_line.received) == 0) {
+					if(uart_info->uart_rx_line.matcher(uart_info->uart_rx_line.matcher_ctx, uart_info->uart_rx_line.data, uart_info->uart_rx_line.received) == 0) {
 						signal_send(uart_info->rx_msg_q, 0, 0);
 					} else {
 						HAL_StatusTypeDef status;
@@ -251,7 +251,7 @@ int uart_tx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t 
 	mutex_unlock(uart_info->huart_mutex);
 
 	if(status != HAL_OK) {
-		//debug("\n");
+		//debug("");
 	}
 
 	if(signal_wait(uart_info->tx_msg_q, NULL, timeout) == 0) {
@@ -281,19 +281,19 @@ static uint16_t wait_for_uart_receive(uart_info_t *uart_info, uint16_t size, uin
 
 		left_ticks -= wait_ticks;
 
-		//debug("left_ticks:%d\n", left_ticks);
+		//debug("left_ticks:%d", left_ticks);
 
 		ret = signal_wait(uart_info->rx_msg_q, NULL, wait_ticks);
 
 		received = get_uart_received(uart_info);
 
 		if(ret == 0) {//接收完成
-			//debug("completed!\n");
+			//debug("completed!");
 			break;
 		} else {//接收超时
 			if(left_ticks == 0) {//等待超时
 				if(pre_received == received) {//等待超时，没有新数据进来,返回
-					//debug("timeout!\n");
+					//debug("timeout!");
 					HAL_UART_AbortReceive(uart_info->huart);
 					break;
 				} else {//等待超时，有新数据进来,再等最多一个poll interval
@@ -309,7 +309,7 @@ static uint16_t wait_for_uart_receive(uart_info_t *uart_info, uint16_t size, uin
 				if(pre_received == received) {//等待未超时,没有新数据进来
 					//pending for a long time(poll interval)
 					if(received != 0) {//有数据,立即返回
-						//debug("pending duration:%d\n", wait_ticks);
+						//debug("pending duration:%d", wait_ticks);
 						HAL_UART_AbortReceive(uart_info->huart);
 						break;
 					} else {//没有数据,继续等
@@ -322,7 +322,7 @@ static uint16_t wait_for_uart_receive(uart_info_t *uart_info, uint16_t size, uin
 
 	}
 
-	//debug("received:%d!\n", received);
+	//debug("received:%d!", received);
 	return received;
 }
 
@@ -339,7 +339,7 @@ int uart_rx_data(uart_info_t *uart_info, uint8_t *data, uint16_t size, uint32_t 
 
 	if(status != HAL_OK) {
 		HAL_UART_AbortReceive(uart_info->huart);
-		//debug("status:%d\n", status);
+		//debug("status:%d", status);
 	}
 
 	ret = wait_for_uart_receive(uart_info, size, timeout);
@@ -378,7 +378,7 @@ int uart_tx_rx_data(uart_info_t *uart_info, uint8_t *tx_data, uint16_t tx_size, 
 	return ret;
 }
 
-int uart_rx_line(uart_info_t *uart_info, uint8_t *data, uint16_t size, line_matcher_t matcher)
+int uart_rx_line(uart_info_t *uart_info, uint8_t *data, uint16_t size, line_matcher_t matcher, void *matcher_ctx)
 {
 	int ret = 0;
 	HAL_StatusTypeDef status;
@@ -392,6 +392,7 @@ int uart_rx_line(uart_info_t *uart_info, uint8_t *data, uint16_t size, line_matc
 	uart_info->uart_rx_line.size = size;
 	uart_info->uart_rx_line.received = 0;
 	uart_info->uart_rx_line.matcher = matcher;
+	uart_info->uart_rx_line.matcher_ctx = matcher_ctx;
 
 	os_leave_critical();
 
@@ -405,7 +406,7 @@ int uart_rx_line(uart_info_t *uart_info, uint8_t *data, uint16_t size, line_matc
 		}
 	} else {
 		HAL_UART_AbortReceive(uart_info->huart);
-		//debug("status:%d\n", status);
+		//debug("status:%d", status);
 	}
 
 	uart_info->uart_rx_mode = UART_RX_MODE_NORMAL;
