@@ -6,7 +6,7 @@
  *   文件名称：os_utils.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分36秒
- *   修改日期：2021年03月22日 星期一 15时06分21秒
+ *   修改日期：2021年03月25日 星期四 14时37分51秒
  *   描    述：
  *
  *================================================================*/
@@ -287,6 +287,7 @@ void os_leave_critical(void);
 void *port_malloc(size_t size);
 void port_free(void *p);
 uint32_t get_total_heap_size(void);
+int init_mem_info(void);
 void get_mem_info(size_t *size, size_t *count, size_t *max_size);
 void *os_alloc(size_t size);
 void os_free(void *p);

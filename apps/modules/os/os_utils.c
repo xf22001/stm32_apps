@@ -6,7 +6,7 @@
  *   文件名称：os_utils.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分17秒
- *   修改日期：2021年03月10日 星期三 08时41分42秒
+ *   修改日期：2021年03月25日 星期四 14时37分28秒
  *   描    述：
  *
  *================================================================*/
@@ -266,7 +266,7 @@ __weak uint32_t get_total_heap_size(void)
 	return 0;
 }
 
-static int init_mem_info(void)
+int init_mem_info(void)
 {
 	int ret = -1;
 
@@ -296,10 +296,6 @@ static void *xmalloc(size_t size)
 {
 	mem_node_info_t *mem_node_info;
 
-	os_enter_critical();
-	init_mem_info();
-	os_leave_critical();
-
 	mutex_lock(mem_info.mutex);
 
 	mem_node_info = (mem_node_info_t *)port_malloc(sizeof(mem_node_info_t) + size);
@@ -323,10 +319,6 @@ static void *xmalloc(size_t size)
 
 static void xfree(void *p)
 {
-	os_enter_critical();
-	init_mem_info();
-	os_leave_critical();
-
 	mutex_lock(mem_info.mutex);
 
 	if(p != NULL) {
@@ -352,10 +344,6 @@ void get_mem_info(size_t *size, size_t *count, size_t *max_size)
 	*size = 0;
 	*count = 0;
 	*max_size = 0;
-
-	os_enter_critical();
-	init_mem_info();
-	os_leave_critical();
 
 	mutex_lock(mem_info.mutex);
 

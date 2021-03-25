@@ -6,7 +6,7 @@
  *   文件名称：usbh_user_callback.c
  *   创 建 者：肖飞
  *   创建日期：2021年03月25日 星期四 14时15分22秒
- *   修改日期：2021年03月25日 星期四 14时19分51秒
+ *   修改日期：2021年03月25日 星期四 14时34分10秒
  *   描    述：
  *
  *================================================================*/
@@ -22,7 +22,6 @@ void usbh_user_callback(USBH_HandleTypeDef *phost, uint8_t id)
 
 	switch(id) {
 		case HOST_USER_CONNECTION: {
-			mt_file_environment_init();
 		}
 		break;
 
