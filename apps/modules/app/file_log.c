@@ -6,7 +6,7 @@
  *   文件名称：file_log.c
  *   创 建 者：肖飞
  *   创建日期：2020年11月03日 星期二 13时03分25秒
- *   修改日期：2021年02月21日 星期日 19时38分24秒
+ *   修改日期：2021年03月25日 星期四 14时23分18秒
  *   描    述：
  *
  *================================================================*/
@@ -171,9 +171,9 @@ void try_to_close_log(void)
 
 void handle_open_log(void)
 {
-	int ret;
+	//int ret;
 	static uint32_t stamps = 0;
-	static uint32_t count = 0;
+	//static uint32_t count = 0;
 	uint32_t ticks = osKernelSysTick();
 
 	if(request_close_log == 1) {
@@ -197,10 +197,10 @@ void handle_open_log(void)
 		}
 	}
 
-	ret = log_printf((1 << LOG_MASK_FILE_OFFSET), "test %d\n", count++);
+	//ret = log_printf((LOG_MASK | (1 << LOG_MASK_FILE_OFFSET)), "test %d\n", count++);
 
-	if(ret < 0) {
-		//debug("file log ret:%d", ret);
-	}
+	//if(ret < 0) {
+	//	debug("file log ret:%d", ret);
+	//}
 }
 
