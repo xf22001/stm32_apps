@@ -6,7 +6,7 @@
  *   文件名称：object_class.c
  *   创 建 者：肖飞
  *   创建日期：2021年02月02日 星期二 08时56分26秒
- *   修改日期：2021年03月05日 星期五 09时53分28秒
+ *   修改日期：2021年03月26日 星期五 10时18分36秒
  *   描    述：
  *
  *================================================================*/
@@ -318,10 +318,6 @@ void *object_class_get_or_alloc_object(object_class_t *object_class, object_filt
 		return o;
 	}
 
-	if(object_free == NULL) {
-		return o;
-	}
-
 	o = object_class_get_object(object_class, filter, ctx);
 
 	if(o != NULL) {
@@ -341,7 +337,10 @@ void *object_class_get_or_alloc_object(object_class_t *object_class, object_filt
 	ret = object_class_add_object(object_class, filter, ctx, o, object_free);
 
 	if(ret != 0) {
-		object_free(o);
+		if(object_free != NULL) {
+			object_free(o);
+		}
+
 		o = NULL;
 	}
 
