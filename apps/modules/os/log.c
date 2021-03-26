@@ -6,7 +6,7 @@
  *   文件名称：log.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月29日 星期五 12时45分56秒
- *   修改日期：2021年03月05日 星期五 12时25分03秒
+ *   修改日期：2021年03月26日 星期五 11时47分43秒
  *   描    述：
  *
  *================================================================*/
@@ -199,9 +199,13 @@ static int dummy_log(uint32_t log_mask, const char *buffer, size_t size)
 	return size;
 }
 
-uint8_t log_enable(void)
+uint8_t log_enable(uint32_t log_mask)
 {
 	uint8_t enable = 1;
+
+	if(log_mask == 0) {
+		enable = 0;
+	}
 
 	if(__get_IPSR() != 0) {
 		enable = 0;
@@ -222,7 +226,7 @@ int log_printf(uint32_t log_mask, const char *fmt, ...)
 	log_ctx_t log_ctx;
 	log_fn_t log_fn;
 	log_info_t *log_info = get_log_info();
-	uint8_t enable = log_enable();
+	uint8_t enable = log_enable(log_mask);
 
 	if(log_info == NULL) {
 		return ret;
@@ -288,7 +292,7 @@ void log_hexdump(uint32_t log_mask, const char *label, const char *data, int len
 	log_ctx_t log_ctx;
 	log_fn_t log_fn;
 	log_info_t *log_info = get_log_info();
-	uint8_t enable = log_enable();
+	uint8_t enable = log_enable(log_mask);
 
 	if(log_info == NULL) {
 		return;
@@ -472,7 +476,7 @@ int log_puts(uint32_t log_mask, const char *s)
 	log_ctx_t log_ctx;
 	log_fn_t log_fn;
 	log_info_t *log_info = get_log_info();
-	uint8_t enable = log_enable();
+	uint8_t enable = log_enable(log_mask);
 
 	if(log_info == NULL) {
 		return ret;
