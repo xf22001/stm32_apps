@@ -6,7 +6,7 @@
  *   文件名称：power_modules.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时37分07秒
- *   修改日期：2021年01月21日 星期四 16时42分21秒
+ *   修改日期：2021年03月27日 星期六 12时23分50秒
  *   描    述：
  *
  *================================================================*/
@@ -73,7 +73,7 @@ typedef struct {
 
 typedef struct {
 	can_info_t *can_info;
-	void *channels_info;
+	void *channels_config;
 	can_tx_msg_t can_tx_msg;
 	can_rx_msg_t *can_rx_msg;
 

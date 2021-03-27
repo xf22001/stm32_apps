@@ -6,7 +6,7 @@
  *   文件名称：power_modules.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时34分29秒
- *   修改日期：2021年02月02日 星期二 13时35分15秒
+ *   修改日期：2021年03月27日 星期六 12时23分24秒
  *   描    述：
  *
  *================================================================*/
@@ -307,7 +307,7 @@ static void free_power_modules_info(power_modules_info_t *power_modules_info)
 	os_free(power_modules_info);
 }
 
-static int power_modules_set_channels_info_config(power_modules_info_t *power_modules_info, channels_info_t *channels_info)
+static int power_modules_set_channels_config(power_modules_info_t *power_modules_info, channels_config_t *channels_config)
 {
 	int ret = -1;
 	int i;
@@ -317,18 +317,18 @@ static int power_modules_set_channels_info_config(power_modules_info_t *power_mo
 	int max_cmd_size = get_power_modules_handler_max_cmd_size();
 	can_data_task_info_t *can_data_task_info;
 
-	power_modules_info->channels_info = channels_info;
+	power_modules_info->channels_config = channels_config;
 
-	debug("power_module_number:%d", channels_info->channels_info_config->power_module_number);
+	debug("power_module_number:%d", channels_config->power_module_number);
 
-	power_modules_info->power_module_number = channels_info->channels_info_config->power_module_number;
+	power_modules_info->power_module_number = channels_config->power_module_number;
 
 	if(power_modules_info->power_module_number == 0) {
 		debug("");
 		return ret;
 	}
 
-	can_info = get_or_alloc_can_info(channels_info->channels_info_config->hcan_power);
+	can_info = get_or_alloc_can_info(channels_config->hcan_power);
 
 	if(can_info == NULL) {
 		debug("");
@@ -379,7 +379,7 @@ static int power_modules_set_channels_info_config(power_modules_info_t *power_mo
 	return ret;
 }
 
-static power_modules_info_t *alloc_power_modules_info(channels_info_t *channels_info)
+static power_modules_info_t *alloc_power_modules_info(channels_config_t *channels_config)
 {
 	power_modules_info_t *power_modules_info = NULL;
 
@@ -392,7 +392,7 @@ static power_modules_info_t *alloc_power_modules_info(channels_info_t *channels_
 
 	memset(power_modules_info, 0, sizeof(power_modules_info_t));
 
-	if(power_modules_set_channels_info_config(power_modules_info, channels_info) != 0) {
+	if(power_modules_set_channels_config(power_modules_info, channels_config) != 0) {
 		debug("");
 		goto failed;
 	}
@@ -412,9 +412,9 @@ static int object_filter(void *o, void *ctx)
 {
 	int ret = -1;
 	power_modules_info_t *power_modules_info = (power_modules_info_t *)o;
-	channels_info_t *channels_info = (channels_info_t *)ctx;
+	channels_config_t *channels_config = (channels_config_t *)ctx;
 
-	if(power_modules_info->channels_info == channels_info) {
+	if(power_modules_info->channels_config == channels_config) {
 		ret = 0;
 	}
 
