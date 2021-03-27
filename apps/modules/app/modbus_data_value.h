@@ -6,7 +6,7 @@
  *   文件名称：modbus_data_value.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月14日 星期四 08时25分59秒
- *   修改日期：2020年07月17日 星期五 10时25分59秒
+ *   修改日期：2021年03月27日 星期六 19时39分56秒
  *   描    述：
  *
  *================================================================*/
@@ -17,7 +17,8 @@ extern "C"
 {
 #endif
 
-#include <string.h>
+#include "cmsis_os.h"
+#include "app_platform.h"
 
 #ifdef __cplusplus
 }
@@ -64,37 +65,23 @@ typedef enum {
 	} \
 } while(0)
 
-static inline void modbus_data_value_copy(uint16_t *value, uint16_t *store, uint16_t size, uint16_t offset, modbus_data_op_t op)
-{
-	uint16_t copy_size = size - sizeof(uint16_t) * offset;
-	uint16_t *from = NULL;
-	uint16_t *to = NULL;
-
-	if(offset * sizeof(uint16_t) >= size) {
-		return;
-	}
-
-	if(copy_size > sizeof(uint16_t)) {
-		copy_size = sizeof(uint16_t);
-	}
-
-	if(op == MODBUS_DATA_GET) {
-		from = store + offset;
-		to = value;
-	} else if(op == MODBUS_DATA_SET) {
-		from = value;
-		to = store + offset;
-	}
-
-	if(from == NULL) {
-		return;
-	}
-
-	if(to == NULL) {
-		return;
-	}
-
-	memcpy(to, from, copy_size);
-}
+#define modbus_data_buffer_rw(value, store, size, offset, op) do { \
+	uint16_t *buffer = (store) + (offset); \
+	if(size - (offset) * sizeof(uint16_t) == sizeof(uint16_t)) { \
+		uint16_t *store_buffer = buffer; \
+		if(op == MODBUS_DATA_GET) { \
+			*value = *store_buffer; \
+		} else if(op == MODBUS_DATA_SET) { \
+			*store_buffer = *value; \
+		} \
+	} else { \
+		uint8_t *store_buffer = (uint8_t *)buffer; \
+		if(op == MODBUS_DATA_GET) { \
+			*value = *store_buffer; \
+		} else if(op == MODBUS_DATA_SET) { \
+			*store_buffer = *value; \
+		} \
+	} \
+} while(0)
 
 #endif //_MODBUS_DATA_VALUE_H
