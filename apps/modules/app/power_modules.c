@@ -6,7 +6,7 @@
  *   文件名称：power_modules.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时34分29秒
- *   修改日期：2021年03月27日 星期六 12时23分24秒
+ *   修改日期：2021年03月30日 星期二 17时05分33秒
  *   描    述：
  *
  *================================================================*/
@@ -286,25 +286,7 @@ uint32_t get_module_connect_stamp(power_module_info_t *power_module_info)
 
 static void free_power_modules_info(power_modules_info_t *power_modules_info)
 {
-	int i;
-
-	if(power_modules_info == NULL) {
-		return;
-	}
-
-	for(i = 0; i < power_modules_info->power_module_number; i++) {
-		power_module_info_t *power_module_info = power_modules_info->power_module_info + i;
-
-		if(power_module_info->cmd_ctx != NULL) {
-			os_free(power_module_info->cmd_ctx);
-		}
-	}
-
-	if(power_modules_info->power_module_info != NULL) {
-		os_free(power_modules_info->power_module_info);
-	}
-
-	os_free(power_modules_info);
+	app_panic();
 }
 
 static int power_modules_set_channels_config(power_modules_info_t *power_modules_info, channels_config_t *channels_config)
@@ -319,9 +301,9 @@ static int power_modules_set_channels_config(power_modules_info_t *power_modules
 
 	power_modules_info->channels_config = channels_config;
 
-	debug("power_module_number:%d", channels_config->power_module_number);
+	debug("power_module_number:%d", channels_config->channels_power_module_number);
 
-	power_modules_info->power_module_number = channels_config->power_module_number;
+	power_modules_info->power_module_number = channels_config->channels_power_module_number;
 
 	if(power_modules_info->power_module_number == 0) {
 		debug("");
