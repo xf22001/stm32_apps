@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_increase.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 17时36分29秒
- *   修改日期：2021年03月22日 星期一 16时37分45秒
+ *   修改日期：2021年03月31日 星期三 09时36分05秒
  *   描    述：
  *
  *================================================================*/
@@ -15,7 +15,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-//#define LOG_NONE
+#define LOG_NONE
 #include "log.h"
 
 #define  POWER_ID_TX_INCREASE 0x1307c080

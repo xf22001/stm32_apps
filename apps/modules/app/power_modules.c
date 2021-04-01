@@ -6,7 +6,7 @@
  *   文件名称：power_modules.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时34分29秒
- *   修改日期：2021年03月30日 星期二 17时05分33秒
+ *   修改日期：2021年03月31日 星期三 08时54分53秒
  *   描    述：
  *
  *================================================================*/
@@ -72,12 +72,12 @@ int power_modules_set_type(power_modules_info_t *power_modules_info, power_modul
 {
 	int ret = -1;
 	int i;
-	power_modules_handler_t *power_modules_handler;
+	power_modules_handler_t *power_modules_handler = get_power_modules_handler(power_module_type);
 
-	power_modules_handler = get_power_modules_handler(power_module_type);
+	OS_ASSERT(power_modules_handler != NULL);
 
-	if(power_modules_handler == NULL) {
-		debug("");
+	if(power_modules_handler == power_modules_info->power_modules_handler) {
+		ret = 0;
 		return ret;
 	}
 
@@ -144,10 +144,12 @@ void query_status(power_modules_info_t *power_modules_info, int module_id)
 	}
 
 	if(power_modules_handler == NULL) {
+		debug("");
 		return;
 	}
 
 	if(power_modules_handler->query_status == NULL) {
+		debug("");
 		return;
 	}
 
