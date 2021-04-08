@@ -6,7 +6,7 @@
  *   文件名称：dlt_645_master_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月21日 星期四 10时19分55秒
- *   修改日期：2021年02月02日 星期二 13时48分15秒
+ *   修改日期：2021年04月06日 星期二 11时36分14秒
  *   描    述：
  *
  *================================================================*/
@@ -32,7 +32,7 @@ static void free_dlt_645_master_info(dlt_645_master_info_t *dlt_645_master_info)
 	os_free(dlt_645_master_info);
 }
 
-static dlt_645_master_info_t *get_or_alloc_dlt_645_master_info(uart_info_t *uart_info)
+static dlt_645_master_info_t *alloc_dlt_645_master_info(uart_info_t *uart_info)
 {
 	dlt_645_master_info_t *dlt_645_master_info = NULL;
 
@@ -80,7 +80,7 @@ dlt_645_master_info_t *get_or_alloc_dlt_645_master_info(uart_info_t *uart_info)
 
 	os_leave_critical();
 
-	dlt_645_master_info = (dlt_645_master_info_t *)object_class_get_or_alloc_object(dlt_645_master_class, object_filter, uart_info, (object_alloc_t)get_or_alloc_dlt_645_master_info, (object_free_t)free_dlt_645_master_info);
+	dlt_645_master_info = (dlt_645_master_info_t *)object_class_get_or_alloc_object(dlt_645_master_class, object_filter, uart_info, (object_alloc_t)alloc_dlt_645_master_info, (object_free_t)free_dlt_645_master_info);
 
 	return dlt_645_master_info;
 }
@@ -202,10 +202,10 @@ int dlt_645_master_get_energy(dlt_645_master_info_t *dlt_645_master_info, dlt_64
 	}
 
 	data_type = get_u32_from_u8_b0123(
-	                response_energy->data.data_type.flag,
-	                response_energy->data.data_type.chennel,
-	                response_energy->data.data_type.type,
-	                response_energy->data.data_type.domain);
+	                request_energy->data.data_type.flag,
+	                request_energy->data.data_type.chennel,
+	                request_energy->data.data_type.type,
+	                request_energy->data.data_type.domain);
 
 	if(data_type != get_u32_from_u8_b0123(response_energy->data.data_type.flag,
 	                                      response_energy->data.data_type.chennel,

@@ -6,7 +6,7 @@
  *   文件名称：os_utils.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分17秒
- *   修改日期：2021年03月25日 星期四 14时37分28秒
+ *   修改日期：2021年04月08日 星期四 11时08分05秒
  *   描    述：
  *
  *================================================================*/
@@ -17,6 +17,8 @@
 #include <ctype.h>
 
 #include "list_utils.h"
+
+#include "duty_cycle_pattern.h"
 
 typedef struct {
 	size_t size;
@@ -39,6 +41,8 @@ static mem_info_t mem_info = {
 
 void app_panic(void)
 {
+	set_work_led_fault_state(1);
+
 	while(1);
 }
 

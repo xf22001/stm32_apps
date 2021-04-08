@@ -6,7 +6,7 @@
  *   文件名称：power_modules.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时34分29秒
- *   修改日期：2021年03月31日 星期三 08时54分53秒
+ *   修改日期：2021年04月08日 星期四 09时28分29秒
  *   描    述：
  *
  *================================================================*/
@@ -303,53 +303,35 @@ static int power_modules_set_channels_config(power_modules_info_t *power_modules
 
 	power_modules_info->channels_config = channels_config;
 
-	debug("power_module_number:%d", channels_config->channels_power_module_number);
+	debug("power_module_number:%d", channels_config->power_module_config.channels_power_module_number);
 
-	power_modules_info->power_module_number = channels_config->channels_power_module_number;
+	power_modules_info->power_module_number = channels_config->power_module_config.channels_power_module_number;
 
-	if(power_modules_info->power_module_number == 0) {
-		debug("");
-		return ret;
-	}
+	OS_ASSERT(power_modules_info->power_module_number != 0);
 
-	can_info = get_or_alloc_can_info(channels_config->hcan_power);
+	can_info = get_or_alloc_can_info(channels_config->power_module_config.hcan_power);
 
-	if(can_info == NULL) {
-		debug("");
-		return ret;
-	}
+	OS_ASSERT(can_info != NULL);
 
 	power_modules_info->can_info = can_info;
 
-	power_module_info = (power_module_info_t *)os_alloc(sizeof(power_module_info_t) * power_modules_info->power_module_number);
+	power_module_info = (power_module_info_t *)os_calloc(1, sizeof(power_module_info_t) * power_modules_info->power_module_number);
 
-	if(power_module_info == NULL) {
-		debug("");
-		return ret;
-	}
-
-	memset(power_module_info, 0, sizeof(power_module_info_t) * power_modules_info->power_module_number);
+	OS_ASSERT(power_module_info != NULL);
 
 	power_modules_info->power_module_info = power_module_info;
 
 	for(i = 0; i < power_modules_info->power_module_number; i++) {
 		power_module_info_t *power_module_info = power_modules_info->power_module_info + i;
 
-		power_module_info->cmd_ctx = (can_com_cmd_ctx_t *)os_alloc(sizeof(can_com_cmd_ctx_t) * max_cmd_size);
+		power_module_info->cmd_ctx = (can_com_cmd_ctx_t *)os_calloc(1, sizeof(can_com_cmd_ctx_t) * max_cmd_size);
 
-		if(power_module_info->cmd_ctx == NULL) {
-			debug("");
-			return ret;
-		}
-
-		memset(power_module_info->cmd_ctx, 0, sizeof(can_com_cmd_ctx_t) * max_cmd_size);
+		OS_ASSERT(power_module_info->cmd_ctx != NULL);
 	}
 
 	can_data_task_info = get_or_alloc_can_data_task_info(power_modules_info->can_info->hcan);
 
-	if(can_data_task_info == NULL) {
-		app_panic();
-	}
+	OS_ASSERT(can_data_task_info != NULL);
 
 	power_modules_info->can_data_request_cb.fn = can_data_request;
 	power_modules_info->can_data_request_cb.fn_ctx = power_modules_info;
