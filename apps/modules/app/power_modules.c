@@ -6,7 +6,7 @@
  *   文件名称：power_modules.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时34分29秒
- *   修改日期：2021年04月08日 星期四 09时28分29秒
+ *   修改日期：2021年04月09日 星期五 16时26分31秒
  *   描    述：
  *
  *================================================================*/
@@ -68,6 +68,24 @@ static int get_power_modules_handler_max_cmd_size(void)
 	return max_cmd_size;
 }
 
+char *get_power_modules_type_des(power_module_type_t type)
+{
+	char *des = "unknow";
+
+	switch(type) {
+			add_des_case(POWER_MODULE_TYPE_UNKNOW);
+			add_des_case(POWER_MODULE_TYPE_HUAWEI);
+			add_des_case(POWER_MODULE_TYPE_INCREASE);
+			add_des_case(POWER_MODULE_TYPE_PSEUDO);
+
+		default: {
+		}
+		break;
+	}
+
+	return des;
+}
+
 int power_modules_set_type(power_modules_info_t *power_modules_info, power_module_type_t power_module_type)
 {
 	int ret = -1;
@@ -75,6 +93,8 @@ int power_modules_set_type(power_modules_info_t *power_modules_info, power_modul
 	power_modules_handler_t *power_modules_handler = get_power_modules_handler(power_module_type);
 
 	OS_ASSERT(power_modules_handler != NULL);
+
+	debug("power_module_type:%s", get_power_modules_type_des(power_module_type));
 
 	if(power_modules_handler == power_modules_info->power_modules_handler) {
 		ret = 0;
