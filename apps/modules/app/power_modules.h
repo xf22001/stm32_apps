@@ -6,7 +6,7 @@
  *   文件名称：power_modules.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时37分07秒
- *   修改日期：2021年03月27日 星期六 12时23分50秒
+ *   修改日期：2021年04月13日 星期二 16时52分09秒
  *   描    述：
  *
  *================================================================*/
@@ -24,6 +24,7 @@ extern "C"
 #include "can_txrx.h"
 #include "can_command.h"
 #include "callback_chain.h"
+#include "connect_state.h"
 
 #ifdef __cplusplus
 }
@@ -68,7 +69,7 @@ typedef struct {
 	power_module_status_t power_module_status;//模块状态
 
 	can_com_cmd_ctx_t *cmd_ctx;//os_alloc
-	can_com_connect_state_t connect_state;
+	connect_state_t connect_state;
 } power_module_info_t;
 
 typedef struct {

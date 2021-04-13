@@ -6,7 +6,7 @@
  *   文件名称：can_command.c
  *   创 建 者：肖飞
  *   创建日期：2020年07月07日 星期二 08时29分24秒
- *   修改日期：2021年01月30日 星期六 10时02分07秒
+ *   修改日期：2021年04月13日 星期二 16时51分37秒
  *   描    述：
  *
  *================================================================*/
@@ -228,39 +228,3 @@ int can_com_prepare_tx_request_broadcast(can_com_cmd_ctx_t *can_com_cmd_ctx, can
 
 	return ret;
 }
-
-
-void can_com_set_connect_state(can_com_connect_state_t *can_com_connect_state, uint8_t state)
-{
-	uint32_t ticks = osKernelSysTick();
-
-	if(state == 1) {
-		can_com_connect_state->update_stamp = ticks;
-	}
-
-	can_com_connect_state->state[can_com_connect_state->index++] = state;
-
-	if(can_com_connect_state->index >= CAN_COM_CONNECT_STATE_SIZE) {
-		can_com_connect_state->index = 0;
-	}
-}
-
-uint8_t can_com_get_connect_state(can_com_connect_state_t *can_com_connect_state)
-{
-	uint8_t count = 0;
-	int i;
-
-	for(i = 0; i < CAN_COM_CONNECT_STATE_SIZE; i++) {
-		if(can_com_connect_state->state[i] != 0) {
-			count++;
-		}
-	}
-
-	return count;
-}
-
-uint32_t can_com_get_connect_stamp(can_com_connect_state_t *can_com_connect_state)
-{
-	return can_com_connect_state->update_stamp;
-}
-

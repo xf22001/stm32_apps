@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_huawei.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 17时23分55秒
- *   修改日期：2021年02月21日 星期日 19时31分21秒
+ *   修改日期：2021年04月13日 星期二 16时59分24秒
  *   描    述：
  *
  *================================================================*/
@@ -856,7 +856,7 @@ static void power_modules_request_periodic(power_modules_info_t *power_modules_i
 	for(module_id = 0; module_id < power_modules_info->power_module_number; module_id++) {
 		power_module_info_t *power_module_info = power_modules_info->power_module_info + module_id;
 		can_com_cmd_ctx_t *module_cmd_ctx = power_module_info->cmd_ctx;
-		can_com_connect_state_t *connect_state = &power_module_info->connect_state;
+		connect_state_t *connect_state = &power_module_info->connect_state;
 
 		for(i = 0; i < ARRAY_SIZE(module_command_item_table); i++) {
 			module_command_item_t *item = module_command_item_table[i];
@@ -864,12 +864,12 @@ static void power_modules_request_periodic(power_modules_info_t *power_modules_i
 
 			if(cmd_ctx->state == CAN_COM_STATE_RESPONSE) {//超时
 				if(ticks_duration(ticks, cmd_ctx->send_stamp) >= RESPONSE_TIMEOUT) {
-					can_com_set_connect_state(connect_state, 0);
+					update_connect_state(connect_state, 0);
 					debug("cmd %d(%s), module_id %d timeout, connect state:%d",
 					      item->cmd,
 					      get_power_module_cmd_des(item->cmd),
 					      module_id,
-					      can_com_get_connect_state(connect_state));
+					      get_connect_state(connect_state));
 					cmd_ctx->state = CAN_COM_STATE_REQUEST;
 				}
 			}
@@ -887,7 +887,7 @@ static void power_modules_request_huawei(power_modules_info_t *power_modules_inf
 	for(module_id = 0; module_id < power_modules_info->power_module_number; module_id++) {
 		power_module_info_t *power_module_info = power_modules_info->power_module_info + module_id;
 		can_com_cmd_ctx_t *module_cmd_ctx = power_module_info->cmd_ctx;
-		can_com_connect_state_t *connect_state = &power_module_info->connect_state;
+		connect_state_t *connect_state = &power_module_info->connect_state;
 
 		for(i = 0; i < ARRAY_SIZE(module_command_item_table); i++) {
 			module_command_item_t *item = module_command_item_table[i];
@@ -929,7 +929,7 @@ static void power_modules_request_huawei(power_modules_info_t *power_modules_inf
 			if(ret != 0) {
 				cmd_ctx->state = CAN_COM_STATE_REQUEST;
 
-				can_com_set_connect_state(connect_state, 0);
+				update_connect_state(connect_state, 0);
 				debug("send module_id %d cmd %d(%s) error!",
 				      module_id,
 				      item->cmd,
@@ -976,7 +976,7 @@ static int power_modules_response_huawei(power_modules_info_t *power_modules_inf
 	for(i = 0; i < ARRAY_SIZE(module_command_item_table); i++) {
 		module_command_item_t *item = module_command_item_table[i];
 		power_module_info_t *power_module_info = power_modules_info->power_module_info + module_id;
-		can_com_connect_state_t *connect_state = &power_module_info->connect_state;
+		connect_state_t *connect_state = &power_module_info->connect_state;
 
 		if(response_ext_id != item->response_ext_id) {
 			continue;
@@ -986,7 +986,7 @@ static int power_modules_response_huawei(power_modules_info_t *power_modules_inf
 			continue;
 		}
 
-		can_com_set_connect_state(connect_state, 1);
+		update_connect_state(connect_state, 1);
 
 		ret = item->response_callback(power_modules_info, module_id);
 

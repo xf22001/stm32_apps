@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_pseudo.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 17时36分29秒
- *   修改日期：2021年02月01日 星期一 09时10分58秒
+ *   修改日期：2021年04月13日 星期二 16时55分18秒
  *   描    述：
  *
  *================================================================*/
@@ -83,9 +83,9 @@ static void power_modules_request_pseudo(power_modules_info_t *power_modules_inf
 
 	for(module_id = 0; module_id < power_modules_info->power_module_number; module_id++) {
 		power_module_info_t *power_module_info = power_modules_info->power_module_info + module_id;
-		can_com_connect_state_t *connect_state = &power_module_info->connect_state;
+		connect_state_t *connect_state = &power_module_info->connect_state;
 
-		can_com_set_connect_state(connect_state, 1);
+		update_connect_state(connect_state, 1);
 	}
 }
 

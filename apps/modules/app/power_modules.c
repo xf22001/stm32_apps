@@ -6,7 +6,7 @@
  *   文件名称：power_modules.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时34分29秒
- *   修改日期：2021年04月09日 星期五 16时26分31秒
+ *   修改日期：2021年04月13日 星期二 16时52分54秒
  *   描    述：
  *
  *================================================================*/
@@ -294,16 +294,16 @@ static void can_data_response(void *fn_ctx, void *chain_ctx)
 
 uint8_t get_module_connect_state(power_module_info_t *power_module_info)
 {
-	can_com_connect_state_t *connect_state = &power_module_info->connect_state;
+	connect_state_t *connect_state = &power_module_info->connect_state;
 
-	return can_com_get_connect_state(connect_state);
+	return get_connect_state(connect_state);
 }
 
 uint32_t get_module_connect_stamp(power_module_info_t *power_module_info)
 {
-	can_com_connect_state_t *connect_state = &power_module_info->connect_state;
+	connect_state_t *connect_state = &power_module_info->connect_state;
 
-	return can_com_get_connect_stamp(connect_state);
+	return get_connect_stamp(connect_state);
 }
 
 static void free_power_modules_info(power_modules_info_t *power_modules_info)

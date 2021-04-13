@@ -6,7 +6,7 @@
  *   文件名称：command_status.h
  *   创 建 者：肖飞
  *   创建日期：2020年06月17日 星期三 15时40分38秒
- *   修改日期：2021年02月21日 星期日 19时37分25秒
+ *   修改日期：2021年04月13日 星期二 16时58分02秒
  *   描    述：
  *
  *================================================================*/
@@ -17,11 +17,8 @@ extern "C"
 {
 #endif
 
-#include <stdlib.h>
-#include "app.h"
 #include "app_platform.h"
 #include "cmsis_os.h"
-#include "os_utils.h"
 
 #ifdef __cplusplus
 }
