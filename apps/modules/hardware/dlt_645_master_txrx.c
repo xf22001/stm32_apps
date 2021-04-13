@@ -6,7 +6,7 @@
  *   文件名称：dlt_645_master_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月21日 星期四 10时19分55秒
- *   修改日期：2021年04月06日 星期二 11时36分14秒
+ *   修改日期：2021年04月13日 星期二 14时59分07秒
  *   描    述：
  *
  *================================================================*/
@@ -179,8 +179,7 @@ int dlt_645_master_get_energy(dlt_645_master_info_t *dlt_645_master_info, dlt_64
 	                          dlt_645_master_info->rx_timeout);
 
 	if(rx_size != dlt_645_master_info->rx_size) {
-		_printf("rx_size:%d\n", rx_size);
-		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		debug("rx_size:%d", rx_size);
 		return ret;
 	}
 
@@ -301,8 +300,7 @@ int dlt_645_master_get_voltage(dlt_645_master_info_t *dlt_645_master_info, dlt_6
 	                          dlt_645_master_info->rx_timeout);
 
 	if(rx_size != dlt_645_master_info->rx_size) {
-		_printf("rx_size:%d\n", rx_size);
-		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		debug("rx_size:%d", rx_size);
 		return ret;
 	}
 
@@ -429,8 +427,7 @@ int dlt_645_master_get_current(dlt_645_master_info_t *dlt_645_master_info, dlt_6
 	                          dlt_645_master_info->rx_timeout);
 
 	if(rx_size != dlt_645_master_info->rx_size) {
-		_printf("rx_size:%d\n", rx_size);
-		_printf("%s:%s:%d\n", __FILE__, __func__, __LINE__);
+		debug("rx_size:%d", rx_size);
 		return ret;
 	}
 
