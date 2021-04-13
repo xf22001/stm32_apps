@@ -6,7 +6,7 @@
  *   文件名称：test_https.c
  *   创 建 者：肖飞
  *   创建日期：2020年01月27日 星期一 12时22分23秒
- *   修改日期：2021年03月22日 星期一 16时54分09秒
+ *   修改日期：2021年04月13日 星期二 12时23分37秒
  *   描    述：
  *
  *================================================================*/
@@ -41,7 +41,7 @@ int test_https(void)
 
 	http_init(&hi, verify_cert);
 
-	mbedtls_platform_set_calloc_free(os_calloc, os_free);
+	mbedtls_platform_set_calloc_free(_os_calloc, os_free);
 
 	ret = http_open(&hi, url);
 
