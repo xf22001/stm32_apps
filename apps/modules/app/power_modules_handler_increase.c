@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_increase.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 17时36分29秒
- *   修改日期：2021年04月13日 星期二 16时54分52秒
+ *   修改日期：2021年04月13日 星期二 17时35分47秒
  *   描    述：
  *
  *================================================================*/
@@ -205,7 +205,7 @@ static void set_out_voltage_current_increase(power_modules_info_t *power_modules
 {
 	power_modules_info->power_module_info[module_id].setting_current = current;
 	power_modules_info->power_module_info[module_id].setting_voltage = voltage;
-	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_0_0].state = CAN_COM_STATE_REQUEST;
+	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_0_0].state = COMMAND_STATE_REQUEST;
 }
 
 static int request_0(power_modules_info_t *power_modules_info, int module_id)
@@ -222,7 +222,7 @@ static int request_0(power_modules_info_t *power_modules_info, int module_id)
 	cmd_0_request->voltage_b2 = get_u8_b2_from_u32(power_modules_info->power_module_info[module_id].setting_voltage);
 	cmd_0_request->voltage_b3 = get_u8_b3_from_u32(power_modules_info->power_module_info[module_id].setting_voltage);
 
-	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_0_0].state = CAN_COM_STATE_RESPONSE;
+	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_0_0].state = COMMAND_STATE_RESPONSE;
 	ret = 0;
 	return ret;
 }
@@ -231,7 +231,7 @@ static int response_0(power_modules_info_t *power_modules_info, int module_id)
 {
 	int ret = -1;
 
-	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_0_0].state = CAN_COM_STATE_IDLE;
+	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_0_0].state = COMMAND_STATE_IDLE;
 	ret = 0;
 	return ret;
 }
@@ -250,7 +250,7 @@ static module_command_item_t module_command_item_0_0 = {
 static void set_poweroff_increase(power_modules_info_t *power_modules_info, int module_id, uint8_t poweroff)
 {
 	power_modules_info->power_module_info[module_id].poweroff = poweroff;
-	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_2_2].state = CAN_COM_STATE_REQUEST;
+	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_2_2].state = COMMAND_STATE_REQUEST;
 	debug("module_id %d poweroff:%d", module_id, poweroff);
 }
 
@@ -261,7 +261,7 @@ static int request_2(power_modules_info_t *power_modules_info, int module_id)
 
 	cmd_2_requeset->poweron = (power_modules_info->power_module_info[module_id].poweroff == 0) ? 0x55 : 0xaa;
 
-	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_2_2].state = CAN_COM_STATE_RESPONSE;
+	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_2_2].state = COMMAND_STATE_RESPONSE;
 	ret = 0;
 	return ret;
 }
@@ -270,7 +270,7 @@ static int response_2(power_modules_info_t *power_modules_info, int module_id)
 {
 	int ret = -1;
 
-	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_2_2].state = CAN_COM_STATE_IDLE;
+	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_2_2].state = COMMAND_STATE_IDLE;
 	ret = 0;
 	return ret;
 }
@@ -288,7 +288,7 @@ static module_command_item_t module_command_item_2_2 = {
 
 static void query_status_increase(power_modules_info_t *power_modules_info, int module_id)
 {
-	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_1_1].state = CAN_COM_STATE_REQUEST;
+	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_1_1].state = COMMAND_STATE_REQUEST;
 }
 
 static int request_1(power_modules_info_t *power_modules_info, int module_id)
@@ -296,7 +296,7 @@ static int request_1(power_modules_info_t *power_modules_info, int module_id)
 	int ret = -1;
 	//cmd_1_request_t *cmd_1_requeset = (cmd_1_request_t *)power_modules_info->can_tx_msg.Data;
 
-	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_1_1].state = CAN_COM_STATE_RESPONSE;
+	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_1_1].state = COMMAND_STATE_RESPONSE;
 	ret = 0;
 	return ret;
 }
@@ -335,7 +335,7 @@ static int response_1(power_modules_info_t *power_modules_info, int module_id)
 	//debug("module_id %d protect_overtemperature:%d", module_id, power_modules_info->power_module_info[module_id].power_module_status.protect_overtemperature);
 	//debug("module_id %d setting_poweroff:%d", module_id, power_modules_info->power_module_info[module_id].power_module_status.setting_poweroff);
 
-	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_1_1].state = CAN_COM_STATE_IDLE;
+	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_1_1].state = COMMAND_STATE_IDLE;
 	ret = 0;
 	return ret;
 }
@@ -353,7 +353,7 @@ static module_command_item_t module_command_item_1_1 = {
 
 static void query_a_line_input_voltage_increase(power_modules_info_t *power_modules_info, int module_id)
 {
-	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_0x10_0x0c].state = CAN_COM_STATE_REQUEST;
+	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_0x10_0x0c].state = COMMAND_STATE_REQUEST;
 }
 
 static int request_0x10_0x0c(power_modules_info_t *power_modules_info, int module_id)
@@ -361,7 +361,7 @@ static int request_0x10_0x0c(power_modules_info_t *power_modules_info, int modul
 	int ret = -1;
 	//cmd_0x10_0x0c_request_t *cmd_0x10_0x0c_requeset = (cmd_0x10_0x0c_request_t *)power_modules_info->can_tx_msg.Data;
 
-	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_0x10_0x0c].state = CAN_COM_STATE_RESPONSE;
+	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_0x10_0x0c].state = COMMAND_STATE_RESPONSE;
 	ret = 0;
 	return ret;
 }
@@ -388,7 +388,7 @@ static int response_0x10_0x0c(power_modules_info_t *power_modules_info, int modu
 	}
 
 	power_module_info = power_modules_info->power_module_info + module_id;
-	power_module_info->cmd_ctx[MODULE_CMD_0x10_0x0c].state = CAN_COM_STATE_IDLE;
+	power_module_info->cmd_ctx[MODULE_CMD_0x10_0x0c].state = COMMAND_STATE_IDLE;
 	ret = 0;
 	return ret;
 }
@@ -408,7 +408,7 @@ static module_command_item_t module_command_item_0x10_0x0c = {
 
 static void query_b_line_input_voltage_increase(power_modules_info_t *power_modules_info, int module_id)
 {
-	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_0x10_0x0d].state = CAN_COM_STATE_REQUEST;
+	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_0x10_0x0d].state = COMMAND_STATE_REQUEST;
 }
 
 static int request_0x10_0x0d(power_modules_info_t *power_modules_info, int module_id)
@@ -416,7 +416,7 @@ static int request_0x10_0x0d(power_modules_info_t *power_modules_info, int modul
 	int ret = -1;
 	//cmd_0x10_0x0d_request_t *cmd_0x10_0x0d_requeset = (cmd_0x10_0x0d_request_t *)power_modules_info->can_tx_msg.Data;
 
-	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_0x10_0x0d].state = CAN_COM_STATE_RESPONSE;
+	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_0x10_0x0d].state = COMMAND_STATE_RESPONSE;
 	ret = 0;
 	return ret;
 }
@@ -443,7 +443,7 @@ static int response_0x10_0x0d(power_modules_info_t *power_modules_info, int modu
 	}
 
 	power_module_info = power_modules_info->power_module_info + module_id;
-	power_module_info->cmd_ctx[MODULE_CMD_0x10_0x0d].state = CAN_COM_STATE_IDLE;
+	power_module_info->cmd_ctx[MODULE_CMD_0x10_0x0d].state = COMMAND_STATE_IDLE;
 	ret = 0;
 	return ret;
 }
@@ -463,7 +463,7 @@ static module_command_item_t module_command_item_0x10_0x0d = {
 
 static void query_c_line_input_voltage_increase(power_modules_info_t *power_modules_info, int module_id)
 {
-	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_0x10_0x0e].state = CAN_COM_STATE_REQUEST;
+	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_0x10_0x0e].state = COMMAND_STATE_REQUEST;
 }
 
 static int request_0x10_0x0e(power_modules_info_t *power_modules_info, int module_id)
@@ -471,7 +471,7 @@ static int request_0x10_0x0e(power_modules_info_t *power_modules_info, int modul
 	int ret = -1;
 	//cmd_0x10_0x0e_request_t *cmd_0x10_0x0e_requeset = (cmd_0x10_0x0e_request_t *)power_modules_info->can_tx_msg.Data;
 
-	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_0x10_0x0e].state = CAN_COM_STATE_RESPONSE;
+	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_0x10_0x0e].state = COMMAND_STATE_RESPONSE;
 	ret = 0;
 	return ret;
 }
@@ -498,7 +498,7 @@ static int response_0x10_0x0e(power_modules_info_t *power_modules_info, int modu
 	}
 
 	power_module_info = power_modules_info->power_module_info + module_id;
-	power_module_info->cmd_ctx[MODULE_CMD_0x10_0x0e].state = CAN_COM_STATE_IDLE;
+	power_module_info->cmd_ctx[MODULE_CMD_0x10_0x0e].state = COMMAND_STATE_IDLE;
 	ret = 0;
 	return ret;
 }
@@ -541,14 +541,14 @@ static void power_modules_request_periodic(power_modules_info_t *power_modules_i
 
 	for(module_id = 0; module_id < power_modules_info->power_module_number; module_id++) {
 		power_module_info_t *power_module_info = power_modules_info->power_module_info + module_id;
-		can_com_cmd_ctx_t *module_cmd_ctx = power_module_info->cmd_ctx;
+		command_status_t *module_cmd_ctx = power_module_info->cmd_ctx;
 		connect_state_t *connect_state = &power_module_info->connect_state;
 
 		for(i = 0; i < ARRAY_SIZE(module_command_item_table); i++) {
 			module_command_item_t *item = module_command_item_table[i];
-			can_com_cmd_ctx_t *cmd_ctx = module_cmd_ctx + item->cmd;
+			command_status_t *cmd_ctx = module_cmd_ctx + item->cmd;
 
-			if(cmd_ctx->state == CAN_COM_STATE_RESPONSE) {//超时
+			if(cmd_ctx->state == COMMAND_STATE_RESPONSE) {//超时
 				if(ticks_duration(ticks, cmd_ctx->send_stamp) >= RESPONSE_TIMEOUT) {
 					update_connect_state(connect_state, 0);
 					debug("cmd %d(%s), module_id %d timeout, connect state:%d",
@@ -557,7 +557,7 @@ static void power_modules_request_periodic(power_modules_info_t *power_modules_i
 					      module_id,
 					      get_connect_state(connect_state));
 
-					cmd_ctx->state = CAN_COM_STATE_REQUEST;
+					cmd_ctx->state = COMMAND_STATE_REQUEST;
 				}
 			}
 		}
@@ -572,19 +572,19 @@ static void power_modules_request_increase(power_modules_info_t *power_modules_i
 
 	for(module_id = 0; module_id < power_modules_info->power_module_number; module_id++) {
 		power_module_info_t *power_module_info = power_modules_info->power_module_info + module_id;
-		can_com_cmd_ctx_t *module_cmd_ctx = power_module_info->cmd_ctx;
+		command_status_t *module_cmd_ctx = power_module_info->cmd_ctx;
 		connect_state_t *connect_state = &power_module_info->connect_state;
 
 		for(i = 0; i < ARRAY_SIZE(module_command_item_table); i++) {
 			module_command_item_t *item = module_command_item_table[i];
-			can_com_cmd_ctx_t *cmd_ctx = module_cmd_ctx + item->cmd;
+			command_status_t *cmd_ctx = module_cmd_ctx + item->cmd;
 			module_cmd_t *module_cmd = (module_cmd_t *)power_modules_info->can_tx_msg.Data;
 			u_module_extid_t u_module_extid;
 			uint32_t ticks = osKernelSysTick();
 
 			power_modules_request_periodic(power_modules_info);
 
-			if(cmd_ctx->state != CAN_COM_STATE_REQUEST) {
+			if(cmd_ctx->state != COMMAND_STATE_REQUEST) {
 				continue;
 			}
 
@@ -628,7 +628,7 @@ static void power_modules_request_increase(power_modules_info_t *power_modules_i
 			//      power_modules_info->can_tx_msg.Data[7]);
 
 			if(ret != 0) {
-				cmd_ctx->state = CAN_COM_STATE_REQUEST;
+				cmd_ctx->state = COMMAND_STATE_REQUEST;
 
 				update_connect_state(connect_state, 0);
 				debug("send module_id %d cmd %d(%s) error!",

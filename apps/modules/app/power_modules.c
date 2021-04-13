@@ -6,7 +6,7 @@
  *   文件名称：power_modules.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时34分29秒
- *   修改日期：2021年04月13日 星期二 16时52分54秒
+ *   修改日期：2021年04月13日 星期二 17时29分55秒
  *   描    述：
  *
  *================================================================*/
@@ -104,7 +104,7 @@ int power_modules_set_type(power_modules_info_t *power_modules_info, power_modul
 	for(i = 0; i < power_modules_info->power_module_number; i++) {
 		power_module_info_t *power_module_info = power_modules_info->power_module_info + i;
 
-		memset(power_module_info->cmd_ctx, 0, sizeof(can_com_cmd_ctx_t) * power_modules_handler->cmd_size);
+		memset(power_module_info->cmd_ctx, 0, sizeof(command_status_t) * power_modules_handler->cmd_size);
 	}
 
 	power_modules_info->power_module_type = power_module_type;
@@ -344,7 +344,7 @@ static int power_modules_set_channels_config(power_modules_info_t *power_modules
 	for(i = 0; i < power_modules_info->power_module_number; i++) {
 		power_module_info_t *power_module_info = power_modules_info->power_module_info + i;
 
-		power_module_info->cmd_ctx = (can_com_cmd_ctx_t *)os_calloc(1, sizeof(can_com_cmd_ctx_t) * max_cmd_size);
+		power_module_info->cmd_ctx = (command_status_t *)os_calloc(1, sizeof(command_status_t) * max_cmd_size);
 
 		OS_ASSERT(power_module_info->cmd_ctx != NULL);
 	}

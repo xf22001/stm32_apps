@@ -6,7 +6,7 @@
  *   文件名称：power_modules.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时37分07秒
- *   修改日期：2021年04月13日 星期二 16时52分09秒
+ *   修改日期：2021年04月13日 星期二 17时29分24秒
  *   描    述：
  *
  *================================================================*/
@@ -68,7 +68,7 @@ typedef struct {
 
 	power_module_status_t power_module_status;//模块状态
 
-	can_com_cmd_ctx_t *cmd_ctx;//os_alloc
+	command_status_t *cmd_ctx;//os_alloc
 	connect_state_t connect_state;
 } power_module_info_t;
 

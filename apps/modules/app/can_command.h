@@ -6,7 +6,7 @@
  *   文件名称：can_command.h
  *   创 建 者：肖飞
  *   创建日期：2020年07月07日 星期二 08时26分08秒
- *   修改日期：2021年04月13日 星期二 16时51分01秒
+ *   修改日期：2021年04月13日 星期二 17时28分53秒
  *   描    述：
  *
  *================================================================*/
@@ -20,18 +20,13 @@ extern "C"
 #include "cmsis_os.h"
 #include "app_platform.h"
 
+#include "command_status.h"
+
 #ifdef __cplusplus
 }
 #endif
 
 #define CAN_COM_CONNECT_STATE_SIZE 10
-
-typedef enum {
-	CAN_COM_STATE_IDLE = 0,
-	CAN_COM_STATE_REQUEST,
-	CAN_COM_STATE_RESPONSE,
-	CAN_COM_STATE_ERROR,
-} can_com_com_state_t;
 
 typedef enum {
 	CAN_COM_RESPONSE_STATUS_WAIT = 0,
@@ -54,21 +49,11 @@ typedef struct {
 
 #pragma pack(pop)
 
-typedef struct {
-	can_com_com_state_t state;
-	uint32_t stamp;
-	uint32_t send_stamp;
-	uint32_t recv_stamp;
-	uint8_t available;
-	uint8_t index;
-} can_com_cmd_ctx_t;
-
-char *get_can_com_state_des(can_com_com_state_t state);
 char *get_can_com_response_status_des(can_com_response_status_t status);
-int can_com_prepare_tx_request(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_common_t *can_com_cmd_common, uint8_t cmd, uint8_t *data, uint8_t data_size);
-int can_com_process_rx_response(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_response_t *can_com_cmd_response, uint8_t cmd, uint8_t data_size);
-int can_com_prepare_tx_response(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_response_t *can_com_cmd_response, uint8_t cmd, uint8_t data_size);
-int can_com_process_rx_request(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_common_t *can_com_cmd_common, uint8_t cmd, uint8_t *data, uint8_t data_size);
-int can_com_prepare_tx_request_broadcast(can_com_cmd_ctx_t *can_com_cmd_ctx, can_com_cmd_common_t *can_com_cmd_common, uint8_t cmd, uint8_t *data, uint8_t data_size);
+int can_com_prepare_tx_request(command_status_t *command_status, can_com_cmd_common_t *can_com_cmd_common, uint8_t cmd, uint8_t *data, uint8_t data_size);
+int can_com_process_rx_response(command_status_t *command_status, can_com_cmd_response_t *can_com_cmd_response, uint8_t cmd, uint8_t data_size);
+int can_com_prepare_tx_response(command_status_t *command_status, can_com_cmd_response_t *can_com_cmd_response, uint8_t cmd, uint8_t data_size);
+int can_com_process_rx_request(command_status_t *command_status, can_com_cmd_common_t *can_com_cmd_common, uint8_t cmd, uint8_t *data, uint8_t data_size);
+int can_com_prepare_tx_request_broadcast(command_status_t *command_status, can_com_cmd_common_t *can_com_cmd_common, uint8_t cmd, uint8_t *data, uint8_t data_size);
 
 #endif //_CAN_COMMAND_H

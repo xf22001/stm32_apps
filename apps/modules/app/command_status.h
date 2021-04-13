@@ -6,7 +6,7 @@
  *   文件名称：command_status.h
  *   创 建 者：肖飞
  *   创建日期：2020年06月17日 星期三 15时40分38秒
- *   修改日期：2021年04月13日 星期二 16时58分02秒
+ *   修改日期：2021年04月13日 星期二 17时37分25秒
  *   描    述：
  *
  *================================================================*/
@@ -19,6 +19,8 @@ extern "C"
 
 #include "app_platform.h"
 #include "cmsis_os.h"
+
+#include "os_utils.h"
 
 #ifdef __cplusplus
 }
@@ -33,8 +35,11 @@ typedef enum {
 
 typedef struct {
 	command_state_t state;
-	uint32_t update_stamp;
+	uint32_t stamp;
+	uint32_t send_stamp;
+	uint32_t recv_stamp;
 	uint8_t available;
+	uint8_t index;
 } command_status_t;
 
 static inline int validate_command_status(command_status_t *status, uint32_t ticks, uint32_t timeout)
@@ -45,7 +50,7 @@ static inline int validate_command_status(command_status_t *status, uint32_t tic
 		return ret;
 	}
 
-	if(ticks_duration(ticks, status->update_stamp) >= timeout) {
+	if(ticks_duration(ticks, status->stamp) >= timeout) {
 		status->available = 0;
 		return ret;
 	}
