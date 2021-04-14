@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时07分55秒
- *   修改日期：2021年02月21日 星期日 19时40分45秒
+ *   修改日期：2021年04月14日 星期三 14时29分31秒
  *   描    述：
  *
  *================================================================*/
@@ -291,10 +291,11 @@ int can_rx_data(can_info_t *can_info, uint32_t timeout)
 
 	if(ret == 0) {
 		can_info->rx_msg_pos = can_info->rx_msg_r;
-		can_info->rx_msg_r++;
 
-		if(can_info->rx_msg_r >= CAN_RX_MSG_BUFFER_SIZE) {
+		if((can_info->rx_msg_r + 1) >= CAN_RX_MSG_BUFFER_SIZE) {
 			can_info->rx_msg_r = 0;
+		} else {
+			can_info->rx_msg_r++;
 		}
 	}
 
