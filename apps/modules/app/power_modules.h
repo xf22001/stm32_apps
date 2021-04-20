@@ -6,7 +6,7 @@
  *   文件名称：power_modules.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时37分07秒
- *   修改日期：2021年04月13日 星期二 17时29分24秒
+ *   修改日期：2021年04月20日 星期二 10时08分38秒
  *   描    述：
  *
  *================================================================*/
@@ -36,7 +36,9 @@ typedef enum {
 	POWER_MODULE_TYPE_UNKNOW = 0,
 	POWER_MODULE_TYPE_HUAWEI,
 	POWER_MODULE_TYPE_INCREASE,
+	POWER_MODULE_TYPE_INFY,
 	POWER_MODULE_TYPE_PSEUDO,
+	POWER_MODULE_TYPE_STATEGRID,
 } power_module_type_t;
 
 typedef struct {
@@ -54,6 +56,9 @@ typedef struct {
 } power_module_status_t;
 
 typedef struct {
+	uint8_t channel_id;
+	uint32_t battery_voltage;//电池电压 mv
+
 	uint32_t setting_voltage;//模块设置输出电压 mv
 	uint32_t setting_current;//模块设置输出电流 ma
 
@@ -61,10 +66,10 @@ typedef struct {
 	uint16_t output_current;//模块输出电流 0.1a
 
 	uint8_t poweroff;//输入
-	uint8_t automode;//输入
-	uint32_t input_aline_voltage;//输出
-	uint32_t input_bline_voltage;//输出
-	uint32_t input_cline_voltage;//输出
+	uint8_t automode;//输入,华为
+	uint32_t input_aline_voltage;//输出 0.1v
+	uint32_t input_bline_voltage;//输出 0.1v
+	uint32_t input_cline_voltage;//输出 0.1v
 
 	power_module_status_t power_module_status;//模块状态
 
@@ -78,30 +83,31 @@ typedef struct {
 	can_tx_msg_t can_tx_msg;
 	can_rx_msg_t *can_rx_msg;
 
+	uint16_t rate_current;//华为模块参考电流 a
 	uint32_t periodic_stamp;
 
 	power_module_type_t power_module_type;
 	void *power_modules_handler;
 	uint8_t power_module_number;
 	power_module_info_t *power_module_info;//os_alloc
-	uint16_t rate_current;//华为模块参考电流 a
 	callback_item_t can_data_request_cb;
 	callback_item_t can_data_response_cb;
 } power_modules_info_t;
 
-typedef void (*set_out_voltage_current_t)(power_modules_info_t *power_modules_info, int module_id, uint32_t voltage, uint32_t current);
-typedef void (*set_poweroff_t)(power_modules_info_t *power_modules_info, int module_id, uint8_t poweroff);
+typedef void (*power_modules_init_t)(power_modules_info_t *power_modules_info);
+typedef void (*set_out_voltage_current_t)(power_modules_info_t *power_modules_info, int module_id);
+typedef void (*set_poweroff_t)(power_modules_info_t *power_modules_info, int module_id);
 typedef void (*query_status_t)(power_modules_info_t *power_modules_info, int module_id);
 typedef void (*query_a_line_input_voltage_t)(power_modules_info_t *power_modules_info, int module_id);
 typedef void (*query_b_line_input_voltage_t)(power_modules_info_t *power_modules_info, int module_id);
 typedef void (*query_c_line_input_voltage_t)(power_modules_info_t *power_modules_info, int module_id);
-typedef int (*power_modules_init_t)(power_modules_info_t *power_modules_info);
 typedef void (*power_modules_request_t)(power_modules_info_t *power_modules_info);
 typedef int (*power_modules_response_t)(power_modules_info_t *power_modules_info, can_rx_msg_t *can_rx_msg);
 
 typedef struct {
 	power_module_type_t power_module_type;
 	uint8_t cmd_size;
+	power_modules_init_t init;
 	set_out_voltage_current_t set_out_voltage_current;
 	set_poweroff_t set_poweroff;
 	query_status_t query_status;
@@ -113,13 +119,15 @@ typedef struct {
 } power_modules_handler_t;
 
 int power_modules_set_type(power_modules_info_t *power_modules_info, power_module_type_t power_module_type);
-void set_out_voltage_current(power_modules_info_t *power_modules_info, int module_id, uint32_t voltage, uint32_t current);
-void set_poweroff(power_modules_info_t *power_modules_info, int module_id, uint8_t poweroff);
-void query_status(power_modules_info_t *power_modules_info, int module_id);
-void query_a_line_input_voltage(power_modules_info_t *power_modules_info, int module_id);
-void query_b_line_input_voltage(power_modules_info_t *power_modules_info, int module_id);
-void query_c_line_input_voltage(power_modules_info_t *power_modules_info, int module_id);
-uint8_t get_module_connect_state(power_module_info_t *power_module_info);
-uint32_t get_module_connect_stamp(power_module_info_t *power_module_info);
+void power_modules_set_channel_id(power_modules_info_t *power_modules_info, int module_id, uint8_t channel_id);
+void power_modules_set_battery_voltage(power_modules_info_t *power_modules_info, int module_id, uint32_t voltage);
+void power_modules_set_out_voltage_current(power_modules_info_t *power_modules_info, int module_id, uint32_t voltage, uint32_t current);
+void power_modules_set_poweroff(power_modules_info_t *power_modules_info, int module_id, uint8_t poweroff);
+void power_modules_query_status(power_modules_info_t *power_modules_info, int module_id);
+void power_modules_query_a_line_input_voltage(power_modules_info_t *power_modules_info, int module_id);
+void power_modules_query_b_line_input_voltage(power_modules_info_t *power_modules_info, int module_id);
+void power_modules_query_c_line_input_voltage(power_modules_info_t *power_modules_info, int module_id);
+uint8_t get_power_module_connect_state(power_module_info_t *power_module_info);
+uint32_t get_power_module_connect_stamp(power_module_info_t *power_module_info);
 power_modules_info_t *get_or_alloc_power_modules_info(void *ctx);
 #endif //_POWER_MODULES_H

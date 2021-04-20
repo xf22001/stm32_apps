@@ -6,7 +6,7 @@
  *   文件名称：os_utils.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分17秒
- *   修改日期：2021年04月08日 星期四 11时08分05秒
+ *   修改日期：2021年04月20日 星期二 08时17分38秒
  *   描    述：
  *
  *================================================================*/
@@ -447,16 +447,40 @@ unsigned int str_hash(const char *s)
 	return hash;
 }
 
-unsigned char calc_crc8(const void *data, size_t size)
+uint8_t sum_crc8(const void *data, size_t size)
 {
-	unsigned char crc = 0;
-	unsigned char *p = (unsigned char *)data;
+	uint8_t crc = 0;
+	uint8_t *p = (unsigned char *)data;
+	int i; 
 
-	while(size > 0) {
-		crc += *p;
+	for(i = 0; i < size; i++) {
+		crc += p[i];
+	}
 
-		p++;
-		size--;
+	return crc;
+}
+
+uint16_t sum_crc16(const void *data, size_t size)
+{
+	uint16_t crc = 0;
+	uint8_t *p = (unsigned char *)data;
+	int i; 
+
+	for(i = 0; i < size; i++) {
+		crc += p[i];
+	}
+
+	return crc;
+}
+
+uint32_t sum_crc32(const void *data, size_t size)
+{
+	uint32_t crc = 0;
+	uint8_t *p = (unsigned char *)data;
+	int i; 
+
+	for(i = 0; i < size; i++) {
+		crc += p[i];
 	}
 
 	return crc;

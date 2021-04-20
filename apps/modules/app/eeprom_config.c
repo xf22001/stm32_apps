@@ -6,7 +6,7 @@
  *   文件名称：eeprom_config.c
  *   创 建 者：肖飞
  *   创建日期：2020年12月17日 星期四 14时02分18秒
- *   修改日期：2021年01月29日 星期五 16时04分57秒
+ *   修改日期：2021年04月20日 星期二 08时20分17秒
  *   描    述：
  *
  *================================================================*/
@@ -39,12 +39,12 @@ int eeprom_load_config_item(eeprom_info_t *eeprom_info, const char *label, void 
 	crc = size;
 
 	if(label != NULL) {
-		crc += calc_crc8(label, strlen(label));
+		crc += sum_crc8(label, strlen(label));
 	}
 
 	eeprom_read(eeprom_info, offset, (uint8_t *)config, size);
 
-	crc += calc_crc8(config, size);
+	crc += sum_crc8(config, size);
 
 	if(crc != eeprom_config_item_head.crc) {
 		debug("");
@@ -74,10 +74,10 @@ int eeprom_save_config_item(eeprom_info_t *eeprom_info, const char *label, void 
 	crc = size;
 
 	if(label != NULL) {
-		crc += calc_crc8(label, strlen(label));
+		crc += sum_crc8(label, strlen(label));
 	}
 
-	crc += calc_crc8(config, size);
+	crc += sum_crc8(config, size);
 
 	eeprom_config_item_head.crc = crc;
 

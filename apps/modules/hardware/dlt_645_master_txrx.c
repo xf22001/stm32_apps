@@ -6,7 +6,7 @@
  *   文件名称：dlt_645_master_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月21日 星期四 10时19分55秒
- *   修改日期：2021年04月13日 星期二 14时59分07秒
+ *   修改日期：2021年04月20日 星期二 08时19分01秒
  *   描    述：
  *
  *================================================================*/
@@ -85,18 +85,6 @@ dlt_645_master_info_t *get_or_alloc_dlt_645_master_info(uart_info_t *uart_info)
 	return dlt_645_master_info;
 }
 
-static uint8_t dlt_645_crc(uint8_t *data, size_t len)
-{
-	uint8_t crc = 0;
-	int i;
-
-	for(i = 0; i < len; i++) {
-		crc += data[i];
-	}
-
-	return crc;
-}
-
 typedef struct {
 	uint8_t flag;
 	uint8_t chennel;//0:总 0x01-0x3f:费率1-63 0xff:最大
@@ -166,7 +154,7 @@ int dlt_645_master_get_energy(dlt_645_master_info_t *dlt_645_master_info, dlt_64
 		data[i] = data[i] + 0x33;
 	}
 
-	request_energy->crc = dlt_645_crc((uint8_t *)request_energy,
+	request_energy->crc = sum_crc8((uint8_t *)request_energy,
 	                                  (uint8_t *)&request_energy->crc - (uint8_t *)request_energy);
 	request_energy->end_flag = 0x16;
 
@@ -183,7 +171,7 @@ int dlt_645_master_get_energy(dlt_645_master_info_t *dlt_645_master_info, dlt_64
 		return ret;
 	}
 
-	crc = dlt_645_crc((uint8_t *)response_energy,
+	crc = sum_crc8((uint8_t *)response_energy,
 	                  (uint8_t *)&response_energy->crc - (uint8_t *)response_energy);
 
 	if(response_energy->crc != crc) {
@@ -287,7 +275,7 @@ int dlt_645_master_get_voltage(dlt_645_master_info_t *dlt_645_master_info, dlt_6
 		data[i] = data[i] + 0x33;
 	}
 
-	request_voltage->crc = dlt_645_crc((uint8_t *)request_voltage,
+	request_voltage->crc = sum_crc8((uint8_t *)request_voltage,
 	                                   (uint8_t *)&request_voltage->crc - (uint8_t *)request_voltage);
 	request_voltage->end_flag = 0x16;
 
@@ -304,7 +292,7 @@ int dlt_645_master_get_voltage(dlt_645_master_info_t *dlt_645_master_info, dlt_6
 		return ret;
 	}
 
-	crc = dlt_645_crc((uint8_t *)response_voltage,
+	crc = sum_crc8((uint8_t *)response_voltage,
 	                  (uint8_t *)&response_voltage->crc - (uint8_t *)response_voltage);
 
 	if(response_voltage->crc != crc) {
@@ -414,7 +402,7 @@ int dlt_645_master_get_current(dlt_645_master_info_t *dlt_645_master_info, dlt_6
 		data[i] = data[i] + 0x33;
 	}
 
-	request_current->crc = dlt_645_crc((uint8_t *)request_current,
+	request_current->crc = sum_crc8((uint8_t *)request_current,
 	                                   (uint8_t *)&request_current->crc - (uint8_t *)request_current);
 	request_current->end_flag = 0x16;
 
@@ -431,7 +419,7 @@ int dlt_645_master_get_current(dlt_645_master_info_t *dlt_645_master_info, dlt_6
 		return ret;
 	}
 
-	crc = dlt_645_crc((uint8_t *)response_current,
+	crc = sum_crc8((uint8_t *)response_current,
 	                  (uint8_t *)&response_current->crc - (uint8_t *)response_current);
 
 	if(response_current->crc != crc) {

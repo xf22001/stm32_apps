@@ -6,7 +6,7 @@
  *   文件名称：request.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月16日 星期日 11时05分58秒
- *   修改日期：2020年06月11日 星期四 16时27分27秒
+ *   修改日期：2021年04月20日 星期二 10时38分30秒
  *   描    述：
  *
  *================================================================*/
@@ -20,12 +20,10 @@ static unsigned char request_calc_crc8(void *data, size_t size)
 {
 	unsigned char crc = 0;
 	unsigned char *p = (unsigned char *)data;
+	int i;
 
-	while(size > 0) {
-		crc += *p;
-
-		p++;
-		size--;
+	for(i = 0; i < size; i++) {
+		crc += p[i];
 	}
 
 	return crc;

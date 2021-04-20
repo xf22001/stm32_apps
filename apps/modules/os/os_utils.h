@@ -6,7 +6,7 @@
  *   文件名称：os_utils.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分36秒
- *   修改日期：2021年04月06日 星期二 11时44分20秒
+ *   修改日期：2021年04月20日 星期二 10时13分58秒
  *   描    述：
  *
  *================================================================*/
@@ -309,7 +309,9 @@ void *os_realloc(void *p, size_t size);
 void *os_calloc(size_t n, size_t size);
 unsigned char mem_is_set(char *values, size_t size, char value);
 unsigned int str_hash(const char *s);
-unsigned char calc_crc8(const void *data, size_t size);
+uint8_t sum_crc8(const void *data, size_t size);
+uint16_t sum_crc16(const void *data, size_t size);
+uint32_t sum_crc32(const void *data, size_t size);
 uint32_t ticks_duration(uint32_t a, uint32_t b);
 
 #endif //_OS_UTILS_H

@@ -6,7 +6,7 @@
  *   文件名称：power_modules.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时34分29秒
- *   修改日期：2021年04月13日 星期二 17时29分55秒
+ *   修改日期：2021年04月19日 星期一 17时34分17秒
  *   描    述：
  *
  *================================================================*/
@@ -107,6 +107,10 @@ int power_modules_set_type(power_modules_info_t *power_modules_info, power_modul
 		memset(power_module_info->cmd_ctx, 0, sizeof(command_status_t) * power_modules_handler->cmd_size);
 	}
 
+	if(power_modules_handler->init != NULL) {
+		power_modules_handler->init(power_modules_info);
+	}
+
 	power_modules_info->power_module_type = power_module_type;
 	power_modules_info->power_modules_handler = power_modules_handler;
 	ret = 0;
@@ -114,7 +118,27 @@ int power_modules_set_type(power_modules_info_t *power_modules_info, power_modul
 	return ret;
 }
 
-void set_out_voltage_current(power_modules_info_t *power_modules_info, int module_id, uint32_t voltage, uint32_t current)
+void power_modules_set_channel_id(power_modules_info_t *power_modules_info, int module_id, uint8_t channel_id)
+{
+	if(module_id >= power_modules_info->power_module_number) {
+		debug("");
+		return;
+	}
+
+	power_modules_info->power_module_info[module_id].channel_id = channel_id;
+}
+
+void power_modules_set_battery_voltage(power_modules_info_t *power_modules_info, int module_id, uint32_t voltage)
+{
+	if(module_id >= power_modules_info->power_module_number) {
+		debug("");
+		return;
+	}
+
+	power_modules_info->power_module_info[module_id].battery_voltage = voltage;
+}
+
+void power_modules_set_out_voltage_current(power_modules_info_t *power_modules_info, int module_id, uint32_t voltage, uint32_t current)
 {
 	power_modules_handler_t *power_modules_handler = (power_modules_handler_t *)power_modules_info->power_modules_handler;
 
@@ -131,10 +155,13 @@ void set_out_voltage_current(power_modules_info_t *power_modules_info, int modul
 		return;
 	}
 
-	power_modules_handler->set_out_voltage_current(power_modules_info, module_id, voltage, current);
+	power_modules_info->power_module_info[module_id].setting_voltage = voltage;
+	power_modules_info->power_module_info[module_id].setting_current = current;
+
+	power_modules_handler->set_out_voltage_current(power_modules_info, module_id);
 }
 
-void set_poweroff(power_modules_info_t *power_modules_info, int module_id, uint8_t poweroff)
+void power_modules_set_poweroff(power_modules_info_t *power_modules_info, int module_id, uint8_t poweroff)
 {
 	power_modules_handler_t *power_modules_handler = (power_modules_handler_t *)power_modules_info->power_modules_handler;
 
@@ -151,10 +178,12 @@ void set_poweroff(power_modules_info_t *power_modules_info, int module_id, uint8
 		return;
 	}
 
-	power_modules_handler->set_poweroff(power_modules_info, module_id, poweroff);
+	power_modules_info->power_module_info[module_id].poweroff = poweroff;
+
+	power_modules_handler->set_poweroff(power_modules_info, module_id);
 }
 
-void query_status(power_modules_info_t *power_modules_info, int module_id)
+void power_modules_query_status(power_modules_info_t *power_modules_info, int module_id)
 {
 	power_modules_handler_t *power_modules_handler = (power_modules_handler_t *)power_modules_info->power_modules_handler;
 
@@ -176,7 +205,7 @@ void query_status(power_modules_info_t *power_modules_info, int module_id)
 	power_modules_handler->query_status(power_modules_info, module_id);
 }
 
-void query_a_line_input_voltage(power_modules_info_t *power_modules_info, int module_id)
+void power_modules_query_a_line_input_voltage(power_modules_info_t *power_modules_info, int module_id)
 {
 	power_modules_handler_t *power_modules_handler = (power_modules_handler_t *)power_modules_info->power_modules_handler;
 
@@ -196,7 +225,7 @@ void query_a_line_input_voltage(power_modules_info_t *power_modules_info, int mo
 	power_modules_handler->query_a_line_input_voltage(power_modules_info, module_id);
 }
 
-void query_b_line_input_voltage(power_modules_info_t *power_modules_info, int module_id)
+void power_modules_query_b_line_input_voltage(power_modules_info_t *power_modules_info, int module_id)
 {
 	power_modules_handler_t *power_modules_handler = (power_modules_handler_t *)power_modules_info->power_modules_handler;
 
@@ -216,7 +245,7 @@ void query_b_line_input_voltage(power_modules_info_t *power_modules_info, int mo
 	power_modules_handler->query_b_line_input_voltage(power_modules_info, module_id);
 }
 
-void query_c_line_input_voltage(power_modules_info_t *power_modules_info, int module_id)
+void power_modules_query_c_line_input_voltage(power_modules_info_t *power_modules_info, int module_id)
 {
 	power_modules_handler_t *power_modules_handler = (power_modules_handler_t *)power_modules_info->power_modules_handler;
 
@@ -292,14 +321,14 @@ static void can_data_response(void *fn_ctx, void *chain_ctx)
 	power_modules_response(power_modules_info, can_rx_msg);
 }
 
-uint8_t get_module_connect_state(power_module_info_t *power_module_info)
+uint8_t get_power_module_connect_state(power_module_info_t *power_module_info)
 {
 	connect_state_t *connect_state = &power_module_info->connect_state;
 
 	return get_connect_state(connect_state);
 }
 
-uint32_t get_module_connect_stamp(power_module_info_t *power_module_info)
+uint32_t get_power_module_connect_stamp(power_module_info_t *power_module_info)
 {
 	connect_state_t *connect_state = &power_module_info->connect_state;
 
@@ -335,7 +364,7 @@ static int power_modules_set_channels_config(power_modules_info_t *power_modules
 
 	power_modules_info->can_info = can_info;
 
-	power_module_info = (power_module_info_t *)os_calloc(1, sizeof(power_module_info_t) * power_modules_info->power_module_number);
+	power_module_info = (power_module_info_t *)os_calloc(power_modules_info->power_module_number, sizeof(power_module_info_t));
 
 	OS_ASSERT(power_module_info != NULL);
 
@@ -345,7 +374,6 @@ static int power_modules_set_channels_config(power_modules_info_t *power_modules
 		power_module_info_t *power_module_info = power_modules_info->power_module_info + i;
 
 		power_module_info->cmd_ctx = (command_status_t *)os_calloc(1, sizeof(command_status_t) * max_cmd_size);
-
 		OS_ASSERT(power_module_info->cmd_ctx != NULL);
 	}
 

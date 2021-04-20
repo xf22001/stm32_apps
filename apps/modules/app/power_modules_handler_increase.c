@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_increase.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 17时36分29秒
- *   修改日期：2021年04月13日 星期二 17时35分47秒
+ *   修改日期：2021年04月16日 星期五 15时59分50秒
  *   描    述：
  *
  *================================================================*/
@@ -201,10 +201,8 @@ static char *get_power_module_cmd_des(module_command_t cmd)
 	return des;
 }
 
-static void set_out_voltage_current_increase(power_modules_info_t *power_modules_info, int module_id, uint32_t voltage, uint32_t current)
+static void _set_out_voltage_current(power_modules_info_t *power_modules_info, int module_id)
 {
-	power_modules_info->power_module_info[module_id].setting_current = current;
-	power_modules_info->power_module_info[module_id].setting_voltage = voltage;
 	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_0_0].state = COMMAND_STATE_REQUEST;
 }
 
@@ -247,11 +245,10 @@ static module_command_item_t module_command_item_0_0 = {
 	.response_callback = response_0,
 };
 
-static void set_poweroff_increase(power_modules_info_t *power_modules_info, int module_id, uint8_t poweroff)
+static void _set_poweroff(power_modules_info_t *power_modules_info, int module_id)
 {
-	power_modules_info->power_module_info[module_id].poweroff = poweroff;
 	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_2_2].state = COMMAND_STATE_REQUEST;
-	debug("module_id %d poweroff:%d", module_id, poweroff);
+	debug("module_id %d poweroff:%d", module_id, power_modules_info->power_module_info[module_id].poweroff);
 }
 
 static int request_2(power_modules_info_t *power_modules_info, int module_id)
@@ -286,7 +283,7 @@ static module_command_item_t module_command_item_2_2 = {
 	.response_callback = response_2,
 };
 
-static void query_status_increase(power_modules_info_t *power_modules_info, int module_id)
+static void _query_status(power_modules_info_t *power_modules_info, int module_id)
 {
 	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_1_1].state = COMMAND_STATE_REQUEST;
 }
@@ -351,7 +348,7 @@ static module_command_item_t module_command_item_1_1 = {
 	.response_callback = response_1,
 };
 
-static void query_a_line_input_voltage_increase(power_modules_info_t *power_modules_info, int module_id)
+static void _query_a_line_input_voltage(power_modules_info_t *power_modules_info, int module_id)
 {
 	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_0x10_0x0c].state = COMMAND_STATE_REQUEST;
 }
@@ -406,7 +403,7 @@ static module_command_item_t module_command_item_0x10_0x0c = {
 	.response_callback = response_0x10_0x0c,
 };
 
-static void query_b_line_input_voltage_increase(power_modules_info_t *power_modules_info, int module_id)
+static void _query_b_line_input_voltage(power_modules_info_t *power_modules_info, int module_id)
 {
 	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_0x10_0x0d].state = COMMAND_STATE_REQUEST;
 }
@@ -461,7 +458,7 @@ static module_command_item_t module_command_item_0x10_0x0d = {
 	.response_callback = response_0x10_0x0d,
 };
 
-static void query_c_line_input_voltage_increase(power_modules_info_t *power_modules_info, int module_id)
+static void _query_c_line_input_voltage(power_modules_info_t *power_modules_info, int module_id)
 {
 	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_0x10_0x0e].state = COMMAND_STATE_REQUEST;
 }
@@ -564,7 +561,7 @@ static void power_modules_request_periodic(power_modules_info_t *power_modules_i
 	}
 }
 
-static void power_modules_request_increase(power_modules_info_t *power_modules_info)
+static void _power_modules_request(power_modules_info_t *power_modules_info)
 {
 	int module_id;
 	int i;
@@ -644,7 +641,7 @@ static void power_modules_request_increase(power_modules_info_t *power_modules_i
 	}
 }
 
-static int power_modules_response_increase(power_modules_info_t *power_modules_info, can_rx_msg_t *can_rx_msg)
+static int _power_modules_response(power_modules_info_t *power_modules_info, can_rx_msg_t *can_rx_msg)
 {
 	int ret = -1;
 	int i;
@@ -725,12 +722,12 @@ static int power_modules_response_increase(power_modules_info_t *power_modules_i
 power_modules_handler_t power_modules_handler_increase = {
 	.power_module_type = POWER_MODULE_TYPE_INCREASE,
 	.cmd_size = ARRAY_SIZE(module_command_item_table),
-	.set_out_voltage_current = set_out_voltage_current_increase,
-	.set_poweroff = set_poweroff_increase,
-	.query_status = query_status_increase,
-	.query_a_line_input_voltage = query_a_line_input_voltage_increase,
-	.query_b_line_input_voltage =  query_b_line_input_voltage_increase,
-	.query_c_line_input_voltage = query_c_line_input_voltage_increase,
-	.power_modules_request = power_modules_request_increase,
-	.power_modules_response = power_modules_response_increase,
+	.set_out_voltage_current = _set_out_voltage_current,
+	.set_poweroff = _set_poweroff,
+	.query_status = _query_status,
+	.query_a_line_input_voltage = _query_a_line_input_voltage,
+	.query_b_line_input_voltage =  _query_b_line_input_voltage,
+	.query_c_line_input_voltage = _query_c_line_input_voltage,
+	.power_modules_request = _power_modules_request,
+	.power_modules_response = _power_modules_response,
 };

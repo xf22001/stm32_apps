@@ -132,14 +132,14 @@ static int parse_url(char *src_url, int *https, char *host, char *port, char *ur
 	if((p1 = strstr(str, ":")) != NULL) {
 		*p1 = 0;
 		snprintf(host, 256, "%s", str);
-		snprintf(port, 5, "%s", p1 + 1);
+		snprintf(port, 10, "%s", p1 + 1);
 	} else {
 		snprintf(host, 256, "%s", str);
 
 		if(*https == 0) {
-			snprintf(port, 5, "80");
+			snprintf(port, 10, "80");
 		} else {
-			snprintf(port, 5, "443");
+			snprintf(port, 10, "443");
 		}
 	}
 

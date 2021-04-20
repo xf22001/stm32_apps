@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_pseudo.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 17时36分29秒
- *   修改日期：2021年04月13日 星期二 16时55分18秒
+ *   修改日期：2021年04月15日 星期四 11时35分17秒
  *   描    述：
  *
  *================================================================*/
@@ -17,11 +17,8 @@
 #define LOG_NONE
 #include "log.h"
 
-static void set_out_voltage_current_pseudo(power_modules_info_t *power_modules_info, int module_id, uint32_t voltage, uint32_t current)
+static void _set_out_voltage_current(power_modules_info_t *power_modules_info, int module_id)
 {
-	power_modules_info->power_module_info[module_id].setting_voltage = voltage;
-	power_modules_info->power_module_info[module_id].setting_current = current;
-
 	power_modules_info->power_module_info[module_id].output_voltage = power_modules_info->power_module_info[module_id].setting_voltage / 100;
 	debug("module_id %d output voltage:%d", module_id, power_modules_info->power_module_info[module_id].setting_voltage / 100);
 
@@ -29,17 +26,14 @@ static void set_out_voltage_current_pseudo(power_modules_info_t *power_modules_i
 	debug("module_id %d output current:%d", module_id, power_modules_info->power_module_info[module_id].setting_current / 100);
 }
 
-static void set_poweroff_pseudo(power_modules_info_t *power_modules_info, int module_id, uint8_t poweroff)
+static void _set_poweroff(power_modules_info_t *power_modules_info, int module_id)
 {
-
-	power_modules_info->power_module_info[module_id].poweroff = poweroff;
-
 	power_modules_info->power_module_info[module_id].power_module_status.poweroff = power_modules_info->power_module_info[module_id].poweroff;
 	power_modules_info->power_module_info[module_id].power_module_status.setting_poweroff = power_modules_info->power_module_info[module_id].poweroff;
 	debug("module_id %d poweroff:%d", module_id, power_modules_info->power_module_info[module_id].poweroff);
 }
 
-static void query_status_pseudo(power_modules_info_t *power_modules_info, int module_id)
+static void _query_status(power_modules_info_t *power_modules_info, int module_id)
 {
 	power_modules_info->power_module_info[module_id].power_module_status.fault = 0;
 	power_modules_info->power_module_info[module_id].power_module_status.output_state = 0;
@@ -65,19 +59,19 @@ static void query_status_pseudo(power_modules_info_t *power_modules_info, int mo
 	debug("module_id %d setting_poweroff:%d", module_id, power_modules_info->power_module_info[module_id].power_module_status.setting_poweroff);
 }
 
-static void query_a_line_input_voltage_pseudo(power_modules_info_t *power_modules_info, int module_id)
+static void _query_a_line_input_voltage(power_modules_info_t *power_modules_info, int module_id)
 {
 }
 
-static void query_b_line_input_voltage_pseudo(power_modules_info_t *power_modules_info, int module_id)
+static void _query_b_line_input_voltage(power_modules_info_t *power_modules_info, int module_id)
 {
 }
 
-static void query_c_line_input_voltage_pseudo(power_modules_info_t *power_modules_info, int module_id)
+static void _query_c_line_input_voltage(power_modules_info_t *power_modules_info, int module_id)
 {
 }
 
-static void power_modules_request_pseudo(power_modules_info_t *power_modules_info)
+static void _power_modules_request(power_modules_info_t *power_modules_info)
 {
 	int module_id;
 
@@ -89,7 +83,7 @@ static void power_modules_request_pseudo(power_modules_info_t *power_modules_inf
 	}
 }
 
-static int power_modules_response_pseudo(power_modules_info_t *power_modules_info, can_rx_msg_t *can_rx_msg)
+static int _power_modules_response(power_modules_info_t *power_modules_info, can_rx_msg_t *can_rx_msg)
 {
 	int ret = 0;
 
@@ -99,12 +93,12 @@ static int power_modules_response_pseudo(power_modules_info_t *power_modules_inf
 power_modules_handler_t power_modules_handler_pseudo = {
 	.power_module_type = POWER_MODULE_TYPE_PSEUDO,
 	.cmd_size = 0,
-	.set_out_voltage_current = set_out_voltage_current_pseudo,
-	.set_poweroff = set_poweroff_pseudo,
-	.query_status = query_status_pseudo,
-	.query_a_line_input_voltage = query_a_line_input_voltage_pseudo,
-	.query_b_line_input_voltage =  query_b_line_input_voltage_pseudo,
-	.query_c_line_input_voltage = query_c_line_input_voltage_pseudo,
-	.power_modules_request = power_modules_request_pseudo,
-	.power_modules_response = power_modules_response_pseudo,
+	.set_out_voltage_current = _set_out_voltage_current,
+	.set_poweroff = _set_poweroff,
+	.query_status = _query_status,
+	.query_a_line_input_voltage = _query_a_line_input_voltage,
+	.query_b_line_input_voltage =  _query_b_line_input_voltage,
+	.query_c_line_input_voltage = _query_c_line_input_voltage,
+	.power_modules_request = _power_modules_request,
+	.power_modules_response = _power_modules_response,
 };
