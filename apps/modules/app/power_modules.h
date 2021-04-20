@@ -6,7 +6,7 @@
  *   文件名称：power_modules.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时37分07秒
- *   修改日期：2021年04月20日 星期二 10时08分38秒
+ *   修改日期：2021年04月20日 星期二 11时20分21秒
  *   描    述：
  *
  *================================================================*/
@@ -121,6 +121,7 @@ typedef struct {
 int power_modules_set_type(power_modules_info_t *power_modules_info, power_module_type_t power_module_type);
 void power_modules_set_channel_id(power_modules_info_t *power_modules_info, int module_id, uint8_t channel_id);
 void power_modules_set_battery_voltage(power_modules_info_t *power_modules_info, int module_id, uint32_t voltage);
+void power_modules_init(power_modules_info_t *power_modules_info);
 void power_modules_set_out_voltage_current(power_modules_info_t *power_modules_info, int module_id, uint32_t voltage, uint32_t current);
 void power_modules_set_poweroff(power_modules_info_t *power_modules_info, int module_id, uint8_t poweroff);
 void power_modules_query_status(power_modules_info_t *power_modules_info, int module_id);

@@ -6,7 +6,7 @@
  *   文件名称：power_modules.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时34分29秒
- *   修改日期：2021年04月19日 星期一 17时34分17秒
+ *   修改日期：2021年04月20日 星期二 11时20分10秒
  *   描    述：
  *
  *================================================================*/
@@ -136,6 +136,21 @@ void power_modules_set_battery_voltage(power_modules_info_t *power_modules_info,
 	}
 
 	power_modules_info->power_module_info[module_id].battery_voltage = voltage;
+}
+
+void power_modules_init(power_modules_info_t *power_modules_info)
+{
+	power_modules_handler_t *power_modules_handler = (power_modules_handler_t *)power_modules_info->power_modules_handler;
+
+	if(power_modules_handler == NULL) {
+		return;
+	}
+
+	if(power_modules_handler->init == NULL) {
+		return;
+	}
+
+	power_modules_handler->init(power_modules_info);
 }
 
 void power_modules_set_out_voltage_current(power_modules_info_t *power_modules_info, int module_id, uint32_t voltage, uint32_t current)
