@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_infy.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月15日 星期四 10时25分30秒
- *   修改日期：2021年04月16日 星期五 16时36分26秒
+ *   修改日期：2021年04月22日 星期四 11时25分51秒
  *   描    述：
  *
  *================================================================*/
@@ -286,9 +286,9 @@ static int response_query_abc_line_input_voltage(power_modules_info_t *power_mod
 	int ret = 0;
 	uint8_t *data = power_modules_info->can_rx_msg->Data;
 
-	power_modules_info->power_module_info[module_id].input_aline_voltage = get_u16_from_u8_lh(data[1], data[0]);
-	power_modules_info->power_module_info[module_id].input_bline_voltage = get_u16_from_u8_lh(data[3], data[2]);
-	power_modules_info->power_module_info[module_id].input_cline_voltage = get_u16_from_u8_lh(data[5], data[4]);
+	power_modules_info->power_module_info[module_id].input_aline_voltage = get_u16_from_u8_lh(data[1], data[0]) * LINE_TO_PHASE_COEFFICIENT;
+	power_modules_info->power_module_info[module_id].input_bline_voltage = get_u16_from_u8_lh(data[3], data[2]) * LINE_TO_PHASE_COEFFICIENT;
+	power_modules_info->power_module_info[module_id].input_cline_voltage = get_u16_from_u8_lh(data[5], data[4]) * LINE_TO_PHASE_COEFFICIENT;
 
 	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_COMMAND_QUERY_ABC_LINE_INPUT_VOLTAGE].state = COMMAND_STATE_IDLE;
 	return ret;

@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_increase.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 17时36分29秒
- *   修改日期：2021年04月16日 星期五 15时59分50秒
+ *   修改日期：2021年04月22日 星期四 11时36分32秒
  *   描    述：
  *
  *================================================================*/
@@ -368,24 +368,17 @@ static int response_0x10_0x0c(power_modules_info_t *power_modules_info, int modu
 	int ret = -1;
 	cmd_0x10_0x0c_response_t *cmd_0x10_0x0c_response = (cmd_0x10_0x0c_response_t *)power_modules_info->can_rx_msg->Data;
 	uint32_t input_aline_voltage = 0;
-	power_module_info_t *power_module_info;
-	int i;
 
 	if(cmd_0x10_0x0c_response->fault == 0xf0) {
 		input_aline_voltage = 10 * get_u32_from_u8_b0123(
 		                          cmd_0x10_0x0c_response->voltage_b0,
 		                          cmd_0x10_0x0c_response->voltage_b1,
 		                          cmd_0x10_0x0c_response->voltage_b2,
-		                          cmd_0x10_0x0c_response->voltage_b3);
+		                          cmd_0x10_0x0c_response->voltage_b3) * LINE_TO_PHASE_COEFFICIENT;
 	}
 
-	for(i = 0; i < power_modules_info->power_module_number; i++) {
-		power_module_info = power_modules_info->power_module_info + i;
-		power_module_info->input_aline_voltage = input_aline_voltage;
-	}
-
-	power_module_info = power_modules_info->power_module_info + module_id;
-	power_module_info->cmd_ctx[MODULE_CMD_0x10_0x0c].state = COMMAND_STATE_IDLE;
+	power_modules_info->power_module_info[module_id].input_aline_voltage = input_aline_voltage;
+	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_0x10_0x0c].state = COMMAND_STATE_IDLE;
 	ret = 0;
 	return ret;
 }
@@ -423,24 +416,17 @@ static int response_0x10_0x0d(power_modules_info_t *power_modules_info, int modu
 	int ret = -1;
 	cmd_0x10_0x0d_response_t *cmd_0x10_0x0d_response = (cmd_0x10_0x0d_response_t *)power_modules_info->can_rx_msg->Data;
 	uint32_t input_bline_voltage = 0;
-	power_module_info_t *power_module_info;
-	int i;
 
 	if(cmd_0x10_0x0d_response->fault == 0xf0) {
 		input_bline_voltage = 10 * get_u32_from_u8_b0123(
 		                          cmd_0x10_0x0d_response->voltage_b0,
 		                          cmd_0x10_0x0d_response->voltage_b1,
 		                          cmd_0x10_0x0d_response->voltage_b2,
-		                          cmd_0x10_0x0d_response->voltage_b3);
+		                          cmd_0x10_0x0d_response->voltage_b3) * LINE_TO_PHASE_COEFFICIENT;
 	}
 
-	for(i = 0; i < power_modules_info->power_module_number; i++) {
-		power_module_info = power_modules_info->power_module_info + i;
-		power_module_info->input_bline_voltage = input_bline_voltage;
-	}
-
-	power_module_info = power_modules_info->power_module_info + module_id;
-	power_module_info->cmd_ctx[MODULE_CMD_0x10_0x0d].state = COMMAND_STATE_IDLE;
+	power_modules_info->power_module_info[module_id].input_bline_voltage = input_bline_voltage;
+	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_0x10_0x0d].state = COMMAND_STATE_IDLE;
 	ret = 0;
 	return ret;
 }
@@ -478,24 +464,17 @@ static int response_0x10_0x0e(power_modules_info_t *power_modules_info, int modu
 	int ret = -1;
 	cmd_0x10_0x0e_response_t *cmd_0x10_0x0e_response = (cmd_0x10_0x0e_response_t *)power_modules_info->can_rx_msg->Data;
 	uint32_t input_cline_voltage = 0;
-	power_module_info_t *power_module_info;
-	int i;
 
 	if(cmd_0x10_0x0e_response->fault == 0xf0) {
 		input_cline_voltage = 10 * get_u32_from_u8_b0123(
 		                          cmd_0x10_0x0e_response->voltage_b0,
 		                          cmd_0x10_0x0e_response->voltage_b1,
 		                          cmd_0x10_0x0e_response->voltage_b2,
-		                          cmd_0x10_0x0e_response->voltage_b3);
+		                          cmd_0x10_0x0e_response->voltage_b3) * LINE_TO_PHASE_COEFFICIENT;
 	}
 
-	for(i = 0; i < power_modules_info->power_module_number; i++) {
-		power_module_info = power_modules_info->power_module_info + i;
-		power_module_info->input_cline_voltage = input_cline_voltage;
-	}
-
-	power_module_info = power_modules_info->power_module_info + module_id;
-	power_module_info->cmd_ctx[MODULE_CMD_0x10_0x0e].state = COMMAND_STATE_IDLE;
+	power_modules_info->power_module_info[module_id].input_cline_voltage = input_cline_voltage;
+	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_0x10_0x0e].state = COMMAND_STATE_IDLE;
 	ret = 0;
 	return ret;
 }

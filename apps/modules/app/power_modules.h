@@ -6,7 +6,7 @@
  *   文件名称：power_modules.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时37分07秒
- *   修改日期：2021年04月20日 星期二 11时20分21秒
+ *   修改日期：2021年04月22日 星期四 10时46分37秒
  *   描    述：
  *
  *================================================================*/
@@ -31,6 +31,7 @@ extern "C"
 #endif
 
 #define CONNECT_STATE_SIZE 10
+#define LINE_TO_PHASE_COEFFICIENT 0.5773502691896258f
 
 typedef enum {
 	POWER_MODULE_TYPE_UNKNOW = 0,
@@ -39,6 +40,7 @@ typedef enum {
 	POWER_MODULE_TYPE_INFY,
 	POWER_MODULE_TYPE_PSEUDO,
 	POWER_MODULE_TYPE_STATEGRID,
+	POWER_MODULE_TYPE_YYLN,
 } power_module_type_t;
 
 typedef struct {

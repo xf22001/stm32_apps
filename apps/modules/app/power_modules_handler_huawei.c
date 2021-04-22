@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_huawei.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 17时23分55秒
- *   修改日期：2021年04月16日 星期五 16时28分59秒
+ *   修改日期：2021年04月22日 星期四 11时37分30秒
  *   描    述：
  *
  *================================================================*/
@@ -691,22 +691,14 @@ static int response_0x179(power_modules_info_t *power_modules_info, int module_i
 	int ret = -1;
 	cmd_0x179_response_t *cmd_0x179_response = (cmd_0x179_response_t *)power_modules_info->can_rx_msg->Data;
 	uint32_t input_aline_voltage = 0;
-	power_module_info_t *power_module_info;
-	int i;
 
 	input_aline_voltage = get_u32_from_u8_b0123(cmd_0x179_response->input_voltage_b0,
 	                      cmd_0x179_response->input_voltage_b1,
 	                      cmd_0x179_response->input_voltage_b2,
-	                      cmd_0x179_response->input_voltage_b3);
+	                      cmd_0x179_response->input_voltage_b3) * 10 / 1024 * LINE_TO_PHASE_COEFFICIENT;
 
-	for(i = 0; i < power_modules_info->power_module_number; i++) {
-		power_module_info = power_modules_info->power_module_info + i;
-		power_module_info->input_aline_voltage = input_aline_voltage;
-	}
-
-	power_module_info = power_modules_info->power_module_info + module_id;
-
-	power_module_info->cmd_ctx[MODULE_CMD_0x179_0x179].state = COMMAND_STATE_IDLE;
+	power_modules_info->power_module_info[module_id].input_aline_voltage = input_aline_voltage;
+	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_0x179_0x179].state = COMMAND_STATE_IDLE;
 	ret = 0;
 	return ret;
 }
@@ -741,21 +733,14 @@ static int response_0x17a(power_modules_info_t *power_modules_info, int module_i
 	int ret = -1;
 	cmd_0x17a_response_t *cmd_0x17a_response = (cmd_0x17a_response_t *)power_modules_info->can_rx_msg->Data;
 	uint32_t input_bline_voltage = 0;
-	power_module_info_t *power_module_info;
-	int i;
 
 	input_bline_voltage = get_u32_from_u8_b0123(cmd_0x17a_response->input_voltage_b0,
 	                      cmd_0x17a_response->input_voltage_b1,
 	                      cmd_0x17a_response->input_voltage_b2,
-	                      cmd_0x17a_response->input_voltage_b3);
+	                      cmd_0x17a_response->input_voltage_b3) * 10 / 1024 * LINE_TO_PHASE_COEFFICIENT;
 
-	for(i = 0; i < power_modules_info->power_module_number; i++) {
-		power_module_info = power_modules_info->power_module_info + i;
-		power_module_info->input_bline_voltage = input_bline_voltage;
-	}
-
-	power_module_info = power_modules_info->power_module_info + module_id;
-	power_module_info->cmd_ctx[MODULE_CMD_0x17a_0x17a].state = COMMAND_STATE_IDLE;
+	power_modules_info->power_module_info[module_id].input_bline_voltage = input_bline_voltage;
+	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_0x17a_0x17a].state = COMMAND_STATE_IDLE;
 	ret = 0;
 	return ret;
 }
@@ -790,21 +775,14 @@ static int response_0x17b(power_modules_info_t *power_modules_info, int module_i
 	int ret = -1;
 	cmd_0x17b_response_t *cmd_0x17b_response = (cmd_0x17b_response_t *)power_modules_info->can_rx_msg->Data;
 	uint32_t input_cline_voltage = 0;
-	power_module_info_t *power_module_info;
-	int i;
 
 	input_cline_voltage = get_u32_from_u8_b0123(cmd_0x17b_response->input_voltage_b0,
 	                      cmd_0x17b_response->input_voltage_b1,
 	                      cmd_0x17b_response->input_voltage_b2,
-	                      cmd_0x17b_response->input_voltage_b3);
+	                      cmd_0x17b_response->input_voltage_b3) * 10 / 1024 * LINE_TO_PHASE_COEFFICIENT;
 
-	for(i = 0; i < power_modules_info->power_module_number; i++) {
-		power_module_info = power_modules_info->power_module_info + i;
-		power_module_info->input_cline_voltage = input_cline_voltage;
-	}
-
-	power_module_info = power_modules_info->power_module_info + module_id;
-	power_module_info->cmd_ctx[MODULE_CMD_0x17b_0x17b].state = COMMAND_STATE_IDLE;
+	power_modules_info->power_module_info[module_id].input_cline_voltage = input_cline_voltage;
+	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_0x17b_0x17b].state = COMMAND_STATE_IDLE;
 	ret = 0;
 	return ret;
 }
