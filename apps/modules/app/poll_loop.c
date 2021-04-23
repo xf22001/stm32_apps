@@ -6,7 +6,7 @@
  *   文件名称：poll_loop.c
  *   创 建 者：肖飞
  *   创建日期：2020年08月11日 星期二 09时54分20秒
- *   修改日期：2021年02月02日 星期二 11时24分58秒
+ *   修改日期：2021年04月23日 星期五 13时14分30秒
  *   描    述：
  *
  *================================================================*/
@@ -141,7 +141,7 @@ static int poll_loop_poll(poll_loop_t *poll_loop)
 	}
 
 	if(ret >= 0) {
-	mutex_lock(poll_loop->poll_ctx_list_mutex);
+		mutex_lock(poll_loop->poll_ctx_list_mutex);
 
 		list_for_each_entry(poll_ctx, head, poll_ctx_t, list) {
 			poll_fd_t *poll_fd = &poll_ctx->poll_fd;
@@ -175,7 +175,7 @@ static int poll_loop_poll(poll_loop_t *poll_loop)
 			}
 		}
 
-	mutex_unlock(poll_loop->poll_ctx_list_mutex);
+		mutex_unlock(poll_loop->poll_ctx_list_mutex);
 	} else {
 		debug("ret:%d, errno:%d", ret, errno);
 	}

@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_yyln.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月20日 星期二 11时42分56秒
- *   修改日期：2021年04月22日 星期四 10时49分00秒
+ *   修改日期：2021年04月23日 星期五 09时36分56秒
  *   描    述：
  *
  *================================================================*/
@@ -178,7 +178,6 @@ static char *get_power_module_cmd_des(module_command_t cmd)
 	return des;
 }
 
-
 static void _set_out_voltage_current(power_modules_info_t *power_modules_info, int module_id)
 {
 	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_COMMAND_SET_VOLTAGE].state = COMMAND_STATE_REQUEST;
@@ -341,7 +340,7 @@ static int request_set_poweroff(power_modules_info_t *power_modules_info, int mo
 {
 	int ret = 0;
 	uint8_t *data = power_modules_info->can_tx_msg.Data;
-	uint8_t poweroff = power_modules_info->power_module_info[module_id].power_module_status.setting_poweroff;
+	uint8_t poweroff = power_modules_info->power_module_info[module_id].power_module_status.poweroff;
 	u_yyln_msg_byte2_byte3_t *u_yyln_msg_byte2_byte3 = (u_yyln_msg_byte2_byte3_t *)&data[2];
 
 	u_yyln_msg_byte2_byte3->v = 0;
@@ -351,6 +350,7 @@ static int request_set_poweroff(power_modules_info_t *power_modules_info, int mo
 	data[6] = get_u8_b1_from_u32(poweroff);
 	data[7] = get_u8_b0_from_u32(poweroff);
 
+	power_modules_info->power_module_info[module_id].power_module_status.setting_poweroff = poweroff;
 	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_COMMAND_SET_POWEROFF].state = COMMAND_STATE_RESPONSE;
 	return ret;
 }
@@ -515,7 +515,7 @@ static module_command_item_t module_command_item_get_state = {
 	.response_callback = response_get_state,
 };
 
-void _query_aline_input_voltage(power_modules_info_t *power_modules_info, int module_id)
+static void _query_aline_input_voltage(power_modules_info_t *power_modules_info, int module_id)
 {
 	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_COMMAND_GET_ALINE_INPUT_VOLTAGE].state = COMMAND_STATE_REQUEST;
 }
@@ -557,7 +557,7 @@ static module_command_item_t module_command_item_get_aline_input_voltage = {
 	.response_callback = response_get_aline_input_voltage,
 };
 
-void _query_bline_input_voltage(power_modules_info_t *power_modules_info, int module_id)
+static void _query_bline_input_voltage(power_modules_info_t *power_modules_info, int module_id)
 {
 	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_COMMAND_GET_BLINE_INPUT_VOLTAGE].state = COMMAND_STATE_REQUEST;
 }
@@ -599,7 +599,7 @@ static module_command_item_t module_command_item_get_bline_input_voltage = {
 	.response_callback = response_get_bline_input_voltage,
 };
 
-void _query_cline_input_voltage(power_modules_info_t *power_modules_info, int module_id)
+static void _query_cline_input_voltage(power_modules_info_t *power_modules_info, int module_id)
 {
 	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_COMMAND_GET_CLINE_INPUT_VOLTAGE].state = COMMAND_STATE_REQUEST;
 }
@@ -824,7 +824,6 @@ static int _power_modules_response(power_modules_info_t *power_modules_info, can
 
 	return ret;
 }
-
 
 power_modules_handler_t power_modules_handler_yyln = {
 	.power_module_type = POWER_MODULE_TYPE_YYLN,

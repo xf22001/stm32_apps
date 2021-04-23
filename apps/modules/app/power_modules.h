@@ -6,7 +6,7 @@
  *   文件名称：power_modules.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时37分07秒
- *   修改日期：2021年04月22日 星期四 10时46分37秒
+ *   修改日期：2021年04月23日 星期五 12时53分54秒
  *   描    述：
  *
  *================================================================*/
@@ -41,6 +41,8 @@ typedef enum {
 	POWER_MODULE_TYPE_PSEUDO,
 	POWER_MODULE_TYPE_STATEGRID,
 	POWER_MODULE_TYPE_YYLN,
+	POWER_MODULE_TYPE_WINLINE,
+	POWER_MODULE_TYPE_ZTE,
 } power_module_type_t;
 
 typedef struct {
