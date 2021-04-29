@@ -6,7 +6,7 @@
  *   文件名称：os_utils.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分36秒
- *   修改日期：2021年04月20日 星期二 10时13分58秒
+ *   修改日期：2021年04月29日 星期四 09时42分50秒
  *   描    述：
  *
  *================================================================*/
@@ -19,6 +19,9 @@ extern "C"
 
 #include "app_platform.h"
 #include "cmsis_os.h"
+
+#include <string.h>
+#include <ctype.h>
 
 #ifdef __cplusplus
 }
@@ -107,6 +110,66 @@ static inline uint64_t get_u64_from_bcd_b01234567(uint8_t b0, uint8_t b1, uint8_
 	return v0 + v1 * 100 + v2 * 10000 + v3 * 1000000 + v4 * 100000000 + v5 * 10000000000 + v6 * 1000000000000 + v7 * 100000000000000;
 }
 
+
+static inline void bcd_to_ascii(char *ascii, size_t ascii_size, uint8_t *bcd, size_t bcd_size)
+{
+	u_uint8_bcd_t u_uint8_bcd;
+	int i;
+	uint8_t dh;
+	uint8_t dl;
+
+	memset(ascii, 0, ascii_size);
+
+	for(i = 0; i < bcd_size; i++) {
+		u_uint8_bcd.v = bcd[i];
+		dh = u_uint8_bcd.s.h;
+		dl = u_uint8_bcd.s.l;
+
+		if(2 * i + 1 >= ascii_size) {
+			break;
+		}
+
+		ascii[2 * i + 0] = ((dh >= 0) && (dh <= 9)) ? (dh + 0x30) : 0;
+
+		if(2 * i + 2 >= ascii_size) {
+			break;
+		}
+
+		ascii[2 * i + 1] = ((dl >= 0) && (dl <= 9)) ? (dl + 0x30) : 0;
+	}
+}
+
+static inline void ascii_to_bcd(char *ascii, size_t ascii_size, uint8_t *bcd, size_t bcd_size)
+{
+	u_uint8_bcd_t u_uint8_bcd;
+	int i;
+	uint8_t c;
+
+	memset(bcd, 0, bcd_size);
+
+	for(i = 0; i < ascii_size; i++) {
+		if((i / 2) >= bcd_size) {
+			break;
+		}
+
+		c = ascii[i];
+
+		if(c == 0) {
+			break;
+		}
+
+		u_uint8_bcd.v = bcd[i / 2];
+
+		if((c % 2) == 0) {
+			u_uint8_bcd.s.h = (isdigit(c) == 0) ? 0 : (c - 0x30);
+		} else {
+			u_uint8_bcd.s.l = (isdigit(c) == 0) ? 0 : (c - 0x30);
+		}
+
+		bcd[i / 2] = u_uint8_bcd.v;
+	}
+}
+
 static inline uint16_t get_u16_from_u8_lh(uint8_t l, uint8_t h)
 {
 	u_uint16_bytes_t u_uint16_bytes;
@@ -183,6 +246,44 @@ static inline uint8_t get_u8_b3_from_u32(uint32_t v)
 	u_uint32_bytes.v = v;
 
 	return u_uint32_bytes.s.byte3;
+}
+
+typedef struct {
+	uint16_t u16_0;
+	uint16_t u16_1;
+} uint32_u16_t;
+
+typedef union {
+	uint32_u16_t s;
+	uint32_t v;
+} u_uint32_u16_t;
+
+static inline uint32_t get_u32_from_u16_01(uint16_t u16_0, uint16_t u16_1)
+{
+	u_uint32_u16_t u_uint32_u16;
+
+	u_uint32_u16.s.u16_0 = u16_0;
+	u_uint32_u16.s.u16_1 = u16_1;
+
+	return u_uint32_u16.v;
+}
+
+static inline uint32_t get_u16_0_from_u32(uint32_t u32)
+{
+	u_uint32_u16_t u_uint32_u16;
+
+	u_uint32_u16.v = u32;
+
+	return u_uint32_u16.s.u16_0;
+}
+
+static inline uint32_t get_u16_1_from_u32(uint32_t u32)
+{
+	u_uint32_u16_t u_uint32_u16;
+
+	u_uint32_u16.v = u32;
+
+	return u_uint32_u16.s.u16_1;
 }
 
 typedef struct {
