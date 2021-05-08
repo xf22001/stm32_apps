@@ -6,7 +6,7 @@
  *   文件名称：os_utils.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分17秒
- *   修改日期：2021年04月20日 星期二 08时17分38秒
+ *   修改日期：2021年05月08日 星期六 20时28分05秒
  *   描    述：
  *
  *================================================================*/
@@ -60,46 +60,28 @@ void mutex_delete(os_mutex_t mutex)
 {
 	osStatus os_status;
 
-	if(mutex == NULL) {
-		app_panic();
-	}
-
+	OS_ASSERT(mutex != NULL);
 	os_status = osMutexDelete(mutex);
-
-	if(osOK != os_status) {
-		app_panic();
-	}
+	OS_ASSERT(os_status == osOK);
 }
 
 void mutex_lock(os_mutex_t mutex)
 {
 	osStatus os_status;
 
-	if(mutex == NULL) {
-		app_panic();
-	}
-
+	OS_ASSERT(mutex != NULL);
 	//os_status = osMutexWait(mutex, osWaitForever);
 	os_status = osMutexWait(mutex, 1000);
-
-	if(os_status != osOK) {
-		app_panic();
-	}
+	OS_ASSERT(os_status == osOK);
 }
 
 void mutex_unlock(os_mutex_t mutex)
 {
 	osStatus os_status;
 
-	if(mutex == NULL) {
-		app_panic();
-	}
-
+	OS_ASSERT(mutex != NULL);
 	os_status = osMutexRelease(mutex);
-
-	if(os_status != osOK) {
-		app_panic();
-	}
+	OS_ASSERT(os_status == osOK);
 }
 
 os_signal_t signal_create(size_t size)
@@ -119,26 +101,18 @@ void signal_delete(os_signal_t signal)
 {
 	osStatus os_status;
 
-	if(signal == NULL) {
-		app_panic();
-	}
-
+	OS_ASSERT(signal != NULL);
 	os_status = osMessageDelete(signal);
-
-	if(osOK != os_status) {
-		app_panic();
-	}
+	OS_ASSERT(os_status == osOK);
 }
 
 int signal_wait(os_signal_t signal, uint32_t *pvalue, uint32_t timeout)
 {
 	int ret = -1;
+	osEvent event;
 
-	if(signal == NULL) {
-		app_panic();
-	}
-
-	osEvent event = osMessageGet(signal, timeout);
+	OS_ASSERT(signal != NULL);
+	event = osMessageGet(signal, timeout);
 
 	if(event.status == osEventMessage) {
 		if(pvalue != NULL) {
@@ -156,10 +130,7 @@ int signal_send(os_signal_t signal, uint32_t value, uint32_t timeout)
 	int ret = -1;
 	osStatus os_status;
 
-	if(signal == NULL) {
-		app_panic();
-	}
-
+	OS_ASSERT(signal != NULL);
 	os_status = osMessagePut(signal, value, timeout);
 
 	if(os_status == osOK) {
@@ -183,15 +154,9 @@ void sem_delete(os_sem_t sem)
 {
 	osStatus os_status;
 
-	if(sem == NULL) {
-		app_panic();
-	}
-
+	OS_ASSERT(sem != NULL);
 	os_status = osSemaphoreDelete(sem);
-
-	if(os_status == osOK) {
-		app_panic();
-	}
+	OS_ASSERT(os_status == osOK);
 }
 
 int sem_take(os_sem_t sem, uint32_t timeout)
@@ -199,10 +164,7 @@ int sem_take(os_sem_t sem, uint32_t timeout)
 	int ret = -1;
 	osStatus os_status;
 
-	if(sem == NULL) {
-		app_panic();
-	}
-
+	OS_ASSERT(sem != NULL);
 	os_status = osSemaphoreWait(sem, timeout);
 
 	if(os_status == osOK) {
@@ -217,15 +179,9 @@ int sem_release(os_sem_t sem)
 	int ret = -1;
 	osStatus os_status;
 
-	if(sem == NULL) {
-		app_panic();
-	}
-
+	OS_ASSERT(sem != NULL);
 	os_status = osSemaphoreRelease(sem);
-
-	if(os_status == osOK) {
-		ret = 0;
-	}
+	OS_ASSERT(os_status == osOK);
 
 	return ret;
 }
@@ -280,11 +236,7 @@ int init_mem_info(void)
 	}
 
 	mem_info.mutex = mutex_create();
-
-	if(mem_info.mutex == NULL) {
-		app_panic();
-	}
-
+	OS_ASSERT(mem_info.mutex != NULL);
 	mem_info.size = 0;
 	mem_info.count = 0;
 	mem_info.max_size = 0;
@@ -451,7 +403,7 @@ uint8_t sum_crc8(const void *data, size_t size)
 {
 	uint8_t crc = 0;
 	uint8_t *p = (unsigned char *)data;
-	int i; 
+	int i;
 
 	for(i = 0; i < size; i++) {
 		crc += p[i];
@@ -464,7 +416,7 @@ uint16_t sum_crc16(const void *data, size_t size)
 {
 	uint16_t crc = 0;
 	uint8_t *p = (unsigned char *)data;
-	int i; 
+	int i;
 
 	for(i = 0; i < size; i++) {
 		crc += p[i];
@@ -477,7 +429,7 @@ uint32_t sum_crc32(const void *data, size_t size)
 {
 	uint32_t crc = 0;
 	uint8_t *p = (unsigned char *)data;
-	int i; 
+	int i;
 
 	for(i = 0; i < size; i++) {
 		crc += p[i];
