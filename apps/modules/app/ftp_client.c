@@ -6,7 +6,7 @@
  *   文件名称：ftp_client.c
  *   创 建 者：肖飞
  *   创建日期：2020年09月15日 星期二 09时32分10秒
- *   修改日期：2021年02月21日 星期日 19时30分34秒
+ *   修改日期：2021年05月10日 星期一 10时31分37秒
  *   描    述：
  *
  *================================================================*/
@@ -271,6 +271,7 @@ static void ftp_client_cmd_download(void *ctx)
 			ret = ftp_client_send_data(poll_ctx_cmd->poll_fd.fd, ftp_client_info->cmd.tx_buffer, ret);
 
 			if(ret != 0) {
+				debug("");
 				set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
 			} else {
 				ftp_client_info->cmd.action_state = 1;
@@ -280,6 +281,7 @@ static void ftp_client_cmd_download(void *ctx)
 			ret = ftp_client_send_data(poll_ctx_cmd->poll_fd.fd, ftp_client_info->cmd.tx_buffer, ret);
 
 			if(ret != 0) {
+				debug("");
 				set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
 			} else {
 				ftp_client_info->cmd.action_state = 1;
@@ -305,6 +307,7 @@ static void ftp_client_cmd_download(void *ctx)
 						ret = ftp_client_send_data(poll_ctx_cmd->poll_fd.fd, ftp_client_info->cmd.tx_buffer, ret);
 
 						if(ret != 0) {
+							debug("");
 							set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
 						} else {
 							ftp_client_info->cmd.action_state = 2;
@@ -317,11 +320,13 @@ static void ftp_client_cmd_download(void *ctx)
 					ret = ftp_client_send_data(poll_ctx_cmd->poll_fd.fd, ftp_client_info->cmd.tx_buffer, ret);
 
 					if(ret != 0) {
+						debug("");
 						set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
 					} else {
 						ftp_client_info->cmd.action_state = 2;
 					}
 				} else {
+					debug("");
 					set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
 				}
 			} else if(response_code == 350) {
@@ -352,6 +357,7 @@ static void ftp_client_cmd_pasv(void *ctx)
 			ret = ftp_client_send_data(poll_ctx_cmd->poll_fd.fd, ftp_client_info->cmd.tx_buffer, ret);
 
 			if(ret != 0) {
+				debug("");
 				set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
 			} else {
 				ftp_client_info->cmd.action_state = 1;
@@ -413,10 +419,12 @@ static void ftp_client_cmd_pasv(void *ctx)
 								break;
 							}
 						} else {
+							debug("");
 							set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
 						}
 
 					} else {
+						debug("");
 						set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
 					}
 
@@ -428,6 +436,7 @@ static void ftp_client_cmd_pasv(void *ctx)
 						os_free(port);
 					}
 				} else {
+					debug("");
 					set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
 				}
 			}
@@ -456,6 +465,7 @@ static void ftp_client_cmd_login(void *ctx)
 				ret = ftp_client_send_data(poll_ctx_cmd->poll_fd.fd, ftp_client_info->cmd.tx_buffer, ret);
 
 				if(ret != 0) {
+					debug("");
 					set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
 				} else {
 					ftp_client_info->cmd.action_state = 1;
@@ -472,6 +482,7 @@ static void ftp_client_cmd_login(void *ctx)
 				ret = ftp_client_send_data(poll_ctx_cmd->poll_fd.fd, ftp_client_info->cmd.tx_buffer, ret);
 
 				if(ret != 0) {
+					debug("");
 					set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
 				} else {
 					ftp_client_info->cmd.action_state = 2;
@@ -481,6 +492,7 @@ static void ftp_client_cmd_login(void *ctx)
 				ret = ftp_client_send_data(poll_ctx_cmd->poll_fd.fd, ftp_client_info->cmd.tx_buffer, ret);
 
 				if(ret != 0) {
+					debug("");
 					set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
 				} else {
 					ftp_client_info->cmd.action_state = 3;
@@ -497,6 +509,7 @@ static void ftp_client_cmd_login(void *ctx)
 				ret = ftp_client_send_data(poll_ctx_cmd->poll_fd.fd, ftp_client_info->cmd.tx_buffer, ret);
 
 				if(ret != 0) {
+					debug("");
 					set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
 				} else {
 					ftp_client_info->cmd.action_state = 3;
@@ -556,6 +569,7 @@ static void ftp_client_cmd_handler(void *ctx)
 				set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_CONNECTED);
 				set_ftp_client_state(ftp_client_info, FTP_CLIENT_STATE_CONNECTED);
 			} else {
+				debug("");
 				set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
 			}
 		}
@@ -677,6 +691,7 @@ static void ftp_client_cmd_periodic(void *ctx)
 			} else {
 				switch(get_ftp_client_cmd_request_state(ftp_client_info)) {
 					case FTP_CLIENT_CMD_STATE_DISCONNECT: {
+						debug("");
 						set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
 					}
 					break;
@@ -734,7 +749,8 @@ static void ftp_client_data_download(void *ctx)
 
 				speed = ftp_client_info->download_size * 1.0 / duration;
 
-				debug("downloading %d/%d(%.2f%%), %.6f Mbyte/S",
+				debug("downloading %s %d/%d(%.2f%%), %.6f Mbyte/S",
+				      ftp_client_info->ftp_server_path.path,
 				      ftp_client_info->download_size,
 				      ftp_client_info->file_size,
 				      percent,
@@ -889,6 +905,7 @@ static void ftp_client_data_periodic(void *ctx)
 
 
 		case FTP_CLIENT_DATA_STATE_DISCONNECT: {
+			debug("");
 			poll_ctx_data->poll_fd.available = 0;
 			ftp_client_close(&poll_ctx_data->poll_fd.fd);
 
