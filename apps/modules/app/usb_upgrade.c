@@ -6,7 +6,7 @@
  *   文件名称：usb_upgrade.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月08日 星期六 20时15分37秒
- *   修改日期：2021年05月08日 星期六 22时54分17秒
+ *   修改日期：2021年05月10日 星期一 11时17分58秒
  *   描    述：
  *
  *================================================================*/
@@ -29,17 +29,17 @@ static usb_upgrade_state_t state = USB_UPGRADE_STATE_IDLE;
 void start_usb_upgrade(void)
 {
 	if(state == USB_UPGRADE_STATE_IDLE) {
-#if defined(USER_APP)
-		app_info_t *app_info = get_app_info();
-		if(app_info->mechine.upgrade_enable != 0) {
-			state = USB_UPGRADE_STATE_CHECK_FIRMWARE;
-		} else {
-			debug("");
-		}
+		if(is_app() == 1) {
+			app_info_t *app_info = get_app_info();
 
-#else
-		state = USB_UPGRADE_STATE_CHECK_FIRMWARE;
-#endif
+			if(app_info->mechine.upgrade_enable != 0) {
+				state = USB_UPGRADE_STATE_CHECK_FIRMWARE;
+			} else {
+				debug("");
+			}
+		} else {
+			state = USB_UPGRADE_STATE_CHECK_FIRMWARE;
+		}
 	}
 }
 
@@ -231,14 +231,14 @@ void handle_usb_upgrade(void)
 			int ret = check_firmware();
 
 			if(ret == 0) {
-#if defined(USER_APP)
-				uint8_t flag = 0x00;
-				flash_write(APP_CONFIG_ADDRESS, &flag, 1);
-				debug("reset for upgrade!\n");
-				HAL_NVIC_SystemReset();
-#else
-				state = USB_UPGRADE_STATE_FLUSH_FIRMWARE;
-#endif
+				if(is_app() == 1) {
+					uint8_t flag = 0x00;
+					flash_write(APP_CONFIG_ADDRESS, &flag, 1);
+					debug("reset for upgrade!\n");
+					HAL_NVIC_SystemReset();
+				} else {
+					state = USB_UPGRADE_STATE_FLUSH_FIRMWARE;
+				}
 			} else {
 				state = USB_UPGRADE_STATE_IDLE;
 			}
