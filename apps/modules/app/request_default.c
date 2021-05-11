@@ -6,7 +6,7 @@
  *   文件名称：request_default.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月05日 星期四 10时09分49秒
- *   修改日期：2021年02月21日 星期日 19时39分37秒
+ *   修改日期：2021年05月10日 星期一 14时33分06秒
  *   描    述：
  *
  *================================================================*/
@@ -54,9 +54,9 @@ static int chunk_sendto(net_client_info_t *net_client_info, uint32_t fn, uint32_
 static void request_set_lan_led_state(void *ctx, uint32_t state)
 {
 	if(state == 0) {
-		HAL_GPIO_WritePin(led_lan_GPIO_Port, led_lan_Pin, GPIO_PIN_RESET);
+		//HAL_GPIO_WritePin(led_lan_GPIO_Port, led_lan_Pin, GPIO_PIN_RESET);
 	} else {
-		HAL_GPIO_WritePin(led_lan_GPIO_Port, led_lan_Pin, GPIO_PIN_SET);
+		//HAL_GPIO_WritePin(led_lan_GPIO_Port, led_lan_Pin, GPIO_PIN_SET);
 	}
 }
 
