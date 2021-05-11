@@ -6,7 +6,7 @@
  *   文件名称：eeprom.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月14日 星期四 09时01分36秒
- *   修改日期：2021年02月02日 星期二 11时16分33秒
+ *   修改日期：2021年05月11日 星期二 14时14分53秒
  *   描    述：
  *
  *================================================================*/
@@ -115,22 +115,30 @@ eeprom_info_t *get_or_alloc_eeprom_info(spi_info_t *spi_info, GPIO_TypeDef *gpio
 
 static inline void eeprom_enable_cs(eeprom_info_t *eeprom_info)
 {
-	HAL_GPIO_WritePin(eeprom_info->gpio_port_spi_cs, eeprom_info->gpio_pin_spi_cs, GPIO_PIN_RESET);
+	if(eeprom_info->gpio_port_spi_cs != NULL) {
+		HAL_GPIO_WritePin(eeprom_info->gpio_port_spi_cs, eeprom_info->gpio_pin_spi_cs, GPIO_PIN_RESET);
+	}
 }
 
 static inline void eeprom_disable_cs(eeprom_info_t *eeprom_info)
 {
-	HAL_GPIO_WritePin(eeprom_info->gpio_port_spi_cs, eeprom_info->gpio_pin_spi_cs, GPIO_PIN_SET);
+	if(eeprom_info->gpio_port_spi_cs != NULL) {
+		HAL_GPIO_WritePin(eeprom_info->gpio_port_spi_cs, eeprom_info->gpio_pin_spi_cs, GPIO_PIN_SET);
+	}
 }
 
 static inline void eeprom_enable_wp(eeprom_info_t *eeprom_info)
 {
-	HAL_GPIO_WritePin(eeprom_info->gpio_port_spi_wp, eeprom_info->gpio_pin_spi_wp, GPIO_PIN_RESET);
+	if(eeprom_info->gpio_port_spi_wp != NULL) {
+		HAL_GPIO_WritePin(eeprom_info->gpio_port_spi_wp, eeprom_info->gpio_pin_spi_wp, GPIO_PIN_RESET);
+	}
 }
 
 static inline void eeprom_disable_wp(eeprom_info_t *eeprom_info)
 {
-	HAL_GPIO_WritePin(eeprom_info->gpio_port_spi_wp, eeprom_info->gpio_pin_spi_wp, GPIO_PIN_SET);
+	if(eeprom_info->gpio_port_spi_wp != NULL) {
+		HAL_GPIO_WritePin(eeprom_info->gpio_port_spi_wp, eeprom_info->gpio_pin_spi_wp, GPIO_PIN_SET);
+	}
 }
 
 static inline void set_eeprom_addr(eeprom_addr_t *eeprom_addr, uint32_t addr)
