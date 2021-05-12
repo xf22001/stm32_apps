@@ -6,7 +6,7 @@
  *   文件名称：poll_loop.c
  *   创 建 者：肖飞
  *   创建日期：2020年08月11日 星期二 09时54分20秒
- *   修改日期：2021年04月23日 星期五 13时14分30秒
+ *   修改日期：2021年05月12日 星期三 08时52分29秒
  *   描    述：
  *
  *================================================================*/
@@ -22,14 +22,9 @@ static object_class_t *poll_loop_class = NULL;
 
 poll_ctx_t *alloc_poll_ctx(void)
 {
-	poll_ctx_t *poll_ctx = (poll_ctx_t *)os_alloc(sizeof(poll_ctx_t));
+	poll_ctx_t *poll_ctx = (poll_ctx_t *)os_calloc(1, sizeof(poll_ctx_t));
 
-	if(poll_ctx == NULL) {
-		return poll_ctx;
-	}
-
-	memset(poll_ctx, 0, sizeof(poll_ctx_t));
-
+	OS_ASSERT(poll_ctx != NULL);
 	INIT_LIST_HEAD(&poll_ctx->list);
 	poll_ctx->poll_fd.fd = -1;
 
