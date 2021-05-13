@@ -6,7 +6,7 @@
  *   文件名称：ftp_client.h
  *   创 建 者：肖飞
  *   创建日期：2020年09月15日 星期二 09时32分14秒
- *   修改日期：2021年05月12日 星期三 10时39分17秒
+ *   修改日期：2021年05月13日 星期四 10时53分32秒
  *   描    述：
  *
  *================================================================*/
@@ -76,9 +76,9 @@ typedef struct {
 	ftp_client_data_state_t state;
 	ftp_client_handler_t handler;
 	uint8_t action_state;
-	char rx_buffer[1024];
+	char rx_buffer[512];
 	size_t rx_size;
-	char tx_buffer[256];
+	char tx_buffer[512];
 	size_t tx_size;
 } ftp_client_data_t;
 
@@ -96,6 +96,7 @@ typedef struct {
 typedef enum {
 	FTP_CLIENT_ACTION_IDLE = 0,
 	FTP_CLIENT_ACTION_DOWNLOAD,
+	FTP_CLIENT_ACTION_UPLOAD,
 } ftp_client_action_t;
 
 typedef void (*ftp_download_callback_t)(void *fn_ctx, void *_ftp_client_info);
@@ -108,16 +109,17 @@ typedef struct {
 	ftp_client_data_t data;
 
 	uint32_t file_size;
-	uint32_t download_size;
-	uint32_t download_stamp;
+	uint32_t data_size;
+	uint32_t data_stamp;
 	uint32_t debug_stamp;
-	callback_chain_t *ftp_download_event_chain;
-	callback_item_t ftp_download_callback_item;
+	uint8_t data_ready;
+	callback_chain_t *ftp_data_event_chain;
+	callback_item_t ftp_data_callback_item;
 } ftp_client_info_t;
 
 char *get_ftp_client_cmd_state_des(ftp_client_cmd_state_t state);
 char *get_ftp_client_data_state_des(ftp_client_data_state_t state);
-int request_ftp_client_download(const char *host, const char *port, const char *path, const char *user, const char *password, void *fn_ctx, ftp_download_callback_t callback);
+int request_ftp_client_download(const char *host, const char *port, const char *path, const char *user, const char *password, ftp_client_action_t action, void *fn_ctx, ftp_download_callback_t callback);
 void ftp_client_add_poll_loop(poll_loop_t *poll_loop);
 
 #endif //_FTP_CLIENT_H
