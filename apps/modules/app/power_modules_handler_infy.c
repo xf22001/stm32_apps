@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_infy.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月15日 星期四 10时25分30秒
- *   修改日期：2021年04月22日 星期四 11时25分51秒
+ *   修改日期：2021年05月13日 星期四 13时56分23秒
  *   描    述：
  *
  *================================================================*/
@@ -47,6 +47,7 @@ typedef enum {
 	INFY_CMD_GET_STATUS = 0x04,
 	INFY_CMD_GET_ABC_LINE_INPUT_VOLTAGE = 0x06,
 	INFY_CMD_GET_VOLTAGE_CURRENT = 0x09,
+	INFY_CMD_SET_WORK_IN = 0x13,
 	INFY_CMD_SET_POWEROFF = 0x1a,
 	INFY_CMD_SET_VOLTAGE_CURRENT = 0x1c,
 	INFY_CMD_SET_INIT_ADDR = 0x1f,
@@ -59,6 +60,9 @@ typedef enum {
 	MODULE_COMMAND_QUERY_STATUS,
 	MODULE_COMMAND_QUERY_ABC_LINE_INPUT_VOLTAGE,
 	MODULE_COMMAND_GET_OUT_VOLTAGE_CURRENT,
+	MODULE_COMMAND_INIT_ADDR,
+	MODULE_COMMAND_INIT_GROUP,
+	MODULE_COMMAND_WALK_IN,
 } module_command_t;
 
 typedef struct {
@@ -122,6 +126,13 @@ static char *get_power_module_cmd_des(module_command_t cmd)
 	return des;
 }
 
+static void _init(power_modules_info_t *power_modules_info)
+{
+	power_modules_info->power_module_info[0].cmd_ctx[MODULE_COMMAND_INIT_ADDR].state = COMMAND_STATE_REQUEST;
+	power_modules_info->power_module_info[0].cmd_ctx[MODULE_COMMAND_INIT_GROUP].state = COMMAND_STATE_REQUEST;
+	power_modules_info->power_module_info[0].cmd_ctx[MODULE_COMMAND_WALK_IN].state = COMMAND_STATE_REQUEST;
+}
+
 static int request_get_voltage_current(power_modules_info_t *power_modules_info, int module_id)
 {
 	int ret = 0;
@@ -132,7 +143,7 @@ static int request_get_voltage_current(power_modules_info_t *power_modules_info,
 static int response_get_voltage_current(power_modules_info_t *power_modules_info, int module_id)
 {
 	int ret = 0;
-	uint8_t *data = power_modules_info->can_tx_msg.Data;
+	uint8_t *data = power_modules_info->can_rx_msg->Data;
 
 	power_modules_info->power_module_info[module_id].output_voltage = get_u32_from_u8_b0123(data[3], data[2], data[1], data[0]) / 100;
 	power_modules_info->power_module_info[module_id].output_current = get_u32_from_u8_b0123(data[7], data[6], data[5], data[4]) / 100;
@@ -301,12 +312,96 @@ static module_command_item_t module_command_item_query_abc_line_input_voltage = 
 	.response_callback = response_query_abc_line_input_voltage,
 };
 
+static int request_init_addr(power_modules_info_t *power_modules_info, int module_id)
+{
+	int ret = 0;
+	u_infy_ext_id_t *u_infy_ext_id = (u_infy_ext_id_t *)power_modules_info->can_tx_msg.ExtId;
+	uint8_t *data = power_modules_info->can_tx_msg.Data;
+
+	u_infy_ext_id->s.dst = 0x3f;//广播
+
+	data[0] = 0x01;
+
+	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_COMMAND_INIT_ADDR].state = COMMAND_STATE_IDLE;
+	return ret;
+}
+
+static int response_init_addr(power_modules_info_t *power_modules_info, int module_id)
+{
+	int ret = 0;
+	return ret;
+}
+
+static module_command_item_t module_command_item_init_addr = {
+	.cmd = MODULE_COMMAND_INIT_ADDR,
+	.infy_cmd = INFY_CMD_SET_INIT_ADDR,
+	.request_callback = request_init_addr,
+	.response_callback = response_init_addr,
+};
+
+static int request_init_group(power_modules_info_t *power_modules_info, int module_id)
+{
+	int ret = 0;
+	u_infy_ext_id_t *u_infy_ext_id = (u_infy_ext_id_t *)power_modules_info->can_tx_msg.ExtId;
+	uint8_t *data = power_modules_info->can_tx_msg.Data;
+
+	u_infy_ext_id->s.dst = 0x3f;//广播
+
+	data[0] = 0x01;
+
+	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_COMMAND_INIT_ADDR].state = COMMAND_STATE_IDLE;
+	return ret;
+}
+
+static int response_init_group(power_modules_info_t *power_modules_info, int module_id)
+{
+	int ret = 0;
+	return ret;
+}
+
+static module_command_item_t module_command_item_init_group = {
+	.cmd = MODULE_COMMAND_INIT_GROUP,
+	.infy_cmd = INFY_CMD_SET_INIT_GROUP,
+	.request_callback = request_init_group,
+	.response_callback = response_init_group,
+};
+
+static int request_walk_in(power_modules_info_t *power_modules_info, int module_id)
+{
+	int ret = 0;
+	u_infy_ext_id_t *u_infy_ext_id = (u_infy_ext_id_t *)power_modules_info->can_tx_msg.ExtId;
+	uint8_t *data = power_modules_info->can_tx_msg.Data;
+
+	u_infy_ext_id->s.dst = 0x3f;//广播
+
+	data[0] = 0x00;
+
+	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_COMMAND_INIT_ADDR].state = COMMAND_STATE_IDLE;
+	return ret;
+}
+
+static int response_walk_in(power_modules_info_t *power_modules_info, int module_id)
+{
+	int ret = 0;
+	return ret;
+}
+
+static module_command_item_t module_command_item_init_walk_in = {
+	.cmd = MODULE_COMMAND_WALK_IN,
+	.infy_cmd = INFY_CMD_SET_WORK_IN,
+	.request_callback = request_walk_in,
+	.response_callback = response_walk_in,
+};
+
 static module_command_item_t *module_command_item_table[] = {
 	&module_command_item_set_voltage_current,
 	&module_command_item_set_poweroff,
 	&module_command_item_query_status,
 	&module_command_item_query_abc_line_input_voltage,
 	&module_command_item_get_voltage_current,
+	&module_command_item_init_addr,
+	&module_command_item_init_group,
+	&module_command_item_init_walk_in,
 };
 
 #define RESPONSE_TIMEOUT 500
@@ -478,6 +573,7 @@ static int _power_modules_response(power_modules_info_t *power_modules_info, can
 power_modules_handler_t power_modules_handler_infy = {
 	.power_module_type = POWER_MODULE_TYPE_INFY,
 	.cmd_size = ARRAY_SIZE(module_command_item_table),
+	.init = _init,
 	.set_out_voltage_current = _set_out_voltage_current,
 	.set_poweroff = _set_poweroff,
 	.query_status = _query_status,
