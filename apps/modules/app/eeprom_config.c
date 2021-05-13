@@ -6,7 +6,7 @@
  *   文件名称：eeprom_config.c
  *   创 建 者：肖飞
  *   创建日期：2020年12月17日 星期四 14时02分18秒
- *   修改日期：2021年04月20日 星期二 08时20分17秒
+ *   修改日期：2021年05月13日 星期四 15时15分57秒
  *   描    述：
  *
  *================================================================*/
@@ -28,8 +28,9 @@ int eeprom_load_config_item(eeprom_info_t *eeprom_info, const char *label, void 
 		return ret;
 	}
 
-	eeprom_read(eeprom_info, offset, (uint8_t *)&eeprom_config_item_head, sizeof(eeprom_config_item_head_t));
-	offset += sizeof(eeprom_config_item_head_t);
+	OS_ASSERT(offset >= sizeof(eeprom_config_item_head_t));
+
+	eeprom_read(eeprom_info, offset - sizeof(eeprom_config_item_head_t), (uint8_t *)&eeprom_config_item_head, sizeof(eeprom_config_item_head_t));
 
 	if(eeprom_config_item_head.payload_size != size) {
 		debug("");
@@ -69,6 +70,8 @@ int eeprom_save_config_item(eeprom_info_t *eeprom_info, const char *label, void 
 		return ret;
 	}
 
+	OS_ASSERT(offset >= sizeof(eeprom_config_item_head_t));
+
 	eeprom_config_item_head.payload_size = size;
 
 	crc = size;
@@ -81,9 +84,7 @@ int eeprom_save_config_item(eeprom_info_t *eeprom_info, const char *label, void 
 
 	eeprom_config_item_head.crc = crc;
 
-	eeprom_write(eeprom_info, offset, (uint8_t *)&eeprom_config_item_head, sizeof(eeprom_config_item_head_t));
-
-	offset += sizeof(eeprom_config_item_head_t);
+	eeprom_write(eeprom_info, offset - sizeof(eeprom_config_item_head_t), (uint8_t *)&eeprom_config_item_head, sizeof(eeprom_config_item_head_t));
 
 	eeprom_write(eeprom_info, offset, (uint8_t *)config, size);
 
