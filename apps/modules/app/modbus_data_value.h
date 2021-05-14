@@ -6,7 +6,7 @@
  *   文件名称：modbus_data_value.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月14日 星期四 08时25分59秒
- *   修改日期：2021年03月27日 星期六 19时39分56秒
+ *   修改日期：2021年05月14日 星期五 15时31分37秒
  *   描    述：
  *
  *================================================================*/
@@ -67,19 +67,22 @@ typedef enum {
 
 #define modbus_data_buffer_rw(value, store, size, offset, op) do { \
 	uint16_t *buffer = (store) + (offset); \
-	if(size - (offset) * sizeof(uint16_t) == sizeof(uint16_t)) { \
-		uint16_t *store_buffer = buffer; \
-		if(op == MODBUS_DATA_GET) { \
-			*value = *store_buffer; \
-		} else if(op == MODBUS_DATA_SET) { \
-			*store_buffer = *value; \
-		} \
-	} else { \
-		uint8_t *store_buffer = (uint8_t *)buffer; \
-		if(op == MODBUS_DATA_GET) { \
-			*value = *store_buffer; \
-		} else if(op == MODBUS_DATA_SET) { \
-			*store_buffer = *value; \
+	uint16_t store_offset = (offset) * sizeof(uint16_t); \
+	if(size > store_offset) { \
+		if(size - store_offset >= sizeof(uint16_t)) { \
+			uint16_t *store_buffer = buffer; \
+			if(op == MODBUS_DATA_GET) { \
+				*value = *store_buffer; \
+			} else if(op == MODBUS_DATA_SET) { \
+				*store_buffer = *value; \
+			} \
+		} else { \
+			uint8_t *store_buffer = (uint8_t *)buffer; \
+			if(op == MODBUS_DATA_GET) { \
+				*value = *store_buffer; \
+			} else if(op == MODBUS_DATA_SET) { \
+				*store_buffer = *value; \
+			} \
 		} \
 	} \
 } while(0)
