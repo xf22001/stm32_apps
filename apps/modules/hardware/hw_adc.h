@@ -3,15 +3,15 @@
 /*================================================================
  *   
  *   
- *   文件名称：adc.h
+ *   文件名称：hw_adc.h
  *   创 建 者：肖飞
- *   创建日期：2021年05月11日 星期二 14时57分27秒
- *   修改日期：2021年05月11日 星期二 16时52分00秒
+ *   创建日期：2021年05月15日 星期六 16时05分26秒
+ *   修改日期：2021年05月15日 星期六 16时05分52秒
  *   描    述：
  *
  *================================================================*/
-#ifndef _ADC_H
-#define _ADC_H
+#ifndef _HW_ADC_H
+#define _HW_ADC_H
 #ifdef __cplusplus
 extern "C"
 {
@@ -19,8 +19,6 @@ extern "C"
 
 #include "app_platform.h"
 #include "cmsis_os.h"
-
-#include "main.h"
 
 #ifdef __cplusplus
 }
@@ -35,4 +33,4 @@ typedef struct {
 adc_info_t *get_or_alloc_adc_info(ADC_HandleTypeDef *hadc);
 uint16_t get_adc_value(adc_info_t *adc_info, uint32_t rank);
 
-#endif //_ADC_H
+#endif //_HW_ADC_H

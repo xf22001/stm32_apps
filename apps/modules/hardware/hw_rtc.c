@@ -1,21 +1,23 @@
 
 
 /*================================================================
- *
- *
- *   文件名称：rtc.c
+ *   
+ *   
+ *   文件名称：hw_rtc.c
  *   创 建 者：肖飞
- *   创建日期：2021年05月12日 星期三 15时45分09秒
- *   修改日期：2021年05月12日 星期三 16时10分47秒
+ *   创建日期：2021年05月15日 星期六 15时58分08秒
+ *   修改日期：2021年05月15日 星期六 15时58分23秒
  *   描    述：
  *
  *================================================================*/
-#include "rtc.h"
+#include "hw_rtc.h"
 
 #include <string.h>
 #include <time.h>
 
 #include "os_utils.h"
+#define LOG_NONE
+#include "log.h"
 
 extern RTC_HandleTypeDef hrtc;
 
@@ -24,9 +26,19 @@ struct tm *rtc_get_datetime(void)
 	static struct tm tm = {0};
 	RTC_DateTypeDef rtc_date;
 	RTC_TimeTypeDef rtc_time;
+	HAL_StatusTypeDef status;
 
-	HAL_RTC_GetDate(&hrtc, &rtc_date, RTC_FORMAT_BCD);
-	HAL_RTC_GetTime(&hrtc, &rtc_time, RTC_FORMAT_BCD);
+	status = HAL_RTC_GetTime(&hrtc, &rtc_time, RTC_FORMAT_BCD);
+
+	if(status != HAL_OK) {
+		debug("status:%d", status);
+	}
+
+	status = HAL_RTC_GetDate(&hrtc, &rtc_date, RTC_FORMAT_BCD);
+
+	if(status != HAL_OK) {
+		debug("status:%d", status);
+	}
 
 	tm.tm_year = get_u8_from_bcd(rtc_date.Year) + 2000 - 1900;
 	tm.tm_mon = get_u8_from_bcd(rtc_date.Month) - 1;
@@ -43,6 +55,7 @@ int rtc_set_datetime(struct tm *tm)
 	int ret = 0;
 	RTC_DateTypeDef rtc_date;
 	RTC_TimeTypeDef rtc_time;
+	HAL_StatusTypeDef status;
 
 	memset(&rtc_date, 0, sizeof(rtc_date));
 	memset(&rtc_time, 0, sizeof(rtc_time));
@@ -54,8 +67,17 @@ int rtc_set_datetime(struct tm *tm)
 	rtc_time.Minutes = get_bcd_from_u8(tm->tm_min);
 	rtc_time.Seconds = get_bcd_from_u8(tm->tm_sec);
 
-	HAL_RTC_SetDate(&hrtc, &rtc_date, RTC_FORMAT_BCD);
-	HAL_RTC_SetTime(&hrtc, &rtc_time, RTC_FORMAT_BCD);
+	status = HAL_RTC_SetTime(&hrtc, &rtc_time, RTC_FORMAT_BCD);
+	if(status != HAL_OK) {
+		ret = -1;
+		debug("status:%d", status);
+	}
+
+	status = HAL_RTC_SetDate(&hrtc, &rtc_date, RTC_FORMAT_BCD);
+	if(status != HAL_OK) {
+		ret = -1;
+		debug("status:%d", status);
+	}
 
 	return ret;
 }
