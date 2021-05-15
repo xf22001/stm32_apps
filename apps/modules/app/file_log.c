@@ -6,7 +6,7 @@
  *   文件名称：file_log.c
  *   创 建 者：肖飞
  *   创建日期：2020年11月03日 星期二 13时03分25秒
- *   修改日期：2021年05月15日 星期六 17时27分36秒
+ *   修改日期：2021年05月15日 星期六 22时45分56秒
  *   描    述：
  *
  *================================================================*/
@@ -15,7 +15,6 @@
 #include "os_utils.h"
 #include "mt_file.h"
 
-#define LOG_FILE
 #include "log.h"
 
 typedef struct {
@@ -197,12 +196,6 @@ void handle_open_log(void)
 		} else {
 			sync_log();
 		}
-	}
-
-	ret = file_printf("test %d\n", count++);
-
-	if(ret < 0) {
-		debug("file log ret:%d", ret);
 	}
 }
 
