@@ -6,7 +6,7 @@
  *   文件名称：log.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月29日 星期五 12时45分56秒
- *   修改日期：2021年03月26日 星期五 11时47分43秒
+ *   修改日期：2021年05月16日 星期日 20时34分07秒
  *   描    述：
  *
  *================================================================*/
@@ -258,6 +258,7 @@ int log_printf(uint32_t log_mask, const char *fmt, ...)
 		do_callback_chain(log_info->log_chain, &log_ctx);
 	} else {
 		ret = log_fn(log_mask, log_buffer, ret);
+		OS_ASSERT(ret >= 0);
 	}
 
 	if(enable == 1) {
@@ -283,7 +284,6 @@ void log_hexdump(uint32_t log_mask, const char *label, const char *data, int len
 	char *log_buffer = NULL;
 	const char *start = data;
 	const char *end = start + len;
-	int c;
 	int puts(const char *s);
 	char *buffer_start = NULL;
 	int i;
@@ -299,7 +299,7 @@ void log_hexdump(uint32_t log_mask, const char *label, const char *data, int len
 	}
 
 	if(enable == 1) {
-		log_buffer = (char *)os_alloc(LOG_BUFFER_SIZE);
+		log_buffer = (char *)os_alloc(BUFFER_LEN);
 
 		if(log_buffer == NULL) {
 			return;
@@ -325,12 +325,14 @@ void log_hexdump(uint32_t log_mask, const char *label, const char *data, int len
 			do_callback_chain(log_info->log_chain, &log_ctx);
 		} else {
 			ret = log_fn(log_mask, log_buffer, ret);
+			OS_ASSERT(ret >= 0);
 		}
 	}
 
 	while(start < end) {
 		int left = BUFFER_LEN;
 		long address = start - data;
+		int c;
 
 		buffer_start = log_buffer;
 
@@ -459,6 +461,7 @@ void log_hexdump(uint32_t log_mask, const char *label, const char *data, int len
 			do_callback_chain(log_info->log_chain, &log_ctx);
 		} else {
 			ret = log_fn(log_mask, log_buffer, BUFFER_LEN - left);
+			OS_ASSERT(ret >= 0);
 		}
 
 		start += c;
@@ -493,6 +496,7 @@ int log_puts(uint32_t log_mask, const char *s)
 		} else {
 			log_fn = dummy_log;
 			ret = log_fn(log_mask, s, ret);
+			OS_ASSERT(ret >= 0);
 		}
 	}
 
