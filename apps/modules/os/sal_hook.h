@@ -6,7 +6,7 @@
  *   文件名称：sal_hook.h
  *   创 建 者：肖飞
  *   创建日期：2021年05月19日 星期三 08时14分01秒
- *   修改日期：2021年05月19日 星期三 08时55分50秒
+ *   修改日期：2021年05月19日 星期三 10时02分43秒
  *   描    述：
  *
  *================================================================*/
@@ -17,13 +17,12 @@ extern "C"
 {
 #endif
 
-#include "sal_socket.h"
-
 #ifdef __cplusplus
 }
 #endif
 
 #if defined(SAL_HOOK)
+#include "sal_socket.h"
 #undef close
 #undef closesocket
 #undef connect
