@@ -6,7 +6,7 @@
  *   文件名称：net_utils.c
  *   创 建 者：肖飞
  *   创建日期：2020年09月15日 星期二 09时42分47秒
- *   修改日期：2021年01月29日 星期五 16时11分21秒
+ *   修改日期：2021年05月19日 星期三 09时42分42秒
  *   描    述：
  *
  *================================================================*/
@@ -15,6 +15,7 @@
 #include <string.h>
 
 #include "os_utils.h"
+#include "sal_hook.h"
 #include "log.h"
 
 int update_addr_info_list(struct list_head *list_head, const char *host, const char *port, int socktype, int protocol)
