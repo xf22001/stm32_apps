@@ -6,7 +6,7 @@
  *   文件名称：probe_tool.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 08时02分35秒
- *   修改日期：2021年05月20日 星期四 17时27分43秒
+ *   修改日期：2021年05月20日 星期四 22时38分32秒
  *   描    述：
  *
  *================================================================*/
@@ -114,10 +114,6 @@ static void probe_broadcast_periodic(void *ctx)
 
 			if(ret < 0) {
 				debug("ret:%d", ret);
-				poll_ctx->poll_fd.available = 0;
-				close(poll_ctx->poll_fd.fd);
-				poll_ctx->poll_fd.fd = -1;
-				probe_broadcast_info->state = PROBE_BROADCAST_STATE_INIT;
 			}
 		}
 		break;
@@ -380,11 +376,10 @@ static void probe_server_handler(void *ctx)
 	}
 
 	if(poll_ctx->poll_fd.status.s.poll_out == 1) {
-		debug("");
 	}
 
 	if(poll_ctx->poll_fd.status.s.poll_err == 1) {
-		debug("");
+		probe_server_info->log_server_valid = 0;
 	}
 }
 
