@@ -6,7 +6,7 @@
  *   文件名称：probe_tool.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 08时02分35秒
- *   修改日期：2021年05月20日 星期四 13时24分22秒
+ *   修改日期：2021年05月20日 星期四 17时27分43秒
  *   描    述：
  *
  *================================================================*/
@@ -375,6 +375,7 @@ static void probe_server_handler(void *ctx)
 			probe_server_process_message(probe_server_info);
 		} else {
 			debug("ret:%d", ret);
+			probe_server_info->log_server_valid = 0;
 		}
 	}
 
@@ -393,7 +394,7 @@ static void probe_server_periodic(void *ctx)
 	probe_server_info_t *probe_server_info = (probe_server_info_t *)poll_ctx->priv;
 	uint32_t ticks = osKernelSysTick();
 
-	if(ticks_duration(ticks, probe_server_info->stamp) < 1 * 100) {
+	if(ticks_duration(ticks, probe_server_info->stamp) < 1 * 1000) {
 		return;
 	}
 
@@ -409,6 +410,7 @@ static void probe_server_periodic(void *ctx)
 				poll_ctx->poll_fd.fd = fd;
 				poll_ctx->poll_fd.config.v = 0;
 				poll_ctx->poll_fd.config.s.poll_in = 1;
+				poll_ctx->poll_fd.config.s.poll_out = 1;
 				poll_ctx->poll_fd.config.s.poll_err = 1;
 				poll_ctx->poll_fd.available = 1;
 
