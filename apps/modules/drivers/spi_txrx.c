@@ -6,7 +6,7 @@
  *   文件名称：spi_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月31日 星期四 10时30分48秒
- *   修改日期：2021年02月02日 星期二 11时18分57秒
+ *   修改日期：2021年05月20日 星期四 13时00分45秒
  *   描    述：
  *
  *================================================================*/
@@ -25,6 +25,8 @@ static void free_spi_info(spi_info_t *spi_info)
 		return;
 	}
 
+	mutex_delete(spi_info->hspi_mutex);
+
 	os_free(spi_info);
 }
 
@@ -36,15 +38,14 @@ static spi_info_t *alloc_spi_info(SPI_HandleTypeDef *hspi)
 		return spi_info;
 	}
 
-	spi_info = (spi_info_t *)os_alloc(sizeof(spi_info_t));
+	spi_info = (spi_info_t *)os_calloc(1, sizeof(spi_info_t));
 
 	if(spi_info == NULL) {
 		return spi_info;
 	}
 
-	memset(spi_info, 0, sizeof(spi_info_t));
-
 	spi_info->hspi = hspi;
+	spi_info->hspi_mutex = mutex_create();
 
 	return spi_info;
 }
@@ -79,10 +80,14 @@ spi_info_t *get_or_alloc_spi_info(SPI_HandleTypeDef *hspi)
 	return spi_info;
 }
 
-int spi_tx_data(spi_info_t *info, uint8_t *data, uint16_t size, uint32_t timeout)
+int spi_tx_data(spi_info_t *spi_info, uint8_t *data, uint16_t size, uint32_t timeout)
 {
 	int ret = -1;
-	HAL_StatusTypeDef status = HAL_SPI_Transmit(info->hspi, data, size, timeout);
+	HAL_StatusTypeDef status;
+
+	mutex_lock(spi_info->hspi_mutex);
+	status = HAL_SPI_Transmit(spi_info->hspi, data, size, timeout);
+	mutex_unlock(spi_info->hspi_mutex);
 
 	if(status == HAL_OK) {
 		ret = 0;
@@ -90,10 +95,14 @@ int spi_tx_data(spi_info_t *info, uint8_t *data, uint16_t size, uint32_t timeout
 
 	return ret;
 }
-int spi_rx_data(spi_info_t *info, uint8_t *data, uint16_t size, uint32_t timeout)
+int spi_rx_data(spi_info_t *spi_info, uint8_t *data, uint16_t size, uint32_t timeout)
 {
 	int ret = -1;
-	HAL_StatusTypeDef status = HAL_SPI_Receive(info->hspi, data, size, timeout);
+	HAL_StatusTypeDef status;
+
+	mutex_lock(spi_info->hspi_mutex);
+	status = HAL_SPI_Receive(spi_info->hspi, data, size, timeout);
+	mutex_unlock(spi_info->hspi_mutex);
 
 	if(status == HAL_OK) {
 		ret = 0;

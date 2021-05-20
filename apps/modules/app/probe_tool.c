@@ -6,7 +6,7 @@
  *   文件名称：probe_tool.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 08时02分35秒
- *   修改日期：2021年05月19日 星期三 21时12分11秒
+ *   修改日期：2021年05月20日 星期四 13时24分22秒
  *   描    述：
  *
  *================================================================*/
@@ -18,7 +18,7 @@
 
 #include "sal_hook.h"
 
-#define LOG_UART
+#define LOG_NONE
 #include "log.h"
 
 typedef struct {
@@ -114,6 +114,10 @@ static void probe_broadcast_periodic(void *ctx)
 
 			if(ret < 0) {
 				debug("ret:%d", ret);
+				poll_ctx->poll_fd.available = 0;
+				close(poll_ctx->poll_fd.fd);
+				poll_ctx->poll_fd.fd = -1;
+				probe_broadcast_info->state = PROBE_BROADCAST_STATE_INIT;
 			}
 		}
 		break;
