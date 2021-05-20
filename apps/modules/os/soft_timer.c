@@ -6,7 +6,7 @@
  *   文件名称：soft_timer.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月22日 星期五 10时28分46秒
- *   修改日期：2021年03月22日 星期一 15时52分11秒
+ *   修改日期：2021年05月19日 星期三 23时27分20秒
  *   描    述：
  *
  *================================================================*/
@@ -17,6 +17,7 @@
 
 #include "object_class.h"
 #include "os_utils.h"
+#define LOG_NONE
 #include "log.h"
 
 static object_class_t *soft_timer_class = NULL;

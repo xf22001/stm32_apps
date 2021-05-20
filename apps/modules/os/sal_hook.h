@@ -6,7 +6,7 @@
  *   文件名称：sal_hook.h
  *   创 建 者：肖飞
  *   创建日期：2021年05月19日 星期三 08时14分01秒
- *   修改日期：2021年05月19日 星期三 19时21分58秒
+ *   修改日期：2021年05月19日 星期三 23时08分46秒
  *   描    述：
  *
  *================================================================*/
@@ -41,7 +41,6 @@ extern "C"
 #undef getaddrinfo
 #undef freeaddrinfo
 #undef gethostbyname
-#undef AF_INET
 #define close(s) sal_closesocket(s)
 #define closesocket(s) sal_closesocket(s)
 #define connect(s, name, namelen) sal_connect(s, name, namelen)
@@ -60,6 +59,5 @@ extern "C"
 #define getaddrinfo(nodname, servname, hints, res) sal_getaddrinfo(nodname, servname, hints, res)
 #define freeaddrinfo(addrinfo) sal_freeaddrinfo(addrinfo)
 #define gethostbyname(name) sal_gethostbyname(name)
-#define AF_INET AF_WIZ
 #endif//#if defined(SAL_HOOK)
 #endif //_SAL_HOOK_H

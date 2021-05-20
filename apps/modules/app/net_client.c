@@ -6,25 +6,24 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2021年02月21日 星期日 19时40分11秒
+ *   修改日期：2021年05月19日 星期三 21时21分07秒
  *   描    述：
  *
  *================================================================*/
-#include "app_platform.h"
-#include "cmsis_os.h"
+#include "net_client.h"
+
+#include <string.h>
+
 #include "lwip.h"
 #include "lwip/sockets.h"
 #include "lwip/dhcp.h"
 #include "main.h"
-
-#include "os_utils.h"
-#include "net_client.h"
-#include "request.h"
-
-#include "log.h"
 #include "app.h"
+#include "os_utils.h"
+#include "request.h"
+#include "sal_hook.h"
+#include "log.h"
 
-#include <string.h>
 
 extern protocol_if_t protocol_if_tcp;
 extern request_callback_t request_callback_default;
