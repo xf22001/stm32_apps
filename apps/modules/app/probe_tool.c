@@ -6,7 +6,7 @@
  *   文件名称：probe_tool.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 08时02分35秒
- *   修改日期：2021年05月20日 星期四 22时38分32秒
+ *   修改日期：2021年05月21日 星期五 13时56分11秒
  *   描    述：
  *
  *================================================================*/
@@ -52,6 +52,7 @@ static int init_probe_broadcast_socket(probe_broadcast_info_t *probe_broadcast_i
 	int ret = -1;
 	int sock = -1;
 	const int opt = -1;
+	int flags;
 
 	sock = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -74,6 +75,10 @@ static int init_probe_broadcast_socket(probe_broadcast_info_t *probe_broadcast_i
 	probe_broadcast_info->broadcast_addr.sin_family = AF_INET;
 	probe_broadcast_info->broadcast_addr.sin_addr.s_addr = htonl(INADDR_BROADCAST); //套接字地址为广播地址
 	probe_broadcast_info->broadcast_addr.sin_port = htons(BROADCAST_PORT); //套接字广播端口号为BROADCAST_PORT
+
+	flags = fcntl(sock, F_GETFL, 0);
+	flags |= O_NONBLOCK;
+	fcntl(sock, F_SETFL, flags);
 
 	return sock;
 }
@@ -114,6 +119,11 @@ static void probe_broadcast_periodic(void *ctx)
 
 			if(ret < 0) {
 				debug("ret:%d", ret);
+				poll_ctx->poll_fd.available = 0;
+
+				close(poll_ctx->poll_fd.fd);
+				poll_ctx->poll_fd.fd = -1;
+				probe_broadcast_info->state = PROBE_BROADCAST_STATE_INIT;
 			}
 		}
 		break;
@@ -281,7 +291,11 @@ static int init_server_socket(probe_server_info_t *probe_server_info)
 	}
 
 	if(sock != -1) {
+		int flags;
 		probe_server_info->sock = sock;
+		flags = fcntl(sock, F_GETFL, 0);
+		flags |= O_NONBLOCK;
+		fcntl(sock, F_SETFL, flags);
 	}
 
 	return sock;
@@ -372,6 +386,11 @@ static void probe_server_handler(void *ctx)
 		} else {
 			debug("ret:%d", ret);
 			probe_server_info->log_server_valid = 0;
+
+			poll_ctx->poll_fd.available = 0;
+			close(poll_ctx->poll_fd.fd);
+			poll_ctx->poll_fd.fd = -1;
+			probe_server_info->state = PROBE_SERVER_STATE_INIT;
 		}
 	}
 
@@ -380,6 +399,11 @@ static void probe_server_handler(void *ctx)
 
 	if(poll_ctx->poll_fd.status.s.poll_err == 1) {
 		probe_server_info->log_server_valid = 0;
+
+		poll_ctx->poll_fd.available = 0;
+		close(poll_ctx->poll_fd.fd);
+		poll_ctx->poll_fd.fd = -1;
+		probe_server_info->state = PROBE_SERVER_STATE_INIT;
 	}
 }
 
