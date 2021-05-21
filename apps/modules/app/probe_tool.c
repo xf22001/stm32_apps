@@ -6,7 +6,7 @@
  *   文件名称：probe_tool.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 08时02分35秒
- *   修改日期：2021年05月21日 星期五 15时12分17秒
+ *   修改日期：2021年05月21日 星期五 17时11分42秒
  *   描    述：
  *
  *================================================================*/
@@ -78,7 +78,7 @@ static int init_probe_broadcast_socket(probe_broadcast_info_t *probe_broadcast_i
 
 	flags = fcntl(sock, F_GETFL, 0);
 	flags |= O_NONBLOCK;
-	fcntl(sock, F_SETFL, flags);
+	fcntl(sock, F_SETFL, (void *)flags);
 
 	return sock;
 }
@@ -191,6 +191,7 @@ typedef struct {
 
 	struct sockaddr_in log_server_addr;
 	uint8_t log_server_valid;
+	ip_addr_t gw;
 
 	char recv_buffer[RECV_BUFFER_SIZE];
 	size_t recv_size;
@@ -295,7 +296,7 @@ static int init_server_socket(probe_server_info_t *probe_server_info)
 		probe_server_info->sock = sock;
 		flags = fcntl(sock, F_GETFL, 0);
 		flags |= O_NONBLOCK;
-		fcntl(sock, F_SETFL, flags);
+		fcntl(sock, F_SETFL, (void *)flags);
 	}
 
 	return sock;
@@ -410,6 +411,7 @@ static void probe_server_periodic(void *ctx)
 	poll_ctx_t *poll_ctx = (poll_ctx_t *)ctx;
 	probe_server_info_t *probe_server_info = (probe_server_info_t *)poll_ctx->priv;
 	uint32_t ticks = osKernelSysTick();
+	ip_addr_t *ip_addr;
 
 	if(ticks_duration(ticks, probe_server_info->stamp) < 1 * 1000) {
 		return;
@@ -431,6 +433,14 @@ static void probe_server_periodic(void *ctx)
 				poll_ctx->poll_fd.config.s.poll_err = 1;
 				poll_ctx->poll_fd.available = 1;
 
+				ip_addr = get_default_gw();
+
+				if(ip_addr != NULL) {
+					ip_addr_copy(probe_server_info->gw, *ip_addr);
+				} else {
+					memset(&probe_server_info->gw, 0, sizeof(probe_server_info->gw));
+				}
+
 				probe_server_info->state = PROBE_SERVER_STATE_SERVE;
 			}
 		}
@@ -439,6 +449,15 @@ static void probe_server_periodic(void *ctx)
 		case PROBE_SERVER_STATE_SERVE: {
 			if(ticks_duration(ticks, probe_server_info->client_active_stamp) >= 3 * 1000) {
 				probe_server_info->log_server_valid = 0;
+
+				ip_addr = get_default_gw();
+
+				if((ip_addr == NULL) || (ip_addr_cmp(&probe_server_info->gw, ip_addr))) {
+					poll_ctx->poll_fd.available = 0;
+					close(poll_ctx->poll_fd.fd);
+					poll_ctx->poll_fd.fd = -1;
+					probe_server_info->state = PROBE_SERVER_STATE_INIT;
+				}
 			}
 		}
 		break;

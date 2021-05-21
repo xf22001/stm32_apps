@@ -6,7 +6,7 @@
  *   文件名称：sal_hook.h
  *   创 建 者：肖飞
  *   创建日期：2021年05月19日 星期三 08时14分01秒
- *   修改日期：2021年05月19日 星期三 23时08分46秒
+ *   修改日期：2021年05月21日 星期五 17时04分01秒
  *   描    述：
  *
  *================================================================*/
@@ -23,6 +23,7 @@ extern "C"
 
 #if defined(SAL_HOOK)
 #include "sal_socket.h"
+#include "sal_netdev.h"
 #undef close
 #undef closesocket
 #undef connect
@@ -59,5 +60,19 @@ extern "C"
 #define getaddrinfo(nodname, servname, hints, res) sal_getaddrinfo(nodname, servname, hints, res)
 #define freeaddrinfo(addrinfo) sal_freeaddrinfo(addrinfo)
 #define gethostbyname(name) sal_gethostbyname(name)
+static inline ip_addr_t *get_default_gw(void)
+{
+	struct netdev *netdev = get_default_netdev();
+	if(netdev != NULL) {
+		return &netdev->ip_addr;
+	}
+	return NULL;
+}
+#else//#if defined(SAL_HOOK)
+extern struct netif gnetif;
+static inline ip_addr_t *get_default_gw(void)
+{
+	return &gnetif.ip_addr;
+}
 #endif//#if defined(SAL_HOOK)
 #endif //_SAL_HOOK_H
