@@ -6,7 +6,7 @@
  *   文件名称：probe_tool.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 08时02分35秒
- *   修改日期：2021年05月21日 星期五 17时11分42秒
+ *   修改日期：2021年05月22日 星期六 10时12分40秒
  *   描    述：
  *
  *================================================================*/
@@ -447,7 +447,13 @@ static void probe_server_periodic(void *ctx)
 		break;
 
 		case PROBE_SERVER_STATE_SERVE: {
-			if(ticks_duration(ticks, probe_server_info->client_active_stamp) >= 3 * 1000) {
+			if(ticks_duration(ticks, probe_server_info->client_active_stamp) >= 30 * 1000) {
+				poll_ctx->poll_fd.available = 0;
+				close(poll_ctx->poll_fd.fd);
+				poll_ctx->poll_fd.fd = -1;
+				probe_server_info->client_active_stamp = ticks;
+				probe_server_info->state = PROBE_SERVER_STATE_INIT;
+			} else if(ticks_duration(ticks, probe_server_info->client_active_stamp) >= 3 * 1000) {
 				probe_server_info->log_server_valid = 0;
 
 				ip_addr = get_default_gw();
@@ -456,6 +462,7 @@ static void probe_server_periodic(void *ctx)
 					poll_ctx->poll_fd.available = 0;
 					close(poll_ctx->poll_fd.fd);
 					poll_ctx->poll_fd.fd = -1;
+					probe_server_info->client_active_stamp = ticks;
 					probe_server_info->state = PROBE_SERVER_STATE_INIT;
 				}
 			}

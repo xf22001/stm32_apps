@@ -6,7 +6,7 @@
  *   文件名称：request_default.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月05日 星期四 10时09分49秒
- *   修改日期：2021年05月10日 星期一 14时33分06秒
+ *   修改日期：2021年05月22日 星期六 10时18分22秒
  *   描    述：
  *
  *================================================================*/
@@ -110,7 +110,9 @@ static void request_periodic(void *ctx, uint8_t *send_buffer, uint16_t send_buff
 	debug("");
 
 	if(get_client_state(net_client_info) == CLIENT_CONNECTED) {
-		chunk_sendto(net_client_info, 1, 0, (void *)0x8000000, 128, (char *)send_buffer, send_buffer_size);
+		if(chunk_sendto(net_client_info, 1, 0, (void *)0x8000000, 128, (char *)send_buffer, send_buffer_size) == -1) {
+			set_client_state(net_client_info, CLIENT_RESET);
+		}
 	}
 }
 
