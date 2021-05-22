@@ -6,7 +6,7 @@
  *   文件名称：sal_hook.h
  *   创 建 者：肖飞
  *   创建日期：2021年05月19日 星期三 08时14分01秒
- *   修改日期：2021年05月21日 星期五 17时04分01秒
+ *   修改日期：2021年05月22日 星期六 13时45分16秒
  *   描    述：
  *
  *================================================================*/
@@ -69,6 +69,7 @@ static inline ip_addr_t *get_default_gw(void)
 	return NULL;
 }
 #else//#if defined(SAL_HOOK)
+#include "lwip/netif.h"
 extern struct netif gnetif;
 static inline ip_addr_t *get_default_gw(void)
 {
