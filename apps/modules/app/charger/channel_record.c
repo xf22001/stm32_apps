@@ -6,7 +6,7 @@
  *   文件名称：channel_record.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月23日 星期日 13时40分21秒
- *   修改日期：2021年05月24日 星期一 14时56分42秒
+ *   修改日期：2021年05月24日 星期一 15时50分00秒
  *   描    述：
  *
  *================================================================*/
@@ -54,8 +54,11 @@ static int channel_record_item_save(channel_record_task_info_t *channel_record_t
 
 uint16_t alloc_channel_record_item_id(channel_record_task_info_t *channel_record_task_info)
 {
-	uint16_t id;
+	uint16_t id = -1;
 	channel_record_info_t *channel_record_info = &channel_record_task_info->channel_record_info;
+	channel_record_item_t *channel_record_item = (channel_record_item_t *)os_calloc(1, sizeof(channel_record_item_t));
+
+	OS_ASSERT(channel_record_item != NULL);
 
 	mutex_lock(channel_record_task_info->mutex);
 	id = channel_record_info->end;
@@ -74,31 +77,19 @@ uint16_t alloc_channel_record_item_id(channel_record_task_info_t *channel_record
 		channel_record_info->start = 0;
 	}
 
+	channel_record_item->id = id;
+
 	OS_ASSERT(channel_record_info_save(channel_record_task_info, channel_record_info));
+	OS_ASSERT(channel_record_item_save(channel_record_task_info, channel_record_item));
 
 	mutex_unlock(channel_record_task_info->mutex);
+
+	os_free(channel_record_item);
+
 	return id;
 }
 
-int channel_record_update(channel_record_task_info_t *channel_record_task_info, channel_record_item_t *channel_record_item)
-{
-	int ret = -1;
-	if(channel_record_item == NULL) {
-		return ret;
-	}
-
-	if(channel_record_item->id >= CHANNEL_RECORD_NUMBER) {
-		return ret;
-	}
-
-	mutex_lock(channel_record_task_info->mutex);
-	do_callback_chain(channel_record_task_info->channel_record_update_chain, channel_record_item);
-	ret = channel_record_item_save(channel_record_task_info, channel_record_item);
-	mutex_unlock(channel_record_task_info->mutex);
-	return ret;
-}
-
-channel_record_item_t *getchannel_record_item_by_id(channel_record_task_info_t *channel_record_task_info, uint16_t id)
+channel_record_item_t *get_channel_record_item_by_id(channel_record_task_info_t *channel_record_task_info, uint16_t id)
 {
 	channel_record_item_t *channel_record_item = (channel_record_item_t *)os_calloc(1, sizeof(channel_record_item_t));
 
@@ -120,6 +111,30 @@ channel_record_item_t *getchannel_record_item_by_id(channel_record_task_info_t *
 	mutex_unlock(channel_record_task_info->mutex);
 
 	return channel_record_item;
+}
+
+int channel_record_update(channel_record_task_info_t *channel_record_task_info, channel_record_item_t *channel_record_item)
+{
+	int ret = -1;
+
+	if(channel_record_item == NULL) {
+		return ret;
+	}
+
+	if(channel_record_item->id >= CHANNEL_RECORD_NUMBER) {
+		return ret;
+	}
+
+	mutex_lock(channel_record_task_info->mutex);
+	do_callback_chain(channel_record_task_info->channel_record_update_chain, channel_record_item);
+	ret = channel_record_item_save(channel_record_task_info, channel_record_item);
+	mutex_unlock(channel_record_task_info->mutex);
+	return ret;
+}
+
+int channel_record_sync(channel_record_task_info_t *channel_record_task_info)
+{
+	return signal_send(channel_record_task_info->sync_signal, 0, 10);
 }
 
 static void free_channel_record_task_info(channel_record_task_info_t *channel_record_task_info)

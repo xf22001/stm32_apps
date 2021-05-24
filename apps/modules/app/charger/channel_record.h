@@ -6,7 +6,7 @@
  *   文件名称：channel_record.h
  *   创 建 者：肖飞
  *   创建日期：2021年05月23日 星期日 13时40分28秒
- *   修改日期：2021年05月24日 星期一 13时30分14秒
+ *   修改日期：2021年05月24日 星期一 15时32分08秒
  *   描    述：
  *
  *================================================================*/
@@ -40,6 +40,7 @@ typedef struct {
 	uint16_t id;
 	uint8_t channel_id;
 	uint8_t upload;
+	uint8_t valid;
 } channel_record_item_t;
 
 #pragma pack(pop)
@@ -53,4 +54,11 @@ typedef struct {
 	os_mutex_t mutex;
 	eeprom_info_t *eeprom_info;
 } channel_record_task_info_t; 
+
+uint16_t alloc_channel_record_item_id(channel_record_task_info_t *channel_record_task_info);
+channel_record_item_t *get_channel_record_item_by_id(channel_record_task_info_t *channel_record_task_info, uint16_t id);
+int channel_record_update(channel_record_task_info_t *channel_record_task_info, channel_record_item_t *channel_record_item);
+int channel_record_sync(channel_record_task_info_t *channel_record_task_info);
+channel_record_task_info_t *get_or_alloc_channel_record_task_info(uint32_t id);
+
 #endif //_CHANNEL_RECORD_H
