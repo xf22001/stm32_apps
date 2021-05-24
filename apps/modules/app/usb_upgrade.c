@@ -6,7 +6,7 @@
  *   文件名称：usb_upgrade.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月08日 星期六 20时15分37秒
- *   修改日期：2021年05月10日 星期一 11时17分58秒
+ *   修改日期：2021年05月24日 星期一 13时26分19秒
  *   描    述：
  *
  *================================================================*/
@@ -32,7 +32,7 @@ void start_usb_upgrade(void)
 		if(is_app() == 1) {
 			app_info_t *app_info = get_app_info();
 
-			if(app_info->mechine.upgrade_enable != 0) {
+			if(app_info->mechine_info.upgrade_enable != 0) {
 				state = USB_UPGRADE_STATE_CHECK_FIRMWARE;
 			} else {
 				debug("");
@@ -250,7 +250,7 @@ void handle_usb_upgrade(void)
 
 			if(ret == 0) {
 				app_info_t *app_info = get_app_info();
-				app_info->mechine.upgrade_enable = 0;
+				app_info->mechine_info.upgrade_enable = 0;
 				app_save_config();
 				HAL_NVIC_SystemReset();
 			}

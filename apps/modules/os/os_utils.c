@@ -6,7 +6,7 @@
  *   文件名称：os_utils.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分17秒
- *   修改日期：2021年05月08日 星期六 20时28分05秒
+ *   修改日期：2021年05月24日 星期一 13时56分48秒
  *   描    述：
  *
  *================================================================*/
@@ -71,7 +71,7 @@ void mutex_lock(os_mutex_t mutex)
 
 	OS_ASSERT(mutex != NULL);
 	//os_status = osMutexWait(mutex, osWaitForever);
-	os_status = osMutexWait(mutex, 1000);
+	os_status = osMutexWait(mutex, 3 * 60 * 1000);
 	OS_ASSERT(os_status == osOK);
 }
 

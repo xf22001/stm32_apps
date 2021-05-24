@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2021年05月19日 星期三 21时21分07秒
+ *   修改日期：2021年05月24日 星期一 13时21分55秒
  *   描    述：
  *
  *================================================================*/
@@ -89,8 +89,8 @@ static int get_addr_host_port_service(net_client_info_t *net_client_info, char *
 
 	app_info_t *app_info = get_app_info();
 
-	*host = app_info->mechine.host;
-	*port = app_info->mechine.port;
+	*host = app_info->mechine_info.host;
+	*port = app_info->mechine_info.port;
 	*path = "/";
 
 	return ret;
