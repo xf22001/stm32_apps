@@ -6,7 +6,7 @@
  *   文件名称：poll_loop.h
  *   创 建 者：肖飞
  *   创建日期：2020年08月11日 星期二 09时54分24秒
- *   修改日期：2021年01月29日 星期五 21时53分09秒
+ *   修改日期：2021年05月24日 星期一 09时35分59秒
  *   描    述：
  *
  *================================================================*/
@@ -57,8 +57,6 @@ typedef struct {
 } poll_ctx_t;
 
 typedef struct {
-	struct list_head list;
-
 	uint8_t id;
 	os_mutex_t poll_ctx_list_mutex;
 	struct list_head poll_ctx_list;
