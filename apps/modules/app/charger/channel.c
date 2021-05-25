@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分12秒
- *   修改日期：2021年05月25日 星期二 17时12分38秒
+ *   修改日期：2021年05月25日 星期二 21时36分48秒
  *   描    述：
  *
  *================================================================*/
@@ -17,7 +17,6 @@
 #include "charger.h"
 #include "energy_meter.h"
 
-#define LOG_DISABLE
 #include "log.h"
 
 static channel_handler_t *channel_handler_sz[] = {
@@ -91,8 +90,6 @@ static void handle_channels_event(void *_channels_info, void *_channels_event)
 {
 	channels_info_t *channels_info = (channels_info_t *)_channels_info;
 	channels_event_t *channels_event = (channels_event_t *)_channels_event;
-
-	debug("");
 
 	debug("channels_info process event %s!", get_channel_event_type_des(channels_event->type));
 
