@@ -6,7 +6,7 @@
  *   文件名称：os_utils.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分17秒
- *   修改日期：2021年05月24日 星期一 13时56分48秒
+ *   修改日期：2021年05月25日 星期二 08时50分44秒
  *   描    述：
  *
  *================================================================*/
@@ -21,8 +21,10 @@
 #include "duty_cycle_pattern.h"
 
 typedef struct {
-	size_t size;
 	struct list_head list;
+	size_t size;
+	const char *func;
+	int line;
 } mem_node_info_t;
 
 typedef struct {
@@ -248,7 +250,7 @@ int init_mem_info(void)
 	return ret;
 }
 
-static void *xmalloc(size_t size)
+static void *xmalloc(size_t size, const char *func, int line)
 {
 	mem_node_info_t *mem_node_info;
 
@@ -265,6 +267,8 @@ static void *xmalloc(size_t size)
 		}
 
 		mem_node_info->size = size;
+		mem_node_info->func = func;
+		mem_node_info->line = line;
 		list_add_tail(&mem_node_info->list, &mem_info.list);
 	}
 
@@ -315,11 +319,11 @@ void get_mem_info(size_t *size, size_t *count, size_t *max_size)
 	mutex_unlock(mem_info.mutex);
 }
 
-void *os_alloc(size_t size)
+void *__os_alloc(size_t size, const char *func, int line)
 {
 	void *p;
 
-	p = xmalloc(size);
+	p = xmalloc(size, func, line);
 
 	return p;
 }
@@ -329,12 +333,12 @@ void os_free(void *p)
 	xfree(p);
 }
 
-void *os_realloc(void *p, size_t size)
+void *__os_realloc(void *p, size_t size, const char *func, int line)
 {
 	void *old = p;
 
 	if(size != 0) {
-		p = xmalloc(size);
+		p = xmalloc(size, func, line);
 	} else {
 		xfree(p);
 		old = NULL;
@@ -358,9 +362,9 @@ void *os_realloc(void *p, size_t size)
 	return p;
 }
 
-void *os_calloc(size_t n, size_t size)
+void *__os_calloc(size_t n, size_t size, const char *func, int line)
 {
-	void *p = xmalloc(n * size);
+	void *p = xmalloc(n * size, func, line);
 
 	if(p != NULL) {
 		memset(p, 0, n * size);

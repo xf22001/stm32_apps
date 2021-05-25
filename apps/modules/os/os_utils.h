@@ -6,7 +6,7 @@
  *   文件名称：os_utils.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分36秒
- *   修改日期：2021年04月29日 星期四 09时42分50秒
+ *   修改日期：2021年05月25日 星期二 08时49分07秒
  *   描    述：
  *
  *================================================================*/
@@ -404,15 +404,19 @@ void port_free(void *p);
 uint32_t get_total_heap_size(void);
 int init_mem_info(void);
 void get_mem_info(size_t *size, size_t *count, size_t *max_size);
-void *os_alloc(size_t size);
+void *__os_alloc(size_t size, const char *func, int line);
 void os_free(void *p);
-void *os_realloc(void *p, size_t size);
-void *os_calloc(size_t n, size_t size);
+void *__os_realloc(void *p, size_t size, const char *func, int line);
+void *__os_calloc(size_t n, size_t size, const char *func, int line);
 unsigned char mem_is_set(char *values, size_t size, char value);
 unsigned int str_hash(const char *s);
 uint8_t sum_crc8(const void *data, size_t size);
 uint16_t sum_crc16(const void *data, size_t size);
 uint32_t sum_crc32(const void *data, size_t size);
 uint32_t ticks_duration(uint32_t a, uint32_t b);
+
+#define os_alloc(size) __os_alloc(size, __func__, __LINE__)
+#define os_realloc(p, size) __os_realloc(p, size, __func__, __LINE__)
+#define os_calloc(n, size) __os_calloc(n, size, __func__, __LINE__)
 
 #endif //_OS_UTILS_H
