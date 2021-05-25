@@ -6,7 +6,7 @@
  *   文件名称：channel_record.h
  *   创 建 者：肖飞
  *   创建日期：2021年05月23日 星期日 13时40分28秒
- *   修改日期：2021年05月24日 星期一 15时32分08秒
+ *   修改日期：2021年05月25日 星期二 09时41分44秒
  *   描    述：
  *
  *================================================================*/
@@ -36,11 +36,17 @@ typedef struct {
 	uint16_t end;
 } channel_record_info_t;
 
+typedef enum {
+	CHANNEL_RECORD_ITEM_STATE_INIT = 0,
+	CHANNEL_RECORD_ITEM_STATE_UPDATE,
+	CHANNEL_RECORD_ITEM_STATE_FINISH,
+	CHANNEL_RECORD_ITEM_STATE_UPLOAD,
+} channel_record_item_state_t;
+
 typedef struct {
 	uint16_t id;
 	uint8_t channel_id;
-	uint8_t upload;
-	uint8_t valid;
+	channel_record_item_state_t state;
 } channel_record_item_t;
 
 #pragma pack(pop)

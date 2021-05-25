@@ -6,7 +6,7 @@
  *   文件名称：channel_record.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月23日 星期日 13时40分21秒
- *   修改日期：2021年05月24日 星期一 15时50分00秒
+ *   修改日期：2021年05月25日 星期二 09时44分01秒
  *   描    述：
  *
  *================================================================*/
@@ -60,7 +60,10 @@ uint16_t alloc_channel_record_item_id(channel_record_task_info_t *channel_record
 
 	OS_ASSERT(channel_record_item != NULL);
 
+	channel_record_item->state = CHANNEL_RECORD_ITEM_STATE_INIT;
+
 	mutex_lock(channel_record_task_info->mutex);
+
 	id = channel_record_info->end;
 
 	channel_record_info->end += 1;

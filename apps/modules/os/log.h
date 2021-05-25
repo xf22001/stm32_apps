@@ -6,7 +6,7 @@
  *   文件名称：log.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月29日 星期五 14时29分33秒
- *   修改日期：2021年04月09日 星期五 16时11分41秒
+ *   修改日期：2021年05月25日 星期二 11时15分59秒
  *   描    述：
  *
  *================================================================*/
@@ -86,4 +86,37 @@ int remove_log_handler(log_fn_t fn);
 int log_printf(uint32_t log_mask, const char *fmt, ...);
 void log_hexdump(uint32_t log_mask, const char *label, const char *data, int len);
 int log_puts(uint32_t log_mask, const char *s);
+
+#if defined(LOG_DISABLE)
+#undef _printf
+#undef _hexdump
+#undef _puts
+#undef debug
+#undef uart_printf
+#undef udp_printf
+#undef file_printf
+#undef _printf
+#undef _hexdump
+#undef _puts
+#undef debug
+#undef uart_printf
+#undef udp_printf
+#undef file_printf
+
+#define _printf(fmt, ...)
+#define _hexdump(label, data, len)
+#define _puts(s)
+#define debug(fmt, ...)
+#define uart_printf(fmt, ...)
+#define udp_printf(fmt, ...)
+#define file_printf(fmt, ...)
+#define _printf(fmt, ...)
+#define _hexdump(label, data, len)
+#define _puts(s)
+#define debug(fmt, ...)
+#define uart_printf(fmt, ...)
+#define udp_printf(fmt, ...)
+#define file_printf(fmt, ...)
+#endif//#if defined(LOG_DISABLE)
+
 #endif //_LOG_H

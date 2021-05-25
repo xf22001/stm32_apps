@@ -6,7 +6,7 @@
  *   文件名称：channels.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 09时26分31秒
- *   修改日期：2021年05月11日 星期二 09时53分23秒
+ *   修改日期：2021年05月25日 星期二 10时58分30秒
  *   描    述：
  *
  *================================================================*/
@@ -20,6 +20,7 @@
 
 #include "channel.h"
 #include "channels_power_module.h"
+#include "card_reader.h"
 
 #include "log.h"
 
@@ -59,6 +60,8 @@ static int channels_info_set_channels_config(channels_info_t *channels_info, cha
 	channels_info->channel_info = alloc_channels_channel_info(channels_info);
 
 	channels_info->channels_power_module = alloc_channels_power_module(channels_info);
+
+	channels_info->card_reader_info = alloc_card_reader_info(channels_info);
 
 	channels_info->configed = 1;
 
