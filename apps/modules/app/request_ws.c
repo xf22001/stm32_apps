@@ -6,7 +6,7 @@
  *   文件名称：request_ws.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月23日 星期日 15时44分51秒
- *   修改日期：2020年09月10日 星期四 08时34分23秒
+ *   修改日期：2021年05月25日 星期二 19时59分26秒
  *   描    述：
  *
  *================================================================*/
@@ -59,7 +59,7 @@ static void request_periodic(void *ctx, uint8_t *send_buffer, uint16_t send_buff
 }
 
 request_callback_t request_callback_ws = {
-	.name = "websocket request",
+	.type = REQUEST_TYPE_DEFAULT_WEBSOCKET,
 	.init = request_init,
 	.before_connect = request_before_create_server_connect,
 	.after_connect = request_after_create_server_connect,

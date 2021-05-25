@@ -6,7 +6,7 @@
  *   文件名称：sal_hook.h
  *   创 建 者：肖飞
  *   创建日期：2021年05月19日 星期三 08时14分01秒
- *   修改日期：2021年05月22日 星期六 13时45分16秒
+ *   修改日期：2021年05月25日 星期二 21时12分35秒
  *   描    述：
  *
  *================================================================*/
@@ -39,9 +39,14 @@ extern "C"
 #undef fcntl
 #undef setsockopt
 #undef getsockopt
+#undef getsockname
 #undef getaddrinfo
 #undef freeaddrinfo
 #undef gethostbyname
+#undef read
+#undef write
+#undef shutdown
+
 #define close(s) sal_closesocket(s)
 #define closesocket(s) sal_closesocket(s)
 #define connect(s, name, namelen) sal_connect(s, name, namelen)
@@ -57,9 +62,13 @@ extern "C"
 #define fcntl(s, cmd, val) sal_ioctlsocket(s, cmd, val)
 #define setsockopt(s,level,optname,opval,optlen)  sal_setsockopt(s,level,optname,opval,optlen)
 #define getsockopt(s,level,optname,opval,optlen)  sal_getsockopt(s,level,optname,opval,optlen)
+#define getsockname(s,name,namelen)  sal_getsockname(s,name,namelen)
 #define getaddrinfo(nodname, servname, hints, res) sal_getaddrinfo(nodname, servname, hints, res)
 #define freeaddrinfo(addrinfo) sal_freeaddrinfo(addrinfo)
 #define gethostbyname(name) sal_gethostbyname(name)
+#define read(s, mem, len) sal_recvfrom(s, mem, len, 0, NULL, NULL)
+#define write(s, dataptr, size) sal_sendto(s, dataptr, size, 0, NULL, 0)
+#define shutdown(s, how) sal_shutdown(s, how)
 static inline ip_addr_t *get_default_gw(void)
 {
 	struct netdev *netdev = get_default_netdev();

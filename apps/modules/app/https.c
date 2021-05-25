@@ -15,6 +15,7 @@
 #include "https.h"
 
 #include "os_utils.h"
+#include "sal_hook.h"
 #include "log.h"
 
 /*---------------------------------------------------------------------*/

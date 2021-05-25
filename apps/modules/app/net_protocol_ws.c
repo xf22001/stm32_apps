@@ -6,7 +6,7 @@
  *   文件名称：net_protocol_ws.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月23日 星期日 12时23分31秒
- *   修改日期：2021年03月22日 星期一 09时12分12秒
+ *   修改日期：2021年05月25日 星期二 19时57分36秒
  *   描    述：
  *
  *================================================================*/
@@ -20,7 +20,6 @@
 #include <string.h>
 #include "os_utils.h"
 #include "net_client.h"
-#include "net_protocol.h"
 #include "https.h"
 #include "mbedtls/platform.h"
 
@@ -159,8 +158,7 @@ static int ws_client_close(void *ctx)
 }
 
 protocol_if_t protocol_if_ws = {
-	.name = "websocket",
-	.type = TRANS_PROTOCOL_WS,
+	.type = PROTOCOL_WS,
 	.net_connect = ws_client_connect,
 	.net_recv = ws_client_recv,
 	.net_send = ws_client_send,

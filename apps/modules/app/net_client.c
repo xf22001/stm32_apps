@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2021年05月24日 星期一 13时21分55秒
+ *   修改日期：2021年05月25日 星期二 20时58分14秒
  *   描    述：
  *
  *================================================================*/
@@ -26,9 +26,21 @@
 
 
 extern protocol_if_t protocol_if_tcp;
+extern protocol_if_t protocol_if_udp;
+extern protocol_if_t protocol_if_ws;
 extern request_callback_t request_callback_default;
 
-char *get_net_client_state_des(client_state_t state)
+static protocol_if_t *protocol_if_sz[] = {
+	&protocol_if_tcp,
+	&protocol_if_udp,
+	&protocol_if_ws,
+};
+
+static request_callback_t *request_callback_sz[] = {
+	&request_callback_default,
+};
+
+static char *get_net_client_state_des(client_state_t state)
 {
 	char *des = "unknow";
 
@@ -49,38 +61,61 @@ char *get_net_client_state_des(client_state_t state)
 	return des;
 }
 
-
-void set_net_client_protocol_if(net_client_info_t *net_client_info, protocol_if_t *protocol_if)
+static char *get_protocol_type_des(protocol_type_t protocol_type)
 {
-	if(net_client_info == NULL) {
-		debug("");
-		return;
+	char *des = "unknow";
+
+	switch(protocol_type) {
+			add_des_case(PROTOCOL_TCP);
+			add_des_case(PROTOCOL_UDP);
+			add_des_case(PROTOCOL_WS);
+
+		default: {
+		}
+		break;
 	}
 
-	if(protocol_if == NULL) {
-		debug("");
-		return;
-	}
-
-	debug("select protocol %s", protocol_if->name);
-
-	net_client_info->protocol_if = protocol_if;
+	return des;
 }
 
-void set_net_client_request_callback(net_client_info_t *net_client_info, request_callback_t *request_callback)
+static char *get_request_type_des(request_type_t request_type)
+{
+	char *des = "unknow";
+
+	switch(request_type) {
+			add_des_case(REQUEST_TYPE_DEFAULT);
+			add_des_case(REQUEST_TYPE_DEFAULT_WEBSOCKET);
+
+		default: {
+		}
+		break;
+	}
+
+	return des;
+}
+
+void set_net_client_protocol_type(net_client_info_t *net_client_info, protocol_type_t protocol_type)
 {
 	if(net_client_info == NULL) {
 		debug("");
 		return;
 	}
 
-	if(request_callback == NULL) {
+	debug("set protocol_type %s", get_protocol_type_des(protocol_type));
+
+	net_client_info->protocol_type = protocol_type;
+}
+
+void set_net_client_request_type(net_client_info_t *net_client_info, request_type_t request_type)
+{
+	if(net_client_info == NULL) {
 		debug("");
 		return;
 	}
 
-	debug("select net request_callback %s", request_callback->name);
-	net_client_info->request_callback = request_callback;
+	debug("set request_type %s", get_request_type_des(request_type));
+
+	net_client_info->request_type = request_type;
 }
 
 static int get_addr_host_port_service(net_client_info_t *net_client_info, char **host, char **port, char **path)
@@ -141,8 +176,8 @@ static void get_addr_info(net_client_info_t *net_client_info)
 	net_client_info->net_client_addr_info.socket_addr_info = NULL;
 
 
-	socktype = (net_client_info->protocol_if->type == TRANS_PROTOCOL_UDP) ? SOCK_DGRAM : SOCK_STREAM;
-	protocol = (net_client_info->protocol_if->type == TRANS_PROTOCOL_UDP) ? IPPROTO_UDP : IPPROTO_TCP;
+	socktype = (net_client_info->protocol_type == PROTOCOL_UDP) ? SOCK_DGRAM : SOCK_STREAM;
+	protocol = (net_client_info->protocol_type == PROTOCOL_UDP) ? IPPROTO_UDP : IPPROTO_TCP;
 
 	ret = update_addr_info_list(list_head, net_client_info->net_client_addr_info.host, net_client_info->net_client_addr_info.port, socktype, protocol);
 
@@ -180,10 +215,51 @@ client_state_t get_client_state(net_client_info_t *net_client_info)
 	return net_client_info->state;
 }
 
+static protocol_if_t *get_protocol_if(protocol_type_t protocol_type)
+{
+	protocol_if_t *protocol_if = NULL;
+	int i;
+
+	for(i = 0; i < ARRAY_SIZE(protocol_if_sz); i++) {
+		protocol_if_t *protocol_if_item = protocol_if_sz[i];
+
+		if(protocol_if_item->type == protocol_type) {
+			protocol_if = protocol_if_item;
+			break;
+		}
+	}
+
+	return protocol_if;
+}
+
+static request_callback_t *get_request_callback(request_type_t request_type)
+{
+	request_callback_t *request_callback = NULL;
+	int i;
+
+	for(i = 0; i < ARRAY_SIZE(request_callback_sz); i++) {
+		request_callback_t *request_callback_item = request_callback_sz[i];
+
+		if(request_callback_item->type == request_type) {
+			request_callback = request_callback_item;
+			break;
+		}
+	}
+
+	return request_callback;
+}
+
 static void default_init(net_client_info_t *net_client_info)
 {
 	debug("");
 	srand(osKernelSysTick());
+
+	net_client_info->protocol_if = get_protocol_if(net_client_info->protocol_type);
+	OS_ASSERT(net_client_info->protocol_if);
+	net_client_info->request_callback = get_request_callback(net_client_info->request_type);
+	OS_ASSERT(net_client_info->request_callback);
+
+	get_addr_info(net_client_info);
 
 	if(net_client_info->request_callback->init != NULL) {
 		net_client_info->request_callback->init(net_client_info);
@@ -597,7 +673,7 @@ static uint8_t is_server_enable(void)
 	return 1;
 }
 
-void net_client_periodic(void *ctx)
+static void net_client_periodic(void *ctx)
 {
 	int ret = 0;
 	poll_ctx_t *poll_ctx = (poll_ctx_t *)ctx;
@@ -609,7 +685,7 @@ void net_client_periodic(void *ctx)
 		return;
 	}
 
-	//debug("state:%s", get_net_client_state_des(get_client_state()));
+	debug("state:%s", get_net_client_state_des(get_client_state(net_client_info)));
 
 	//处理周期性事件
 	//约100ms调用一次
@@ -651,6 +727,7 @@ void net_client_periodic(void *ctx)
 		break;
 
 		case CLIENT_CONNECT_CONFIRM: {
+
 			if(ticks_duration(ticks, net_client_info->connect_confirm_stamp) >= (30 * TASK_NET_CLIENT_CONNECT_PERIODIC)) {
 				debug("connect failed!");
 				set_client_state(net_client_info, CLIENT_RESET);
@@ -666,8 +743,6 @@ void net_client_periodic(void *ctx)
 		break;
 
 		case CLIENT_RESET: {
-			get_addr_info(net_client_info);
-			debug("");
 			poll_ctx->poll_fd.available = 0;
 
 			close_connect(net_client_info);
@@ -730,8 +805,8 @@ void net_client_add_poll_loop(poll_loop_t *poll_loop)
 	net_client_info->sock_fd = -1;
 	INIT_LIST_HEAD(&net_client_info->net_client_addr_info.socket_addr_info_list);
 
-	set_net_client_protocol_if(net_client_info, &protocol_if_tcp);
-	set_net_client_request_callback(net_client_info, &request_callback_default);
+	set_net_client_protocol_type(net_client_info, PROTOCOL_TCP);
+	set_net_client_request_type(net_client_info, REQUEST_TYPE_DEFAULT);
 
 	default_init(net_client_info);
 

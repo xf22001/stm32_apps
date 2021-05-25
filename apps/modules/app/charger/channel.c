@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分12秒
- *   修改日期：2021年05月22日 星期六 13时26分03秒
+ *   修改日期：2021年05月25日 星期二 17时12分38秒
  *   描    述：
  *
  *================================================================*/
@@ -17,6 +17,7 @@
 #include "charger.h"
 #include "energy_meter.h"
 
+#define LOG_DISABLE
 #include "log.h"
 
 static channel_handler_t *channel_handler_sz[] = {

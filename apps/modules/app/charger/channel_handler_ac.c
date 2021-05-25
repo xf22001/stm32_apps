@@ -6,12 +6,13 @@
  *   文件名称：channel_handler_ac.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月11日 星期二 09时20分53秒
- *   修改日期：2021年05月22日 星期六 13时12分38秒
+ *   修改日期：2021年05月25日 星期二 17时11分46秒
  *   描    述：
  *
  *================================================================*/
 #include "channel_handler_ac.h"
 
+#define LOG_DISABLE
 #include "log.h"
 
 static void handle_channel_periodic(void *_channel_info, void *_channels_info)

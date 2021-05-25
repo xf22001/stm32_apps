@@ -6,7 +6,7 @@
  *   文件名称：request_default.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月05日 星期四 10时09分49秒
- *   修改日期：2021年05月25日 星期二 11时26分25秒
+ *   修改日期：2021年05月25日 星期二 19时58分14秒
  *   描    述：
  *
  *================================================================*/
@@ -117,7 +117,7 @@ static void request_periodic(void *ctx, uint8_t *send_buffer, uint16_t send_buff
 }
 
 request_callback_t request_callback_default = {
-	.name = "zr",
+	.type = REQUEST_TYPE_DEFAULT,
 	.set_lan_led_state = request_set_lan_led_state,
 	.init = request_init,
 	.before_connect = request_before_create_server_connect,
