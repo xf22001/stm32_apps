@@ -6,7 +6,7 @@
  *   文件名称：power_modules.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时34分29秒
- *   修改日期：2021年04月20日 星期二 11时20分10秒
+ *   修改日期：2021年05月25日 星期二 11时25分40秒
  *   描    述：
  *
  *================================================================*/
@@ -22,7 +22,7 @@
 #include "channels.h"
 #include "can_data_task.h"
 
-//#define LOG_NONE
+//#define LOG_DISABLE
 #include "log.h"
 
 static object_class_t *power_modules_class = NULL;

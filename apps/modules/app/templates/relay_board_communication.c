@@ -6,7 +6,7 @@
  *   文件名称：relay_board_communication.c
  *   创 建 者：肖飞
  *   创建日期：2020年07月06日 星期一 17时08分54秒
- *   修改日期：2021年02月21日 星期日 19时42分20秒
+ *   修改日期：2021年05月25日 星期二 11时26分14秒
  *   描    述：
  *
  *================================================================*/
@@ -18,7 +18,7 @@
 
 #include "relay_board_command.h"
 
-//#define LOG_NONE
+//#define LOG_DISABLE
 #include "log.h"
 
 typedef struct {

@@ -6,7 +6,7 @@
  *   文件名称：hw_rtc.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月15日 星期六 15时58分08秒
- *   修改日期：2021年05月15日 星期六 15时58分23秒
+ *   修改日期：2021年05月25日 星期二 11时27分05秒
  *   描    述：
  *
  *================================================================*/
@@ -16,7 +16,7 @@
 #include <time.h>
 
 #include "os_utils.h"
-#define LOG_NONE
+#define LOG_DISABLE
 #include "log.h"
 
 extern RTC_HandleTypeDef hrtc;

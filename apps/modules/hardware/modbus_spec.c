@@ -6,14 +6,14 @@
  *   文件名称：modbus_spec.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月22日 星期三 11时47分17秒
- *   修改日期：2020年12月28日 星期一 13时24分31秒
+ *   修改日期：2021年05月25日 星期二 11时26分35秒
  *   描    述：
  *
  *================================================================*/
 #include "modbus_spec.h"
 #include "os_utils.h"
 
-#define LOG_NONE
+#define LOG_DISABLE
 #include "log.h"
 
 uint16_t modbus_calc_crc(uint8_t *data, uint16_t size)

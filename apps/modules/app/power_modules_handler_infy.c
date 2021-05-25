@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_infy.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月15日 星期四 10时25分30秒
- *   修改日期：2021年05月13日 星期四 13时56分23秒
+ *   修改日期：2021年05月25日 星期二 11时26分29秒
  *   描    述：
  *
  *================================================================*/
@@ -15,7 +15,7 @@
 #include <string.h>
 
 #include "os_utils.h"
-#define LOG_NONE
+#define LOG_DISABLE
 #include "log.h"
 
 #define LOCAL_ADDR 0xf0

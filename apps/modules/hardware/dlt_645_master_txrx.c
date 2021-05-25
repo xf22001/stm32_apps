@@ -6,7 +6,7 @@
  *   文件名称：dlt_645_master_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月21日 星期四 10时19分55秒
- *   修改日期：2021年04月20日 星期二 11时12分55秒
+ *   修改日期：2021年05月25日 星期二 11时26分56秒
  *   描    述：
  *
  *================================================================*/
@@ -14,7 +14,7 @@
 #include <string.h>
 #include "object_class.h"
 
-#define LOG_NONE
+#define LOG_DISABLE
 #include "log.h"
 
 static object_class_t *dlt_645_master_class = NULL;

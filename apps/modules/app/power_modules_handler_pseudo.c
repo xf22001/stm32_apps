@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_pseudo.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 17时36分29秒
- *   修改日期：2021年04月15日 星期四 11时35分17秒
+ *   修改日期：2021年05月25日 星期二 11时25分48秒
  *   描    述：
  *
  *================================================================*/
@@ -14,7 +14,7 @@
 #include "os_utils.h"
 #include <string.h>
 
-#define LOG_NONE
+#define LOG_DISABLE
 #include "log.h"
 
 static void _set_out_voltage_current(power_modules_info_t *power_modules_info, int module_id)

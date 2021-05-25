@@ -6,7 +6,7 @@
  *   文件名称：modbus_slave_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月20日 星期一 14时54分12秒
- *   修改日期：2021年02月02日 星期二 13时13分00秒
+ *   修改日期：2021年05月25日 星期二 11时26分47秒
  *   描    述：
  *
  *================================================================*/
@@ -15,7 +15,7 @@
 #include "object_class.h"
 #include "os_utils.h"
 
-#define LOG_NONE
+#define LOG_DISABLE
 #include "log.h"
 
 static object_class_t *modbus_slave_class = NULL;

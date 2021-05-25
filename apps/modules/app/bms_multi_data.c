@@ -6,7 +6,7 @@
  *   文件名称：bms_multi_data.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月09日 星期四 13时04分55秒
- *   修改日期：2021年02月21日 星期日 19时30分54秒
+ *   修改日期：2021年05月25日 星期二 11时25分14秒
  *   描    述：
  *
  *================================================================*/
@@ -17,7 +17,7 @@
 
 #include "can.h"
 
-#define LOG_NONE
+#define LOG_DISABLE
 #include "log.h"
 
 static int send_bms_multi_request_response(can_info_t *can_info, multi_packets_des_t *multi_packets_des, bms_data_settings_t *settings)

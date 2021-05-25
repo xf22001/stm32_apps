@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_huawei.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 17时23分55秒
- *   修改日期：2021年04月22日 星期四 11时37分30秒
+ *   修改日期：2021年05月25日 星期二 11时25分24秒
  *   描    述：
  *
  *================================================================*/
@@ -15,7 +15,7 @@
 #include <stdlib.h>
 
 #include "os_utils.h"
-#define LOG_NONE
+#define LOG_DISABLE
 #include "log.h"
 
 #define POWER_ID_TX_CONTROL_HUAWEI 0x068081FC

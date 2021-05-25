@@ -6,7 +6,7 @@
  *   文件名称：soft_timer.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月22日 星期五 10时28分46秒
- *   修改日期：2021年05月19日 星期三 23时27分20秒
+ *   修改日期：2021年05月25日 星期二 11时27分53秒
  *   描    述：
  *
  *================================================================*/
@@ -17,7 +17,7 @@
 
 #include "object_class.h"
 #include "os_utils.h"
-#define LOG_NONE
+#define LOG_DISABLE
 #include "log.h"
 
 static object_class_t *soft_timer_class = NULL;
@@ -216,7 +216,7 @@ static void active_deactive_timers(soft_timer_info_t *soft_timer_info)
 		soft_timer_ctx_t *soft_timer_ctx = list_entry(pos, soft_timer_ctx_t, list);
 
 		if(remove_callback(soft_timer_ctx->soft_timer_info->timer_cb_chain, soft_timer_ctx->callback_item) != 0) {
-			//debug("remove_callback %p in %p failed", soft_timer_ctx->callback_item, soft_timer_ctx->soft_timer_info);
+			debug("remove_callback %p in %p failed", soft_timer_ctx->callback_item, soft_timer_ctx->soft_timer_info);
 		}
 
 		list_del(pos);
@@ -227,7 +227,7 @@ static void active_deactive_timers(soft_timer_info_t *soft_timer_info)
 		soft_timer_ctx_t *soft_timer_ctx = list_entry(pos, soft_timer_ctx_t, list);
 
 		if(register_callback(soft_timer_ctx->soft_timer_info->timer_cb_chain, soft_timer_ctx->callback_item) != 0) {
-			//debug("register_callback %p in %p failed", soft_timer_ctx->callback_item, soft_timer_ctx->soft_timer_info);
+			debug("register_callback %p in %p failed", soft_timer_ctx->callback_item, soft_timer_ctx->soft_timer_info);
 		}
 
 		list_del(pos);
@@ -238,7 +238,7 @@ static void active_deactive_timers(soft_timer_info_t *soft_timer_info)
 		soft_timer_ctx_t *soft_timer_ctx = list_entry(pos, soft_timer_ctx_t, list);
 
 		if(remove_callback(soft_timer_ctx->soft_timer_info->timer_cb_chain, soft_timer_ctx->callback_item) != 0) {
-			//debug("remove_callback %p in %p failed", soft_timer_ctx->callback_item, soft_timer_ctx->soft_timer_info);
+			debug("remove_callback %p in %p failed", soft_timer_ctx->callback_item, soft_timer_ctx->soft_timer_info);
 		}
 
 		list_del(pos);
@@ -265,7 +265,7 @@ static void soft_timer_task(void const *argument)
 		} else {
 			soft_timer_info->delay = osWaitForever;
 			do_callback_chain(soft_timer_info->timer_cb_chain, soft_timer_info);
-			//debug("%p delay:%d", soft_timer_info, soft_timer_info->delay);
+			debug("%p delay:%d", soft_timer_info, soft_timer_info->delay);
 			soft_timer_delay(soft_timer_info, soft_timer_info->delay);
 		}
 
