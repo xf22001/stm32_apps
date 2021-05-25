@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2021年05月25日 星期二 20时58分14秒
+ *   修改日期：2021年05月25日 星期二 21时33分33秒
  *   描    述：
  *
  *================================================================*/
@@ -685,7 +685,7 @@ static void net_client_periodic(void *ctx)
 		return;
 	}
 
-	debug("state:%s", get_net_client_state_des(get_client_state(net_client_info)));
+	//debug("state:%s", get_net_client_state_des(get_client_state(net_client_info)));
 
 	//处理周期性事件
 	//约100ms调用一次
