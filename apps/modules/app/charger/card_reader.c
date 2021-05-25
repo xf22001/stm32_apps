@@ -6,7 +6,7 @@
  *   文件名称：card_reader.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月24日 星期一 16时08分40秒
- *   修改日期：2021年05月24日 星期一 16时41分11秒
+ *   修改日期：2021年05月25日 星期二 11时48分37秒
  *   描    述：
  *
  *================================================================*/
@@ -45,6 +45,10 @@ card_reader_info_t *alloc_card_reader_info(channels_info_t *channels_info)
 	card_reader_info->channels_info = channels_info;
 
 	card_reader_info->card_reader_handler = get_card_reader_handler(card_reader_config->card_reader_type);
+
+	if(card_reader_config->huart_card_reader == NULL) {
+		return card_reader_info;
+	}
 
 	if((card_reader_info->card_reader_handler != NULL) && (card_reader_info->card_reader_handler->init != NULL)) {
 		card_reader_info->card_reader_handler->init(card_reader_info);
