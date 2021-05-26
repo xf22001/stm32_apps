@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2021年05月25日 星期二 21时33分33秒
+ *   修改日期：2021年05月26日 星期三 09时26分25秒
  *   描    述：
  *
  *================================================================*/
@@ -22,13 +22,14 @@
 #include "os_utils.h"
 #include "request.h"
 #include "sal_hook.h"
+#define LOG_DISABLE
 #include "log.h"
-
 
 extern protocol_if_t protocol_if_tcp;
 extern protocol_if_t protocol_if_udp;
 extern protocol_if_t protocol_if_ws;
 extern request_callback_t request_callback_default;
+extern request_callback_t request_callback_ws;
 
 static protocol_if_t *protocol_if_sz[] = {
 	&protocol_if_tcp,
@@ -38,6 +39,7 @@ static protocol_if_t *protocol_if_sz[] = {
 
 static request_callback_t *request_callback_sz[] = {
 	&request_callback_default,
+	&request_callback_ws,
 };
 
 static char *get_net_client_state_des(client_state_t state)
@@ -251,7 +253,6 @@ static request_callback_t *get_request_callback(request_type_t request_type)
 
 static void default_init(net_client_info_t *net_client_info)
 {
-	debug("");
 	srand(osKernelSysTick());
 
 	net_client_info->protocol_if = get_protocol_if(net_client_info->protocol_type);
@@ -685,7 +686,7 @@ static void net_client_periodic(void *ctx)
 		return;
 	}
 
-	//debug("state:%s", get_net_client_state_des(get_client_state(net_client_info)));
+	debug("state:%s", get_net_client_state_des(get_client_state(net_client_info)));
 
 	//处理周期性事件
 	//约100ms调用一次

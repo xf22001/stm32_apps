@@ -6,7 +6,7 @@
  *   文件名称：probe_tool.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 08时02分35秒
- *   修改日期：2021年05月24日 星期一 09时42分43秒
+ *   修改日期：2021年05月26日 星期三 13时22分40秒
  *   描    述：
  *
  *================================================================*/
@@ -18,7 +18,6 @@
 
 #include "sal_hook.h"
 
-#define LOG_NONE
 #include "log.h"
 
 typedef struct {
@@ -328,7 +327,6 @@ static void probe_server_process_message(probe_server_info_t *probe_server_info)
 	request_decode(probe_server_info->recv_buffer, probe_server_info->recv_size, RECV_BUFFER_SIZE, (char **)&request_buffer, &request_size);
 
 	if(request_size == 0) {
-		debug("");
 		return;
 	}
 

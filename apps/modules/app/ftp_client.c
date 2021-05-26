@@ -6,7 +6,7 @@
  *   文件名称：ftp_client.c
  *   创 建 者：肖飞
  *   创建日期：2020年09月15日 星期二 09时32分10秒
- *   修改日期：2021年05月19日 星期三 21时11分48秒
+ *   修改日期：2021年05月26日 星期三 14时36分59秒
  *   描    述：
  *
  *================================================================*/
@@ -200,6 +200,7 @@ static int ftp_client_connect(socket_addr_info_t *socket_addr_info, int *sock_fd
 	int ret = -1;
 
 	ret = socket_nonblock_connect(socket_addr_info, sock_fd);
+	debug("ret:%d", ret);
 
 	return ret;
 }
@@ -316,6 +317,9 @@ static void ftp_client_cmd_download(void *ctx)
 				}
 			} else if(response_code == 350) {
 				ftp_client_info->ftp_server_path.rest_enable = 1;
+				debug("start download ...");
+				set_ftp_client_data_request_state(ftp_client_info, FTP_CLIENT_DATA_STATE_CONNECT);
+				ftp_client_info->cmd.action_state = 3;
 			}
 		}
 		break;
@@ -325,8 +329,13 @@ static void ftp_client_cmd_download(void *ctx)
 
 			if(response_code == 350) {
 				ftp_client_info->ftp_server_path.rest_enable = 1;
-			} else if(response_code == 125) {
 				debug("start download ...");
+				set_ftp_client_data_request_state(ftp_client_info, FTP_CLIENT_DATA_STATE_CONNECT);
+				ftp_client_info->cmd.action_state = 3;
+			} else if(response_code == 150) {
+				debug("start download ...");
+				set_ftp_client_data_request_state(ftp_client_info, FTP_CLIENT_DATA_STATE_CONNECT);
+				ftp_client_info->cmd.action_state = 3;
 			}
 		}
 		break;
@@ -365,6 +374,7 @@ static void ftp_client_cmd_upload(void *ctx)
 			if(response_code == 150) {
 				debug("start upload ...");
 				ftp_client_info->data_ready = 1;
+				set_ftp_client_data_request_state(ftp_client_info, FTP_CLIENT_DATA_STATE_CONNECT);
 			}
 		}
 		break;
@@ -430,7 +440,6 @@ static void ftp_client_cmd_pasv(void *ctx)
 
 						if(ret == 0) {
 							ftp_client_info->data.addr_info.socket_addr_info = get_next_socket_addr_info(list_head, ftp_client_info->data.addr_info.socket_addr_info);
-							set_ftp_client_data_request_state(ftp_client_info, FTP_CLIENT_DATA_STATE_CONNECT);
 							ftp_client_info->cmd.action_state = 2;
 
 							switch(get_ftp_client_action(ftp_client_info)) {
@@ -595,10 +604,13 @@ static void ftp_client_cmd_handler(void *ctx)
 	uint32_t ticks = osKernelSysTick();
 	int ret;
 
+	//debug("poll_ctx_cmd->poll_fd.status.s.poll_in:%d", poll_ctx_cmd->poll_fd.status.s.poll_in);
+	//debug("poll_ctx_cmd->poll_fd.status.s.poll_err:%d", poll_ctx_cmd->poll_fd.status.s.poll_err);
+
 	switch(get_ftp_client_cmd_state(ftp_client_info)) {
 		case FTP_CLIENT_CMD_STATE_CONNECT_CONFIRM: {
 			if(socket_nonblock_connect_confirm(poll_ctx_cmd->poll_fd.fd) == 0) {
-				poll_ctx_cmd->poll_fd.config.s.poll_out = 0;
+				poll_ctx_cmd->poll_fd.config.v = 0;
 				poll_ctx_cmd->poll_fd.config.s.poll_in = 1;
 
 				ftp_client_info->cmd.action_state = 0;
@@ -864,13 +876,17 @@ static void ftp_client_data_handler(void *ctx)
 	ftp_client_info_t *ftp_client_info = (ftp_client_info_t *)poll_ctx_data->priv;
 	uint32_t ticks = osKernelSysTick();
 
+	//debug("poll_ctx_data->poll_fd.status.s.poll_in:%d", poll_ctx_data->poll_fd.status.s.poll_in);
+	//debug("poll_ctx_data->poll_fd.status.s.poll_err:%d", poll_ctx_data->poll_fd.status.s.poll_err);
+
 	switch(get_ftp_client_data_state(ftp_client_info)) {
 		case FTP_CLIENT_DATA_STATE_CONNECT_CONFIRM: {
 			if(socket_nonblock_connect_confirm(poll_ctx_data->poll_fd.fd) == 0) {
 				switch(get_ftp_client_action(ftp_client_info)) {
 					case FTP_CLIENT_ACTION_DOWNLOAD: {
-						poll_ctx_data->poll_fd.config.s.poll_out = 0;
+						poll_ctx_data->poll_fd.config.v = 0;
 						poll_ctx_data->poll_fd.config.s.poll_in = 1;
+						poll_ctx_data->poll_fd.config.s.poll_err = 1;
 
 						ftp_client_info->data.action_state = 0;
 						ftp_client_info->data.handler = ftp_client_data_download;
@@ -878,8 +894,9 @@ static void ftp_client_data_handler(void *ctx)
 					break;
 
 					case FTP_CLIENT_ACTION_UPLOAD: {
+						poll_ctx_data->poll_fd.config.v = 0;
 						poll_ctx_data->poll_fd.config.s.poll_out = 1;
-						poll_ctx_data->poll_fd.config.s.poll_in = 0;
+						poll_ctx_data->poll_fd.config.s.poll_err = 1;
 						ftp_client_info->data.action_state = 0;
 						ftp_client_info->data.handler = ftp_client_data_upload;
 					}
