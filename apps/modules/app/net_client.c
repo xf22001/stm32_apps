@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2021年05月26日 星期三 16时59分33秒
+ *   修改日期：2021年05月26日 星期三 17时11分01秒
  *   描    述：
  *
  *================================================================*/
@@ -635,7 +635,6 @@ static void net_client_handler(void *ctx)
 
 			if(ret <= 0) {
 				debug("close connect.");
-				poll_ctx->poll_fd.available = 0;
 				set_client_state(net_client_info, CLIENT_RESET);
 			} else {
 				net_client_info->recv_message_buffer.used += ret;
