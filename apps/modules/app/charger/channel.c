@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分12秒
- *   修改日期：2021年05月25日 星期二 21时36分48秒
+ *   修改日期：2021年05月26日 星期三 15时23分55秒
  *   描    述：
  *
  *================================================================*/
@@ -62,7 +62,7 @@ static int channel_init(channel_info_t *channel_info)
 
 static void handle_channels_periodic(void *_channels_info, void *chain_ctx)
 {
-	debug("channels_info periodic!");
+	//debug("channels_info periodic!");
 }
 
 static int handle_channel_event(channels_info_t *channels_info, channel_event_t *channel_event)

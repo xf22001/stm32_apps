@@ -6,7 +6,7 @@
  *   文件名称：channel_handler_dc.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月11日 星期二 09时21分02秒
- *   修改日期：2021年05月11日 星期二 11时05分18秒
+ *   修改日期：2021年05月26日 星期三 15时24分20秒
  *   描    述：
  *
  *================================================================*/
@@ -16,7 +16,7 @@
 
 static void handle_channel_periodic(void *_channel_info, void *_channels_info)
 {
-	debug("channel_id %d periodic!", ((channel_info_t *)_channel_info)->channel_id);
+	//debug("channel_id %d periodic!", ((channel_info_t *)_channel_info)->channel_id);
 }
 
 static int _handle_channel_event(channel_info_t *channel_info, channel_event_t *channel_event)

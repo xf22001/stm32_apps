@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2021年05月26日 星期三 09时26分25秒
+ *   修改日期：2021年05月26日 星期三 16时59分33秒
  *   描    述：
  *
  *================================================================*/
@@ -22,7 +22,6 @@
 #include "os_utils.h"
 #include "request.h"
 #include "sal_hook.h"
-#define LOG_DISABLE
 #include "log.h"
 
 extern protocol_if_t protocol_if_tcp;
@@ -204,6 +203,7 @@ void set_client_state(net_client_info_t *net_client_info, client_state_t state)
 		return;
 	}
 
+	debug("%s -> %s", get_net_client_state_des(net_client_info->state), get_net_client_state_des(state));
 	net_client_info->state = state;
 }
 
@@ -635,6 +635,7 @@ static void net_client_handler(void *ctx)
 
 			if(ret <= 0) {
 				debug("close connect.");
+				poll_ctx->poll_fd.available = 0;
 				set_client_state(net_client_info, CLIENT_RESET);
 			} else {
 				net_client_info->recv_message_buffer.used += ret;
@@ -686,7 +687,7 @@ static void net_client_periodic(void *ctx)
 		return;
 	}
 
-	debug("state:%s", get_net_client_state_des(get_client_state(net_client_info)));
+	//debug("state:%s", get_net_client_state_des(get_client_state(net_client_info)));
 
 	//处理周期性事件
 	//约100ms调用一次
