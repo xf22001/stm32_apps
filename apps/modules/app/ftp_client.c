@@ -6,7 +6,7 @@
  *   文件名称：ftp_client.c
  *   创 建 者：肖飞
  *   创建日期：2020年09月15日 星期二 09时32分10秒
- *   修改日期：2021年05月27日 星期四 09时22分15秒
+ *   修改日期：2021年05月27日 星期四 10时36分32秒
  *   描    述：
  *
  *================================================================*/
@@ -446,6 +446,7 @@ static void ftp_client_cmd_pasv(void *ctx)
 									ftp_client_info->data.tx_size = 0;
 									ftp_client_info->data.rx_size = 0;
 									ftp_client_info->ftp_server_path.rest_enable = 0;
+									ftp_client_info->ftp_server_path.retry = 0;
 									ftp_client_info->cmd.handler = ftp_client_cmd_download;
 									ftp_client_info->cmd.handler(ctx);
 								}
@@ -719,8 +720,43 @@ static void ftp_client_cmd_periodic(void *ctx)
 
 		case FTP_CLIENT_CMD_STATE_CONNECT_CONFIRM: {
 			if(ticks_duration(ticks, ftp_client_info->stamp) >= FTP_SESSION_TIMEOUT) {
-				debug("FTP_CLIENT_CMD_STATE_CONNECT_CONFIRM timeout!");
-				set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
+				switch(get_ftp_client_action(ftp_client_info)) {
+					case FTP_CLIENT_ACTION_DOWNLOAD: {
+						if(ftp_client_info->ftp_server_path.rest_enable == 1) {
+							ftp_client_info->ftp_server_path.retry++;
+
+							if(ftp_client_info->ftp_server_path.retry >= 10) {
+								debug("FTP_CLIENT_CMD_STATE_CONNECT_CONFIRM timeout!");
+								set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
+							} else {
+								ftp_client_info->stamp = ticks;
+								ret = snprintf(ftp_client_info->cmd.tx_buffer, sizeof(ftp_client_info->cmd.tx_buffer), "REST %lu\r\n", ftp_client_info->data_size);
+								ret = ftp_client_send_data(poll_ctx_cmd->poll_fd.fd, ftp_client_info->cmd.tx_buffer, ret);
+
+								if(ret != 0) {
+									debug("");
+									set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
+								}
+							}
+						} else {
+							debug("FTP_CLIENT_CMD_STATE_CONNECT_CONFIRM timeout!");
+							set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
+						}
+					}
+					break;
+
+					case FTP_CLIENT_ACTION_UPLOAD: {
+						debug("FTP_CLIENT_CMD_STATE_CONNECT_CONFIRM timeout!");
+						set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
+					}
+					break;
+
+					default: {
+						debug("FTP_CLIENT_CMD_STATE_CONNECT_CONFIRM timeout!");
+						set_ftp_client_cmd_state(ftp_client_info, FTP_CLIENT_CMD_STATE_DISCONNECT);
+					}
+					break;
+				}
 			}
 		}
 		break;
@@ -925,6 +961,8 @@ static void ftp_client_data_handler(void *ctx)
 						ftp_client_info->data.handler(ctx);
 						ftp_client_info->stamp = ticks;
 					} else {
+						debug("ret:%d", ret);
+
 						if(ret < 0) {
 							debug("recv error %d, (%s)", ret, strerror(errno));
 						}
@@ -1027,23 +1065,18 @@ static void ftp_client_data_periodic(void *ctx)
 		break;
 
 		case FTP_CLIENT_DATA_STATE_CONNECTED: {
-			if(ticks_duration(ticks, ftp_client_info->stamp) >= FTP_SESSION_TIMEOUT) {
-				debug("FTP_CLIENT_DATA_STATE_CONNECTED timeout!");
-				set_ftp_client_data_state(ftp_client_info, FTP_CLIENT_DATA_STATE_DISCONNECT);
-			} else {
-				switch(get_ftp_client_data_request_state(ftp_client_info)) {
-					case FTP_CLIENT_DATA_STATE_DISCONNECT: {
-						set_ftp_client_data_state(ftp_client_info, FTP_CLIENT_DATA_STATE_DISCONNECT);
-					}
-					break;
-
-					default: {
-					}
-					break;
+			switch(get_ftp_client_data_request_state(ftp_client_info)) {
+				case FTP_CLIENT_DATA_STATE_DISCONNECT: {
+					set_ftp_client_data_state(ftp_client_info, FTP_CLIENT_DATA_STATE_DISCONNECT);
 				}
+				break;
 
-				set_ftp_client_data_request_state(ftp_client_info, FTP_CLIENT_DATA_STATE_IDLE);
+				default: {
+				}
+				break;
 			}
+
+			set_ftp_client_data_request_state(ftp_client_info, FTP_CLIENT_DATA_STATE_IDLE);
 		}
 		break;
 
