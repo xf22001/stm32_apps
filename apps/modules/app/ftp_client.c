@@ -6,7 +6,7 @@
  *   文件名称：ftp_client.c
  *   创 建 者：肖飞
  *   创建日期：2020年09月15日 星期二 09时32分10秒
- *   修改日期：2021年05月26日 星期三 14时36分59秒
+ *   修改日期：2021年05月27日 星期四 09时22分15秒
  *   描    述：
  *
  *================================================================*/
@@ -317,9 +317,6 @@ static void ftp_client_cmd_download(void *ctx)
 				}
 			} else if(response_code == 350) {
 				ftp_client_info->ftp_server_path.rest_enable = 1;
-				debug("start download ...");
-				set_ftp_client_data_request_state(ftp_client_info, FTP_CLIENT_DATA_STATE_CONNECT);
-				ftp_client_info->cmd.action_state = 3;
 			}
 		}
 		break;
@@ -604,7 +601,9 @@ static void ftp_client_cmd_handler(void *ctx)
 	uint32_t ticks = osKernelSysTick();
 	int ret;
 
+	//debug("poll_ctx_cmd->poll_fd.fd:%d", poll_ctx_cmd->poll_fd.fd);
 	//debug("poll_ctx_cmd->poll_fd.status.s.poll_in:%d", poll_ctx_cmd->poll_fd.status.s.poll_in);
+	//debug("poll_ctx_cmd->poll_fd.status.s.poll_out:%d", poll_ctx_cmd->poll_fd.status.s.poll_out);
 	//debug("poll_ctx_cmd->poll_fd.status.s.poll_err:%d", poll_ctx_cmd->poll_fd.status.s.poll_err);
 
 	switch(get_ftp_client_cmd_state(ftp_client_info)) {
@@ -698,7 +697,6 @@ static void ftp_client_cmd_periodic(void *ctx)
 		break;
 
 		case FTP_CLIENT_CMD_STATE_CONNECT: {
-			debug("FTP_CLIENT_CMD_STATE_CONNECT");
 			get_ftp_client_cmd_addr_info(ftp_client_info);
 			ret = ftp_client_connect(ftp_client_info->cmd.addr_info.socket_addr_info, &ftp_client_info->cmd.sock_fd);
 
@@ -876,7 +874,9 @@ static void ftp_client_data_handler(void *ctx)
 	ftp_client_info_t *ftp_client_info = (ftp_client_info_t *)poll_ctx_data->priv;
 	uint32_t ticks = osKernelSysTick();
 
+	//debug("poll_ctx_data->poll_fd.fd:%d", poll_ctx_data->poll_fd.fd);
 	//debug("poll_ctx_data->poll_fd.status.s.poll_in:%d", poll_ctx_data->poll_fd.status.s.poll_in);
+	//debug("poll_ctx_data->poll_fd.status.s.poll_out:%d", poll_ctx_data->poll_fd.status.s.poll_out);
 	//debug("poll_ctx_data->poll_fd.status.s.poll_err:%d", poll_ctx_data->poll_fd.status.s.poll_err);
 
 	switch(get_ftp_client_data_state(ftp_client_info)) {
@@ -1049,7 +1049,6 @@ static void ftp_client_data_periodic(void *ctx)
 
 
 		case FTP_CLIENT_DATA_STATE_DISCONNECT: {
-			debug("");
 			poll_ctx_data->poll_fd.available = 0;
 			ftp_client_close(&poll_ctx_data->poll_fd.fd);
 
