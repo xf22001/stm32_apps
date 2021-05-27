@@ -6,7 +6,7 @@
  *   文件名称：os_utils.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分36秒
- *   修改日期：2021年05月25日 星期二 21时09分14秒
+ *   修改日期：2021年05月27日 星期四 11时20分40秒
  *   描    述：
  *
  *================================================================*/
@@ -415,8 +415,14 @@ uint16_t sum_crc16(const void *data, size_t size);
 uint32_t sum_crc32(const void *data, size_t size);
 uint32_t ticks_duration(uint32_t a, uint32_t b);
 
+#if !defined(ALLOC_TRACE_DISABLE)
 #define os_alloc(size) __os_alloc(size, __FILE__, __func__, __LINE__)
 #define os_realloc(p, size) __os_realloc(p, size, __FILE__, __func__, __LINE__)
 #define os_calloc(n, size) __os_calloc(n, size, __FILE__, __func__, __LINE__)
+#else
+#define os_alloc(size) __os_alloc(size, NULL, NULL, 0)
+#define os_realloc(p, size) __os_realloc(p, size, NULL, NULL, 0)
+#define os_calloc(n, size) __os_calloc(n, size, NULL, NULL, 0)
+#endif//if !defined(ALLOC_TRACE_DISABLE)
 
 #endif //_OS_UTILS_H

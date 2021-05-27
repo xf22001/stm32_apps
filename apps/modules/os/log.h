@@ -6,7 +6,7 @@
  *   文件名称：log.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月29日 星期五 14时29分33秒
- *   修改日期：2021年05月25日 星期二 11时15分59秒
+ *   修改日期：2021年05月27日 星期四 11时08分37秒
  *   描    述：
  *
  *================================================================*/
@@ -19,10 +19,6 @@ extern "C"
 
 #include "app_platform.h"
 #include "cmsis_os.h"
-
-#if defined(LOG_CONFIG_FILE)
-#include LOG_CONFIG_FILE
-#endif
 
 #ifdef __cplusplus
 }
@@ -40,6 +36,42 @@ typedef union {
 } u_log_mask_t;
 
 typedef int (*log_fn_t)(uint32_t log_mask, const char *buffer, size_t size);
+
+#if defined(LOG_DISABLE)
+#undef _printf
+#undef _hexdump
+#undef _puts
+#undef debug
+#undef uart_printf
+#undef udp_printf
+#undef file_printf
+#undef _printf
+#undef _hexdump
+#undef _puts
+#undef debug
+#undef uart_printf
+#undef udp_printf
+#undef file_printf
+
+#define _printf(fmt, ...)
+#define _hexdump(label, data, len)
+#define _puts(s)
+#define debug(fmt, ...)
+#define uart_printf(fmt, ...)
+#define udp_printf(fmt, ...)
+#define file_printf(fmt, ...)
+#define _printf(fmt, ...)
+#define _hexdump(label, data, len)
+#define _puts(s)
+#define debug(fmt, ...)
+#define uart_printf(fmt, ...)
+#define udp_printf(fmt, ...)
+#define file_printf(fmt, ...)
+#else//#if defined(LOG_DISABLE)
+
+#if defined(LOG_CONFIG_FILE)
+#include LOG_CONFIG_FILE
+#endif
 
 #define LOG_MASK_UART_OFFSET 0
 #define LOG_MASK_UDP_OFFSET 1
@@ -81,42 +113,12 @@ typedef int (*log_fn_t)(uint32_t log_mask, const char *buffer, size_t size);
 #define udp_printf(fmt, ...) log_printf(LOG_MASK_UDP, fmt, ## __VA_ARGS__)
 #define file_printf(fmt, ...) log_printf(LOG_MASK_FILE, fmt, ## __VA_ARGS__)
 
+#endif//#if defined(LOG_DISABLE)
+
 int add_log_handler(log_fn_t fn);
 int remove_log_handler(log_fn_t fn);
 int log_printf(uint32_t log_mask, const char *fmt, ...);
 void log_hexdump(uint32_t log_mask, const char *label, const char *data, int len);
 int log_puts(uint32_t log_mask, const char *s);
-
-#if defined(LOG_DISABLE)
-#undef _printf
-#undef _hexdump
-#undef _puts
-#undef debug
-#undef uart_printf
-#undef udp_printf
-#undef file_printf
-#undef _printf
-#undef _hexdump
-#undef _puts
-#undef debug
-#undef uart_printf
-#undef udp_printf
-#undef file_printf
-
-#define _printf(fmt, ...)
-#define _hexdump(label, data, len)
-#define _puts(s)
-#define debug(fmt, ...)
-#define uart_printf(fmt, ...)
-#define udp_printf(fmt, ...)
-#define file_printf(fmt, ...)
-#define _printf(fmt, ...)
-#define _hexdump(label, data, len)
-#define _puts(s)
-#define debug(fmt, ...)
-#define uart_printf(fmt, ...)
-#define udp_printf(fmt, ...)
-#define file_printf(fmt, ...)
-#endif//#if defined(LOG_DISABLE)
 
 #endif //_LOG_H
