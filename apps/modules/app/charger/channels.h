@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2021年05月24日 星期一 16时58分53秒
+ *   修改日期：2021年05月28日 星期五 16时25分15秒
  *   描    述：
  *
  *================================================================*/
@@ -24,6 +24,7 @@ extern "C"
 #include "channels_config.h"
 
 #include "callback_chain.h"
+#include "bitmap_ops.h"
 
 #ifdef __cplusplus
 }
@@ -81,10 +82,17 @@ typedef struct {
 #pragma pack(push, 1)
 
 typedef struct {
+	char device_id[32];
+	uint8_t device_type;
 	uint16_t power_module_type;
 } channels_settings_t;
 
 #pragma pack(pop)
+
+typedef enum {
+	CHANNELS_FAULT_UNKNOW = 0,
+	CHANNELS_FAULT_SIZE,
+} channels_fault_t;
 
 typedef struct {
 	channels_config_t *channels_config;
@@ -105,11 +113,14 @@ typedef struct {
 	void *card_reader_info;
 	void *channels_power_module;
 	channels_settings_t channels_settings;
+	bitmap_t *faults;
 } channels_info_t;
 
 char *get_channel_event_type_des(channel_event_type_t type);
-channels_info_t *get_or_alloc_channels_info(channels_config_t *channels_config);
+int set_channels_info_fault(channels_info_t *channels_info, channels_fault_t fault);
+int reset_channels_info_fault(channels_info_t *channels_info, channels_fault_t fault);
+int get_channels_info_fault(channels_info_t *channels_info, channels_fault_t fault);
 int send_channels_event(channels_info_t *channels_info, channels_event_t *channels_event, uint32_t timeout);
-void task_channels(void const *argument);
+channels_info_t *start_channels(void);
 
 #endif //_CHANNELS_H
