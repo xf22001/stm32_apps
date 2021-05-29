@@ -6,7 +6,7 @@
  *   文件名称：charger.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月19日 星期二 12时32分24秒
- *   修改日期：2021年04月13日 星期二 14时01分43秒
+ *   修改日期：2021年05月28日 星期五 17时01分04秒
  *   描    述：
  *
  *================================================================*/
@@ -73,6 +73,7 @@ typedef struct {
 	callback_chain_t *charger_bms_status_changed;
 	charger_bms_request_t bms_request;
 
+	uint8_t connect_state;
 	uint32_t periodic_stamps;
 } charger_info_t;
 

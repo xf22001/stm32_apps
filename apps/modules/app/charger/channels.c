@@ -6,7 +6,7 @@
  *   文件名称：channels.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 09时26分31秒
- *   修改日期：2021年05月28日 星期五 16时21分51秒
+ *   修改日期：2021年05月29日 星期六 10时26分59秒
  *   描    述：
  *
  *================================================================*/
@@ -56,6 +56,11 @@ int reset_channels_info_fault(channels_info_t *channels_info, channels_fault_t f
 int get_channels_info_fault(channels_info_t *channels_info, channels_fault_t fault)
 {
 	return get_bitmap_value(channels_info->faults, fault);
+}
+
+int get_channels_info_first_fault(channels_info_t *channels_info)
+{
+	return get_first_value_index(channels_info->faults, 1);
 }
 
 static void free_channels_info(channels_info_t *channels_info)

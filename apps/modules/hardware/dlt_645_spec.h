@@ -6,7 +6,7 @@
  *   文件名称：dlt_645_spec.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月21日 星期四 10时20分10秒
- *   修改日期：2020年05月21日 星期四 14时08分28秒
+ *   修改日期：2021年05月29日 星期六 14时39分38秒
  *   描    述：
  *
  *================================================================*/
@@ -71,5 +71,14 @@ typedef struct {
 	u_dlt_645_control_t control;
 	uint8_t len;
 } dlt_645_frame_head_t;
+
+typedef struct {
+	uint8_t data[0];
+} dlt_645_frame_data_t;
+
+typedef struct {
+	uint8_t crc;
+	uint8_t end_flag;//0x16
+} dlt_645_frame_tail_t;
 
 #endif //_DLT_645_SPEC_H

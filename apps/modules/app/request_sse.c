@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年05月28日 星期五 15时11分38秒
+ *   修改日期：2021年05月28日 星期五 17时45分31秒
  *   描    述：
  *
  *================================================================*/
@@ -46,20 +46,20 @@ typedef enum {
 
 //充电桩定时上报工作状态
 typedef struct {
-	uint16_t insulation : 1;
-	uint16_t telemeter : 1;
-	uint16_t card_reader : 1;
-	uint16_t display : 1;
-	uint16_t fault : 1;
-	uint16_t unused : 3;
-	uint16_t channel_connect_0 : 1;
-	uint16_t channel_connect_1 : 1;
-	uint16_t channel_connect_2 : 1;
-	uint16_t channel_connect_3 : 1;
-	uint16_t channel_connect_4 : 1;
-	uint16_t channel_connect_5 : 1;
-	uint16_t channel_connect_6 : 1;
-	uint16_t channel_connect_7 : 1;
+	uint8_t insulation : 1;
+	uint8_t telemeter : 1;
+	uint8_t card_reader : 1;
+	uint8_t display : 1;
+	uint8_t fault : 1;
+	uint8_t unused : 3;
+	uint8_t channel_connect_0 : 1;
+	uint8_t channel_connect_1 : 1;
+	uint8_t channel_connect_2 : 1;
+	uint8_t channel_connect_3 : 1;
+	uint8_t channel_connect_4 : 1;
+	uint8_t channel_connect_5 : 1;
+	uint8_t channel_connect_6 : 1;
+	uint8_t channel_connect_7 : 1;
 } sse_device_state_t;
 
 typedef union {
@@ -199,7 +199,7 @@ typedef struct {
 	uint8_t date_time[8];//装置时间 bcd 20161223135922ff
 	u_sse_device_state_t device_state;
 	uint16_t power_threshold;//单位 0.1kW V22
-	uint16_t sse_device_fault_type;//V23
+	uint16_t sse_device_fault_type;//V23 sse_device_fault_type_t
 	uint8_t app;//0:原始版本 1:升级版本 V23
 	uint32_t module_state_mask;//模块总数掩码 V23
 	uint32_t module_state_value;//按位表示对于序号的模块工作状态 0 表示故障 1 正常 V23
@@ -262,25 +262,8 @@ typedef union {
 	uint32_t v;
 } u_sse_event_fault_type_t;
 
-typedef struct {
-	uint16_t insulation : 1;
-	uint16_t telemeter : 1;
-	uint16_t card_reader : 1;
-	uint16_t display : 1;
-	uint16_t fault : 1;
-	uint16_t unused : 3;
-	uint16_t channel_charge_1 : 1;
-	uint16_t channel_charge_2 : 1;
-	uint16_t channel_charge_3 : 1;
-	uint16_t channel_charge_4 : 1;
-	uint16_t channel_charge_5 : 1;
-	uint16_t channel_charge_6 : 1;
-	uint16_t channel_charge_7 : 1;
-	uint16_t channel_charge_8 : 1;
-} sse_event_fault_status_t;
-
 typedef union {
-	sse_event_fault_status_t s;
+	sse_device_state_t s;
 	uint16_t v;
 } u_sse_event_fault_status_t;
 
@@ -604,8 +587,68 @@ static void sync_transaction_record(void)
 static uint16_t get_device_state(channels_info_t *channels_info)
 {
 	u_sse_device_state_t device_state;
-
+	u_uint16_bytes_t *u_uint16_bytes = (u_uint16_bytes_t *)&device_state;
+	uint8_t connects = 0;
+	int i;
 	device_state.v = 0;
+	device_state.s.faults.insulation = get_channels_info_fault(channels_info, CHANNELS_EVENT_CHANNEL_INSULATION);
+	device_state.s.faults.telemeter = get_channels_info_fault(channels_info, CHANNELS_EVENT_CHANNEL_TELEMETER);
+	device_state.s.faults.card_reader = get_channels_info_fault(channels_info, CHANNELS_EVENT_CHANNEL_CARD_READER);
+	device_state.s.faults.display = get_channels_info_fault(channels_info, CHANNELS_EVENT_CHANNEL_DISPLAY);
+	device_state.s.faults.fault = (get_channels_info_first_fault(channels_info) >= CHANNELS_FAULT_SIZE) ? 0 : 1;
+
+	for(i = 0; i < channels_info->channel_number; i++) {
+		channel_info_t *channel_info = channels_info->channel_info + i;
+		charger_info_t *charger_info = (charger_info_t *)channel_info->channel_info;
+
+		connects = set_u8_bits(connects, i, charger_info->connect_state);
+	}
+
+	u_uint16_bytes->s.byte1 = connects;
+
+	return device_state.v;
+}
+
+static uint16_t get_sse_device_fault_type(channels_info_t *channels_info)
+{
+	uint16_t fault = SSE_DEVICE_FAULT_TYPE_NONE;
+
+	channels_fault_t channels_fault = get_channels_info_first_fault(channels_info);
+
+	if(channels_fault >= CHANNELS_FAULT_SIZE) {
+		return fault;
+	}
+
+	//todo 
+
+	return fault;
+}
+
+static uint32_t get_sse_module_state_mask(channels_info_t *channels_info)
+{
+	uint32_t mask = 0;
+	uint8_t *cells = (uint8_t *)&mask;
+	channels_config_t *channels_config = channels_info->channels_config;
+	channels_power_module_t *channels_power_module = (channels_power_module_t *)channels_info->channels_power_module;
+	channels_power_module_callback_t *channels_power_module_callback = channels_power_module->channels_power_module_callback;
+	int i = 0;
+	int channels_power_module_number = channels_config->power_module_config.channels_power_module_number;
+
+	if(channels_power_module_callback == NULL) {
+		return mask;
+	}
+
+	if(channels_power_module_callback->get_power_module_item_info == NULL) {
+		return mask;
+	}
+
+	for(i = 0; i < channels_power_module_number; i++) {
+		int j = i / 8;
+		int k = i % 8;
+		cells[j] = set_u8_bits(cells[j], k, 1);
+	}
+
+	return mask;
 }
 
 static int request_callback_report(net_client_info_t *net_client_info, void *_command_item, uint8_t *send_buffer, uint16_t send_buffer_size)
@@ -619,13 +662,17 @@ static int request_callback_report(net_client_info_t *net_client_info, void *_co
 	struct tm *tm = localtime(get_time());
 	char dt[20];
 
-	//sse_0x00_request_report->device_id;
 	snprintf(sse_0x00_request_report->device_id, 32, "%s", channels_settings->device_id);
 	sse_0x00_request_report->device_type = channels_settings->device_type;
 	memset(sse_0x00_request_report->date_time, 0xff, sizeof(sse_0x00_request_report->date_time));
 	strftime(dt, sizeof(dt), "%Y%m%d%H%M%S", tm);
 	ascii_to_bcd(dt, strlen(dt), sse_0x00_request_report->date_time, sizeof(sse_0x00_request_report->date_time));
 	sse_0x00_request_report->device_state.v = get_device_state(channels_info);
+	sse_0x00_request_report->power_threshold = channels_settings->power_threshold;
+	sse_0x00_request_report->sse_device_fault_type = get_sse_device_fault_type(channels_info);
+	sse_0x00_request_report->app = is_app();
+	sse_0x00_request_report->module_state_mask = get_sse_module_state_mask(channels_info);
+	sse_0x00_request_report->module_state_value = get_sse_module_state_value(channels_info);
 
 	send_frame(net_client_info, net_client_data_ctx->serial++, item->request_frame, (uint8_t *), sizeof());
 
@@ -3603,7 +3650,7 @@ static void request_periodic(void *ctx, uint8_t *send_buffer, uint16_t send_buff
 }
 
 request_callback_t request_callback_sse = {
-	.name = "sse",
+	.type = REQUEST_TYPE_DEFAULT_SSE,
 	.set_lan_led_state = request_set_lan_led_state,
 	.init = request_init,
 	.before_connect = request_before_create_server_connect,

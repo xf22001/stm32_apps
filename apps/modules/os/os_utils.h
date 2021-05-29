@@ -6,7 +6,7 @@
  *   文件名称：os_utils.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分36秒
- *   修改日期：2021年05月27日 星期四 11时20分40秒
+ *   修改日期：2021年05月28日 星期五 14时42分10秒
  *   描    述：
  *
  *================================================================*/
@@ -145,8 +145,6 @@ static inline void ascii_to_bcd(char *ascii, size_t ascii_size, uint8_t *bcd, si
 	int i;
 	uint8_t c;
 
-	memset(bcd, 0, bcd_size);
-
 	for(i = 0; i < ascii_size; i++) {
 		if((i / 2) >= bcd_size) {
 			break;
@@ -160,7 +158,7 @@ static inline void ascii_to_bcd(char *ascii, size_t ascii_size, uint8_t *bcd, si
 
 		u_uint8_bcd.v = bcd[i / 2];
 
-		if((c % 2) == 0) {
+		if((i % 2) == 0) {
 			u_uint8_bcd.s.h = (isdigit(c) == 0) ? 0 : (c - 0x30);
 		} else {
 			u_uint8_bcd.s.l = (isdigit(c) == 0) ? 0 : (c - 0x30);

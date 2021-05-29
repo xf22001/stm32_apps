@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2021年05月28日 星期五 16时25分15秒
+ *   修改日期：2021年05月29日 星期六 11时29分50秒
  *   描    述：
  *
  *================================================================*/
@@ -48,6 +48,10 @@ typedef struct {
 //all channels event type
 typedef enum {
 	CHANNELS_EVENT_CHANNEL_UNKNOW = 0,
+	CHANNELS_EVENT_CHANNEL_INSULATION,
+	CHANNELS_EVENT_CHANNEL_TELEMETER,
+	CHANNELS_EVENT_CHANNEL_CARD_READER,
+	CHANNELS_EVENT_CHANNEL_DISPLAY,
 	CHANNELS_EVENT_CHANNEL_EVENT,
 } channels_event_type_t;
 
@@ -60,11 +64,33 @@ typedef struct {
 } channels_event_t;
 
 typedef int (*channel_init_t)(void *_channel_info);
+typedef int (*channel_idle_t)(void *_channel_info);
+typedef int (*channel_start_t)(void *_channel_info);
+typedef int (*channel_starting_t)(void *_channel_info);
+typedef int (*channel_charging_t)(void *_channel_info);
+typedef int (*channel_stopping_t)(void *_channel_info);
+typedef int (*channel_stop_t)(void *_channel_info);
 
 typedef struct {
 	channel_type_t channel_type;
 	channel_init_t init;
+	channel_idle_t idle;
+	channel_start_t start;
+	channel_starting_t starting;
+	channel_charging_t charging;
+	channel_stopping_t stopping;
+	channel_stop_t stop;
 } channel_handler_t;
+
+typedef enum {
+	CHANNEL_STATE_NONE = 0,
+	CHANNEL_STATE_IDLE,
+	CHANNEL_STATE_START,
+	CHANNEL_STATE_STARTING,
+	CHANNEL_STATE_CHARGING,
+	CHANNEL_STATE_STOPPING,
+	CHANNEL_STATE_STOP,
+} channel_state_t;
 
 typedef struct {
 	channel_config_t *channel_config;
@@ -77,6 +103,9 @@ typedef struct {
 
 	void *charger_info;
 	void *energy_meter_info;
+
+	channel_state_t request_state;
+	channel_state_t state;
 } channel_info_t;
 
 #pragma pack(push, 1)
@@ -85,6 +114,7 @@ typedef struct {
 	char device_id[32];
 	uint8_t device_type;
 	uint16_t power_module_type;
+	uint16_t power_threshold;//单位 0.1kW
 } channels_settings_t;
 
 #pragma pack(pop)
@@ -120,6 +150,7 @@ char *get_channel_event_type_des(channel_event_type_t type);
 int set_channels_info_fault(channels_info_t *channels_info, channels_fault_t fault);
 int reset_channels_info_fault(channels_info_t *channels_info, channels_fault_t fault);
 int get_channels_info_fault(channels_info_t *channels_info, channels_fault_t fault);
+int get_channels_info_first_fault(channels_info_t *channels_info);
 int send_channels_event(channels_info_t *channels_info, channels_event_t *channels_event, uint32_t timeout);
 channels_info_t *start_channels(void);
 
