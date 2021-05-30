@@ -68,14 +68,6 @@ static int _handle_channel_handler_event(channel_info_t *channel_info, channel_e
 	debug("channel_id %d process handler event %s!", channel_info->channel_id, get_channel_event_type_des(channel_event->type));
 
 	switch(channel_event->type) {
-		case CHANNEL_EVENT_TYPE_START_CHANNEL: {
-		}
-		break;
-
-		case CHANNEL_EVENT_TYPE_STOP_CHANNEL: {
-		}
-		break;
-
 		default: {
 		}
 		break;

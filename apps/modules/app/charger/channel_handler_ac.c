@@ -6,7 +6,7 @@
  *   文件名称：channel_handler_ac.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月11日 星期二 09时20分53秒
- *   修改日期：2021年05月30日 星期日 13时33分34秒
+ *   修改日期：2021年05月30日 星期日 14时04分17秒
  *   描    述：
  *
  *================================================================*/
@@ -68,14 +68,6 @@ static int _handle_channel_handler_event(channel_info_t *channel_info, channel_e
 	debug("channel_id %d process handler event %s!", channel_info->channel_id, get_channel_event_type_des(channel_event->type));
 
 	switch(channel_event->type) {
-		case CHANNEL_EVENT_TYPE_START_CHANNEL: {
-		}
-		break;
-
-		case CHANNEL_EVENT_TYPE_STOP_CHANNEL: {
-		}
-		break;
-
 		default: {
 		}
 		break;

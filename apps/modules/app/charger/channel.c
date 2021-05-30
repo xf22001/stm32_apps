@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分12秒
- *   修改日期：2021年05月30日 星期日 13时32分09秒
+ *   修改日期：2021年05月30日 星期日 14时22分58秒
  *   描    述：
  *
  *================================================================*/
@@ -66,11 +66,11 @@ int set_channel_request_state(channel_info_t *channel_info, channel_state_t stat
 	int ret = -1;
 
 	if(channel_info->request_state == CHANNEL_STATE_NONE) {
-		channel_info->request_state = state;
 		ret = 0;
-	} else {
-		debug("request_state busy!!! %s -> %s", get_channel_state_des(channel_info->request_state), get_channel_state_des(state));
 	}
+
+	debug("request_state %s -> %s", get_channel_state_des(channel_info->request_state), get_channel_state_des(state));
+	channel_info->request_state = state;
 
 	return ret;
 }
@@ -225,18 +225,57 @@ static void handle_channel_periodic(void *_channel_info, void *chain_ctx)
 	handle_channel_request_state(channel_info);
 }
 
-static void handle_channel_event(void *_channel_info, void *_channels_event)
+static int _handle_channel_event(channel_info_t *channel_info, channel_event_t *channel_event)
 {
-	//channel_info_t *channel_info = (channel_info_t *)_channel_info;
-	channels_event_t *channels_event = (channels_event_t *)_channels_event;
+	int ret = -1;
 
-	debug("channel_info process event %s!", get_channel_event_type_des(channels_event->type));
+	debug("channel_id %d process handler event %s!", channel_info->channel_id, get_channel_event_type_des(channel_event->type));
 
-	switch(channels_event->type) {
+	switch(channel_event->type) {
+		case CHANNEL_EVENT_TYPE_START_CHANNEL: {
+			set_channel_request_state(channel_info, CHANNEL_STATE_START);
+		}
+		break;
+
+		case CHANNEL_EVENT_TYPE_STOP_CHANNEL: {
+			set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
+		}
+		break;
+
 		default: {
 		}
 		break;
 	}
+
+	return ret;
+}
+
+static void handle_channel_event(void *_channel_info, void *_channels_event)
+{
+	channel_info_t *channel_info = (channel_info_t *)_channel_info;
+	channels_event_t *channels_event = (channels_event_t *)_channels_event;
+	channel_event_t *channel_event;
+	uint8_t match = 0;
+
+	if(channels_event->type != CHANNELS_EVENT_CHANNEL_EVENT) {
+		return;
+	}
+
+	channel_event = &channels_event->event.channel_event;
+
+	if(channel_event->channel_id == 0xff) { //broadcast
+		match = 1;
+	}
+
+	if(channel_event->channel_id == channel_info->channel_id) {
+		match = 1;
+	}
+
+	if(match == 0) {
+		return;
+	}
+
+	_handle_channel_event(channel_info, channel_event);
 }
 
 static int channel_init(channel_info_t *channel_info)
