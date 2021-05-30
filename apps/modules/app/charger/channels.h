@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2021年05月29日 星期六 11时29分50秒
+ *   修改日期：2021年05月30日 星期日 10时22分01秒
  *   描    述：
  *
  *================================================================*/
@@ -64,22 +64,10 @@ typedef struct {
 } channels_event_t;
 
 typedef int (*channel_init_t)(void *_channel_info);
-typedef int (*channel_idle_t)(void *_channel_info);
-typedef int (*channel_start_t)(void *_channel_info);
-typedef int (*channel_starting_t)(void *_channel_info);
-typedef int (*channel_charging_t)(void *_channel_info);
-typedef int (*channel_stopping_t)(void *_channel_info);
-typedef int (*channel_stop_t)(void *_channel_info);
 
 typedef struct {
 	channel_type_t channel_type;
 	channel_init_t init;
-	channel_idle_t idle;
-	channel_start_t start;
-	channel_starting_t starting;
-	channel_charging_t charging;
-	channel_stopping_t stopping;
-	channel_stop_t stop;
 } channel_handler_t;
 
 typedef enum {
@@ -100,6 +88,13 @@ typedef struct {
 
 	callback_item_t periodic_callback_item;
 	callback_item_t event_callback_item;
+
+	callback_chain_t *idle_chain;
+	callback_chain_t *start_chain;
+	callback_chain_t *starting_chain;
+	callback_chain_t *charging_chain;
+	callback_chain_t *stopping_chain;
+	callback_chain_t *stop_chain;
 
 	void *charger_info;
 	void *energy_meter_info;
