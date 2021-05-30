@@ -6,7 +6,7 @@
  *   文件名称：channel_handler_ac.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月11日 星期二 09时20分53秒
- *   修改日期：2021年05月30日 星期日 11时59分20秒
+ *   修改日期：2021年05月30日 星期日 13时33分34秒
  *   描    述：
  *
  *================================================================*/
@@ -17,7 +17,44 @@
 typedef struct {
 	callback_item_t handler_periodic_callback_item;
 	callback_item_t handler_event_callback_item;
+
+	callback_item_t idle_callback_item;
+	callback_item_t start_callback_item;
+	callback_item_t starting_callback_item;
+	callback_item_t charging_callback_item;
+	callback_item_t stopping_callback_item;
+	callback_item_t stop_callback_item;
 } channel_handler_ctx_t;
+
+static void idle(void *_channel_info, void *__channel_info)
+{
+	//debug("");
+}
+
+static void start(void *_channel_info, void *__channel_info)
+{
+	//debug("");
+}
+
+static void starting(void *_channel_info, void *__channel_info)
+{
+	//debug("");
+}
+
+static void charging(void *_channel_info, void *__channel_info)
+{
+	//debug("");
+}
+
+static void stopping(void *_channel_info, void *__channel_info)
+{
+	//debug("");
+}
+
+static void stop(void *_channel_info, void *__channel_info)
+{
+	//debug("");
+}
 
 static void handle_channel_handler_periodic(void *_channel_info, void *_channels_info)
 {
@@ -83,6 +120,30 @@ static int init(void *_channel_info)
 	channel_handler_ctx_t *channel_handler_ctx = os_calloc(1, sizeof(channel_handler_ctx_t));
 
 	OS_ASSERT(channel_handler_ctx != NULL);
+
+	channel_handler_ctx->idle_callback_item.fn = idle;
+	channel_handler_ctx->idle_callback_item.fn_ctx = channel_info;
+	OS_ASSERT(register_callback(channel_info->idle_chain, &channel_handler_ctx->idle_callback_item) == 0);
+
+	channel_handler_ctx->start_callback_item.fn = start;
+	channel_handler_ctx->start_callback_item.fn_ctx = channel_info;
+	OS_ASSERT(register_callback(channel_info->start_chain, &channel_handler_ctx->start_callback_item) == 0);
+
+	channel_handler_ctx->starting_callback_item.fn = starting;
+	channel_handler_ctx->starting_callback_item.fn_ctx = channel_info;
+	OS_ASSERT(register_callback(channel_info->starting_chain, &channel_handler_ctx->starting_callback_item) == 0);
+
+	channel_handler_ctx->charging_callback_item.fn = charging;
+	channel_handler_ctx->charging_callback_item.fn_ctx = channel_info;
+	OS_ASSERT(register_callback(channel_info->charging_chain, &channel_handler_ctx->charging_callback_item) == 0);
+
+	channel_handler_ctx->stopping_callback_item.fn = stopping;
+	channel_handler_ctx->stopping_callback_item.fn_ctx = channel_info;
+	OS_ASSERT(register_callback(channel_info->stopping_chain, &channel_handler_ctx->stopping_callback_item) == 0);
+
+	channel_handler_ctx->stop_callback_item.fn = stop;
+	channel_handler_ctx->stop_callback_item.fn_ctx = channel_info;
+	OS_ASSERT(register_callback(channel_info->stop_chain, &channel_handler_ctx->stop_callback_item) == 0);
 
 	channel_handler_ctx->handler_periodic_callback_item.fn = handle_channel_handler_periodic;
 	channel_handler_ctx->handler_periodic_callback_item.fn_ctx = channel_info;
