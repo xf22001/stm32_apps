@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2021年05月30日 星期日 11时25分07秒
+ *   修改日期：2021年05月30日 星期日 11时35分51秒
  *   描    述：
  *
  *================================================================*/
@@ -85,11 +85,10 @@ typedef struct {
 	uint8_t channel_id;
 	void *channels_info;
 	channel_handler_t *channel_handler;
+	void *channel_handler_ctx;
 
 	callback_item_t periodic_callback_item;
 	callback_item_t event_callback_item;
-	callback_item_t handler_periodic_callback_item;
-	callback_item_t handler_event_callback_item;
 
 	callback_chain_t *idle_chain;
 	callback_chain_t *start_chain;

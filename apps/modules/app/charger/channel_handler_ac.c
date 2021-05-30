@@ -6,7 +6,7 @@
  *   文件名称：channel_handler_ac.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月11日 星期二 09时20分53秒
- *   修改日期：2021年05月30日 星期日 11时25分46秒
+ *   修改日期：2021年05月30日 星期日 11时59分20秒
  *   描    述：
  *
  *================================================================*/
@@ -14,16 +14,21 @@
 
 #include "log.h"
 
-static void handle_channel_periodic(void *_channel_info, void *_channels_info)
+typedef struct {
+	callback_item_t handler_periodic_callback_item;
+	callback_item_t handler_event_callback_item;
+} channel_handler_ctx_t;
+
+static void handle_channel_handler_periodic(void *_channel_info, void *_channels_info)
 {
-	//debug("channel_id %d periodic!", ((channel_info_t *)_channel_info)->channel_id);
+	//debug("channel_id %d handler periodic!", ((channel_info_t *)_channel_info)->channel_id);
 }
 
-static int _handle_channel_event(channel_info_t *channel_info, channel_event_t *channel_event)
+static int _handle_channel_handler_event(channel_info_t *channel_info, channel_event_t *channel_event)
 {
 	int ret = -1;
 
-	debug("channel_id %d process event %s!", channel_info->channel_id, get_channel_event_type_des(channel_event->type));
+	debug("channel_id %d process handler event %s!", channel_info->channel_id, get_channel_event_type_des(channel_event->type));
 
 	switch(channel_event->type) {
 		case CHANNEL_EVENT_TYPE_START_CHANNEL: {
@@ -42,14 +47,12 @@ static int _handle_channel_event(channel_info_t *channel_info, channel_event_t *
 	return ret;
 }
 
-static void handle_channel_event(void *_channel_info, void *_channels_event)
+static void handle_channel_handler_event(void *_channel_info, void *_channels_event)
 {
 	channel_info_t *channel_info = (channel_info_t *)_channel_info;
 	channels_event_t *channels_event = (channels_event_t *)_channels_event;
 	channel_event_t *channel_event;
 	uint8_t match = 0;
-
-	debug("");
 
 	if(channels_event->type != CHANNELS_EVENT_CHANNEL_EVENT) {
 		return;
@@ -69,7 +72,7 @@ static void handle_channel_event(void *_channel_info, void *_channels_event)
 		return;
 	}
 
-	_handle_channel_event(channel_info, channel_event);
+	_handle_channel_handler_event(channel_info, channel_event);
 }
 
 static int init(void *_channel_info)
@@ -77,14 +80,19 @@ static int init(void *_channel_info)
 	int ret = 0;
 	channel_info_t *channel_info = (channel_info_t *)_channel_info;
 	channels_info_t *channels_info = (channels_info_t *)channel_info->channels_info;
+	channel_handler_ctx_t *channel_handler_ctx = os_calloc(1, sizeof(channel_handler_ctx_t));
 
-	channel_info->handler_periodic_callback_item.fn = handle_channel_periodic;
-	channel_info->handler_periodic_callback_item.fn_ctx = channel_info;
-	OS_ASSERT(register_callback(channels_info->common_periodic_chain, &channel_info->handler_periodic_callback_item) == 0);
+	OS_ASSERT(channel_handler_ctx != NULL);
 
-	channel_info->handler_event_callback_item.fn = handle_channel_event;
-	channel_info->handler_event_callback_item.fn_ctx = channel_info;
-	OS_ASSERT(register_callback(channels_info->common_event_chain, &channel_info->handler_event_callback_item) == 0);
+	channel_handler_ctx->handler_periodic_callback_item.fn = handle_channel_handler_periodic;
+	channel_handler_ctx->handler_periodic_callback_item.fn_ctx = channel_info;
+	OS_ASSERT(register_callback(channels_info->common_periodic_chain, &channel_handler_ctx->handler_periodic_callback_item) == 0);
+
+	channel_handler_ctx->handler_event_callback_item.fn = handle_channel_handler_event;
+	channel_handler_ctx->handler_event_callback_item.fn_ctx = channel_info;
+	OS_ASSERT(register_callback(channels_info->common_event_chain, &channel_handler_ctx->handler_event_callback_item) == 0);
+
+	channel_info->channel_handler_ctx = channel_handler_ctx;
 
 	return ret;
 }
