@@ -6,7 +6,7 @@
  *   文件名称：channel_handler_ac.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月11日 星期二 09时20分53秒
- *   修改日期：2021年05月26日 星期三 15时24分14秒
+ *   修改日期：2021年05月30日 星期日 11时25分46秒
  *   描    述：
  *
  *================================================================*/
@@ -78,13 +78,13 @@ static int init(void *_channel_info)
 	channel_info_t *channel_info = (channel_info_t *)_channel_info;
 	channels_info_t *channels_info = (channels_info_t *)channel_info->channels_info;
 
-	channel_info->periodic_callback_item.fn = handle_channel_periodic;
-	channel_info->periodic_callback_item.fn_ctx = channel_info;
-	OS_ASSERT(register_callback(channels_info->common_periodic_chain, &channel_info->periodic_callback_item) == 0);
+	channel_info->handler_periodic_callback_item.fn = handle_channel_periodic;
+	channel_info->handler_periodic_callback_item.fn_ctx = channel_info;
+	OS_ASSERT(register_callback(channels_info->common_periodic_chain, &channel_info->handler_periodic_callback_item) == 0);
 
-	channel_info->event_callback_item.fn = handle_channel_event;
-	channel_info->event_callback_item.fn_ctx = channel_info;
-	OS_ASSERT(register_callback(channels_info->common_event_chain, &channel_info->event_callback_item) == 0);
+	channel_info->handler_event_callback_item.fn = handle_channel_event;
+	channel_info->handler_event_callback_item.fn_ctx = channel_info;
+	OS_ASSERT(register_callback(channels_info->common_event_chain, &channel_info->handler_event_callback_item) == 0);
 
 	return ret;
 }

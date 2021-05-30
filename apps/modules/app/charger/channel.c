@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分12秒
- *   修改日期：2021年05月30日 星期日 10时55分03秒
+ *   修改日期：2021年05月30日 星期日 11时07分15秒
  *   描    述：
  *
  *================================================================*/
@@ -182,8 +182,9 @@ static void handle_channel_request_state(channel_info_t *channel_info)
 
 static void handle_channel_common_periodic(void *_channel_info, void *chain_ctx)
 {
-	//debug("channel_info common periodic!");
 	channel_info_t *channel_info = (channel_info_t *)_channel_info;
+
+	debug("channel_info %d common periodic!", channel_info->channel_id);
 
 	switch(channel_info->state) {
 		case CHANNEL_STATE_IDLE: {
