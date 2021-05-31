@@ -6,7 +6,7 @@
  *   文件名称：os_utils.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分36秒
- *   修改日期：2021年05月28日 星期五 14时42分10秒
+ *   修改日期：2021年05月31日 星期一 15时07分09秒
  *   描    述：
  *
  *================================================================*/
@@ -110,6 +110,31 @@ static inline uint64_t get_u64_from_bcd_b01234567(uint8_t b0, uint8_t b1, uint8_
 	return v0 + v1 * 100 + v2 * 10000 + v3 * 1000000 + v4 * 100000000 + v5 * 10000000000 + v6 * 1000000000000 + v7 * 100000000000000;
 }
 
+#define get_bcd_b0123456789_from_u64_step(b) \
+	if(v == 0) { \
+		return; \
+	} \
+	u8 = v % 100; \
+	v /= 100; \
+	if(b != NULL) { \
+		*b = get_bcd_from_u8(u8); \
+	}
+
+static inline void get_bcd_b0123456789_from_u64(uint8_t *b0, uint8_t *b1, uint8_t *b2, uint8_t *b3, uint8_t *b4, uint8_t *b5, uint8_t *b6, uint8_t *b7, uint8_t *b8, uint8_t *b9, uint64_t v)
+{
+	uint8_t u8;
+
+	get_bcd_b0123456789_from_u64_step(b0);
+	get_bcd_b0123456789_from_u64_step(b1);
+	get_bcd_b0123456789_from_u64_step(b2);
+	get_bcd_b0123456789_from_u64_step(b3);
+	get_bcd_b0123456789_from_u64_step(b4);
+	get_bcd_b0123456789_from_u64_step(b5);
+	get_bcd_b0123456789_from_u64_step(b6);
+	get_bcd_b0123456789_from_u64_step(b7);
+	get_bcd_b0123456789_from_u64_step(b8);
+	get_bcd_b0123456789_from_u64_step(b9);
+}
 
 static inline void bcd_to_ascii(char *ascii, size_t ascii_size, uint8_t *bcd, size_t bcd_size)
 {
