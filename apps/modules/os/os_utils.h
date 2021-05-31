@@ -6,7 +6,7 @@
  *   文件名称：os_utils.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分36秒
- *   修改日期：2021年05月31日 星期一 15时07分09秒
+ *   修改日期：2021年05月31日 星期一 17时09分44秒
  *   描    述：
  *
  *================================================================*/
@@ -98,6 +98,7 @@ static inline uint32_t get_u32_from_bcd_b0123(uint8_t b0, uint8_t b1, uint8_t b2
 
 static inline uint64_t get_u64_from_bcd_b01234567(uint8_t b0, uint8_t b1, uint8_t b2, uint8_t b3, uint8_t b4, uint8_t b5, uint8_t b6, uint8_t b7)
 {
+	uint64_t v = 0;
 	uint8_t v0 = get_u8_from_bcd(b0);
 	uint8_t v1 = get_u8_from_bcd(b1);
 	uint8_t v2 = get_u8_from_bcd(b2);
@@ -107,7 +108,16 @@ static inline uint64_t get_u64_from_bcd_b01234567(uint8_t b0, uint8_t b1, uint8_
 	uint8_t v6 = get_u8_from_bcd(b6);
 	uint8_t v7 = get_u8_from_bcd(b7);
 
-	return v0 + v1 * 100 + v2 * 10000 + v3 * 1000000 + v4 * 100000000 + v5 * 10000000000 + v6 * 1000000000000 + v7 * 100000000000000;
+	v = v * 100 + v7;
+	v = v * 100 + v6;
+	v = v * 100 + v5;
+	v = v * 100 + v4;
+	v = v * 100 + v3;
+	v = v * 100 + v2;
+	v = v * 100 + v1;
+	v = v * 100 + v0;
+
+	return v;
 }
 
 #define get_bcd_b0123456789_from_u64_step(b) \
