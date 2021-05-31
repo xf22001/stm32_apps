@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2021年05月31日 星期一 11时35分38秒
+ *   修改日期：2021年05月31日 星期一 15时35分08秒
  *   描    述：
  *
  *================================================================*/
@@ -133,6 +133,17 @@ typedef struct {
 
 	void *charger_info;
 	void *energy_meter_info;
+
+	uint32_t energy;
+	uint32_t voltage;
+	uint32_t current;
+
+	uint16_t va;
+	uint16_t vb;
+	uint16_t vc;
+	uint16_t ca;
+	uint16_t cb;
+	uint16_t cc;
 } channel_info_t;
 
 #pragma pack(push, 1)
@@ -153,7 +164,11 @@ typedef enum {
 
 typedef enum {
 	CHANNEL_FAULT_UNKNOW = 0,
-	CHANNEL_FAULT_CHARGER_CONNECT_STATE_OFF = 0,
+	//not clean able
+	//clean able
+	CHANNEL_FAULT_AC_CHARGER_CONNECT_STATE_OFF,
+	CHANNEL_FAULT_AC_CHARGER_CC1_READY_0_TIMEOUT,
+	CHANNEL_FAULT_AC_CHARGER_CC1_READY_1_TIMEOUT,
 	CHANNEL_FAULT_SIZE,
 } channel_fault_t;
 

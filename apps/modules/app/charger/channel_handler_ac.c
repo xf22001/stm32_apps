@@ -6,7 +6,7 @@
  *   文件名称：channel_handler_ac.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月11日 星期二 09时20分53秒
- *   修改日期：2021年05月31日 星期一 11时52分39秒
+ *   修改日期：2021年05月31日 星期一 14时02分26秒
  *   描    述：
  *
  *================================================================*/
@@ -41,21 +41,16 @@ typedef enum {
 
 static void idle(void *_channel_info, void *__channel_info)
 {
-	//debug("");
 }
 
 static void start(void *_channel_info, void *__channel_info)
 {
 	channel_info_t *channel_info = (channel_info_t *)_channel_info;
-	channel_handler_ctx_t *channel_handler_ctx = (channel_handler_ctx_t *)channel_info->channel_handler_ctx;
-	uint32_t ticks = osKernelSysTick();
-
-	channel_handler_ctx->state_stamps = ticks;
 
 	if(channel_info->charger_connect_state == CHARGER_CONNECT_STATE_ON) {
 		set_channel_request_state(channel_info, CHANNEL_STATE_STARTING);
 	} else {
-		set_fault(channel_info->faults, CHANNEL_FAULT_CHARGER_CONNECT_STATE_OFF);
+		set_fault(channel_info->faults, CHANNEL_FAULT_AC_CHARGER_CONNECT_STATE_OFF);
 		set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
 	}
 }
@@ -122,14 +117,19 @@ static void starting(void *_channel_info, void *__channel_info)
 		case 0: {
 			start_cp_pwm(channel_info);
 			channel_handler_ctx->state = 1;
+			channel_handler_ctx->state_stamps = ticks;
 		}
 		break;
 
 		case 1: {
-			if(channel_handler_ctx->cc1_ready == 1) {
-				output_relay_on(channel_info);
-				set_channel_request_state(channel_info, CHANNEL_STATE_CHARGING);
-				channel_handler_ctx->state_stamps = ticks;
+			if(ticks_duration(ticks, channel_handler_ctx->state_stamps) >= 5 * 1000) {
+				set_fault(channel_info->faults, CHANNEL_FAULT_AC_CHARGER_CC1_READY_1_TIMEOUT);
+				set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
+			} else {
+				if(channel_handler_ctx->cc1_ready == 1) {
+					output_relay_on(channel_info);
+					set_channel_request_state(channel_info, CHANNEL_STATE_CHARGING);
+				}
 			}
 		}
 		break;
@@ -152,17 +152,28 @@ static void stopping(void *_channel_info, void *__channel_info)
 
 	switch(channel_handler_ctx->state) {
 		case 0: {
-			if(channel_handler_ctx->cc1_ready == 0) {
-				output_relay_off(channel_info);
-				channel_handler_ctx->state = 1;
-			}
+			channel_handler_ctx->state = 1;
+			channel_handler_ctx->state_stamps = ticks;
 		}
 		break;
 
 		case 1: {
+			if(ticks_duration(ticks, channel_handler_ctx->state_stamps) >= 5 * 1000) {
+				set_fault(channel_info->faults, CHANNEL_FAULT_AC_CHARGER_CC1_READY_0_TIMEOUT);
+				output_relay_off(channel_info);
+				channel_handler_ctx->state = 2;
+			} else {
+				if(channel_handler_ctx->cc1_ready == 0) {
+					output_relay_off(channel_info);
+					channel_handler_ctx->state = 2;
+				}
+			}
+		}
+		break;
+
+		case 2: {
 			stop_cp_pwm(channel_info);
 			set_channel_request_state(channel_info, CHANNEL_STATE_STOP);
-			channel_handler_ctx->state_stamps = ticks;
 		}
 		break;
 

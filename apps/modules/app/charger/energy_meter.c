@@ -6,16 +6,18 @@
  *   文件名称：energy_meter.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月07日 星期三 15时56分19秒
- *   修改日期：2021年05月11日 星期二 11时45分28秒
+ *   修改日期：2021年05月31日 星期一 14时15分48秒
  *   描    述：
  *
  *================================================================*/
 #include "energy_meter.h"
 #include "channels.h"
 #include "uart_data_task.h"
+#include "energy_meter_handler_ac_native.h"
 #include "energy_meter_handler_dc_native.h"
 
 energy_meter_handler_t *energy_meter_handler_sz[] = {
+	&energy_meter_handler_ac_native,
 	&energy_meter_handler_dc_native,
 };
 

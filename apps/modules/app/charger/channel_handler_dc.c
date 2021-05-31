@@ -1,12 +1,12 @@
 
 
 /*================================================================
- *   
- *   
+ *
+ *
  *   文件名称：channel_handler_dc.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月11日 星期二 09时21分02秒
- *   修改日期：2021年05月30日 星期日 11时59分09秒
+ *   修改日期：2021年05月31日 星期一 13时55分51秒
  *   描    述：
  *
  *================================================================*/
@@ -32,15 +32,18 @@ typedef struct {
 
 static void idle(void *_channel_info, void *__channel_info)
 {
-	//debug("");
 }
 
 static void start(void *_channel_info, void *__channel_info)
 {
+	channel_info_t *channel_info = (channel_info_t *)_channel_info;
+	set_channel_request_state(channel_info, CHANNEL_STATE_STARTING);
 }
 
 static void starting(void *_channel_info, void *__channel_info)
 {
+	channel_info_t *channel_info = (channel_info_t *)_channel_info;
+	set_channel_request_state(channel_info, CHANNEL_STATE_CHARGING);
 }
 
 static void charging(void *_channel_info, void *__channel_info)
@@ -49,10 +52,14 @@ static void charging(void *_channel_info, void *__channel_info)
 
 static void stopping(void *_channel_info, void *__channel_info)
 {
+	channel_info_t *channel_info = (channel_info_t *)_channel_info;
+	set_channel_request_state(channel_info, CHANNEL_STATE_STOP);
 }
 
 static void stop(void *_channel_info, void *__channel_info)
 {
+	channel_info_t *channel_info = (channel_info_t *)_channel_info;
+	set_channel_request_state(channel_info, CHANNEL_STATE_IDLE);
 }
 
 static void state_changed(void *_channel_info, void *_pre_state)
