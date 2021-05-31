@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分12秒
- *   修改日期：2021年05月30日 星期日 14时22分58秒
+ *   修改日期：2021年05月31日 星期一 11时54分04秒
  *   描    述：
  *
  *================================================================*/
@@ -79,105 +79,15 @@ static void handle_channel_request_state(channel_info_t *channel_info)
 {
 	channel_state_t state = channel_info->state;
 
-	switch(channel_info->state) {
-		case CHANNEL_STATE_IDLE: {
-			switch(channel_info->request_state) {
-				case CHANNEL_STATE_START: {
-					channel_info->state = CHANNEL_STATE_START;
-				}
-				break;
-
-				default: {
-				}
-				break;
-			}
-
-		}
-		break;
-
-		case CHANNEL_STATE_START: {
-			switch(channel_info->request_state) {
-				case CHANNEL_STATE_STARTING: {
-					channel_info->state = CHANNEL_STATE_STARTING;
-				}
-				break;
-
-				default: {
-				}
-				break;
-			}
-		}
-		break;
-
-		case CHANNEL_STATE_STARTING: {
-			switch(channel_info->request_state) {
-				case CHANNEL_STATE_CHARGING: {
-					channel_info->state = CHANNEL_STATE_CHARGING;
-				}
-				break;
-
-				default: {
-				}
-				break;
-			}
-		}
-		break;
-
-		case CHANNEL_STATE_CHARGING: {
-			switch(channel_info->request_state) {
-				case CHANNEL_STATE_STOPPING: {
-					channel_info->state = CHANNEL_STATE_STOPPING;
-				}
-				break;
-
-				default: {
-				}
-				break;
-			}
-		}
-		break;
-
-		case CHANNEL_STATE_STOPPING: {
-			switch(channel_info->request_state) {
-				case CHANNEL_STATE_STOP: {
-					channel_info->state = CHANNEL_STATE_STOP;
-				}
-				break;
-
-				default: {
-				}
-				break;
-			}
-		}
-		break;
-
-		case CHANNEL_STATE_STOP: {
-			switch(channel_info->request_state) {
-				case CHANNEL_STATE_IDLE: {
-					channel_info->state = CHANNEL_STATE_IDLE;
-				}
-				break;
-
-				default: {
-				}
-				break;
-			}
-		}
-		break;
-
-		default: {
-		}
-		break;
-	}
-
 	if(channel_info->request_state != CHANNEL_STATE_NONE) {
 		channel_info->request_state = CHANNEL_STATE_NONE;
+		channel_info->state = channel_info->request_state;
 	}
 
 	if(state != channel_info->state) {
 		debug("channel state:%s -> %s!", get_channel_state_des(state), get_channel_state_des(channel_info->state));
+		do_callback_chain(channel_info->state_changed_chain, (void *)state);
 	}
-
 }
 
 static void handle_channel_periodic(void *_channel_info, void *chain_ctx)
@@ -284,6 +194,13 @@ static int channel_init(channel_info_t *channel_info)
 	channel_config_t *channel_config = channel_info->channel_config;
 	channels_info_t *channels_info = (channels_info_t *)channel_info->channels_info;
 
+	channel_info->faults = alloc_bitmap(CHANNEL_FAULT_SIZE);
+	OS_ASSERT(channel_info->faults != NULL);
+
+	channel_info->request_state = CHANNEL_STATE_NONE;
+	channel_info->state = CHANNEL_STATE_IDLE;
+	channel_info->charger_connect_state = CHARGER_CONNECT_STATE_OFF;
+
 	channel_info->idle_chain = alloc_callback_chain();
 	OS_ASSERT(channel_info->idle_chain != NULL);
 	channel_info->start_chain = alloc_callback_chain();
@@ -296,6 +213,8 @@ static int channel_init(channel_info_t *channel_info)
 	OS_ASSERT(channel_info->stopping_chain != NULL);
 	channel_info->stop_chain = alloc_callback_chain();
 	OS_ASSERT(channel_info->stop_chain != NULL);
+	channel_info->state_changed_chain = alloc_callback_chain();
+	OS_ASSERT(channel_info->state_changed_chain != NULL);
 
 	debug("channel %d init charger %s", channel_info->channel_id, get_channel_config_channel_type(channel_config->channel_type));
 	channel_info->channel_handler = get_channel_handler(channel_config->channel_type);
@@ -316,9 +235,6 @@ static int channel_init(channel_info_t *channel_info)
 	channel_info->charger_info = alloc_charger_info(channel_info);
 	debug("channel %d alloc energy_meter %s", channel_info->channel_id, get_channel_config_energy_meter_type(channel_config->energy_meter_config.energy_meter_type));
 	channel_info->energy_meter_info = alloc_energy_meter_info(channel_info);
-
-	channel_info->request_state = CHANNEL_STATE_NONE;
-	channel_info->state = CHANNEL_STATE_IDLE;
 
 	return ret;
 }

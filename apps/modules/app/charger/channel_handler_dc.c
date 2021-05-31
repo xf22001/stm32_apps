@@ -24,6 +24,10 @@ typedef struct {
 	callback_item_t charging_callback_item;
 	callback_item_t stopping_callback_item;
 	callback_item_t stop_callback_item;
+	callback_item_t state_changed_callback_item;
+
+	uint8_t state;
+	uint32_t state_stamps;
 } channel_handler_ctx_t;
 
 static void idle(void *_channel_info, void *__channel_info)
@@ -33,27 +37,30 @@ static void idle(void *_channel_info, void *__channel_info)
 
 static void start(void *_channel_info, void *__channel_info)
 {
-	//debug("");
 }
 
 static void starting(void *_channel_info, void *__channel_info)
 {
-	//debug("");
 }
 
 static void charging(void *_channel_info, void *__channel_info)
 {
-	//debug("");
 }
 
 static void stopping(void *_channel_info, void *__channel_info)
 {
-	//debug("");
 }
 
 static void stop(void *_channel_info, void *__channel_info)
 {
-	//debug("");
+}
+
+static void state_changed(void *_channel_info, void *_pre_state)
+{
+	channel_info_t *channel_info = (channel_info_t *)_channel_info;
+	channel_handler_ctx_t *channel_handler_ctx = (channel_handler_ctx_t *)channel_info->channel_handler_ctx;
+
+	channel_handler_ctx->state = 0;
 }
 
 static void handle_channel_handler_periodic(void *_channel_info, void *_channels_info)
@@ -137,6 +144,10 @@ static int init(void *_channel_info)
 	channel_handler_ctx->stop_callback_item.fn_ctx = channel_info;
 	OS_ASSERT(register_callback(channel_info->stop_chain, &channel_handler_ctx->stop_callback_item) == 0);
 
+	channel_handler_ctx->state_changed_callback_item.fn = state_changed;
+	channel_handler_ctx->state_changed_callback_item.fn_ctx = channel_info;
+	OS_ASSERT(register_callback(channel_info->state_changed_chain, &channel_handler_ctx->state_changed_callback_item) == 0);
+
 	channel_handler_ctx->handler_periodic_callback_item.fn = handle_channel_handler_periodic;
 	channel_handler_ctx->handler_periodic_callback_item.fn_ctx = channel_info;
 	OS_ASSERT(register_callback(channels_info->common_periodic_chain, &channel_handler_ctx->handler_periodic_callback_item) == 0);
@@ -150,7 +161,50 @@ static int init(void *_channel_info)
 	return ret;
 }
 
+static int channel_start(void *_channel_info)
+{
+	int ret = -1;
+	channel_info_t *channel_info = (channel_info_t *)_channel_info;
+
+	switch(channel_info->state) {
+		case CHANNEL_STATE_IDLE: {
+			set_channel_request_state(channel_info, CHANNEL_STATE_START);
+			ret = 0;
+		}
+		break;
+
+		default: {
+		}
+		break;
+	}
+
+	return ret;
+}
+
+static int channel_stop(void *_channel_info)
+{
+	int ret = -1;
+	channel_info_t *channel_info = (channel_info_t *)_channel_info;
+
+	switch(channel_info->state) {
+		case CHANNEL_STATE_START:
+		case CHANNEL_STATE_STARTING:
+		case CHANNEL_STATE_CHARGING: {
+			set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
+			ret = 0;
+		}
+		break;
+
+		default: {
+		}
+		break;
+	}
+
+	return ret;
+}
 channel_handler_t channel_handler_dc = {
 	.channel_type = CHANNEL_TYPE_DC,
 	.init = init,
+	.channel_start = channel_start,
+	.channel_stop = channel_stop,
 };

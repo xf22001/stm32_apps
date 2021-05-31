@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2021年05月30日 星期日 11时35分51秒
+ *   修改日期：2021年05月31日 星期一 11时35分38秒
  *   描    述：
  *
  *================================================================*/
@@ -64,10 +64,14 @@ typedef struct {
 } channels_event_t;
 
 typedef int (*channel_init_t)(void *_channel_info);
+typedef int (*channel_start_t)(void *_channel_info);
+typedef int (*channel_stop_t)(void *_channel_info);
 
 typedef struct {
 	channel_type_t channel_type;
 	channel_init_t init;
+	channel_start_t channel_start;
+	channel_stop_t channel_stop;
 } channel_handler_t;
 
 typedef enum {
@@ -80,12 +84,41 @@ typedef enum {
 	CHANNEL_STATE_STOP,
 } channel_state_t;
 
+typedef enum {
+	CHARGER_CONNECT_STATE_OFF = 0,
+	CHARGER_CONNECT_STATE_ON,
+} charger_connect_state_t;
+
+typedef enum {
+	AC_CURRENT_LIMIT_16A = 0,
+	AC_CURRENT_LIMIT_32A,
+	AC_CURRENT_LIMIT_63A,
+} ac_current_limit_t;
+
+#pragma pack(push, 1)
+
+typedef struct {
+	uint8_t ac_current_limit;//ac_current_limit_t
+} channel_settings_t;
+
+#pragma pack(pop)
+
+
 typedef struct {
 	channel_config_t *channel_config;
 	uint8_t channel_id;
 	void *channels_info;
 	channel_handler_t *channel_handler;
 	void *channel_handler_ctx;
+
+	channel_settings_t channel_settings;
+
+	bitmap_t *faults;
+
+	channel_state_t request_state;
+	channel_state_t state;
+	charger_connect_state_t charger_connect_state;
+
 
 	callback_item_t periodic_callback_item;
 	callback_item_t event_callback_item;
@@ -96,12 +129,10 @@ typedef struct {
 	callback_chain_t *charging_chain;
 	callback_chain_t *stopping_chain;
 	callback_chain_t *stop_chain;
+	callback_chain_t *state_changed_chain;
 
 	void *charger_info;
 	void *energy_meter_info;
-
-	channel_state_t request_state;
-	channel_state_t state;
 } channel_info_t;
 
 #pragma pack(push, 1)
@@ -119,6 +150,12 @@ typedef enum {
 	CHANNELS_FAULT_UNKNOW = 0,
 	CHANNELS_FAULT_SIZE,
 } channels_fault_t;
+
+typedef enum {
+	CHANNEL_FAULT_UNKNOW = 0,
+	CHANNEL_FAULT_CHARGER_CONNECT_STATE_OFF = 0,
+	CHANNEL_FAULT_SIZE,
+} channel_fault_t;
 
 typedef struct {
 	channels_config_t *channels_config;
@@ -143,10 +180,11 @@ typedef struct {
 } channels_info_t;
 
 char *get_channel_event_type_des(channel_event_type_t type);
-int set_channels_info_fault(channels_info_t *channels_info, channels_fault_t fault);
-int reset_channels_info_fault(channels_info_t *channels_info, channels_fault_t fault);
-int get_channels_info_fault(channels_info_t *channels_info, channels_fault_t fault);
-int get_channels_info_first_fault(channels_info_t *channels_info);
+int set_fault(bitmap_t *faults, int fault);
+int reset_fault(bitmap_t *faults, int fault);
+int get_fault(bitmap_t *faults, int fault);
+int get_first_fault(bitmap_t *faults);
+int test_fault(bitmap_t *faults);
 int send_channels_event(channels_info_t *channels_info, channels_event_t *channels_event, uint32_t timeout);
 channels_info_t *start_channels(void);
 

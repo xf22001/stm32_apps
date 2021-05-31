@@ -6,7 +6,7 @@
  *   文件名称：channels.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 09时26分31秒
- *   修改日期：2021年05月29日 星期六 10时26分59秒
+ *   修改日期：2021年05月31日 星期一 09时23分11秒
  *   描    述：
  *
  *================================================================*/
@@ -43,24 +43,37 @@ char *get_channel_event_type_des(channel_event_type_t type)
 	return des;
 }
 
-int set_channels_info_fault(channels_info_t *channels_info, channels_fault_t fault)
+int set_fault(bitmap_t *faults, int fault)
 {
-	return set_bitmap_value(channels_info->faults, fault, 1);
+	return set_bitmap_value(faults, fault, 1);
 }
 
-int reset_channels_info_fault(channels_info_t *channels_info, channels_fault_t fault)
+int reset_fault(bitmap_t *faults, int fault)
 {
-	return set_bitmap_value(channels_info->faults, fault, 0);
+	return set_bitmap_value(faults, fault, 0);
 }
 
-int get_channels_info_fault(channels_info_t *channels_info, channels_fault_t fault)
+int get_fault(bitmap_t *faults, int fault)
 {
-	return get_bitmap_value(channels_info->faults, fault);
+	return get_bitmap_value(faults, fault);
 }
 
-int get_channels_info_first_fault(channels_info_t *channels_info)
+int get_first_fault(bitmap_t *faults)
 {
-	return get_first_value_index(channels_info->faults, 1);
+	return get_first_value_index(faults, 1);
+}
+
+int test_fault(bitmap_t *faults)
+{
+	int ret = 0;
+	int i;
+	for(i = 0; i < faults->cell_size; i++) {
+		if(faults->data[i] != 0) {
+			ret = -1;
+			break;
+		}
+	}
+	return ret;
 }
 
 static void free_channels_info(channels_info_t *channels_info)
