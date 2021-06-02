@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分12秒
- *   修改日期：2021年05月31日 星期一 11时54分04秒
+ *   修改日期：2021年06月02日 星期三 16时28分44秒
  *   描    述：
  *
  *================================================================*/
@@ -199,7 +199,7 @@ static int channel_init(channel_info_t *channel_info)
 
 	channel_info->request_state = CHANNEL_STATE_NONE;
 	channel_info->state = CHANNEL_STATE_IDLE;
-	channel_info->charger_connect_state = CHARGER_CONNECT_STATE_OFF;
+	channel_info->charger_connect_state = 0;
 
 	channel_info->idle_chain = alloc_callback_chain();
 	OS_ASSERT(channel_info->idle_chain != NULL);

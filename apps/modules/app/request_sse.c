@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年06月02日 星期三 11时51分54秒
+ *   修改日期：2021年06月02日 星期三 16时29分05秒
  *   描    述：
  *
  *================================================================*/
@@ -98,7 +98,7 @@ typedef struct {
 	uint8_t auxiliary_power_12 : 1;//12v
 	uint8_t auxiliary_power_24 : 1;//24v
 	uint8_t vehicle_relay_state : 1;
-	uint8_t channel_lock_state : 1;
+	uint8_t charger_lock_state : 1;
 	uint8_t unused : 3;
 } sse_channel_device_state_t;
 
@@ -187,10 +187,10 @@ typedef struct {
 #endif//#if !defined(SSE_AC_CHARGER)
 
 typedef struct {
-	uint8_t channel_id;
+	uint8_t channel_id;//从1开始
 	uint8_t channel_stop_reason;//0:充电机未主动停机 1:人工停机 2:电池温度超限停机 3:超过最大允许充电电压停机
 	u_sse_channel_device_state_t u_sse_channel_device_state;
-	uint8_t channel_work_state;//0:待机 1:枪已插好
+	uint8_t channel_work_state;//0:待机 1:枪已插好 2:正在充电 4:枪已上锁
 	uint8_t sse_report_channel_charger_bms_state;//sse_report_channel_charger_bms_state_t
 	uint8_t sse_report_channel_charger_bms_stop_reason;//sse_report_channel_charger_bms_stop_reason_t
 	sse_report_channel_charge_info_t sse_report_channel_charge_info;
@@ -206,7 +206,7 @@ typedef struct {
 	uint8_t app;//0:原始版本 1:升级版本 V23
 	uint32_t module_state_mask;//模块总数掩码 V23
 	uint32_t module_state_value;//按位表示对于序号的模块工作状态 0 表示故障 1 正常 V23
-	uint32_t float_percision;//字节数顺序描述 V24
+	uint32_t float_percision;//字节数顺序描述 V24 3:电表3位小数,2:电表2位小数
 	uint8_t channel_number;
 	sse_channel_report_t sse_channel_report[0];
 } sse_0x00_request_report_t;
@@ -639,12 +639,6 @@ static uint16_t get_sse_device_fault_type(channels_info_t *channels_info)
 {
 	uint16_t fault = SSE_DEVICE_FAULT_TYPE_NONE;
 
-	channels_fault_t channels_fault = get_channels_info_first_fault(channels_info);
-
-	if(channels_fault >= CHANNELS_FAULT_SIZE) {
-		return fault;
-	}
-
 	//todo
 
 	return fault;
@@ -677,6 +671,69 @@ static uint32_t get_sse_module_state_mask(channels_info_t *channels_info)
 	return mask;
 }
 
+static uint8_t get_channel_stop_reason(channel_info_t *channel_info)
+{
+	uint8_t stop_reason = 0;
+
+	switch(channel_info->channel_record_item.state) {
+		case CHANNEL_RECORD_ITEM_STATE_FINISH:
+		case CHANNEL_RECORD_ITEM_STATE_UPLOAD: {
+			switch(channel_info->channel_record_item.stop_reason) {
+				case CHANNEL_RECORD_ITEM_STOP_REASON_MANUAL: {
+					stop_reason = 1;
+				}
+				break;
+
+				case CHANNEL_RECORD_ITEM_STOP_REASON_TEMPERATURE_LIMIT: {
+					stop_reason = 2;
+				}
+				break;
+
+				case CHANNEL_RECORD_ITEM_STOP_REASON_VOLTAGE_LIMIT: {
+					stop_reason = 3;
+				}
+				break;
+
+				default: {
+				}
+				break;
+			}
+		}
+		break;
+
+		default: {
+		}
+		break;
+	}
+
+}
+
+static uint8_t get_channel_device_state(channel_info_t *channel_info)
+{
+	u_sse_channel_device_state_t u_sse_channel_device_state;
+	u_sse_channel_device_state.v = 0;
+
+	u_sse_channel_device_state.s.connect = channel_info->charger_connect_state;
+	u_sse_channel_device_state.s.auxiliary_power_12 = (channel_info->channel_settings.auxiliary_power_type == AUXILIARY_POWER_TYPE_12) ? 1 : 0;
+	u_sse_channel_device_state.s.auxiliary_power_24 = (channel_info->channel_settings.auxiliary_power_type == AUXILIARY_POWER_TYPE_24) ? 1 : 0;
+	u_sse_channel_device_state.s.vehicle_relay_state = channel_info->vehicle_relay_state;
+	u_sse_channel_device_state.s.charger_lock_state = channel_info->charger_lock_state;
+
+	return u_sse_channel_device_state.v;
+}
+
+static void udpate_sse_chennel_report(sse_channel_report_t *sse_channel_report, uint8_t channel_id)
+{
+	channels_info_t *channels_info = net_client_data_ctx->channels_info;
+	channel_info_t *channel_info = channels_info->channel_info + channel_id;
+	sse_channel_report = sse_channel_report + channel_id;
+
+	sse_channel_report->channel_id = channel_id + 1;
+	sse_channel_report->channel_stop_reason = get_channel_stop_reason(channel_info);
+	sse_channel_report->u_sse_channel_device_state.v = get_channel_device_state(channel_info);
+	sse_channel_report->channel_work_state = (channel_info->state == CHANNEL_STATE_STARTING) ? 1 : (channel_info->state == CHANNEL_STATE_CHARGING) ? 2 : 0;
+}
+
 static int request_callback_report(net_client_info_t *net_client_info, void *_command_item, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
 	int ret = 0;
@@ -687,6 +744,7 @@ static int request_callback_report(net_client_info_t *net_client_info, void *_co
 	channels_settings_t *channels_settings = &net_client_data_ctx->channels_info->channels_settings;
 	struct tm *tm = localtime(get_time());
 	char dt[20];
+	int i;
 
 	snprintf(sse_0x00_request_report->device_id, 32, "%s", channels_settings->device_id);
 	sse_0x00_request_report->device_type = channels_settings->device_type;
@@ -699,6 +757,12 @@ static int request_callback_report(net_client_info_t *net_client_info, void *_co
 	sse_0x00_request_report->app = is_app();
 	sse_0x00_request_report->module_state_mask = get_sse_module_state_mask(channels_info);
 	sse_0x00_request_report->module_state_value = get_sse_module_state_value(channels_info);
+	sse_0x00_request_report->float_percision = (channels_info->channels_settings.magnification == 0) ? 2 : 3;
+	sse_0x00_request_report->channel_number = channels_info->channel_number;
+
+	for(i = 0; i < channels_info->channel_number; i++) {
+		udpate_sse_chennel_report(sse_0x00_request_report->sse_channel_report, i);
+	}
 
 	send_frame(net_client_info, net_client_data_ctx->serial++, item->frame, 0, (uint8_t *)sse_0x00_request_report, sizeof(sse_0x00_request_report_t) + channels_info->channel_number * sizeof(sse_channel_report_t));
 
@@ -733,6 +797,7 @@ static net_client_command_item_t net_client_command_item_report = {
 };
 
 static net_client_command_item_t *net_client_command_item_device_table[] = {
+	&net_client_command_item_report,
 };
 
 

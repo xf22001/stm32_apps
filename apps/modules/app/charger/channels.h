@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2021年06月02日 星期三 09时57分34秒
+ *   修改日期：2021年06月02日 星期三 15时39分26秒
  *   描    述：
  *
  *================================================================*/
@@ -25,6 +25,7 @@ extern "C"
 
 #include "callback_chain.h"
 #include "bitmap_ops.h"
+#include "channel_record.h"
 
 #ifdef __cplusplus
 }
@@ -85,20 +86,21 @@ typedef enum {
 } channel_state_t;
 
 typedef enum {
-	CHARGER_CONNECT_STATE_OFF = 0,
-	CHARGER_CONNECT_STATE_ON,
-} charger_connect_state_t;
-
-typedef enum {
 	AC_CURRENT_LIMIT_16A = 0,
 	AC_CURRENT_LIMIT_32A,
 	AC_CURRENT_LIMIT_63A,
 } ac_current_limit_t;
 
+typedef enum {
+	AUXILIARY_POWER_TYPE_12 = 0,
+	AUXILIARY_POWER_TYPE_24
+} auxiliary_power_type_t;
+
 #pragma pack(push, 1)
 
 typedef struct {
 	uint8_t ac_current_limit;//ac_current_limit_t
+	uint8_t auxiliary_power_type;//auxiliary_power_type_t
 } channel_settings_t;
 
 #pragma pack(pop)
@@ -117,8 +119,12 @@ typedef struct {
 
 	channel_state_t request_state;
 	channel_state_t state;
-	charger_connect_state_t charger_connect_state;
 
+	uint8_t charger_connect_state;
+	uint8_t charger_lock_state;
+	uint8_t vehicle_relay_state;
+
+	uint8_t bms_state;
 
 	callback_item_t periodic_callback_item;
 	callback_item_t event_callback_item;
@@ -144,6 +150,8 @@ typedef struct {
 	uint16_t ca;
 	uint16_t cb;
 	uint16_t cc;
+
+	channel_record_item_t channel_record_item;
 } channel_info_t;
 
 #pragma pack(push, 1)
@@ -153,6 +161,7 @@ typedef struct {
 	uint8_t device_type;
 	uint16_t power_module_type;
 	uint16_t power_threshold;//单位 0.1kW
+	uint8_t magnification;//电表放大倍率.0:2位小数, 1:3位小数
 } channels_settings_t;
 
 #pragma pack(pop)
