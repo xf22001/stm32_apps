@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2021年05月26日 星期三 17时11分01秒
+ *   修改日期：2021年06月02日 星期三 11时51分38秒
  *   描    述：
  *
  *================================================================*/
@@ -85,7 +85,8 @@ static char *get_request_type_des(request_type_t request_type)
 
 	switch(request_type) {
 			add_des_case(REQUEST_TYPE_DEFAULT);
-			add_des_case(REQUEST_TYPE_DEFAULT_WEBSOCKET);
+			add_des_case(REQUEST_TYPE_WEBSOCKET);
+			add_des_case(REQUEST_TYPE_SSE);
 
 		default: {
 		}

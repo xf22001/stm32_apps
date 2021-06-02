@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2021年05月31日 星期一 15时35分08秒
+ *   修改日期：2021年06月02日 星期三 09时57分34秒
  *   描    述：
  *
  *================================================================*/
@@ -159,12 +159,16 @@ typedef struct {
 
 typedef enum {
 	CHANNELS_FAULT_UNKNOW = 0,
+	CHANNELS_FAULT_INSULATION,
+	CHANNELS_FAULT_CARD_READER,
+	CHANNELS_FAULT_DISPLAY,
 	CHANNELS_FAULT_SIZE,
 } channels_fault_t;
 
 typedef enum {
 	CHANNEL_FAULT_UNKNOW = 0,
 	//not clean able
+	CHANNEL_FAULT_TELEMETER,
 	//clean able
 	CHANNEL_FAULT_AC_CHARGER_CONNECT_STATE_OFF,
 	CHANNEL_FAULT_AC_CHARGER_CC1_READY_0_TIMEOUT,

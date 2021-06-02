@@ -6,7 +6,7 @@
  *   文件名称：net_client.h
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时38分02秒
- *   修改日期：2021年05月25日 星期二 20时06分06秒
+ *   修改日期：2021年06月02日 星期三 11时51分07秒
  *   描    述：
  *
  *================================================================*/
@@ -79,7 +79,8 @@ typedef struct {
 
 typedef enum {
 	REQUEST_TYPE_DEFAULT = 0,
-	REQUEST_TYPE_DEFAULT_WEBSOCKET,
+	REQUEST_TYPE_WEBSOCKET,
+	REQUEST_TYPE_SSE,
 } request_type_t;
 
 typedef void (*set_lan_led_state_t)(void *ctx, uint32_t state);
