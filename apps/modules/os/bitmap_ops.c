@@ -6,7 +6,7 @@
  *   文件名称：bitmap_ops.c
  *   创 建 者：肖飞
  *   创建日期：2020年01月19日 星期日 13时14分10秒
- *   修改日期：2021年05月28日 星期五 16时05分22秒
+ *   修改日期：2021年06月03日 星期四 10时04分50秒
  *   描    述：
  *
  *================================================================*/
@@ -53,6 +53,7 @@ int get_first_value_index(bitmap_t *bitmap, uint8_t value)
 	int ret = -1;
 	int i = 0;
 	int j = 0;
+	uint8_t found = 0;
 
 	if(bitmap == NULL) {
 		return ret;
@@ -63,8 +64,13 @@ int get_first_value_index(bitmap_t *bitmap, uint8_t value)
 	for(i = 0; i < bitmap->cell_size; i++) {
 		for(j = 0; j < 8; j++) {
 			if(value == get_u8_bits(bitmap->data[i], j)) {
+				found = 1;
 				break;
 			}
+		}
+
+		if(found == 1) {
+			break;
 		}
 	}
 
