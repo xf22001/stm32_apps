@@ -6,7 +6,7 @@
  *   文件名称：os_utils.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分36秒
- *   修改日期：2021年05月31日 星期一 17时09分44秒
+ *   修改日期：2021年06月04日 星期五 14时25分14秒
  *   描    述：
  *
  *================================================================*/
@@ -22,6 +22,7 @@ extern "C"
 
 #include <string.h>
 #include <ctype.h>
+#include <time.h>
 
 #ifdef __cplusplus
 }
@@ -447,6 +448,7 @@ uint8_t sum_crc8(const void *data, size_t size);
 uint16_t sum_crc16(const void *data, size_t size);
 uint32_t sum_crc32(const void *data, size_t size);
 uint32_t ticks_duration(uint32_t a, uint32_t b);
+time_t get_time(void);
 
 #if !defined(ALLOC_TRACE_DISABLE)
 #define os_alloc(size) __os_alloc(size, __FILE__, __func__, __LINE__)

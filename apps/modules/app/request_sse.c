@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年06月04日 星期五 13时32分21秒
+ *   修改日期：2021年06月04日 星期五 14时42分24秒
  *   描    述：
  *
  *================================================================*/
@@ -774,7 +774,8 @@ static int request_callback_report(net_client_info_t *net_client_info, void *_co
 	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
 	channels_info_t *channels_info = net_client_data_ctx->channels_info;
 	channels_settings_t *channels_settings = &net_client_data_ctx->channels_info->channels_settings;
-	struct tm *tm = localtime(get_time());
+	time_t ts = get_time();
+	struct tm *tm = localtime(&ts);
 	char dt[20];
 	int i;
 
