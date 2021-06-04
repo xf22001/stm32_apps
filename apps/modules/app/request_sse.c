@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年06月04日 星期五 10时45分35秒
+ *   修改日期：2021年06月04日 星期五 13时32分21秒
  *   描    述：
  *
  *================================================================*/
@@ -19,6 +19,7 @@
 #include "channels.h"
 #include "charger.h"
 #include "channels_power_module.h"
+#include "iap.h"
 
 #include "log.h"
 
@@ -132,7 +133,8 @@ typedef enum {
 } sse_report_channel_charger_bms_state_t;
 
 typedef enum {
-	SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_SOC_ARCHIEVED = 1,
+	SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_NONE = 0,
+	SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_SOC_ARCHIEVED,
 	SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_SOC_NOT_CREDIBLE,
 	SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_VOLTAGE_ARCHIEVED,
 	SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_VOLTAGE_NOT_CREDIBLE,
@@ -158,7 +160,6 @@ typedef enum {
 } sse_report_channel_charger_bms_stop_reason_t;
 
 //dc
-#if !defined(SSE_AC_CHARGER)
 typedef struct {
 	uint8_t soc;
 	uint16_t bcl_require_voltage;
@@ -175,16 +176,16 @@ typedef struct {
 	uint16_t bcs_remain_min;
 	uint8_t dc_p_temperature;
 	uint8_t dc_n_temperature;
-} sse_report_channel_charge_info_t;
-#else//#if !defined(SSE_AC_CHARGER)
+} sse_report_channel_charge_info_dc_t;
+
+//ac
 typedef struct {
 	uint16_t output_voltage;
 	uint16_t output_current;
 	uint32_t telemeter_total;
 	uint32_t charge_energy;
 	uint32_t charge_amount;
-} sse_report_channel_charge_info_t;
-#endif//#if !defined(SSE_AC_CHARGER)
+} sse_report_channel_charge_info_ac_t;
 
 typedef struct {
 	uint8_t channel_id;//从1开始
@@ -193,7 +194,8 @@ typedef struct {
 	uint8_t channel_work_state;//0:待机 1:枪已插好 2:正在充电 4:枪已上锁
 	uint8_t sse_report_channel_charger_bms_state;//sse_report_channel_charger_bms_state_t
 	uint8_t sse_report_channel_charger_bms_stop_reason;//sse_report_channel_charger_bms_stop_reason_t
-	sse_report_channel_charge_info_t sse_report_channel_charge_info;
+	sse_report_channel_charge_info_ac_t sse_report_channel_charge_info_ac[0];
+	sse_report_channel_charge_info_dc_t sse_report_channel_charge_info_dc[0];
 } sse_channel_report_t;
 
 typedef struct {
@@ -562,9 +564,9 @@ static void report_transaction_record(uint16_t record_id)
 
 static void sync_transaction_record(void)
 {
-	uint8_t AA = 0;
-	int i;
-	int channel_id;
+	//uint8_t AA = 0;
+	//int i;
+	//int channel_id;
 
 	if(net_client_data_ctx->device_cmd_ctx[NET_CLIENT_DEVICE_COMMAND_EVENT_UPLOAD_RECORD].state != COMMAND_STATE_IDLE) {
 		return;
@@ -671,6 +673,13 @@ static uint32_t get_sse_module_state_mask(channels_info_t *channels_info)
 	return mask;
 }
 
+static uint32_t get_sse_module_state_value(channels_info_t *channels_info)
+{
+	uint32_t state = 0;
+	//todo
+	return state;
+}
+
 static uint8_t get_channel_stop_reason(channel_info_t *channel_info)
 {
 	uint8_t stop_reason = 0;
@@ -705,7 +714,8 @@ static uint8_t get_channel_stop_reason(channel_info_t *channel_info)
 		}
 		break;
 	}
-
+	
+	return stop_reason;
 }
 
 static uint8_t get_channel_device_state(channel_info_t *channel_info)
@@ -722,6 +732,24 @@ static uint8_t get_channel_device_state(channel_info_t *channel_info)
 	return u_sse_channel_device_state.v;
 }
 
+static uint8_t get_sse_report_channel_charger_bms_state(channel_info_t *channel_info)
+{
+	uint8_t state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_NONE;
+	//todo
+	return state;
+}
+
+static uint8_t get_sse_report_channel_charger_bms_stop_reason(channel_info_t *channel_info)
+{
+	uint8_t stop_reason = SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_NONE;
+	//todo
+	return stop_reason;
+}
+
+static void udpate_sse_chennel_charger_report(sse_channel_report_t *sse_channel_report, channel_info_t *channel_info)
+{
+}
+
 static void udpate_sse_chennel_report(sse_channel_report_t *sse_channel_report, uint8_t channel_id)
 {
 	channels_info_t *channels_info = net_client_data_ctx->channels_info;
@@ -732,9 +760,13 @@ static void udpate_sse_chennel_report(sse_channel_report_t *sse_channel_report, 
 	sse_channel_report->channel_stop_reason = get_channel_stop_reason(channel_info);
 	sse_channel_report->u_sse_channel_device_state.v = get_channel_device_state(channel_info);
 	sse_channel_report->channel_work_state = (channel_info->state == CHANNEL_STATE_STARTING) ? 1 : (channel_info->state == CHANNEL_STATE_CHARGING) ? 2 : 0;
+	sse_channel_report->sse_report_channel_charger_bms_state = get_sse_report_channel_charger_bms_state(channel_info);
+	sse_channel_report->sse_report_channel_charger_bms_stop_reason = get_sse_report_channel_charger_bms_stop_reason(channel_info);
+
+	udpate_sse_chennel_charger_report(sse_channel_report, channel_info);
 }
 
-static int request_callback_report(net_client_info_t *net_client_info, void *_command_item, uint8_t *send_buffer, uint16_t send_buffer_size)
+static int request_callback_report(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
 	int ret = 0;
 	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)send_buffer;
@@ -746,7 +778,7 @@ static int request_callback_report(net_client_info_t *net_client_info, void *_co
 	char dt[20];
 	int i;
 
-	snprintf(sse_0x00_request_report->device_id, 32, "%s", channels_settings->device_id);
+	snprintf((char *)sse_0x00_request_report->device_id, 32, "%s", channels_settings->device_id);
 	sse_0x00_request_report->device_type = channels_settings->device_type;
 	memset(sse_0x00_request_report->date_time, 0xff, sizeof(sse_0x00_request_report->date_time));
 	strftime(dt, sizeof(dt), "%Y%m%d%H%M%S", tm);
@@ -770,7 +802,7 @@ static int request_callback_report(net_client_info_t *net_client_info, void *_co
 	return ret;
 }
 
-static int response_callback_report(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
+static int response_callback_report(net_client_info_t *net_client_info, void *_command_item, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
 	int ret = -1;
 	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)send_buffer;
@@ -782,7 +814,7 @@ static int response_callback_report(net_client_info_t *net_client_info, void *_c
 	return ret;
 }
 
-static int timeout_callback_report(net_client_info_t *net_client_info, void *_command_item)
+static int timeout_callback_report(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id)
 {
 	int ret = 0;
 	return ret;
@@ -873,8 +905,6 @@ static void request_after_create_server_connect(void *ctx)
 static void request_before_close_server_connect(void *ctx)
 {
 	debug("");
-
-	logout_callback();
 }
 
 static void request_after_close_server_connect(void *ctx)
@@ -950,10 +980,10 @@ static void sse_response(void *ctx, uint8_t *request, uint16_t request_size, uin
 		if(ret != 0) {
 			if(ret == 1) {
 			} else {
-				debug("channel %d cmd %d(%s) response error!", j, item->cmd, get_net_client_cmd_channel_des(item->cmd));
+				debug("device cmd %d(%s) response error!", item->cmd, get_net_client_cmd_channel_des(item->cmd));
 			}
 		} else {
-			debug("cmd:%d(%s) response", item->cmd, get_net_client_cmd_device_des(item->cmd));
+			debug("device cmd:%d(%s) response", item->cmd, get_net_client_cmd_device_des(item->cmd));
 			handled = 1;
 
 		}
@@ -1026,7 +1056,7 @@ static void sse_periodic(net_client_info_t *net_client_info)
 		if(device_cmd_ctx[item->cmd].state == COMMAND_STATE_RESPONSE) {
 			if(ticks_duration(ticks, device_cmd_ctx[item->cmd].send_stamp) >= RESPONSE_TIMEOUT_DURATOIN) {
 				net_client_data_ctx->request_timeout++;
-				debug("cmd %d(%s) timeout", item->cmd, get_net_client_cmd_device_des(item->cmd));
+				debug("device cmd %d(%s) timeout", item->cmd, get_net_client_cmd_device_des(item->cmd));
 				device_cmd_ctx[item->cmd].state = COMMAND_STATE_IDLE;
 
 				if(item->timeout_callback != NULL) {
@@ -1044,7 +1074,7 @@ static void sse_periodic(net_client_info_t *net_client_info)
 		}
 
 		if(ticks_duration(ticks, device_cmd_ctx[item->cmd].stamp) >= item->periodic) {
-			debug("cmd %d(%s) start", item->cmd, get_net_client_cmd_device_des(item->cmd));
+			debug("device cmd %d(%s) start", item->cmd, get_net_client_cmd_device_des(item->cmd));
 			device_cmd_ctx[item->cmd].state = COMMAND_STATE_REQUEST;
 			device_cmd_ctx[item->cmd].stamp = ticks;
 		}
@@ -1115,7 +1145,7 @@ static void request_process_request(net_client_info_t *net_client_info, uint8_t 
 
 		device_cmd_ctx[item->cmd].send_stamp = ticks;
 
-		debug("request cmd:%d(%s)", item->cmd, get_net_client_cmd_device_des(item->cmd));
+		debug("request device cmd:%d(%s)", item->cmd, get_net_client_cmd_device_des(item->cmd));
 
 		if(item->request_callback == NULL) {
 			debug("");
@@ -1127,7 +1157,7 @@ static void request_process_request(net_client_info_t *net_client_info, uint8_t 
 		ret = item->request_callback(net_client_info, item, 0, send_buffer, send_buffer_size);
 
 		if(ret != 0) {
-			debug("send request cmd %d(%s) error!", item->cmd, get_net_client_cmd_device_des(item->cmd));
+			debug("send device request cmd %d(%s) error!", item->cmd, get_net_client_cmd_device_des(item->cmd));
 			continue;
 		}
 	}
@@ -1150,7 +1180,7 @@ static void request_process_request(net_client_info_t *net_client_info, uint8_t 
 
 			channel_cmd_ctx[item->cmd].send_stamp = ticks;
 
-			debug("channel %d request cmd:%d(%s)", j, item->cmd, get_net_client_cmd_channel_des(item->cmd));
+			debug("request channel %d cmd:%d(%s)", j, item->cmd, get_net_client_cmd_channel_des(item->cmd));
 
 			if(item->request_callback == NULL) {
 				debug("");
@@ -1184,6 +1214,7 @@ static void request_periodic(void *ctx, uint8_t *send_buffer, uint16_t send_buff
 		return;
 	}
 
+	sse_periodic(net_client_info);
 	request_process_request(net_client_info, send_buffer, send_buffer_size);
 }
 

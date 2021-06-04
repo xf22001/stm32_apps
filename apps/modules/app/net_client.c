@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2021年06月04日 星期五 10时43分58秒
+ *   修改日期：2021年06月04日 星期五 13时12分46秒
  *   描    述：
  *
  *================================================================*/
@@ -29,6 +29,7 @@ extern protocol_if_t protocol_if_udp;
 extern protocol_if_t protocol_if_ws;
 extern request_callback_t request_callback_default;
 extern request_callback_t request_callback_ws;
+extern request_callback_t request_callback_sse;
 
 static protocol_if_t *protocol_if_sz[] = {
 	&protocol_if_tcp,
@@ -39,6 +40,7 @@ static protocol_if_t *protocol_if_sz[] = {
 static request_callback_t *request_callback_sz[] = {
 	&request_callback_default,
 	&request_callback_ws,
+	&request_callback_sse,
 };
 
 static char *get_net_client_state_des(client_state_t state)
@@ -770,7 +772,6 @@ static void net_client_periodic(void *ctx)
 		break;
 	}
 }
-
 
 static net_client_info_t *net_client_info = NULL;
 
