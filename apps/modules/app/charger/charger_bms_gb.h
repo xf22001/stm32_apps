@@ -6,7 +6,7 @@
  *   文件名称：charger_bms_gb.h
  *   创 建 者：肖飞
  *   创建日期：2021年04月10日 星期六 17时01分34秒
- *   修改日期：2021年04月10日 星期六 21时52分11秒
+ *   修改日期：2021年06月05日 星期六 00时49分16秒
  *   描    述：
  *
  *================================================================*/
@@ -68,6 +68,7 @@ typedef enum {
 	CHARGER_BMS_INFO_STATUS_BEM_RECEIVED,
 } charger_bms_info_status_t;
 
-extern charger_bms_handler_t charger_bms_handler_gb;
+
+int charger_bms_gb_init(charger_info_t *charger_info);
 
 #endif //_CHARGER_BMS_GB_H
