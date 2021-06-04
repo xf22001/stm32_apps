@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2021年06月04日 星期五 13时12分46秒
+ *   修改日期：2021年06月04日 星期五 23时00分42秒
  *   描    述：
  *
  *================================================================*/
@@ -272,6 +272,10 @@ static void default_init(net_client_info_t *net_client_info)
 	}
 }
 
+__weak void set_lan_led(GPIO_PinState PinState)
+{
+}
+
 static void blink_led_lan(net_client_info_t *net_client_info, uint32_t periodic)
 {
 	static uint8_t led_lan_state = 0;
@@ -290,10 +294,10 @@ static void blink_led_lan(net_client_info_t *net_client_info, uint32_t periodic)
 
 	if(led_lan_state == 0) {
 		led_lan_state = 1;
-		HAL_GPIO_WritePin(led_lan_GPIO_Port, led_lan_Pin, GPIO_PIN_SET);
+		set_lan_led(GPIO_PIN_SET);
 	} else {
 		led_lan_state = 0;
-		HAL_GPIO_WritePin(led_lan_GPIO_Port, led_lan_Pin, GPIO_PIN_RESET);
+		set_lan_led(GPIO_PIN_RESET);
 	}
 }
 

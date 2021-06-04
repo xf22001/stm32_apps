@@ -6,7 +6,7 @@
  *   文件名称：charger.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月19日 星期二 12时32分24秒
- *   修改日期：2021年06月04日 星期五 17时31分26秒
+ *   修改日期：2021年06月04日 星期五 23时43分41秒
  *   描    述：
  *
  *================================================================*/
@@ -38,14 +38,10 @@ typedef struct {
 } charger_bms_state_handler_t;
 
 typedef int (*charger_bms_handle_init_t)(void *_charger_info);
-typedef int (*charger_bms_handle_request_t)(void *_charger_info);
-typedef int (*charger_bms_handle_response_t)(void *_charger_info);
 
 typedef struct {
 	channel_charger_type_t channel_charger_type;
 	charger_bms_handle_init_t handle_init;
-	charger_bms_handle_request_t handle_request;
-	charger_bms_handle_response_t handle_response;
 } charger_bms_handler_t;
 
 typedef int (*charger_init_t)(void *_charger_info);

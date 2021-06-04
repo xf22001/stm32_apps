@@ -1,17 +1,18 @@
 
 
 /*================================================================
- *   
- *   
+ *
+ *
  *   文件名称：charger_bms_gb.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月10日 星期六 17时01分30秒
- *   修改日期：2021年06月04日 星期五 17时40分32秒
+ *   修改日期：2021年06月04日 星期五 23时45分42秒
  *   描    述：
  *
  *================================================================*/
 #include "charger_bms_gb.h"
 #include "charger_bms.h"
+#include "can_data_task.h"
 
 #include "log.h"
 
@@ -344,23 +345,9 @@ static void update_charger_bms_state(charger_info_t *charger_info)
 	charger_info->charger_bms_state_handler = charger_bms_state_handler;
 }
 
-static int handle_init(void *_charger_info)
+static int handle_request(charger_info_t *charger_info)
 {
 	int ret = 0;
-	charger_info_t *charger_info = (charger_info_t *)_charger_info;
-
-	charger_info->charger_bms_state_handler = NULL;
-	set_charger_bms_request_state(charger_info, CHARGER_BMS_STATE_IDLE);
-	update_charger_bms_state(charger_info);
-
-	return ret;
-}
-
-static int handle_request(void *_charger_info)
-{
-	int ret = 0;
-	charger_info_t *charger_info = (charger_info_t *)_charger_info;
-
 	update_charger_bms_state(charger_info);
 
 	if(charger_info->charger_bms_state_handler == NULL) {
@@ -373,10 +360,9 @@ static int handle_request(void *_charger_info)
 	return ret;
 }
 
-static int handle_response(void *_charger_info)
+static int handle_response(charger_info_t *charger_info)
 {
 	int ret = -1;
-	charger_info_t *charger_info = (charger_info_t *)_charger_info;
 
 	if(charger_info->charger_bms_state_handler == NULL) {
 		debug("");
@@ -388,10 +374,86 @@ static int handle_response(void *_charger_info)
 	return ret;
 }
 
+static void charger_handle_request(charger_info_t *charger_info)
+{
+	int ret;
+
+	mutex_lock(charger_info->handle_mutex);
+
+	ret = handle_request(charger_info);
+
+	if(ret != 0) {
+	}
+
+	mutex_unlock(charger_info->handle_mutex);
+}
+
+static void charger_handle_response(charger_info_t *charger_info)
+{
+	int ret;
+
+	mutex_lock(charger_info->handle_mutex);
+
+	ret = handle_response(charger_info);
+
+	if(ret != 0) {
+	}
+
+	mutex_unlock(charger_info->handle_mutex);
+}
+
+static void bms_can_data_request(void *fn_ctx, void *chain_ctx)
+{
+	charger_info_t *charger_info = (charger_info_t *)fn_ctx;
+
+	if(charger_info == NULL) {
+		return;
+	}
+
+	charger_handle_request(charger_info);
+}
+
+static void bms_can_data_response(void *fn_ctx, void *chain_ctx)
+{
+	charger_info_t *charger_info = (charger_info_t *)fn_ctx;
+
+	if(charger_info == NULL) {
+		return;
+	}
+
+	charger_handle_response(charger_info);
+}
+
+static int handle_init(void *_charger_info)
+{
+	int ret = 0;
+	charger_info_t *charger_info = (charger_info_t *)_charger_info;
+	channel_info_t *channel_info = (channel_info_t *)charger_info->channel_info;
+	channel_config_t *channel_config = channel_info->channel_config;
+	can_data_task_info_t *bms_can_data_task_info;
+
+	charger_info->charger_bms_state_handler = NULL;
+	set_charger_bms_request_state(charger_info, CHARGER_BMS_STATE_IDLE);
+	update_charger_bms_state(charger_info);
+
+	charger_info->bms_can_info = get_or_alloc_can_info(channel_config->charger_config.hcan_bms);
+	OS_ASSERT(charger_info->bms_can_info != NULL);
+
+	bms_can_data_task_info = get_or_alloc_can_data_task_info(channel_config->charger_config.hcan_bms);
+	OS_ASSERT(bms_can_data_task_info != NULL);
+
+	charger_info->can_data_request_cb.fn = bms_can_data_request;
+	charger_info->can_data_request_cb.fn_ctx = charger_info;
+	add_can_data_task_info_request_cb(bms_can_data_task_info, &charger_info->can_data_request_cb);
+
+	charger_info->can_data_response_cb.fn = bms_can_data_response;
+	charger_info->can_data_response_cb.fn_ctx = charger_info;
+	add_can_data_task_info_response_cb(bms_can_data_task_info, &charger_info->can_data_response_cb);
+
+	return ret;
+}
 
 charger_bms_handler_t charger_bms_handler_gb = {
 	.channel_charger_type = CHANNEL_CHARGER_TYPE_BMS_GB,
 	.handle_init = handle_init,
-	.handle_request = handle_request,
-	.handle_response = handle_response,
 };

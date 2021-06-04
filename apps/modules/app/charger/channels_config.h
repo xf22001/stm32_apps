@@ -6,7 +6,7 @@
  *   文件名称：channels_config.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 11时00分11秒
- *   修改日期：2021年06月04日 星期五 17时15分57秒
+ *   修改日期：2021年06月04日 星期五 23时30分10秒
  *   描    述：
  *
  *================================================================*/
@@ -35,9 +35,6 @@ typedef enum {
 	CHANNEL_CHARGER_TYPE_BMS_GB,
 	CHANNEL_CHARGER_TYPE_BMS_PROXY,
 	CHANNEL_CHARGER_TYPE_BMS_PROXY_AND_GB,
-	CHANNEL_CHARGER_TYPE_AC_GB,
-	CHANNEL_CHARGER_TYPE_AC_PROXY,
-	CHANNEL_CHARGER_TYPE_AC_PROXY_AND_GB,
 } channel_charger_type_t;
 
 typedef struct {
