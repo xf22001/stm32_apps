@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_stategrid.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月16日 星期五 16时31分34秒
- *   修改日期：2021年04月20日 星期二 10时18分49秒
+ *   修改日期：2021年06月03日 星期四 16时36分21秒
  *   描    述：
  *
  *================================================================*/
@@ -292,7 +292,7 @@ typedef struct {
 	//工作状态
 	//0x01 --- 待机状态
 	//0x02 --- 工作状态
-	uint8_t state : 1;
+	uint8_t state : 2;
 
 	uint8_t other_fault : 1;
 	uint8_t discharge_fault : 1;
@@ -373,8 +373,8 @@ typedef struct {
 	//0x03 --- 功率控制模块
 	//0x04 --- 充电模块
 	//0x05 --- 开关模块
-	uint8_t type;//0x01
-	uint8_t addr;//0xa0
+	uint8_t type;//0x04
+	uint8_t addr;//0x01
 	uint8_t serial_lo;//定值序号
 	uint8_t serial_hi;//定值序号
 	uint8_t result;
@@ -420,8 +420,8 @@ static void _set_poweroff(power_modules_info_t *power_modules_info, int module_i
 	stategrid_set_group_mode->header.len_hi = get_u8_h_from_u16(sizeof(stategrid_set_group_mode_t));
 
 	stategrid_set_group_mode->interface = 0;
-	stategrid_set_group_mode->type = 0x01;
-	stategrid_set_group_mode->addr = 0xa0;
+	stategrid_set_group_mode->type = 0x04;
+	stategrid_set_group_mode->addr = 0x01;
 	stategrid_set_group_mode->serial_lo = get_u8_l_from_u16(13);
 	stategrid_set_group_mode->serial_hi = get_u8_h_from_u16(13);
 	stategrid_set_group_mode->result = 0x00;

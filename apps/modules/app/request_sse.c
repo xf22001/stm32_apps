@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年06月02日 星期三 16时29分05秒
+ *   修改日期：2021年06月04日 星期五 10时45分35秒
  *   描    述：
  *
  *================================================================*/
@@ -833,15 +833,6 @@ static char *get_net_client_cmd_channel_des(net_client_channel_command_t cmd)
 	return des;
 }
 
-static void request_set_lan_led_state(void *ctx, uint32_t state)
-{
-	if(state == 0) {
-		//HAL_GPIO_WritePin(led_lan_GPIO_Port, led_lan_Pin, GPIO_PIN_RESET);
-	} else {
-		//HAL_GPIO_WritePin(led_lan_GPIO_Port, led_lan_Pin, GPIO_PIN_SET);
-	}
-}
-
 static void request_init(void *ctx)
 {
 	int i;
@@ -1198,7 +1189,6 @@ static void request_periodic(void *ctx, uint8_t *send_buffer, uint16_t send_buff
 
 request_callback_t request_callback_sse = {
 	.type = REQUEST_TYPE_SSE,
-	.set_lan_led_state = request_set_lan_led_state,
 	.init = request_init,
 	.before_connect = request_before_create_server_connect,
 	.after_connect = request_after_create_server_connect,

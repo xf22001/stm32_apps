@@ -6,7 +6,7 @@
  *   文件名称：net_client.h
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时38分02秒
- *   修改日期：2021年06月02日 星期三 11时51分07秒
+ *   修改日期：2021年06月04日 星期五 10时42分30秒
  *   描    述：
  *
  *================================================================*/
@@ -83,7 +83,6 @@ typedef enum {
 	REQUEST_TYPE_SSE,
 } request_type_t;
 
-typedef void (*set_lan_led_state_t)(void *ctx, uint32_t state);
 typedef void (*init_t)(void *ctx);
 typedef void (*before_connect_t)(void *ctx);
 typedef void (*after_connect_t)(void *ctx);
@@ -94,7 +93,6 @@ typedef void (*process_t)(void *ctx, uint8_t *request, uint16_t request_size, ui
 typedef void (*periodic_t)(void *ctx, uint8_t *send_buffer, uint16_t send_buffer_size);
 typedef struct {
 	request_type_t type;
-	set_lan_led_state_t set_lan_led_state;
 	init_t init;
 	before_connect_t before_connect;
 	after_connect_t after_connect;
