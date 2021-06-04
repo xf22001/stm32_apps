@@ -6,7 +6,7 @@
  *   文件名称：charger.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月19日 星期二 12时32分24秒
- *   修改日期：2021年05月28日 星期五 17时01分04秒
+ *   修改日期：2021年06月04日 星期五 17时31分26秒
  *   描    述：
  *
  *================================================================*/
@@ -37,11 +37,15 @@ typedef struct {
 	charger_bms_state_handle_t handle_response;
 } charger_bms_state_handler_t;
 
-typedef charger_bms_state_handler_t *(*get_charger_bms_state_handler_t)(uint8_t bms_state);
+typedef int (*charger_bms_handle_init_t)(void *_charger_info);
+typedef int (*charger_bms_handle_request_t)(void *_charger_info);
+typedef int (*charger_bms_handle_response_t)(void *_charger_info);
 
 typedef struct {
-	channel_charger_bms_type_t charger_bms_type;
-	get_charger_bms_state_handler_t get_charger_bms_state_handler;
+	channel_charger_type_t channel_charger_type;
+	charger_bms_handle_init_t handle_init;
+	charger_bms_handle_request_t handle_request;
+	charger_bms_handle_response_t handle_response;
 } charger_bms_handler_t;
 
 typedef int (*charger_init_t)(void *_charger_info);
@@ -52,13 +56,22 @@ typedef struct {
 } charger_handler_t;
 
 typedef enum {
-	CHARGER_BMS_REQUEST_NONE = 0,
-	CHARGER_BMS_REQUEST_START,
-	CHARGER_BMS_REQUEST_STOP,
-} charger_bms_request_t;
+	CHARGER_BMS_REQUEST_ACTION_NONE = 0,
+	CHARGER_BMS_REQUEST_ACTION_START,
+	CHARGER_BMS_REQUEST_ACTION_STOP,
+} charger_bms_request_action_t;
+
+typedef enum {
+	CHARGER_BMS_WORK_STATE_IDLE,
+	CHARGER_BMS_WORK_STATE_STARTING,
+	CHARGER_BMS_WORK_STATE_RUNNING,
+	CHARGER_BMS_WORK_STATE_STOPPING,
+} charger_bms_work_state_t;
 
 typedef struct {
 	channel_info_t *channel_info;
+
+	os_mutex_t handle_mutex;
 
 	can_info_t *bms_can_info;
 	callback_item_t can_data_request_cb;
@@ -67,11 +80,13 @@ typedef struct {
 	charger_handler_t *charger_handler;
 
 	charger_bms_handler_t *charger_bms_handler;
-	uint8_t bms_state;
-	uint8_t bms_state_request;
-	charger_bms_state_handler_t *charger_bms_state_handler_cache;
+	charger_bms_state_handler_t *charger_bms_state_handler;
+	uint8_t state;
+	uint8_t request_state;
 	callback_chain_t *charger_bms_status_changed;
-	charger_bms_request_t bms_request;
+
+	charger_bms_work_state_t charger_bms_work_state;
+	charger_bms_request_action_t charger_bms_request_action;
 
 	uint8_t connect_state;
 	uint32_t periodic_stamps;

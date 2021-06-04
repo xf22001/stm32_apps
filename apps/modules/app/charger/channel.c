@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分12秒
- *   修改日期：2021年06月02日 星期三 16时28分44秒
+ *   修改日期：2021年06月04日 星期五 17时17分22秒
  *   描    述：
  *
  *================================================================*/
@@ -231,7 +231,7 @@ static int channel_init(channel_info_t *channel_info)
 	channel_info->event_callback_item.fn_ctx = channel_info;
 	OS_ASSERT(register_callback(channels_info->common_event_chain, &channel_info->event_callback_item) == 0);
 
-	debug("channel %d alloc charger %s", channel_info->channel_id, get_channel_config_charger_type(channel_config->charger_config.charger_type));
+	debug("channel %d alloc charger %s", channel_info->channel_id, get_channel_config_charger_type(channel_config->charger_config.channel_charger_type));
 	channel_info->charger_info = alloc_charger_info(channel_info);
 	debug("channel %d alloc energy_meter %s", channel_info->channel_id, get_channel_config_energy_meter_type(channel_config->energy_meter_config.energy_meter_type));
 	channel_info->energy_meter_info = alloc_energy_meter_info(channel_info);

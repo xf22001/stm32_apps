@@ -6,7 +6,7 @@
  *   文件名称：channels_config.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 11时00分11秒
- *   修改日期：2021年05月31日 星期一 10时49分54秒
+ *   修改日期：2021年06月04日 星期五 17时15分57秒
  *   描    述：
  *
  *================================================================*/
@@ -32,21 +32,16 @@ typedef enum {
 
 typedef enum {
 	CHANNEL_CHARGER_TYPE_NONE = 0,
-	CHANNEL_CHARGER_TYPE_BMS_NATIVE,
+	CHANNEL_CHARGER_TYPE_BMS_GB,
 	CHANNEL_CHARGER_TYPE_BMS_PROXY,
-	CHANNEL_CHARGER_TYPE_BMS_PROXY_AND_NATIVE,
-	CHANNEL_CHARGER_TYPE_AC_NATIVE,
+	CHANNEL_CHARGER_TYPE_BMS_PROXY_AND_GB,
+	CHANNEL_CHARGER_TYPE_AC_GB,
 	CHANNEL_CHARGER_TYPE_AC_PROXY,
-	CHANNEL_CHARGER_TYPE_AC_PROXY_AND_NATIVE,
+	CHANNEL_CHARGER_TYPE_AC_PROXY_AND_GB,
 } channel_charger_type_t;
 
-typedef enum {
-	CHANNEL_CHARGER_BMS_TYPE_NONE = 0,
-	CHANNEL_CHARGER_BMS_TYPE_GB,
-} channel_charger_bms_type_t;
-
 typedef struct {
-	channel_charger_type_t charger_type;
+	channel_charger_type_t channel_charger_type;
 
 	//ac
 	TIM_HandleTypeDef *cp_pwm_timer;
@@ -58,7 +53,6 @@ typedef struct {
 	uint16_t kn_pin;
 
 	//dc
-	channel_charger_bms_type_t charger_bms_type;
 	CAN_HandleTypeDef *hcan_bms;
 } channel_charger_config_t;
 
