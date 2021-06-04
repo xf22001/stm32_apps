@@ -6,7 +6,7 @@
  *   文件名称：os_utils.c
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分17秒
- *   修改日期：2021年06月04日 星期五 15时34分14秒
+ *   修改日期：2021年06月04日 星期五 16时10分36秒
  *   描    述：
  *
  *================================================================*/
@@ -452,7 +452,7 @@ uint32_t ticks_duration(uint32_t a, uint32_t b)
 	return (duration_1 <= duration_2) ? duration_1 : duration_2;
 }
 
-time_t get_time(void)
+__weak time_t get_time(void)
 {
 	time_t ts = osKernelSysTick() / 1000;
 	return ts;
