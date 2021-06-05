@@ -6,7 +6,7 @@
  *   文件名称：file_log.c
  *   创 建 者：肖飞
  *   创建日期：2020年11月03日 星期二 13时03分25秒
- *   修改日期：2021年06月04日 星期五 15时34分01秒
+ *   修改日期：2021年06月05日 星期六 14时07分59秒
  *   描    述：
  *
  *================================================================*/
@@ -51,11 +51,13 @@ static void clear_old_log(void)
 	static FILINFO fno;
 	time_t deadline = get_log_file_stamp() - 30 * 24 * 60 * 60;
 	char *filepath = (char *)os_alloc(_MAX_LFN + 1);
-	FRESULT ret = mt_f_opendir(&dir, "/logs");
+	FRESULT ret;
 
 	if(filepath == NULL) {
-		goto exit;
+		return;
 	}
+
+	ret = mt_f_opendir(&dir, "/logs");
 
 	if (ret != FR_OK) {
 		debug("opendir ret %d", ret);
@@ -95,9 +97,9 @@ static void clear_old_log(void)
 		}
 	}
 
-	os_free(filepath);
-exit:
 	mt_f_closedir(&dir);
+exit:
+	os_free(filepath);
 }
 
 int open_log(void)
