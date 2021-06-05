@@ -6,7 +6,7 @@
  *   文件名称：energy_meter.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月07日 星期三 15时56分19秒
- *   修改日期：2021年06月05日 星期六 13时07分15秒
+ *   修改日期：2021年06月05日 星期六 13时46分09秒
  *   描    述：
  *
  *================================================================*/
@@ -15,28 +15,6 @@
 #include "uart_data_task.h"
 #include "energy_meter_handler_ac.h"
 #include "energy_meter_handler_dc.h"
-
-static int handle_init_ac(void *_energy_meter_info)
-{
-	energy_meter_info_t *energy_meter_info = (energy_meter_info_t *)_energy_meter_info;
-	return energy_meter_ac_init(energy_meter_info);
-}
-
-static energy_meter_handler_t energy_meter_handler_ac = {
-	.energy_meter_type = CHANNEL_ENERGY_METER_TYPE_AC,
-	.handle_init = handle_init_ac,
-};
-
-static int handle_init_dc(void *_energy_meter_info)
-{
-	energy_meter_info_t *energy_meter_info = (energy_meter_info_t *)_energy_meter_info;
-	return energy_meter_dc_init(energy_meter_info);
-}
-
-static energy_meter_handler_t energy_meter_handler_dc = {
-	.energy_meter_type = CHANNEL_ENERGY_METER_TYPE_DC,
-	.handle_init = handle_init_dc,
-};
 
 energy_meter_handler_t *energy_meter_handler_sz[] = {
 	&energy_meter_handler_ac,

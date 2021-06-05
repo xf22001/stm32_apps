@@ -6,7 +6,7 @@
  *   文件名称：energy_meter_handler_ac.h
  *   创 建 者：肖飞
  *   创建日期：2021年06月05日 星期六 12时57分38秒
- *   修改日期：2021年06月05日 星期六 13时06分10秒
+ *   修改日期：2021年06月05日 星期六 13时46分42秒
  *   描    述：
  *
  *================================================================*/
@@ -26,6 +26,6 @@ extern "C"
 }
 #endif
 
-int energy_meter_ac_init(energy_meter_info_t *energy_meter_info);
+extern energy_meter_handler_t energy_meter_handler_ac;
 
 #endif //_ENERGY_METER_HANDLER_AC_H

@@ -6,7 +6,7 @@
  *   文件名称：charger_bms.c
  *   创 建 者：肖飞
  *   创建日期：2021年06月04日 星期五 16时51分31秒
- *   修改日期：2021年06月05日 星期六 00时50分38秒
+ *   修改日期：2021年06月05日 星期六 13时40分26秒
  *   描    述：
  *
  *================================================================*/
@@ -14,17 +14,6 @@
 #include "charger_bms_gb.h"
 
 #include "log.h"
-
-static int handle_init_gb(void *_charger_info)
-{
-	charger_info_t *charger_info = (charger_info_t *)_charger_info;
-	return charger_bms_gb_init(charger_info);
-}
-
-static charger_bms_handler_t charger_bms_handler_gb = {
-	.channel_charger_type = CHANNEL_CHARGER_TYPE_BMS_GB,
-	.handle_init = handle_init_gb,
-};
 
 static charger_bms_handler_t *charger_bms_handler_sz[] = {
 	&charger_bms_handler_gb,

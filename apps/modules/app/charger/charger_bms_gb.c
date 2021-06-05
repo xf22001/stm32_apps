@@ -6,7 +6,7 @@
  *   文件名称：charger_bms_gb.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月10日 星期六 17时01分30秒
- *   修改日期：2021年06月05日 星期六 00时45分00秒
+ *   修改日期：2021年06月05日 星期六 13时41分37秒
  *   描    述：
  *
  *================================================================*/
@@ -424,9 +424,10 @@ static void bms_can_data_response(void *fn_ctx, void *chain_ctx)
 	charger_handle_response(charger_info);
 }
 
-int charger_bms_gb_init(charger_info_t *charger_info)
+static int handle_init_gb(void *_charger_info)
 {
 	int ret = 0;
+	charger_info_t *charger_info = (charger_info_t *)_charger_info;
 	channel_info_t *channel_info = (channel_info_t *)charger_info->channel_info;
 	channel_config_t *channel_config = channel_info->channel_config;
 	can_data_task_info_t *bms_can_data_task_info;
@@ -451,3 +452,9 @@ int charger_bms_gb_init(charger_info_t *charger_info)
 
 	return ret;
 }
+
+charger_bms_handler_t charger_bms_handler_gb = {
+	.channel_charger_type = CHANNEL_CHARGER_TYPE_BMS_GB,
+	.handle_init = handle_init_gb,
+};
+
