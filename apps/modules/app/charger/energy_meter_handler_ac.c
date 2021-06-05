@@ -1,16 +1,16 @@
 
 
 /*================================================================
- *
- *
- *   文件名称：energy_meter_handler_ac_native.c
+ *   
+ *   
+ *   文件名称：energy_meter_handler_ac.c
  *   创 建 者：肖飞
- *   创建日期：2021年05月31日 星期一 14时13分40秒
- *   修改日期：2021年05月31日 星期一 15时34分21秒
+ *   创建日期：2021年06月05日 星期六 12时56分40秒
+ *   修改日期：2021年06月05日 星期六 13时03分48秒
  *   描    述：
  *
  *================================================================*/
-#include "energy_meter_handler_ac_native.h"
+#include "energy_meter_handler_ac.h"
 
 #include "uart_data_task.h"
 #include "dlt_645_master_txrx.h"
@@ -62,10 +62,9 @@ static void uart_data_request(void *fn_ctx, void *chain_ctx)
 	}
 }
 
-static int init(void *_energy_meter_info)
+int energy_meter_ac_init(energy_meter_info_t *energy_meter_info)
 {
 	int ret = 0;
-	energy_meter_info_t *energy_meter_info = (energy_meter_info_t *)_energy_meter_info;
 	channel_info_t *channel_info = energy_meter_info->channel_info;
 	channel_config_t *channel_config = channel_info->channel_config;
 	uart_data_task_info_t *uart_data_task_info;
@@ -88,8 +87,3 @@ static int init(void *_energy_meter_info)
 
 	return ret;
 }
-
-energy_meter_handler_t energy_meter_handler_ac_native = {
-	.energy_meter_type = CHANNEL_ENERGY_METER_TYPE_AC_NATIVE,
-	.init = init,
-};
