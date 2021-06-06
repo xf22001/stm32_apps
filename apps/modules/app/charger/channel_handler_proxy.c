@@ -3,14 +3,14 @@
 /*================================================================
  *
  *
- *   文件名称：channel_handler_dc.c
+ *   文件名称：channel_handler_proxy.c
  *   创 建 者：肖飞
- *   创建日期：2021年05月11日 星期二 09时21分02秒
- *   修改日期：2021年05月31日 星期一 13时55分51秒
+ *   创建日期：2021年06月05日 星期六 22时43分22秒
+ *   修改日期：2021年06月06日 星期日 13时57分20秒
  *   描    述：
  *
  *================================================================*/
-#include "channel_handler_dc.h"
+#include "channel_handler_proxy.h"
 
 #include "log.h"
 
@@ -36,14 +36,10 @@ static void idle(void *_channel_info, void *__channel_info)
 
 static void start(void *_channel_info, void *__channel_info)
 {
-	channel_info_t *channel_info = (channel_info_t *)_channel_info;
-	set_channel_request_state(channel_info, CHANNEL_STATE_STARTING);
 }
 
 static void starting(void *_channel_info, void *__channel_info)
 {
-	channel_info_t *channel_info = (channel_info_t *)_channel_info;
-	set_channel_request_state(channel_info, CHANNEL_STATE_CHARGING);
 }
 
 static void charging(void *_channel_info, void *__channel_info)
@@ -52,14 +48,10 @@ static void charging(void *_channel_info, void *__channel_info)
 
 static void stopping(void *_channel_info, void *__channel_info)
 {
-	channel_info_t *channel_info = (channel_info_t *)_channel_info;
-	set_channel_request_state(channel_info, CHANNEL_STATE_STOP);
 }
 
 static void stop(void *_channel_info, void *__channel_info)
 {
-	channel_info_t *channel_info = (channel_info_t *)_channel_info;
-	set_channel_request_state(channel_info, CHANNEL_STATE_IDLE);
 }
 
 static void state_changed(void *_channel_info, void *_pre_state)
@@ -211,8 +203,8 @@ static int channel_stop(void *_channel_info)
 
 	return ret;
 }
-channel_handler_t channel_handler_dc = {
-	.channel_type = CHANNEL_TYPE_DC,
+channel_handler_t channel_handler_proxy = {
+	.channel_type = CHANNEL_TYPE_PROXY,
 	.init = init,
 	.channel_start = channel_start,
 	.channel_stop = channel_stop,

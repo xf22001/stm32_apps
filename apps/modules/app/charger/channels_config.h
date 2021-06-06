@@ -6,7 +6,7 @@
  *   文件名称：channels_config.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 11时00分11秒
- *   修改日期：2021年06月05日 星期六 13时50分11秒
+ *   修改日期：2021年06月06日 星期日 19时46分10秒
  *   描    述：
  *
  *================================================================*/
@@ -69,12 +69,8 @@ typedef struct {
 	channel_type_t channel_type;
 	channel_charger_config_t charger_config;
 	channel_energy_meter_config_t energy_meter_config;
+	CAN_HandleTypeDef *hcan_channel_comm;
 } channel_config_t;
-
-typedef struct {
-	uint8_t channels_number;
-	channel_config_t **channel_config;
-} channels_channels_config_t;
 
 typedef enum {
 	CHANNELS_POWER_MODULE_TYPE_NONE = 0,
@@ -108,10 +104,12 @@ typedef struct {
 
 typedef struct {
 	uint8_t id;
-	channels_channels_config_t channels_config;
+	uint8_t channel_number;
+	channel_config_t **channel_config;
 	channels_power_module_config_t power_module_config;
 	voice_config_t voice_config;
 	card_reader_config_t card_reader_config;
+	CAN_HandleTypeDef *hcan_channel_comm;
 } channels_config_t;
 
 char *get_channel_config_channel_type(channel_type_t type);

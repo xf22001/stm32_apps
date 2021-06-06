@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分12秒
- *   修改日期：2021年06月04日 星期五 17时17分22秒
+ *   修改日期：2021年06月06日 星期日 19时42分46秒
  *   描    述：
  *
  *================================================================*/
@@ -14,6 +14,7 @@
 
 #include "channel_handler_dc.h"
 #include "channel_handler_ac.h"
+#include "channel_handler_proxy.h"
 #include "charger.h"
 #include "energy_meter.h"
 
@@ -22,6 +23,7 @@
 static channel_handler_t *channel_handler_sz[] = {
 	&channel_handler_dc,
 	&channel_handler_ac,
+	&channel_handler_proxy,
 };
 
 static channel_handler_t *get_channel_handler(channel_type_t channel_type)
@@ -77,17 +79,15 @@ int set_channel_request_state(channel_info_t *channel_info, channel_state_t stat
 
 static void handle_channel_request_state(channel_info_t *channel_info)
 {
-	channel_state_t state = channel_info->state;
-
-	if(channel_info->request_state != CHANNEL_STATE_NONE) {
-		channel_info->request_state = CHANNEL_STATE_NONE;
-		channel_info->state = channel_info->request_state;
+	if(channel_info->request_state == CHANNEL_STATE_NONE) {
+		return;
 	}
 
-	if(state != channel_info->state) {
-		debug("channel state:%s -> %s!", get_channel_state_des(state), get_channel_state_des(channel_info->state));
-		do_callback_chain(channel_info->state_changed_chain, (void *)state);
+	if(channel_info->state != channel_info->request_state) {
+		do_callback_chain(channel_info->state_changed_chain, channel_info);
 	}
+
+	channel_info->request_state = CHANNEL_STATE_NONE;
 }
 
 static void handle_channel_periodic(void *_channel_info, void *chain_ctx)
@@ -264,7 +264,7 @@ channel_info_t *alloc_channels_channel_info(channels_info_t *channels_info)
 	channel_info_t *channel_info = NULL;
 	int i;
 
-	channels_info->channel_number = channels_config->channels_config.channels_number;
+	channels_info->channel_number = channels_config->channel_number;
 	channel_info = (channel_info_t *)os_calloc(channels_info->channel_number, sizeof(channel_info_t));
 	OS_ASSERT(channel_info != NULL);
 
@@ -272,10 +272,15 @@ channel_info_t *alloc_channels_channel_info(channels_info_t *channels_info)
 		channel_info_t *channel_info_item = channel_info + i;
 
 		channel_info_item->channels_info = channels_info;
-		channel_info_item->channel_config = channels_config->channels_config.channel_config[i];
+		channel_info_item->channel_config = channels_config->channel_config[i];
 		channel_info_item->channel_id = i;
 
 		channel_init(channel_info_item);
+
+		if(channel_info_item->channel_config->channel_type == CHANNEL_TYPE_PROXY) {
+			channels_info->channel_proxy = 1;
+			OS_ASSERT(start_channel_comm_channel(channel_info_item) == 0);
+		}
 	}
 
 	channels_info->periodic_callback_item.fn = handle_channels_common_periodic;

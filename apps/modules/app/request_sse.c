@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年06月04日 星期五 14时42分24秒
+ *   修改日期：2021年06月06日 星期日 19时03分24秒
  *   描    述：
  *
  *================================================================*/
@@ -1104,6 +1104,10 @@ static void sse_periodic(net_client_info_t *net_client_info)
 			}
 
 			if(channel_cmd_ctx[item->cmd].available == 0) {
+				continue;
+			}
+
+			if(channel_cmd_ctx[item->cmd].state != COMMAND_STATE_IDLE) {
 				continue;
 			}
 

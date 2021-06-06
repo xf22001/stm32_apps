@@ -195,6 +195,8 @@ static void state_changed(void *_channel_info, void *_pre_state)
 	channel_info_t *channel_info = (channel_info_t *)_channel_info;
 	channel_handler_ctx_t *channel_handler_ctx = (channel_handler_ctx_t *)channel_info->channel_handler_ctx;
 
+	debug("channel state:%s -> %s!", get_channel_state_des(channel_info->state), get_channel_state_des(channel_info->request_state));
+	channel_info->state = channel_info->request_state;
 	channel_handler_ctx->state = 0;
 }
 
