@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年06月06日 星期日 19时03分24秒
+ *   修改日期：2021年06月07日 星期一 14时23分09秒
  *   描    述：
  *
  *================================================================*/
@@ -194,8 +194,8 @@ typedef struct {
 	uint8_t channel_work_state;//0:待机 1:枪已插好 2:正在充电 4:枪已上锁
 	uint8_t sse_report_channel_charger_bms_state;//sse_report_channel_charger_bms_state_t
 	uint8_t sse_report_channel_charger_bms_stop_reason;//sse_report_channel_charger_bms_stop_reason_t
-	sse_report_channel_charge_info_ac_t sse_report_channel_charge_info_ac[0];
 	sse_report_channel_charge_info_dc_t sse_report_channel_charge_info_dc[0];
+	sse_report_channel_charge_info_ac_t sse_report_channel_charge_info_ac[0];
 } sse_channel_report_t;
 
 typedef struct {
@@ -714,7 +714,7 @@ static uint8_t get_channel_stop_reason(channel_info_t *channel_info)
 		}
 		break;
 	}
-	
+
 	return stop_reason;
 }
 
@@ -748,6 +748,13 @@ static uint8_t get_sse_report_channel_charger_bms_stop_reason(channel_info_t *ch
 
 static void udpate_sse_chennel_charger_report(sse_channel_report_t *sse_channel_report, channel_info_t *channel_info)
 {
+	if(channel_info->channel_config->channel_type == CHANNEL_TYPE_DC) {
+		sse_report_channel_charge_info_dc_t *sse_report_channel_charge_info_dc = sse_channel_report->sse_report_channel_charge_info_dc;
+		charger_info_t *charger_info = (charger_info_t *)channel_info->charger_info;
+		sse_report_channel_charge_info_dc->soc = 
+	} else if(channel_info->channel_config->channel_type == CHANNEL_TYPE_AC) {
+		sse_report_channel_charge_info_ac_t *sse_report_channel_charge_info_ac = sse_channel_report->sse_report_channel_charge_info_ac;
+	}
 }
 
 static void udpate_sse_chennel_report(sse_channel_report_t *sse_channel_report, uint8_t channel_id)
@@ -778,6 +785,7 @@ static int request_callback_report(net_client_info_t *net_client_info, void *_co
 	struct tm *tm = localtime(&ts);
 	char dt[20];
 	int i;
+	uint8_t *channel_report_start;
 
 	snprintf((char *)sse_0x00_request_report->device_id, 32, "%s", channels_settings->device_id);
 	sse_0x00_request_report->device_type = channels_settings->device_type;
@@ -793,8 +801,20 @@ static int request_callback_report(net_client_info_t *net_client_info, void *_co
 	sse_0x00_request_report->float_percision = (channels_info->channels_settings.magnification == 0) ? 2 : 3;
 	sse_0x00_request_report->channel_number = channels_info->channel_number;
 
+	channel_report_start = (uint8_t *)sse_0x00_request_report->sse_channel_report;
+
 	for(i = 0; i < channels_info->channel_number; i++) {
-		udpate_sse_chennel_report(sse_0x00_request_report->sse_channel_report, i);
+		sse_channel_report_t *sse_channel_report = (sse_channel_report_t *)channel_report_start;
+		channel_info_t *channel_info = channels_info->channel_info + channel_id;
+		udpate_sse_chennel_report(sse_channel_report, i);
+
+		if(channel_info->channel_config->channel_type == CHANNEL_TYPE_DC) {
+			channel_report_start += (sizeof(sse_channel_report_t) + sizeof(sse_report_channel_charge_info_dc_t));
+		} else if(channel_info->channel_config->channel_type == CHANNEL_TYPE_AC) {
+			channel_report_start += (sizeof(sse_channel_report_t) + sizeof(sse_report_channel_charge_info_ac_t));
+		} else {
+			app_panic();
+		}
 	}
 
 	send_frame(net_client_info, net_client_data_ctx->serial++, item->frame, 0, (uint8_t *)sse_0x00_request_report, sizeof(sse_0x00_request_report_t) + channels_info->channel_number * sizeof(sse_channel_report_t));

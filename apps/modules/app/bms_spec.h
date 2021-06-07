@@ -6,7 +6,7 @@
  *   文件名称：bms_spec.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月01日 星期五 09时51分27秒
- *   修改日期：2020年08月25日 星期二 12时57分07秒
+ *   修改日期：2021年06月07日 星期一 14时49分45秒
  *   描    述：
  *
  *================================================================*/
@@ -508,7 +508,7 @@ typedef struct {
 	csd_data_t csd_data;
 	bem_data_t bem_data;
 	cem_data_t cem_data;
-} bms_data_settings_t;
+} bms_data_t;
 
 #pragma pack(pop)
 

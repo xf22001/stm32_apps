@@ -6,7 +6,7 @@
  *   文件名称：bms_multi_data.c
  *   创 建 者：肖飞
  *   创建日期：2020年04月09日 星期四 13时04分55秒
- *   修改日期：2021年05月25日 星期二 11时25分14秒
+ *   修改日期：2021年06月07日 星期一 15时02分42秒
  *   描    述：
  *
  *================================================================*/
@@ -20,13 +20,13 @@
 #define LOG_DISABLE
 #include "log.h"
 
-static int send_bms_multi_request_response(can_info_t *can_info, multi_packets_des_t *multi_packets_des, bms_data_settings_t *settings)
+static int send_bms_multi_request_response(can_info_t *can_info, multi_packets_des_t *multi_packets_des, bms_data_t *bms_data)
 {
 	int ret = -1;
 	can_tx_msg_t tx_msg;
 	bms_multi_request_response_t *data;
 
-	tx_msg.ExtId = get_pdu_id(FN_MULTI_REQUEST_PRIORITY, FN_MULTI_REQUEST, settings->dst, settings->src);
+	tx_msg.ExtId = get_pdu_id(FN_MULTI_REQUEST_PRIORITY, FN_MULTI_REQUEST, bms_data->dst, bms_data->src);
 	tx_msg.IDE = CAN_ID_EXT;
 	tx_msg.RTR = CAN_RTR_DATA;
 	tx_msg.DLC = sizeof(bms_multi_request_response_t);
@@ -47,13 +47,13 @@ static int send_bms_multi_request_response(can_info_t *can_info, multi_packets_d
 	return ret;
 }
 
-static int send_bms_multi_data_response(can_info_t *can_info, multi_packets_des_t *multi_packets_des, bms_data_settings_t *settings)
+static int send_bms_multi_data_response(can_info_t *can_info, multi_packets_des_t *multi_packets_des, bms_data_t *bms_data)
 {
 	int ret = -1;
 	can_tx_msg_t tx_msg;
 	bms_multi_data_response_t *data;
 
-	tx_msg.ExtId = get_pdu_id(FN_MULTI_REQUEST_PRIORITY, FN_MULTI_REQUEST, settings->dst, settings->src);
+	tx_msg.ExtId = get_pdu_id(FN_MULTI_REQUEST_PRIORITY, FN_MULTI_REQUEST, bms_data->dst, bms_data->src);
 	tx_msg.IDE = CAN_ID_EXT;
 	tx_msg.RTR = CAN_RTR_DATA;
 	tx_msg.DLC = sizeof(bms_multi_data_response_t);
@@ -73,23 +73,23 @@ static int send_bms_multi_data_response(can_info_t *can_info, multi_packets_des_
 	return ret;
 }
 
-static uint8_t *get_multi_packet_data_by_fn(bms_data_settings_t *settings, uint8_t fn)
+static uint8_t *get_multi_packet_data_by_fn(bms_data_t *bms_data, uint8_t fn)
 {
 	uint8_t *data = NULL;
 
 	switch(fn) {
 		case FN_BRM: {
-			data = (uint8_t *)&settings->brm_data;
+			data = (uint8_t *)&bms_data->brm_data;
 		}
 		break;
 
 		case FN_BCP: {
-			data = (uint8_t *)&settings->bcp_data;
+			data = (uint8_t *)&bms_data->bcp_data;
 		}
 		break;
 
 		case FN_BCS: {
-			data = (uint8_t *)&settings->bcs_data;
+			data = (uint8_t *)&bms_data->bcs_data;
 		}
 		break;
 
@@ -100,7 +100,7 @@ static uint8_t *get_multi_packet_data_by_fn(bms_data_settings_t *settings, uint8
 	return data;
 }
 
-int handle_multi_data_response(can_info_t *can_info, multi_packets_info_t *multi_packets_info, bms_data_settings_t *settings)
+int handle_multi_data_response(can_info_t *can_info, multi_packets_info_t *multi_packets_info, bms_data_t *bms_data)
 {
 	int ret = -1;
 	can_rx_msg_t *rx_msg = can_get_msg(can_info);
@@ -125,10 +125,10 @@ int handle_multi_data_response(can_info_t *can_info, multi_packets_info_t *multi
 					multi_packets_des->bms_data_multi_packets = data->packets;
 					multi_packets_des->bms_data_multi_next_index = 1;
 					multi_packets_des->bms_data_multi_fn = data->fn;
-					multi_packets_des->bms_data = get_multi_packet_data_by_fn(settings, data->fn);
+					multi_packets_des->bms_data = get_multi_packet_data_by_fn(bms_data, data->fn);
 
 					if(multi_packets_des->bms_data) {
-						send_bms_multi_request_response(can_info, multi_packets_des, settings);
+						send_bms_multi_request_response(can_info, multi_packets_des, bms_data);
 					}
 				}
 				break;
@@ -188,7 +188,7 @@ int handle_multi_data_response(can_info_t *can_info, multi_packets_info_t *multi
 						debug("%s send fn %02x data response",
 						      (can_info->hcan == &hcan1) ? "hcan1" : "hcan2",
 						      multi_packets_des->bms_data_multi_fn);
-						send_bms_multi_data_response(can_info, multi_packets_des, settings);
+						send_bms_multi_data_response(can_info, multi_packets_des, bms_data);
 					}
 				}
 
@@ -229,12 +229,12 @@ uint8_t is_bms_data_multi_received(can_info_t *can_info, multi_packets_info_t *m
 	return ret;
 }
 
-static int send_multi_request(can_info_t *can_info, multi_packets_des_t *multi_packets_des, bms_data_settings_t *settings)
+static int send_multi_request(can_info_t *can_info, multi_packets_des_t *multi_packets_des, bms_data_t *bms_data)
 {
 	int ret = 0;
 	can_tx_msg_t tx_msg;
 
-	tx_msg.ExtId = get_pdu_id(FN_MULTI_REQUEST_PRIORITY, FN_MULTI_REQUEST, settings->dst, settings->src);
+	tx_msg.ExtId = get_pdu_id(FN_MULTI_REQUEST_PRIORITY, FN_MULTI_REQUEST, bms_data->dst, bms_data->src);
 	tx_msg.IDE = CAN_ID_EXT;
 	tx_msg.RTR = CAN_RTR_DATA;
 	tx_msg.DLC = sizeof(bms_multi_request_t);
@@ -253,7 +253,7 @@ static int send_multi_request(can_info_t *can_info, multi_packets_des_t *multi_p
 	return ret;
 }
 
-static int send_multi_data(can_info_t *can_info, multi_packets_des_t *multi_packets_des, bms_data_settings_t *settings)
+static int send_multi_data(can_info_t *can_info, multi_packets_des_t *multi_packets_des, bms_data_t *bms_data)
 {
 	int ret = -1;
 	can_tx_msg_t tx_msg;
@@ -264,7 +264,7 @@ static int send_multi_data(can_info_t *can_info, multi_packets_des_t *multi_pack
 		return ret;
 	}
 
-	tx_msg.ExtId = get_pdu_id(FN_MULTI_DATA_PRIORITY, FN_MULTI_DATA, settings->dst, settings->src);
+	tx_msg.ExtId = get_pdu_id(FN_MULTI_DATA_PRIORITY, FN_MULTI_DATA, bms_data->dst, bms_data->src);
 	tx_msg.IDE = CAN_ID_EXT;
 	tx_msg.RTR = CAN_RTR_DATA;
 	tx_msg.DLC = sizeof(bms_multi_data_t);
@@ -306,7 +306,7 @@ static int send_multi_data(can_info_t *can_info, multi_packets_des_t *multi_pack
 	return ret;
 }
 
-int send_multi_packets(can_info_t *can_info, multi_packets_info_t *multi_packets_info, bms_data_settings_t *settings, uint8_t *data, uint16_t fn, uint16_t bytes, uint16_t packets, uint32_t period)
+int send_multi_packets(can_info_t *can_info, multi_packets_info_t *multi_packets_info, bms_data_t *bms_data, uint8_t *data, uint16_t fn, uint16_t bytes, uint16_t packets, uint32_t period)
 {
 	int ret = -1;
 	multi_packets_des_t *multi_packets_des = &multi_packets_info->tx_des;
@@ -320,7 +320,7 @@ int send_multi_packets(can_info_t *can_info, multi_packets_info_t *multi_packets
 		multi_packets_des->start_stamp = ticks;
 		multi_packets_des->bms_data_multi_fn = fn;
 
-		ret = send_multi_request(can_info, multi_packets_des, settings);
+		ret = send_multi_request(can_info, multi_packets_des, bms_data);
 
 		if(ret != 0) {
 			debug("send_multi_request error!");
@@ -330,7 +330,7 @@ int send_multi_packets(can_info_t *can_info, multi_packets_info_t *multi_packets
 		}
 	} else {
 		if((multi_packets_des->bms_data_multi_next_index >= 1) && (multi_packets_des->bms_data_multi_next_index <= multi_packets_des->bms_data_multi_packets)) {
-			send_multi_data(can_info, multi_packets_des, settings);
+			send_multi_data(can_info, multi_packets_des, bms_data);
 
 			if(multi_packets_des->bms_data_multi_next_index > multi_packets_des->bms_data_multi_packets) {
 				multi_packets_des->bms_data_multi_fn = FN_INVALID;
