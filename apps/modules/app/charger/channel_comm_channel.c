@@ -6,7 +6,7 @@
  *   文件名称：channel_comm_channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年06月06日 星期日 15时02分49秒
- *   修改日期：2021年06月07日 星期一 09时54分31秒
+ *   修改日期：2021年06月07日 星期一 10时02分39秒
  *   描    述：
  *
  *================================================================*/
@@ -157,7 +157,7 @@ static int response_channel_comm_heartbeat(channel_comm_channel_info_t *channel_
 
 static command_item_t command_item_channel_heartbeat = {
 	.cmd = CHANNEL_COMM_CMD_CHANNEL_HEARTBEAT,
-	.request_period = 500,
+	.request_period = 1000,
 	.request_callback = request_channel_comm_heartbeat,
 	.response_callback = response_channel_comm_heartbeat,
 };
