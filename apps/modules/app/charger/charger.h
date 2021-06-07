@@ -6,7 +6,7 @@
  *   文件名称：charger.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月19日 星期二 12时32分24秒
- *   修改日期：2021年06月07日 星期一 15时04分43秒
+ *   修改日期：2021年06月07日 星期一 15时54分10秒
  *   描    述：
  *
  *================================================================*/
@@ -23,6 +23,7 @@ extern "C"
 #include "callback_chain.h"
 #include "channels_config.h"
 #include "channels.h"
+#include "bms_spec.h"
 
 #ifdef __cplusplus
 }
@@ -85,6 +86,9 @@ typedef struct {
 	charger_bms_request_action_t charger_bms_request_action;
 
 	bms_data_t bms_data;
+
+	uint8_t dc_p_temperature;
+	uint8_t dc_n_temperature;
 
 	uint8_t connect_state;
 	uint32_t periodic_stamps;

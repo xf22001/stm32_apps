@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年06月07日 星期一 14时23分09秒
+ *   修改日期：2021年06月07日 星期一 16时15分54秒
  *   描    述：
  *
  *================================================================*/
@@ -751,9 +751,28 @@ static void udpate_sse_chennel_charger_report(sse_channel_report_t *sse_channel_
 	if(channel_info->channel_config->channel_type == CHANNEL_TYPE_DC) {
 		sse_report_channel_charge_info_dc_t *sse_report_channel_charge_info_dc = sse_channel_report->sse_report_channel_charge_info_dc;
 		charger_info_t *charger_info = (charger_info_t *)channel_info->charger_info;
-		sse_report_channel_charge_info_dc->soc = 
+		sse_report_channel_charge_info_dc->soc = charger_info->bms_data.bcs_data.soc;
+		sse_report_channel_charge_info_dc->bcl_require_voltage = charger_info->bms_data.bcl_data.require_voltage;
+		sse_report_channel_charge_info_dc->bcl_require_current = charger_info->bms_data.bcl_data.require_current;
+		sse_report_channel_charge_info_dc->output_voltage = channel_info->channel_record_item.voltage;
+		sse_report_channel_charge_info_dc->output_current = channel_info->channel_record_item.current;
+		sse_report_channel_charge_info_dc->bcs_charge_voltage = charger_info->bms_data.bcs_data.charge_voltage;
+		sse_report_channel_charge_info_dc->bcs_charge_current = charger_info->bms_data.bcs_data.charge_current;
+		sse_report_channel_charge_info_dc->telemeter_total = channel_info->total_energy;
+		sse_report_channel_charge_info_dc->charge_energy = channel_info->channel_record_item.energy;
+		sse_report_channel_charge_info_dc->charge_amount = channel_info->channel_record_item.amount;
+		sse_report_channel_charge_info_dc->bcs_single_battery_max_voltage = charger_info->bms_data.bcs_data.u1.s.single_battery_max_voltage;
+		sse_report_channel_charge_info_dc->bsm_battery_max_temperature = charger_info->bms_data.bsm_data.battery_max_temperature;
+		sse_report_channel_charge_info_dc->bcs_remain_min = charger_info->bms_data.bcs_data.remain_min;
+		sse_report_channel_charge_info_dc->dc_p_temperature = charger_info->dc_p_temperature;
+		sse_report_channel_charge_info_dc->dc_n_temperature = charger_info->dc_n_temperature;
 	} else if(channel_info->channel_config->channel_type == CHANNEL_TYPE_AC) {
 		sse_report_channel_charge_info_ac_t *sse_report_channel_charge_info_ac = sse_channel_report->sse_report_channel_charge_info_ac;
+		sse_report_channel_charge_info_ac->output_voltage = channel_info->channel_record_item.voltage;
+		sse_report_channel_charge_info_ac->output_current = channel_info->channel_record_item.current;
+		sse_report_channel_charge_info_ac->telemeter_total = channel_info->total_energy;
+		sse_report_channel_charge_info_ac->charge_energy = channel_info->channel_record_item.energy;
+		sse_report_channel_charge_info_ac->charge_amount = channel_info->channel_record_item.amount;
 	}
 }
 
@@ -786,6 +805,7 @@ static int request_callback_report(net_client_info_t *net_client_info, void *_co
 	char dt[20];
 	int i;
 	uint8_t *channel_report_start;
+	size_t size = 0;
 
 	snprintf((char *)sse_0x00_request_report->device_id, 32, "%s", channels_settings->device_id);
 	sse_0x00_request_report->device_type = channels_settings->device_type;
@@ -817,7 +837,9 @@ static int request_callback_report(net_client_info_t *net_client_info, void *_co
 		}
 	}
 
-	send_frame(net_client_info, net_client_data_ctx->serial++, item->frame, 0, (uint8_t *)sse_0x00_request_report, sizeof(sse_0x00_request_report_t) + channels_info->channel_number * sizeof(sse_channel_report_t));
+	size = channel_report_start - (uint8_t *)sse_0x00_request_report;
+
+	send_frame(net_client_info, net_client_data_ctx->serial++, item->frame, 0, (uint8_t *)sse_0x00_request_report, size);
 
 	net_client_data_ctx->device_cmd_ctx[NET_CLIENT_DEVICE_COMMAND_REPORT].state = COMMAND_STATE_RESPONSE;
 	return ret;
@@ -829,6 +851,9 @@ static int response_callback_report(net_client_info_t *net_client_info, void *_c
 	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)send_buffer;
 	//net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
 	sse_0x00_response_report_t *sse_0x00_response_report = (sse_0x00_response_report_t *)(sse_frame_header + 1);
+
+	if(sse_0x00_response_report->status != 0) {
+	}
 
 	net_client_data_ctx->device_cmd_ctx[NET_CLIENT_DEVICE_COMMAND_REPORT].state = COMMAND_STATE_IDLE;
 	ret = 0;
@@ -1044,9 +1069,8 @@ static void sse_response(void *ctx, uint8_t *request, uint16_t request_size, uin
 				}
 			} else {
 				debug("channel %d cmd:%d(%s) response", j, item->cmd, get_net_client_cmd_channel_des(item->cmd));
+				break;
 			}
-
-			break;
 		}
 	}
 

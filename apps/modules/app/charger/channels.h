@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2021年06月07日 星期一 09时18分51秒
+ *   修改日期：2021年06月07日 星期一 15时42分20秒
  *   描    述：
  *
  *================================================================*/
@@ -140,9 +140,7 @@ typedef struct {
 	void *charger_info;
 	void *energy_meter_info;
 
-	uint32_t energy;
-	uint32_t voltage;
-	uint32_t current;
+	uint32_t total_energy;
 
 	uint16_t va;
 	uint16_t vb;

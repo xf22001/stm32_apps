@@ -6,7 +6,7 @@
  *   文件名称：channel_record.h
  *   创 建 者：肖飞
  *   创建日期：2021年05月23日 星期日 13时40分28秒
- *   修改日期：2021年06月02日 星期三 14时49分07秒
+ *   修改日期：2021年06月07日 星期一 15时41分29秒
  *   描    述：
  *
  *================================================================*/
@@ -56,6 +56,11 @@ typedef struct {
 	uint8_t channel_id;
 	uint8_t state;//channel_record_item_state_t
 	uint8_t stop_reason;//channel_record_item_stop_reason_t
+	uint32_t amount;
+
+	uint32_t energy;
+	uint32_t voltage;
+	uint32_t current;
 } channel_record_item_t;
 
 #pragma pack(pop)

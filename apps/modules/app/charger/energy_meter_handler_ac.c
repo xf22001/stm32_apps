@@ -6,7 +6,7 @@
  *   文件名称：energy_meter_handler_ac.c
  *   创 建 者：肖飞
  *   创建日期：2021年06月05日 星期六 12时56分40秒
- *   修改日期：2021年06月05日 星期六 13时46分23秒
+ *   修改日期：2021年06月07日 星期一 15时44分34秒
  *   描    述：
  *
  *================================================================*/
@@ -54,7 +54,7 @@ static void uart_data_request(void *fn_ctx, void *chain_ctx)
 		break;
 
 		default: {
-			dlt_645_master_get_energy(energy_meter_info->dlt_645_master_info, &energy_meter_info->dlt_645_addr, &channel_info->energy);
+			dlt_645_master_get_energy(energy_meter_info->dlt_645_master_info, &energy_meter_info->dlt_645_addr, &channel_info->total_energy);
 			dlt_645_master_get_voltage(energy_meter_info->dlt_645_master_info, &energy_meter_info->dlt_645_addr, &channel_info->va, &channel_info->vb, &channel_info->vc);
 			dlt_645_master_get_current(energy_meter_info->dlt_645_master_info, &energy_meter_info->dlt_645_addr, &channel_info->ca, &channel_info->cb, &channel_info->cc);
 		}
