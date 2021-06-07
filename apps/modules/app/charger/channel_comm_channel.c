@@ -6,7 +6,7 @@
  *   文件名称：channel_comm_channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年06月06日 星期日 15时02分49秒
- *   修改日期：2021年06月07日 星期一 10时02分39秒
+ *   修改日期：2021年06月07日 星期一 10时47分16秒
  *   描    述：
  *
  *================================================================*/
@@ -212,6 +212,11 @@ static void channel_comm_channel_set_connect_state(channel_comm_channel_info_t *
 uint8_t channel_comm_channel_get_connect_state(channel_comm_channel_info_t *channel_comm_channel_info)
 {
 	return get_connect_state(&channel_comm_channel_info->connect_state);
+}
+
+uint32_t channel_comms_channel_get_connect_stamp(channel_comm_channel_info_t *channel_comm_channel_info)
+{
+	return get_connect_stamp(&channel_comm_channel_info->connect_state);
 }
 
 static void channel_comm_channel_request_periodic(channel_comm_channel_info_t *channel_comm_channel_info)

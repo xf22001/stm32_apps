@@ -6,7 +6,7 @@
  *   文件名称：channel_comm_channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年06月06日 星期日 15时02分58秒
- *   修改日期：2021年06月07日 星期一 09时54分04秒
+ *   修改日期：2021年06月07日 星期一 10时44分12秒
  *   描    述：
  *
  *================================================================*/
@@ -54,6 +54,7 @@ typedef struct {
 } channel_comm_channels_info_t;
 
 uint8_t channel_comms_channels_get_connect_state(channel_comm_channels_info_t *channel_comm_channels_info, uint8_t channel_comm_id);
+uint32_t channel_comms_channels_get_connect_stamp(channel_comm_channels_info_t *channel_comm_channels_info, uint8_t channel_comm_id);
 int start_channel_comm_channels(channels_info_t *channels_info);
 
 #endif //_CHANNEL_COMM_CHANNELS_H

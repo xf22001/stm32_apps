@@ -6,7 +6,7 @@
  *   文件名称：channel_comm_channels.c
  *   创 建 者：肖飞
  *   创建日期：2021年06月06日 星期日 15时02分53秒
- *   修改日期：2021年06月07日 星期一 10时03分05秒
+ *   修改日期：2021年06月07日 星期一 10时43分46秒
  *   描    述：
  *
  *================================================================*/
@@ -185,8 +185,6 @@ static int request_channel_heartbeat(channel_comm_channels_info_t *channel_comm_
 		return ret;
 	}
 
-	//debug("channel_comm_id:%d", channel_comm_id);
-
 	ret = prepare_tx_response(channel_comm_channels_info, CHANNEL_COMM_CMD_CHANNEL_HEARTBEAT, sizeof(channel_heartbeat_t));
 
 	if(can_com_cmd_response->response_status == CAN_COM_RESPONSE_STATUS_DONE) {
@@ -282,7 +280,7 @@ uint8_t channel_comms_channels_get_connect_state(channel_comm_channels_info_t *c
 	return get_connect_state(connect_state);
 }
 
-static uint32_t channel_comms_channels_get_connect_stamp(channel_comm_channels_info_t *channel_comm_channels_info, uint8_t channel_comm_id)
+uint32_t channel_comms_channels_get_connect_stamp(channel_comm_channels_info_t *channel_comm_channels_info, uint8_t channel_comm_id)
 {
 	connect_state_t *connect_state = channel_comm_channels_info->connect_state + channel_comm_id;
 
@@ -307,11 +305,6 @@ static void channel_comms_channels_request_periodic(channel_comm_channels_info_t
 			command_item_t *item = channel_comms_channels_command_table[i];
 			uint8_t cmd_ctx_index = cmd_ctx_offset(j, item->cmd);
 			command_status_t *cmd_ctx = channel_comm_channels_info->cmd_ctx + cmd_ctx_index;
-			//channels_info_t *channels_info = (channels_info_t *)channel_comm_channels_info->channels_info;
-
-			if(ticks_duration(ticks, channel_comms_channels_get_connect_stamp(channel_comm_channels_info, j)) >= (10 * 1000)) {
-			} else {
-			}
 
 			if(cmd_ctx->state == COMMAND_STATE_RESPONSE) {//超时
 				if(ticks_duration(ticks, cmd_ctx->send_stamp) >= RESPONSE_TIMEOUT) {
@@ -389,7 +382,7 @@ static void channel_comms_channels_request(channel_comm_channels_info_t *channel
 			channel_comm_channels_info->can_tx_msg.RTR = CAN_RTR_DATA;
 			channel_comm_channels_info->can_tx_msg.DLC = 8;
 
-			//debug("request cmd %d(%s), channel_comm:%d, index:%d", item->cmd, get_channel_comm_cmd_des(item->cmd), j, can_com_cmd_common->index);
+			debug("request cmd %d(%s), channel_comm:%d, index:%d", item->cmd, get_channel_comm_cmd_des(item->cmd), j, can_com_cmd_common->index);
 
 			memset(channel_comm_channels_info->can_tx_msg.Data, 0, 8);
 
@@ -429,7 +422,7 @@ static int channel_comms_channels_response(channel_comm_channels_info_t *channel
 	u_com_can_rx_id = (u_com_can_rx_id_t *)&channel_comm_channels_info->can_rx_msg->ExtId;
 
 	if(u_com_can_rx_id->s.flag != 0x12) {
-		//debug("response flag:%02x!", u_com_can_rx_id->s.flag);
+		debug("response flag:%02x!", u_com_can_rx_id->s.flag);
 		return ret;
 	}
 
@@ -470,7 +463,7 @@ static int channel_comms_channels_response(channel_comm_channels_info_t *channel
 		can_com_cmd_common_t *can_com_cmd_common = (can_com_cmd_common_t *)channel_comm_channels_info->can_rx_msg->Data;
 
 		if(can_com_cmd_common->cmd == item->cmd) {
-			//debug("response cmd %d(%s), channel_comm:%d, index:%d", item->cmd, get_channel_comm_cmd_des(item->cmd), channel_comm_id, can_com_cmd_common->index);
+			debug("response cmd %d(%s), channel_comm:%d, index:%d", item->cmd, get_channel_comm_cmd_des(item->cmd), channel_comm_id, can_com_cmd_common->index);
 
 			channel_comms_channels_set_connect_state(channel_comm_channels_info, channel_comm_id, 1);
 
