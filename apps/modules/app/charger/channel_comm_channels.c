@@ -6,12 +6,11 @@
  *   文件名称：channel_comm_channels.c
  *   创 建 者：肖飞
  *   创建日期：2021年06月06日 星期日 15时02分53秒
- *   修改日期：2021年06月06日 星期日 20时08分09秒
+ *   修改日期：2021年06月07日 星期一 09时54分40秒
  *   描    述：
  *
  *================================================================*/
 #include "channel_comm_channels.h"
-#include "channels.h"
 #include "can_data_task.h"
 
 #include "log.h"
@@ -373,11 +372,13 @@ static void channel_comms_channels_request(channel_comm_channels_info_t *channel
 
 			channel_comms_channels_request_periodic(channel_comm_channels_info);
 
-			if(cmd_ctx->state != COMMAND_STATE_REQUEST) {
+			if(cmd_ctx->available == 0) {
 				continue;
 			}
 
-			//osDelay(5);
+			if(cmd_ctx->state != COMMAND_STATE_REQUEST) {
+				continue;
+			}
 
 			u_com_can_tx_id->v = 0;
 			u_com_can_tx_id->s.flag = 0x12;
@@ -521,113 +522,55 @@ static void can_data_response(void *fn_ctx, void *chain_ctx)
 	channel_comms_channels_response(channel_comm_channels_info, can_rx_msg);
 }
 
-static void free_channel_comm_channels_info(channel_comm_channels_info_t *channel_comm_channels_info)
+int start_channel_comm_channels(channels_info_t *channels_info)
 {
-	if(channel_comm_channels_info == NULL) {
-		return;
-	}
-
-	if(channel_comm_channels_info->cmd_ctx != NULL) {
-		os_free(channel_comm_channels_info->cmd_ctx);
-	}
-
-	if(channel_comm_channels_info->data_ctx != NULL) {
-		os_free(channel_comm_channels_info->data_ctx);
-	}
-
-	if(channel_comm_channels_info->connect_state != NULL) {
-		os_free(channel_comm_channels_info->connect_state);
-	}
-
-	os_free(channel_comm_channels_info);
-}
-
-static int channel_comm_channels_info_set_channels_info(channel_comm_channels_info_t *channel_comm_channels_info, channels_info_t *channels_info)
-{
-	int ret = -1;
+	int ret = 0;
 	can_info_t *can_info;
 	command_status_t *can_com_cmd_ctx;
 	data_ctx_t *data_ctx;
 	connect_state_t *connect_state;
-	uint8_t channel_comm_number;
-	int i;
 	can_data_task_info_t *can_data_task_info;
+	channel_comm_channels_info_t *channel_comm_channels_info;
+
+	if(channels_info->channel_comm_channels_info != NULL) {
+		return ret;
+	}
+
+	channel_comm_channels_info = (channel_comm_channels_info_t *)os_calloc(1, sizeof(channel_comm_channels_info_t));
+	OS_ASSERT(channel_comm_channels_info != NULL);
 
 	channel_comm_channels_info->channels_info = channels_info;
 
-	channel_comm_number = channels_info->channel_number;
+	OS_ASSERT(channels_info->channel_number != 0);
+	channel_comm_channels_info->channel_comm_number = channels_info->channel_number;
 
-	channel_comm_channels_info->channel_comm_number = channel_comm_number;
-
-	if(channel_comm_number == 0) {
-		debug("");
-		return ret;
-	}
-
-	debug("channel_comm_number:%d", channel_comm_number);
-
-	can_com_cmd_ctx = (command_status_t *)os_alloc(sizeof(command_status_t) * CHANNEL_COMM_CMD_TOTAL * channel_comm_number);
-
-	if(can_com_cmd_ctx == NULL) {
-		return ret;
-	}
-
-	memset(can_com_cmd_ctx, 0, sizeof(command_status_t) * CHANNEL_COMM_CMD_TOTAL * channel_comm_number);
-
+	can_com_cmd_ctx = (command_status_t *)os_calloc(CHANNEL_COMM_CMD_TOTAL * channels_info->channel_number, sizeof(command_status_t));
+	OS_ASSERT(can_com_cmd_ctx != NULL);
 	channel_comm_channels_info->cmd_ctx = can_com_cmd_ctx;
 
-	for(i = 0; i < channel_comm_number; i++) {
-		channel_comm_channels_info->cmd_ctx[cmd_ctx_offset(i, CHANNEL_COMM_CMD_CHANNELS_HEARTBEAT)].available = 1;
-	}
-
-	data_ctx = (data_ctx_t *)os_alloc(sizeof(data_ctx_t) * channel_comm_number);
-
-	if(data_ctx == NULL) {
-		return ret;
-	}
-
-	memset(data_ctx, 0, sizeof(data_ctx_t) * channel_comm_number);
-
+	data_ctx = (data_ctx_t *)os_calloc(channels_info->channel_number, sizeof(data_ctx_t));
+	OS_ASSERT(data_ctx != NULL);
 	channel_comm_channels_info->data_ctx = data_ctx;
 
-	connect_state = (connect_state_t *)os_alloc(sizeof(connect_state_t) * channel_comm_number);
-
-	if(connect_state == NULL) {
-		return ret;
-	}
-
-	memset(connect_state, 0, sizeof(connect_state_t) * channel_comm_number);
-
+	connect_state = (connect_state_t *)os_calloc(channels_info->channel_number, sizeof(connect_state_t));
+	OS_ASSERT(connect_state != NULL);
 	channel_comm_channels_info->connect_state = connect_state;
 
 	can_info = get_or_alloc_can_info(channels_info->channels_config->hcan_channel_comm);
-
-	if(can_info == NULL) {
-		return ret;
-	}
-
+	OS_ASSERT(can_info != NULL);
 	channel_comm_channels_info->can_info = can_info;
 
 	can_data_task_info = get_or_alloc_can_data_task_info(channel_comm_channels_info->can_info->hcan);
-
-	if(can_data_task_info == NULL) {
-		app_panic();
-	}
+	OS_ASSERT(can_data_task_info != NULL);
 
 	channel_comm_channels_info->can_data_request_cb.fn = can_data_request;
 	channel_comm_channels_info->can_data_request_cb.fn_ctx = channel_comm_channels_info;
 	add_can_data_task_info_request_cb(can_data_task_info, &channel_comm_channels_info->can_data_request_cb);
-
 	channel_comm_channels_info->can_data_response_cb.fn = can_data_response;
 	channel_comm_channels_info->can_data_response_cb.fn_ctx = channel_comm_channels_info;
 	add_can_data_task_info_response_cb(can_data_task_info, &channel_comm_channels_info->can_data_response_cb);
 
-	ret = 0;
-	return ret;
-}
+	channels_info->channel_comm_channels_info = channel_comm_channels_info;
 
-int start_channel_comm_channels(channels_info_t *channels_info)
-{
-	int ret = 0;
 	return ret;
 }

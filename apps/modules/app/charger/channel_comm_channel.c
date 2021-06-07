@@ -6,12 +6,11 @@
  *   文件名称：channel_comm_channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年06月06日 星期日 15时02分49秒
- *   修改日期：2021年06月06日 星期日 19时53分06秒
+ *   修改日期：2021年06月07日 星期一 09时54分31秒
  *   描    述：
  *
  *================================================================*/
 #include "channel_comm_channel.h"
-#include "channel.h"
 #include "can_data_task.h"
 
 #include "log.h"
@@ -238,7 +237,12 @@ static void channel_comm_channel_request_periodic(channel_comm_channel_info_t *c
 				      get_channel_comm_cmd_des(item->cmd),
 				      cmd_ctx->index,
 				      channel_comm_channel_get_connect_state(channel_comm_channel_info));
-				cmd_ctx->state = COMMAND_STATE_REQUEST;
+
+				cmd_ctx->state = COMMAND_STATE_IDLE;
+
+				if(item->timeout_callback != NULL) {
+					item->timeout_callback(channel_comm_channel_info);
+				}
 			}
 		}
 
@@ -257,7 +261,7 @@ static void channel_comm_channel_request_periodic(channel_comm_channel_info_t *c
 		if(ticks_duration(ticks, cmd_ctx->stamp) >= item->request_period) {
 			cmd_ctx->stamp = ticks;
 
-			//debug("start cmd %d(%s)", item->cmd, get_channel_comm_cmd_des(item->cmd));
+			debug("start cmd %d(%s)", item->cmd, get_channel_comm_cmd_des(item->cmd));
 			cmd_ctx->index = 0;
 			cmd_ctx->state = COMMAND_STATE_REQUEST;
 		}
@@ -265,20 +269,11 @@ static void channel_comm_channel_request_periodic(channel_comm_channel_info_t *c
 
 }
 
-static void flicker_can_led(uint8_t live)
+static uint8_t get_channel_comm_id(void)
 {
-	static uint32_t live_ticks = 0;
-	uint32_t ticks = osKernelSysTick();
-
-	if(live != 0) {
-		live_ticks = ticks;
-	}
-
-	if(ticks_duration(ticks, live_ticks) >= 30) {
-		//HAL_GPIO_WritePin(led_can_GPIO_Port, led_can_Pin, GPIO_PIN_SET);
-	} else {
-		//HAL_GPIO_WritePin(led_can_GPIO_Port, led_can_Pin, GPIO_PIN_RESET);
-	}
+	uint8_t id = 1;
+	//todo
+	return id;
 }
 
 static void channel_comm_channel_request(channel_comm_channel_info_t *channel_comm_channel_info)
@@ -293,14 +288,15 @@ static void channel_comm_channel_request(channel_comm_channel_info_t *channel_co
 		can_com_cmd_common_t *can_com_cmd_common = (can_com_cmd_common_t *)channel_comm_channel_info->can_tx_msg.Data;
 		u_com_can_tx_id_t *u_com_can_tx_id = (u_com_can_tx_id_t *)&channel_comm_channel_info->can_tx_msg.ExtId;
 
-		flicker_can_led(0);
 		channel_comm_channel_request_periodic(channel_comm_channel_info);
+
+		if(cmd_ctx->available == 0) {
+			continue;
+		}
 
 		if(cmd_ctx->state != COMMAND_STATE_REQUEST) {
 			continue;
 		}
-
-		//osDelay(5);
 
 		u_com_can_tx_id->v = 0;
 		u_com_can_tx_id->s.flag = 0x12;
@@ -311,13 +307,12 @@ static void channel_comm_channel_request(channel_comm_channel_info_t *channel_co
 		channel_comm_channel_info->can_tx_msg.RTR = CAN_RTR_DATA;
 		channel_comm_channel_info->can_tx_msg.DLC = 8;
 
-		//debug("request cmd %d(%s), index:%d", item->cmd, get_channel_comm_cmd_des(item->cmd), can_com_cmd_common->index);
+		debug("request cmd %d(%s), index:%d", item->cmd, get_channel_comm_cmd_des(item->cmd), can_com_cmd_common->index);
 
 		memset(channel_comm_channel_info->can_tx_msg.Data, 0, 8);
 
 		can_com_cmd_common->cmd = item->cmd;
 
-		flicker_can_led(1);
 		ret = item->request_callback(channel_comm_channel_info);
 
 		if(ret != 0) {
@@ -360,9 +355,8 @@ static void channel_comm_channel_response(channel_comm_channel_info_t *channel_c
 		can_com_cmd_common_t *can_com_cmd_common = (can_com_cmd_common_t *)channel_comm_channel_info->can_rx_msg->Data;
 
 		if(can_com_cmd_common->cmd == item->cmd) {
-			//debug("response cmd %d(%s), index:%d", item->cmd, get_channel_comm_cmd_des(item->cmd), can_com_cmd_common->index);
+			debug("response cmd %d(%s), index:%d", item->cmd, get_channel_comm_cmd_des(item->cmd), can_com_cmd_common->index);
 
-			flicker_can_led(1);
 			channel_comm_channel_set_connect_state(channel_comm_channel_info, 1);
 
 			ret = item->response_callback(channel_comm_channel_info);
@@ -375,8 +369,6 @@ static void channel_comm_channel_response(channel_comm_channel_info_t *channel_c
 		}
 
 	}
-
-	flicker_can_led(0);
 }
 
 static void can_data_request(void *fn_ctx, void *chain_ctx)
@@ -401,15 +393,26 @@ static void can_data_response(void *fn_ctx, void *chain_ctx)
 	channel_comm_channel_response(channel_comm_channel_info);
 }
 
-static int channel_comm_channel_info_set_channel_config(channel_comm_channel_info_t *channel_comm_channel_info, channel_info_t *channel_info)
+int start_channel_comm_channel(channel_info_t *channel_info)
 {
-	int ret = -1;
+	int ret = 0;
+	channel_comm_channel_info_t *channel_comm_channel_info = NULL;
+	channels_info_t *channels_info = (channels_info_t *)channel_info->channels_info;
 	can_info_t *can_info;
 	command_status_t *cmd_ctx;
 	data_ctx_t *data_ctx;
 	com_can_rx_id_t *com_can_rx_id;
 	com_can_rx_id_t *com_can_rx_mask_id;
 	can_data_task_info_t *can_data_task_info;
+
+	if(channels_info->channel_comm_channel_info != NULL) {
+		return ret;
+	}
+
+	channel_comm_channel_info = (channel_comm_channel_info_t *)os_calloc(1, sizeof(channel_comm_channel_info_t));
+	OS_ASSERT(channel_comm_channel_info != NULL);
+
+	channel_comm_channel_info->channel_info = channel_info;
 
 	cmd_ctx = (command_status_t *)os_calloc(sizeof(command_status_t), CHANNEL_COMM_CMD_TOTAL);
 	OS_ASSERT(cmd_ctx != NULL);
@@ -438,54 +441,19 @@ static int channel_comm_channel_info_set_channel_config(channel_comm_channel_inf
 
 	debug("can_info->can_config->filter_id:%08x", can_info->can_config->filter_id);
 	debug("can_info->can_config->filter_mask_id:%08x", can_info->can_config->filter_mask_id);
-
 	can_info->receive_init(can_info->hcan);
-
 	channel_comm_channel_info->can_info = can_info;
 
 	can_data_task_info = get_or_alloc_can_data_task_info(channel_comm_channel_info->can_info->hcan);
-
-	if(can_data_task_info == NULL) {
-		app_panic();
-	}
-
+	OS_ASSERT(can_data_task_info != NULL);
 	channel_comm_channel_info->can_data_request_cb.fn = can_data_request;
 	channel_comm_channel_info->can_data_request_cb.fn_ctx = channel_comm_channel_info;
+	add_can_data_task_info_request_cb(can_data_task_info, &channel_comm_channel_info->can_data_request_cb);
 	channel_comm_channel_info->can_data_response_cb.fn = can_data_response;
 	channel_comm_channel_info->can_data_response_cb.fn_ctx = channel_comm_channel_info;
-
-	add_can_data_task_info_request_cb(can_data_task_info, &channel_comm_channel_info->can_data_request_cb);
 	add_can_data_task_info_response_cb(can_data_task_info, &channel_comm_channel_info->can_data_response_cb);
 
-	ret = 0;
-	return ret;
-}
+	channels_info->channel_comm_channel_info = channel_comm_channel_info;
 
-channel_comm_channel_info_t *alloc_channel_comm_channel_info(channel_info_t *channel_info)
-{
-	channel_comm_channel_info_t *channel_comm_channel_info = NULL;
-
-	channel_comm_channel_info = (channel_comm_channel_info_t *)os_calloc(1, sizeof(channel_comm_channel_info_t));
-	OS_ASSERT(channel_comm_channel_info != NULL);
-
-	channel_comm_channel_info->channel_info = channel_info;
-
-	if(channel_comm_channel_info_set_channel_config(channel_comm_channel_info, channel_info) != 0) {
-		goto failed;
-	}
-
-	return channel_comm_channel_info;
-failed:
-
-	free_channel_comm_channel_info(channel_comm_channel_info);
-
-	channel_comm_channel_info = NULL;
-
-	return channel_comm_channel_info;
-}
-
-int start_channel_comm_channel(channel_info_t *channel_info)
-{
-	int ret = 0;
 	return ret;
 }

@@ -6,7 +6,7 @@
  *   文件名称：channels.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 09时26分31秒
- *   修改日期：2021年06月06日 星期日 15时01分33秒
+ *   修改日期：2021年06月07日 星期一 09时28分09秒
  *   描    述：
  *
  *================================================================*/
@@ -159,10 +159,6 @@ static int channels_info_set_channels_config(channels_info_t *channels_info, cha
 	channels_info->channels_power_module = alloc_channels_power_module(channels_info);
 
 	channels_info->card_reader_info = alloc_card_reader_info(channels_info);
-
-	if(channels_info->channel_proxy == 0) {
-		OS_ASSERT(start_channel_comm_channels(channels_info) == 0);
-	}
 
 	osThreadDef(channels, task_channels, osPriorityNormal, 0, 128 * 2 * 2);
 	osThreadCreate(osThread(channels), channels_info);

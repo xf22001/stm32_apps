@@ -6,7 +6,7 @@
  *   文件名称：channel_handler_proxy.c
  *   创 建 者：肖飞
  *   创建日期：2021年06月05日 星期六 22时43分22秒
- *   修改日期：2021年06月06日 星期日 13时57分20秒
+ *   修改日期：2021年06月07日 星期一 09时30分51秒
  *   描    述：
  *
  *================================================================*/
@@ -158,6 +158,8 @@ static int init(void *_channel_info)
 	OS_ASSERT(register_callback(channels_info->common_event_chain, &channel_handler_ctx->handler_event_callback_item) == 0);
 
 	channel_info->channel_handler_ctx = channel_handler_ctx;
+
+	OS_ASSERT(start_channel_comm_channel(channel_info) == 0);
 
 	return ret;
 }

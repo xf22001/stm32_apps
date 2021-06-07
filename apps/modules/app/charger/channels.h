@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2021年06月06日 星期日 14时58分43秒
+ *   修改日期：2021年06月07日 星期一 09时18分51秒
  *   描    述：
  *
  *================================================================*/
@@ -201,11 +201,12 @@ typedef struct {
 
 	uint8_t channel_number;
 	channel_info_t *channel_info;
-	uint8_t channel_proxy;
 	void *card_reader_info;
 	void *channels_power_module;
 	channels_settings_t channels_settings;
 	bitmap_t *faults;
+	void *channel_comm_channel_info;
+	void *channel_comm_channels_info;
 } channels_info_t;
 
 char *get_channel_event_type_des(channel_event_type_t type);

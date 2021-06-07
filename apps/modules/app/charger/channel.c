@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分12秒
- *   修改日期：2021年06月06日 星期日 19时42分46秒
+ *   修改日期：2021年06月07日 星期一 09时31分33秒
  *   描    述：
  *
  *================================================================*/
@@ -276,11 +276,6 @@ channel_info_t *alloc_channels_channel_info(channels_info_t *channels_info)
 		channel_info_item->channel_id = i;
 
 		channel_init(channel_info_item);
-
-		if(channel_info_item->channel_config->channel_type == CHANNEL_TYPE_PROXY) {
-			channels_info->channel_proxy = 1;
-			OS_ASSERT(start_channel_comm_channel(channel_info_item) == 0);
-		}
 	}
 
 	channels_info->periodic_callback_item.fn = handle_channels_common_periodic;

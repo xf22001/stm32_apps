@@ -6,7 +6,7 @@
  *   文件名称：channel_comm_channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年06月06日 星期日 15时02分58秒
- *   修改日期：2021年06月06日 星期日 17时17分54秒
+ *   修改日期：2021年06月07日 星期一 09时54分04秒
  *   描    述：
  *
  *================================================================*/
@@ -26,6 +26,7 @@ extern "C"
 #include "can_command.h"
 #include "callback_chain.h"
 #include "connect_state.h"
+#include "channels.h"
 
 #ifdef __cplusplus
 }
@@ -51,5 +52,8 @@ typedef struct {
 	callback_item_t can_data_request_cb;
 	callback_item_t can_data_response_cb;
 } channel_comm_channels_info_t;
+
+uint8_t channel_comms_channels_get_connect_state(channel_comm_channels_info_t *channel_comm_channels_info, uint8_t channel_comm_id);
+int start_channel_comm_channels(channels_info_t *channels_info);
 
 #endif //_CHANNEL_COMM_CHANNELS_H
