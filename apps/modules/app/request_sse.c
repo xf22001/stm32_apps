@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年06月09日 星期三 17时35分03秒
+ *   修改日期：2021年06月09日 星期三 17时37分27秒
  *   描    述：
  *
  *================================================================*/
@@ -813,7 +813,7 @@ static uint32_t get_sse_module_state_mask(channels_info_t *channels_info)
 static uint32_t get_sse_module_state_value(channels_info_t *channels_info)
 {
 	uint32_t state = 0;
-	uint8_t *cells = (uint8_t *)&mask;
+	uint8_t *cells = (uint8_t *)&state;
 	channels_config_t *channels_config = channels_info->channels_config;
 	channels_power_module_t *channels_power_module = (channels_power_module_t *)channels_info->channels_power_module;
 	channels_power_module_callback_t *channels_power_module_callback = channels_power_module->channels_power_module_callback;
@@ -892,7 +892,7 @@ static uint8_t get_sse_report_channel_charger_bms_state(channel_info_t *channel_
 {
 	uint8_t state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_NONE;
 	if(channel_info->channel_config->channel_type == CHANNEL_TYPE_DC) {
-		if((channel_info->channel_config->state == CHANNEL_STATE_NONE) || (channel_info->channel_config->state == CHANNEL_STATE_IDLE)) {
+		if((channel_info->state == CHANNEL_STATE_NONE) || (channel_info->state == CHANNEL_STATE_IDLE)) {
 			//todo
 		} else {
 		}
@@ -904,7 +904,7 @@ static uint8_t get_sse_report_channel_charger_bms_stop_reason(channel_info_t *ch
 {
 	uint8_t stop_reason = SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_NONE;
 	if(channel_info->channel_config->channel_type == CHANNEL_TYPE_DC) {
-		if((channel_info->channel_config->state == CHANNEL_STATE_NONE) || (channel_info->channel_config->state == CHANNEL_STATE_IDLE)) {
+		if((channel_info->state == CHANNEL_STATE_NONE) || (channel_info->state == CHANNEL_STATE_IDLE)) {
 			//todo
 		} else {
 		}
