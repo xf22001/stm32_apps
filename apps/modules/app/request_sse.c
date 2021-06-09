@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年06月07日 星期一 16时15分54秒
+ *   修改日期：2021年06月09日 星期三 17时35分03秒
  *   描    述：
  *
  *================================================================*/
@@ -640,8 +640,144 @@ static uint16_t get_device_state(channels_info_t *channels_info)
 static uint16_t get_sse_device_fault_type(channels_info_t *channels_info)
 {
 	uint16_t fault = SSE_DEVICE_FAULT_TYPE_NONE;
+	int i;
 
-	//todo
+	if(get_fault(channels_info->faults, CHANNELS_FAULT_POWER_MODULES) == 1) {
+		fault = SSE_DEVICE_FAULT_TYPE_MODULE;
+		return fault;
+	}
+
+	if(get_fault(channels_info->faults, CHANNELS_FAULT_CARD_READER) == 1) {
+		fault = SSE_DEVICE_FAULT_TYPE_CARD_READER;
+		return fault;
+	}
+
+	for(i = 0; i < channels_info->channel_number; i++) {
+		channel_info_t *channel_info = channels_info->channel_info + i;
+
+		if(get_fault(channel_info->faults, CHANNEL_FAULT_CONNECT) == 1) {
+			switch(i) {
+				case 1: {
+					fault = SSE_DEVICE_FAULT_TYPE_CONTROL_BOARD_B;
+					return fault;
+				}
+				break;
+
+				case 2: {
+					fault = SSE_DEVICE_FAULT_TYPE_CONTROL_BOARD_C;
+					return fault;
+				}
+				break;
+
+				case 3: {
+					fault = SSE_DEVICE_FAULT_TYPE_CONTROL_BOARD_D;
+					return fault;
+				}
+				break;
+
+				default: {
+				}
+				break;
+			}
+		}
+
+		if(get_fault(channel_info->faults, CHANNEL_FAULT_FUNCTION_BOARD_CONNECT) == 1) {
+			switch(i) {
+				case 0: {
+					fault = SSE_DEVICE_FAULT_TYPE_FUNCTION_BOARD_A;
+					return fault;
+				}
+				break;
+
+				case 1: {
+					fault = SSE_DEVICE_FAULT_TYPE_FUNCTION_BOARD_B;
+					return fault;
+				}
+				break;
+
+				case 2: {
+					fault = SSE_DEVICE_FAULT_TYPE_FUNCTION_BOARD_C;
+					return fault;
+				}
+				break;
+
+				case 3: {
+					fault = SSE_DEVICE_FAULT_TYPE_FUNCTION_BOARD_D;
+					return fault;
+				}
+				break;
+
+				default: {
+				}
+				break;
+			}
+		}
+
+		if(get_fault(channel_info->faults, CHANNEL_FAULT_TELEMETER) == 1) {
+			switch(i) {
+				case 0: {
+					fault = SSE_DEVICE_FAULT_TYPE_TELEMETER_A;
+					return fault;
+				}
+				break;
+
+				case 1: {
+					fault = SSE_DEVICE_FAULT_TYPE_TELEMETER_B;
+					return fault;
+				}
+				break;
+
+				case 2: {
+					fault = SSE_DEVICE_FAULT_TYPE_TELEMETER_C;
+					return fault;
+				}
+				break;
+
+				case 3: {
+					fault = SSE_DEVICE_FAULT_TYPE_TELEMETER_D;
+					return fault;
+				}
+				break;
+
+				default: {
+				}
+				break;
+			}
+		}
+	}
+
+	if(get_fault(channels_info->faults, CHANNELS_FAULT_DOOR) == 1) {
+		fault = CHANNELS_FAULT_DOOR;
+		return fault;
+	}
+
+	if(get_fault(channels_info->faults, CHANNELS_FAULT_RELAY_ADHESION) == 1) {
+		fault = SSE_DEVICE_FAULT_TYPE_RELAY_ADHESION;
+		return fault;
+	}
+
+	if(get_fault(channels_info->faults, CHANNELS_FAULT_FORCE_STOP) == 1) {
+		fault = SSE_DEVICE_FAULT_TYPE_FORCE_STOP;
+		return fault;
+	}
+
+	if(get_fault(channels_info->faults, CHANNELS_FAULT_INPUT_OVER_VOLTAGE) == 1) {
+		fault = SSE_DEVICE_FAULT_TYPE_INPUT_OVER_VOLTAGE;
+		return fault;
+	}
+
+	if(get_fault(channels_info->faults, CHANNELS_FAULT_INPUT_LOW_VOLTAGE) == 1) {
+		fault = SSE_DEVICE_FAULT_TYPE_INPUT_LOW_VOLTAGE;
+		return fault;
+	}
+
+	for(i = 0; i < channels_info->channel_number; i++) {
+		channel_info_t *channel_info = channels_info->channel_info + i;
+
+		if(get_fault(channel_info->faults, CHANNEL_FAULT_OVER_TEMPERATURE) == 1) {
+			fault = SSE_DEVICE_FAULT_TYPE_CHANNEL_OVER_TEMPERATURE;
+		}
+	}
 
 	return fault;
 }
@@ -665,9 +801,10 @@ static uint32_t get_sse_module_state_mask(channels_info_t *channels_info)
 	}
 
 	for(i = 0; i < channels_power_module_number; i++) {
+		power_module_item_info_t *power_module_item_info = channels_power_module_callback->get_power_module_item_info(channels_info, i);
 		int j = i / 8;
 		int k = i % 8;
-		cells[j] = set_u8_bits(cells[j], k, 1);
+		cells[j] = set_u8_bits(cells[j], k, power_module_item_info->error.fault);
 	}
 
 	return mask;
@@ -676,7 +813,26 @@ static uint32_t get_sse_module_state_mask(channels_info_t *channels_info)
 static uint32_t get_sse_module_state_value(channels_info_t *channels_info)
 {
 	uint32_t state = 0;
-	//todo
+	uint8_t *cells = (uint8_t *)&mask;
+	channels_config_t *channels_config = channels_info->channels_config;
+	channels_power_module_t *channels_power_module = (channels_power_module_t *)channels_info->channels_power_module;
+	channels_power_module_callback_t *channels_power_module_callback = channels_power_module->channels_power_module_callback;
+	int i = 0;
+	int channels_power_module_number = channels_config->power_module_config.channels_power_module_number;
+
+	if(channels_power_module_callback == NULL) {
+		return state;
+	}
+
+	if(channels_power_module_callback->get_power_module_item_info == NULL) {
+		return state;
+	}
+
+	for(i = 0; i < channels_power_module_number; i++) {
+		int j = i / 8;
+		int k = i % 8;
+		cells[j] = set_u8_bits(cells[j], k, 1);
+	}
 	return state;
 }
 
@@ -735,14 +891,24 @@ static uint8_t get_channel_device_state(channel_info_t *channel_info)
 static uint8_t get_sse_report_channel_charger_bms_state(channel_info_t *channel_info)
 {
 	uint8_t state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_NONE;
-	//todo
+	if(channel_info->channel_config->channel_type == CHANNEL_TYPE_DC) {
+		if((channel_info->channel_config->state == CHANNEL_STATE_NONE) || (channel_info->channel_config->state == CHANNEL_STATE_IDLE)) {
+			//todo
+		} else {
+		}
+	}
 	return state;
 }
 
 static uint8_t get_sse_report_channel_charger_bms_stop_reason(channel_info_t *channel_info)
 {
 	uint8_t stop_reason = SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_NONE;
-	//todo
+	if(channel_info->channel_config->channel_type == CHANNEL_TYPE_DC) {
+		if((channel_info->channel_config->state == CHANNEL_STATE_NONE) || (channel_info->channel_config->state == CHANNEL_STATE_IDLE)) {
+			//todo
+		} else {
+		}
+	}
 	return stop_reason;
 }
 
