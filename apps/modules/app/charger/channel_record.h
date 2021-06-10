@@ -6,7 +6,7 @@
  *   文件名称：channel_record.h
  *   创 建 者：肖飞
  *   创建日期：2021年05月23日 星期日 13时40分28秒
- *   修改日期：2021年06月10日 星期四 13时51分32秒
+ *   修改日期：2021年06月10日 星期四 17时29分16秒
  *   描    述：
  *
  *================================================================*/
@@ -22,6 +22,7 @@ extern "C"
 
 #include "callback_chain.h"
 #include "eeprom.h"
+#include "channels_config.h"
 
 #ifdef __cplusplus
 }
@@ -79,7 +80,11 @@ typedef struct {
 	uint8_t channel_id;
 	uint8_t state;//channel_record_item_state_t
 	uint8_t stop_reason;//channel_record_item_stop_reason_t
+
+	uint32_t account_balance;
 	uint32_t amount;
+	uint32_t total_energy;
+	uint32_t energy_seg[PRICE_SEGMENT_SIZE];
 
 	uint32_t energy;
 	uint32_t voltage;

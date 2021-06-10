@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2021年06月10日 星期四 13时37分52秒
+ *   修改日期：2021年06月10日 星期四 17时28分00秒
  *   描    述：
  *
  *================================================================*/
@@ -166,8 +166,12 @@ typedef struct {
 	callback_chain_t *stop_chain;
 	callback_chain_t *state_changed_chain;
 
+	callback_chain_t *charger_connect_changed_chain;
+
 	void *charger_info;
 	void *energy_meter_info;
+
+	uint16_t cp_ad;
 
 	uint32_t total_energy;
 
@@ -184,11 +188,17 @@ typedef struct {
 #pragma pack(push, 1)
 
 typedef struct {
+	uint32_t price[PRICE_ARRAY_SIZE];
+	uint8_t seg[PRICE_SEGMENT_SIZE];
+} price_info_t;
+
+typedef struct {
 	char device_id[32];
 	uint8_t device_type;
 	uint16_t power_module_type;
 	uint16_t power_threshold;//单位 0.1kW
 	uint8_t magnification;//电表放大倍率.0:2位小数, 1:3位小数
+	price_info_t price_info;
 } channels_settings_t;
 
 #pragma pack(pop)
@@ -229,6 +239,7 @@ typedef struct {
 	bitmap_t *faults;
 	void *channel_comm_channel_info;
 	void *channel_comm_channels_info;
+	int8_t temperature;
 } channels_info_t;
 
 char *get_channel_event_type_des(channel_event_type_t type);

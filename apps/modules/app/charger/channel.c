@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分12秒
- *   修改日期：2021年06月07日 星期一 09时31分33秒
+ *   修改日期：2021年06月10日 星期四 17时28分25秒
  *   描    述：
  *
  *================================================================*/
@@ -17,6 +17,8 @@
 #include "channel_handler_proxy.h"
 #include "charger.h"
 #include "energy_meter.h"
+#include "hw_adc.h"
+#include "ntc_temperature.h"
 
 #include "log.h"
 
@@ -90,12 +92,8 @@ static void handle_channel_request_state(channel_info_t *channel_info)
 	channel_info->request_state = CHANNEL_STATE_NONE;
 }
 
-static void handle_channel_periodic(void *_channel_info, void *chain_ctx)
+static void handle_channel_state(channel_info_t *channel_info)
 {
-	channel_info_t *channel_info = (channel_info_t *)_channel_info;
-
-	//debug("channel_info %d periodic!", channel_info->channel_id);
-
 	switch(channel_info->state) {
 		case CHANNEL_STATE_IDLE: {
 			do_callback_chain(channel_info->idle_chain, channel_info);
@@ -135,6 +133,68 @@ static void handle_channel_periodic(void *_channel_info, void *chain_ctx)
 	handle_channel_request_state(channel_info);
 }
 
+static uint8_t get_price_seg_index(time_t ts)
+{
+	uint8_t price_seg_index;
+
+	OS_ASSERT((86400 % PRICE_SEGMENT_SIZE) == 0);
+	price_seg_index = (ts % 86400) / (86400 / PRICE_SEGMENT_SIZE);
+	OS_ASSERT(price_seg_index < PRICE_SEGMENT_SIZE);
+
+	return price_seg_index;
+}
+
+static uint32_t get_current_price(channels_info_t *channels_info, time_t ts)
+{
+	price_info_t *price_info = &channels_info->channels_settings.price_info;
+	uint8_t price_index;
+
+	price_index = price_info->seg[get_price_seg_index(ts)];
+	OS_ASSERT(price_index < PRICE_ARRAY_SIZE);
+
+	return price_info->price[price_index];
+}
+
+void handle_channel_amount(channel_info_t *channel_info)
+{
+	channels_info_t *channels_info = (channels_info_t *)channel_info->channels_info;
+	time_t ts = get_time();
+
+	switch(channel_info->state) {
+		case CHANNEL_STATE_CHARGING: {
+			uint32_t price = get_current_price(channels_info, ts);
+			uint32_t delta_energy = channel_info->total_energy - channel_info->channel_record_item.total_energy;
+
+			//todo clear
+			channel_info->channel_record_item.energy_seg[get_price_seg_index(ts)] += delta_energy;
+			channel_info->channel_record_item.energy += delta_energy;
+			channel_info->channel_record_item.amount += delta_energy * price;
+
+			channel_info->channel_record_item.total_energy = channel_info->total_energy;
+
+			if(channel_info->channel_record_item.amount >= channel_info->channel_record_item.account_balance) {
+				//stop_reason
+				set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
+			}
+		}
+		break;
+
+		default: {
+		}
+		break;
+	}
+}
+
+static void handle_channel_periodic(void *_channel_info, void *chain_ctx)
+{
+	channel_info_t *channel_info = (channel_info_t *)_channel_info;
+
+	//debug("channel_info %d periodic!", channel_info->channel_id);
+
+	handle_channel_amount(channel_info);
+	handle_channel_state(channel_info);
+}
+
 static int _handle_channel_event(channel_info_t *channel_info, channel_event_t *channel_event)
 {
 	int ret = -1;
@@ -148,6 +208,7 @@ static int _handle_channel_event(channel_info_t *channel_info, channel_event_t *
 		break;
 
 		case CHANNEL_EVENT_TYPE_STOP_CHANNEL: {
+			//stop_reason
 			set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
 		}
 		break;
@@ -215,6 +276,8 @@ static int channel_init(channel_info_t *channel_info)
 	OS_ASSERT(channel_info->stop_chain != NULL);
 	channel_info->state_changed_chain = alloc_callback_chain();
 	OS_ASSERT(channel_info->state_changed_chain != NULL);
+	channel_info->charger_connect_changed_chain = alloc_callback_chain();
+	OS_ASSERT(channel_info->charger_connect_changed_chain != NULL);
 
 	debug("channel %d init charger %s", channel_info->channel_id, get_channel_config_channel_type(channel_config->channel_type));
 	channel_info->channel_handler = get_channel_handler(channel_config->channel_type);
@@ -239,9 +302,17 @@ static int channel_init(channel_info_t *channel_info)
 	return ret;
 }
 
-static void handle_channels_common_periodic(void *_channels_info, void *chain_ctx)
+static void handle_channels_common_periodic(void *_channels_info, void *__channels_info)
 {
-	//debug("channels_info common periodic!");
+	channels_info_t *channels_info = (channels_info_t *)_channels_info;
+	adc_info_t *adc_info = get_or_alloc_adc_info(channels_info->channels_config->board_temperature_adc);
+	uint16_t temperature_ad;
+
+	OS_ASSERT(adc_info != NULL);
+
+	temperature_ad = get_adc_value(adc_info, channels_info->channels_config->board_temperature_adc_rank);
+	channels_info->temperature = get_ntc_temperature(10000, temperature_ad, 4095);
+	//debug("current temperature:%d", channels_info->temperature);
 }
 
 static void handle_channels_common_event(void *_channels_info, void *_channels_event)

@@ -6,7 +6,7 @@
  *   文件名称：channels_config.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 11时00分11秒
- *   修改日期：2021年06月06日 星期日 19时46分10秒
+ *   修改日期：2021年06月10日 星期四 17时27分54秒
  *   描    述：
  *
  *================================================================*/
@@ -23,6 +23,9 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif
+
+#define PRICE_ARRAY_SIZE 10
+#define PRICE_SEGMENT_SIZE 48
 
 typedef enum {
 	CHANNEL_TYPE_NONE = 0,
@@ -70,6 +73,8 @@ typedef struct {
 	channel_charger_config_t charger_config;
 	channel_energy_meter_config_t energy_meter_config;
 	CAN_HandleTypeDef *hcan_channel_comm;
+	ADC_HandleTypeDef *cp_ad_adc;
+	uint8_t cp_ad_adc_rank;
 } channel_config_t;
 
 typedef enum {
@@ -110,6 +115,8 @@ typedef struct {
 	voice_config_t voice_config;
 	card_reader_config_t card_reader_config;
 	CAN_HandleTypeDef *hcan_channel_comm;
+	ADC_HandleTypeDef *board_temperature_adc;
+	uint8_t board_temperature_adc_rank;
 } channels_config_t;
 
 char *get_channel_config_channel_type(channel_type_t type);

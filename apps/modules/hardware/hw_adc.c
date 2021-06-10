@@ -6,7 +6,7 @@
  *   文件名称：hw_adc.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月15日 星期六 16时05分03秒
- *   修改日期：2021年05月15日 星期六 16时37分39秒
+ *   修改日期：2021年06月10日 星期四 15时10分01秒
  *   描    述：
  *
  *================================================================*/
@@ -31,9 +31,7 @@ static adc_info_t *alloc_adc_info(ADC_HandleTypeDef *hadc)
 {
 	adc_info_t *adc_info = NULL;
 
-	if(hadc == NULL) {
-		return adc_info;
-	}
+	OS_ASSERT(hadc != NULL);
 
 	adc_info = (adc_info_t *)os_calloc(1, sizeof(adc_info_t));
 	OS_ASSERT(adc_info != NULL);
