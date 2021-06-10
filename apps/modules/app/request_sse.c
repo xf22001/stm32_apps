@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年06月09日 星期三 17时37分27秒
+ *   修改日期：2021年06月10日 星期四 14时00分16秒
  *   描    述：
  *
  *================================================================*/
@@ -597,14 +597,14 @@ static uint8_t get_channels_faults(channels_info_t *channels_info)
 {
 	int i;
 
-	if(test_fault(channels_info->faults) == -1) {
+	if(get_first_fault(channels_info->faults) != -1) {
 		return 1;
 	}
 
 	for(i = 0; i < channels_info->channel_number; i++) {
 		channel_info_t *channel_info = channels_info->channel_info + i;
 
-		if(test_fault(channel_info->faults) == -1) {
+		if(get_first_fault(channel_info->faults) != -1) {
 			return 1;
 		}
 	}
@@ -833,6 +833,7 @@ static uint32_t get_sse_module_state_value(channels_info_t *channels_info)
 		int k = i % 8;
 		cells[j] = set_u8_bits(cells[j], k, 1);
 	}
+
 	return state;
 }
 
@@ -891,24 +892,270 @@ static uint8_t get_channel_device_state(channel_info_t *channel_info)
 static uint8_t get_sse_report_channel_charger_bms_state(channel_info_t *channel_info)
 {
 	uint8_t state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_NONE;
+
 	if(channel_info->channel_config->channel_type == CHANNEL_TYPE_DC) {
-		if((channel_info->state == CHANNEL_STATE_NONE) || (channel_info->state == CHANNEL_STATE_IDLE)) {
-			//todo
-		} else {
+		switch(channel_info->state) {
+			case CHANNEL_STATE_NONE:
+			case CHANNEL_STATE_IDLE: {
+				state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_IDLE;
+			}
+			break;
+
+			case CHANNEL_STATE_STARTING: {
+				state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_STARTING;
+			}
+			break;
+
+			case CHANNEL_STATE_CHARGING: {
+				state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_RUNNING;
+			}
+			break;
+
+			case CHANNEL_STATE_STOPPING: {
+				int ret = get_first_fault(channel_info->faults);
+
+				if(ret == -1) {
+					state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_NONE;
+				} else {
+					switch(ret) {
+						case CHANNEL_FAULT_DC_BMS_GB_BRM_TIMEOUT: {
+							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_BRM_TIMEOUT;
+						}
+						break;
+
+						case CHANNEL_FAULT_DC_BMS_GB_BCP_TIMEOUT: {
+							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_BCP_TIMEOUT;
+						}
+						break;
+
+						case CHANNEL_FAULT_DC_BMS_GB_BRO_READY_TIMEOUT: {
+							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_BRO_READY_TIMEOUT;
+						}
+						break;
+
+						case CHANNEL_FAULT_DC_BMS_GB_BCS_TIMEOUT: {
+							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_BCS_TIMEOUT;
+						}
+						break;
+
+						case CHANNEL_FAULT_DC_BMS_GB_BCL_TIMEOUT: {
+							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_BCL_TIMEOUT;
+						}
+						break;
+
+						case CHANNEL_FAULT_DC_BMS_GB_BST_TIMEOUT: {
+							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_BST_TIMEOUT;
+						}
+						break;
+
+						case CHANNEL_FAULT_DC_BMS_GB_BSD_TIMEOUT: {
+							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_BSD_TIMEOUT;
+						}
+						break;
+
+						case CHANNEL_FAULT_DC_BMS_GB_CRO_NOT_READY_TIMEOUT: {
+							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_CRO_NOT_READY;
+						}
+						break;
+
+						case CHANNEL_FAULT_DC_BMS_GB_INSULATION_CHECK_TIMEOUT: {
+							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_INSULATION_CHECK_TIMEOUT;
+						}
+						break;
+
+						case CHANNEL_FAULT_DC_BMS_GB_INSULATION_FAULT: {
+							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_INSULATION_FAULT;
+						}
+						break;
+
+						case CHANNEL_FAULT_DC_BMS_GB_DISCHARGE_TIMEOUT: {
+							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_DISCHARGE_TIMEOUT;
+						}
+						break;
+
+						case CHANNEL_FAULT_DC_BMS_GB_DISCHARGE_FAULT: {
+							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_DISCHARGE_FAULT;
+						}
+						break;
+
+						case CHANNEL_FAULT_DC_BMS_GB_ADHESION_CHECK_TIMEOUT: {
+							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_ADHESION_CHECK_TIMEOUT;
+						}
+						break;
+
+						case CHANNEL_FAULT_DC_BMS_GB_ADHESION_FAULT: {
+							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_ADHESION_FAULT;
+						}
+						break;
+
+						case CHANNEL_FAULT_DC_BMS_GB_INSULATION_CHECK_WITH_ELECTRIFIED: {
+							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_INSULATION_CHECK_WITH_ELECTRIFIED;
+						}
+						break;
+
+						case CHANNEL_FAULT_DC_BMS_GB_ABNORMAL_VOLTAGE: {
+							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_ABNORMAL_VOLTAGE;
+						}
+						break;
+
+						case CHANNEL_FAULT_AC_CHARGER_CONNECT_STATE_OFF: {
+							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_ABNORMAL_VOLTAGE;
+						}
+						break;
+
+						default: {
+						}
+						break;
+					}
+				}
+			}
+			break;
+
+			default: {
+			}
+			break;
 		}
 	}
+
 	return state;
 }
 
 static uint8_t get_sse_report_channel_charger_bms_stop_reason(channel_info_t *channel_info)
 {
 	uint8_t stop_reason = SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_NONE;
+
 	if(channel_info->channel_config->channel_type == CHANNEL_TYPE_DC) {
-		if((channel_info->state == CHANNEL_STATE_NONE) || (channel_info->state == CHANNEL_STATE_IDLE)) {
-			//todo
-		} else {
+		switch(channel_info->state) {
+			case CHANNEL_STATE_STOPPING: {
+				switch(channel_info->channel_record_item.stop_reason) {
+					case CHANNEL_RECORD_ITEM_STOP_REASON_BMS_SOC_ARCHIEVED: {
+						stop_reason = SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_SOC_ARCHIEVED;
+					}
+					break;
+
+					case CHANNEL_RECORD_ITEM_STOP_REASON_BMS_SOC_NOT_CREDIBLE: {
+						stop_reason = SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_SOC_NOT_CREDIBLE;
+					}
+					break;
+
+					case CHANNEL_RECORD_ITEM_STOP_REASON_BMS_VOLTAGE_ARCHIEVED: {
+						stop_reason = SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_VOLTAGE_ARCHIEVED;
+					}
+					break;
+
+					case CHANNEL_RECORD_ITEM_STOP_REASON_BMS_VOLTAGE_NOT_CREDIBLE: {
+						stop_reason = SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_VOLTAGE_NOT_CREDIBLE;
+					}
+					break;
+
+					case CHANNEL_RECORD_ITEM_STOP_REASON_BMS_SINGLE_VOLTAGE_ARCHIEVED: {
+						stop_reason = SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_SINGLE_VOLTAGE_ARCHIEVED;
+					}
+					break;
+
+					case CHANNEL_RECORD_ITEM_STOP_REASON_BMS_SINGLE_VOLTAGE_NOT_CREDIBLE: {
+						stop_reason = SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_SINGLE_VOLTAGE_NOT_CREDIBLE;
+					}
+					break;
+
+					case CHANNEL_RECORD_ITEM_STOP_REASON_BMS_INSULATION_FAULT: {
+						stop_reason = SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_INSULATION_FAULT;
+					}
+					break;
+
+					case CHANNEL_RECORD_ITEM_STOP_REASON_BMS_INSULATION_NOT_CREDIBLE: {
+						stop_reason = SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_INSULATION_NOT_CREDIBLE;
+					}
+					break;
+
+					case CHANNEL_RECORD_ITEM_STOP_REASON_BMS_CONNECTOR_OVER_TEMPERATURE: {
+						stop_reason = SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_CONNECTOR_OVER_TEMPERATURE;
+					}
+					break;
+
+					case CHANNEL_RECORD_ITEM_STOP_REASON_BMS_CONNECTOR_TEMPERATURE_NOT_CREDIBLE: {
+						stop_reason = SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_CONNECTOR_TEMPERATURE_NOT_CREDIBLE;
+					}
+					break;
+
+					case CHANNEL_RECORD_ITEM_STOP_REASON_BMS_BMS_CONNECTOR_OVER_TEMPERATURE: {
+						stop_reason = SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_BMS_CONNECTOR_OVER_TEMPERATURE;
+					}
+					break;
+
+					case CHANNEL_RECORD_ITEM_STOP_REASON_BMS_BMS_CONNECTOR_TEMPERATURE_NOT_CREDIBLE: {
+						stop_reason = SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_BMS_CONNECTOR_TEMPERATURE_NOT_CREDIBLE;
+					}
+					break;
+
+					case CHANNEL_RECORD_ITEM_STOP_REASON_BMS_CONNECTOR_FAULT: {
+						stop_reason = SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_CONNECTOR_FAULT;
+					}
+					break;
+
+					case CHANNEL_RECORD_ITEM_STOP_REASON_BMS_CONNECTOR_NOT_CREDIBLE: {
+						stop_reason = SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_CONNECTOR_NOT_CREDIBLE;
+					}
+					break;
+
+					case CHANNEL_RECORD_ITEM_STOP_REASON_BMS_BATTERY_OVER_TEMPERATURE: {
+						stop_reason = SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_BATTERY_OVER_TEMPERATURE;
+					}
+					break;
+
+					case CHANNEL_RECORD_ITEM_STOP_REASON_BMS_BATTERY_TEMPERATURE_NOT_CREDIBLE: {
+						stop_reason = SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_BATTERY_TEMPERATURE_NOT_CREDIBLE;
+					}
+					break;
+
+					case CHANNEL_RECORD_ITEM_STOP_REASON_BMS_OTHER_FAULT: {
+						stop_reason = SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_OTHER_FAULT;
+					}
+					break;
+
+					case CHANNEL_RECORD_ITEM_STOP_REASON_BMS_OTHER_FAULT_NOT_CREDIBLE: {
+						stop_reason = SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_OTHER_FAULT_NOT_CREDIBLE;
+					}
+					break;
+
+					case CHANNEL_RECORD_ITEM_STOP_REASON_BMS_OVER_CURRENT: {
+						stop_reason = SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_OVER_CURRENT;
+					}
+					break;
+
+					case CHANNEL_RECORD_ITEM_STOP_REASON_BMS_CURRENT_NOT_CREDIBLE: {
+						stop_reason = SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_CURRENT_NOT_CREDIBLE;
+					}
+					break;
+
+					case CHANNEL_RECORD_ITEM_STOP_REASON_BMS_ABNORMAL_VOLTAGE: {
+						stop_reason = SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_ABNORMAL_VOLTAGE;
+					}
+					break;
+
+					case CHANNEL_RECORD_ITEM_STOP_REASON_BMS_ABNORMAL_VOLTAGE_NOT_CREDIBLE: {
+						stop_reason = SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_ABNORMAL_VOLTAGE_NOT_CREDIBLE;
+					}
+					break;
+
+					case CHANNEL_RECORD_ITEM_STOP_REASON_BMS_BMS_OTHER_FAULT: {
+						stop_reason = SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_BMS_OTHER_FAULT;
+					}
+					break;
+
+					default: {
+					}
+					break;
+				}
+			}
+			break;
+
+			default: {
+			}
+			break;
 		}
 	}
+
 	return stop_reason;
 }
 
