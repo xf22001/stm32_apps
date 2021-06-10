@@ -6,7 +6,7 @@
  *   文件名称：channels.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 09时26分31秒
- *   修改日期：2021年06月07日 星期一 09时28分09秒
+ *   修改日期：2021年06月10日 星期四 12时56分57秒
  *   描    述：
  *
  *================================================================*/
@@ -43,14 +43,9 @@ char *get_channel_event_type_des(channel_event_type_t type)
 	return des;
 }
 
-int set_fault(bitmap_t *faults, int fault)
+int set_fault(bitmap_t *faults, int fault, uint8_t v)
 {
-	return set_bitmap_value(faults, fault, 1);
-}
-
-int reset_fault(bitmap_t *faults, int fault)
-{
-	return set_bitmap_value(faults, fault, 0);
+	return set_bitmap_value(faults, fault, v);
 }
 
 int get_fault(bitmap_t *faults, int fault)
@@ -60,19 +55,10 @@ int get_fault(bitmap_t *faults, int fault)
 
 int get_first_fault(bitmap_t *faults)
 {
-	return get_first_value_index(faults, 1);
-}
+	int ret = get_first_value_index(faults, 1);
 
-int test_fault(bitmap_t *faults)
-{
-	int ret = 0;
-	int i;
-
-	for(i = 0; i < faults->cell_size; i++) {
-		if(faults->data[i] != 0) {
-			ret = -1;
-			break;
-		}
+	if(ret >= faults->size) {
+		ret = -1;
 	}
 
 	return ret;

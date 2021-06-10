@@ -6,7 +6,7 @@
  *   文件名称：channel_handler_ac.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月11日 星期二 09时20分53秒
- *   修改日期：2021年06月02日 星期三 16时29分33秒
+ *   修改日期：2021年06月10日 星期四 12时58分36秒
  *   描    述：
  *
  *================================================================*/
@@ -50,7 +50,7 @@ static void start(void *_channel_info, void *__channel_info)
 	if(channel_info->charger_connect_state == 1) {
 		set_channel_request_state(channel_info, CHANNEL_STATE_STARTING);
 	} else {
-		set_fault(channel_info->faults, CHANNEL_FAULT_AC_CHARGER_CONNECT_STATE_OFF);
+		set_fault(channel_info->faults, CHANNEL_FAULT_AC_CHARGER_CONNECT_STATE_OFF, 1);
 		set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
 	}
 }
@@ -123,7 +123,7 @@ static void starting(void *_channel_info, void *__channel_info)
 
 		case 1: {
 			if(ticks_duration(ticks, channel_handler_ctx->state_stamps) >= 5 * 1000) {
-				set_fault(channel_info->faults, CHANNEL_FAULT_AC_CHARGER_CC1_READY_1_TIMEOUT);
+				set_fault(channel_info->faults, CHANNEL_FAULT_AC_CHARGER_CC1_READY_1_TIMEOUT, 1);
 				set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
 			} else {
 				if(channel_handler_ctx->cc1_ready == 1) {
@@ -159,7 +159,7 @@ static void stopping(void *_channel_info, void *__channel_info)
 
 		case 1: {
 			if(ticks_duration(ticks, channel_handler_ctx->state_stamps) >= 5 * 1000) {
-				set_fault(channel_info->faults, CHANNEL_FAULT_AC_CHARGER_CC1_READY_0_TIMEOUT);
+				set_fault(channel_info->faults, CHANNEL_FAULT_AC_CHARGER_CC1_READY_0_TIMEOUT, 1);
 				output_relay_off(channel_info);
 				channel_handler_ctx->state = 2;
 			} else {

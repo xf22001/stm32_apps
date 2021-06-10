@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2021年06月09日 星期三 17时15分45秒
+ *   修改日期：2021年06月10日 星期四 12时57分21秒
  *   描    述：
  *
  *================================================================*/
@@ -217,11 +217,9 @@ typedef struct {
 } channels_info_t;
 
 char *get_channel_event_type_des(channel_event_type_t type);
-int set_fault(bitmap_t *faults, int fault);
-int reset_fault(bitmap_t *faults, int fault);
+int set_fault(bitmap_t *faults, int fault, uint8_t v);
 int get_fault(bitmap_t *faults, int fault);
 int get_first_fault(bitmap_t *faults);
-int test_fault(bitmap_t *faults);
 int send_channels_event(channels_info_t *channels_info, channels_event_t *channels_event, uint32_t timeout);
 channels_info_t *start_channels(void);
 
