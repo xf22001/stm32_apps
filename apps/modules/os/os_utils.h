@@ -6,7 +6,7 @@
  *   文件名称：os_utils.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分36秒
- *   修改日期：2021年06月04日 星期五 14时25分14秒
+ *   修改日期：2021年06月10日 星期四 09时10分19秒
  *   描    述：
  *
  *================================================================*/
@@ -49,6 +49,16 @@ typedef union {
 	uint16_bytes_t s;
 	uint16_t v;
 } u_uint16_bytes_t;
+
+typedef struct {
+	uint8_t l : 4;
+	uint8_t h : 4;
+} uint8_lh_t;
+
+typedef union {
+	uint8_lh_t s;
+	uint8_t v;
+} u_uint8_lh_t;
 
 typedef struct {
 	uint8_t l : 4;
@@ -394,6 +404,32 @@ static inline uint8_t get_u8_bits(uint8_t v, uint8_t offset)
 	}
 
 	return value;
+}
+
+static inline uint32_t u8_bin(uint8_t v)
+{
+	uint32_t des = 0;
+	u_uint32_bytes_t *u_uint32_bytes = (u_uint32_bytes_t *)&des;
+	u_uint8_lh_t *u_uint8_lh;
+	u_uint8_bits_t *u_uint8_bits = (u_uint8_bits_t *)&v;
+
+	u_uint8_lh = (u_uint8_lh_t *)&u_uint32_bytes->s.byte3;
+	u_uint8_lh->s.h = u_uint8_bits->s.bit7;
+	u_uint8_lh->s.l = u_uint8_bits->s.bit6;
+
+	u_uint8_lh = (u_uint8_lh_t *)&u_uint32_bytes->s.byte2;
+	u_uint8_lh->s.h = u_uint8_bits->s.bit5;
+	u_uint8_lh->s.l = u_uint8_bits->s.bit4;
+
+	u_uint8_lh = (u_uint8_lh_t *)&u_uint32_bytes->s.byte1;
+	u_uint8_lh->s.h = u_uint8_bits->s.bit3;
+	u_uint8_lh->s.l = u_uint8_bits->s.bit2;
+
+	u_uint8_lh = (u_uint8_lh_t *)&u_uint32_bytes->s.byte0;
+	u_uint8_lh->s.h = u_uint8_bits->s.bit1;
+	u_uint8_lh->s.l = u_uint8_bits->s.bit0;
+
+	return des;
 }
 
 #define add_des_case(e) \
