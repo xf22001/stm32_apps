@@ -6,7 +6,7 @@
  *   文件名称：channel_handler_ac.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月11日 星期二 09时20分53秒
- *   修改日期：2021年06月10日 星期四 16时17分50秒
+ *   修改日期：2021年06月11日 星期五 11时44分34秒
  *   描    述：
  *
  *================================================================*/
@@ -31,7 +31,6 @@ typedef struct {
 	uint8_t state;
 	uint32_t state_stamps;
 
-	uint8_t cc1_ready;
 } channel_handler_ctx_t;
 
 typedef enum {
@@ -128,7 +127,7 @@ static void starting(void *_channel_info, void *__channel_info)
 				set_fault(channel_info->faults, CHANNEL_FAULT_AC_CHARGER_CC1_READY_1_TIMEOUT, 1);
 				set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
 			} else {
-				if(channel_handler_ctx->cc1_ready == 1) {
+				if(channel_info->vehicle_relay_state == 1) {
 					output_relay_on(channel_info);
 					set_channel_request_state(channel_info, CHANNEL_STATE_CHARGING);
 				}
@@ -165,7 +164,7 @@ static void stopping(void *_channel_info, void *__channel_info)
 				output_relay_off(channel_info);
 				channel_handler_ctx->state = 2;
 			} else {
-				if(channel_handler_ctx->cc1_ready == 0) {
+				if(channel_info->vehicle_relay_state == 0) {
 					output_relay_off(channel_info);
 					channel_handler_ctx->state = 2;
 				}
@@ -210,7 +209,6 @@ static void state_changed(void *_channel_info, void *_pre_state)
 void handle_charger_connect_state(channel_info_t *channel_info)
 {
 	adc_info_t *adc_info = get_or_alloc_adc_info(channel_info->channel_config->cp_ad_adc);
-	channel_handler_ctx_t *channel_handler_ctx = (channel_handler_ctx_t *)channel_info->channel_handler_ctx;
 	uint16_t cp_ad_voltage = 0;
 	uint8_t charger_connect_state;
 	uint8_t cc1_ready;
@@ -243,11 +241,11 @@ void handle_charger_connect_state(channel_info_t *channel_info)
 		do_callback_chain(channel_info->charger_connect_changed_chain, channel_info);
 	}
 
-	if(channel_handler_ctx->cc1_ready != cc1_ready) {
-		channel_handler_ctx->cc1_ready = cc1_ready;
+	if(channel_info->vehicle_relay_state != cc1_ready) {
+		channel_info->vehicle_relay_state = cc1_ready;
 	}
 
-	debug("channel %d charger_connect_state:%d, cc1_ready:%d", channel_info->channel_id, channel_info->charger_connect_state, channel_handler_ctx->cc1_ready);
+	debug("channel %d charger_connect_state:%d, cc1_ready:%d", channel_info->channel_id, channel_info->charger_connect_state, cc1_ready);
 }
 
 static void handle_channel_handler_periodic(void *_channel_info, void *_channels_info)

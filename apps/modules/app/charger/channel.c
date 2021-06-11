@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分12秒
- *   修改日期：2021年06月11日 星期五 09时25分06秒
+ *   修改日期：2021年06月11日 星期五 11时42分11秒
  *   描    述：
  *
  *================================================================*/
@@ -159,23 +159,49 @@ void handle_channel_amount(channel_info_t *channel_info)
 {
 	channels_info_t *channels_info = (channels_info_t *)channel_info->channels_info;
 	time_t ts = get_time();
+	uint32_t price;
+	uint32_t delta_energy;
 
+	if(channel_info->state != CHANNEL_STATE_CHARGING) {
+		return;
+	}
+
+	price = get_current_price(channels_info, ts);
+	delta_energy = channel_info->total_energy - channel_info->channel_record_item.total_energy;
+
+	//todo clear
+	channel_info->channel_record_item.energy_seg[get_price_seg_index(ts)] += delta_energy;
+	channel_info->channel_record_item.energy += delta_energy;
+	channel_info->channel_record_item.amount += delta_energy * price;
+
+	channel_info->channel_record_item.total_energy = channel_info->total_energy;
+
+	if(channel_info->channel_record_item.amount >= channel_info->channel_record_item.account_balance) {
+		//stop_reason
+		set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
+	}
+}
+
+static void handle_channel_stop_amount(channel_info_t *channel_info)
+{
+	if(channel_info->request_state != CHANNEL_STATE_NONE) {
+		return;
+	}
+
+	if(channel_info->channel_record_item.amount >= channel_info->channel_record_item.account_balance) {
+		OS_ASSERT(channel_info->channel_record_item.stop_reason == CHANNEL_RECORD_ITEM_STOP_REASON_NONE);
+		channel_info->channel_record_item.stop_reason = CHANNEL_RECORD_ITEM_STOP_REASON_AMOUNT;
+		set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
+	}
+}
+
+static void handle_channel_stop(channel_info_t *channel_info)
+{
 	switch(channel_info->state) {
+		case CHANNEL_STATE_START:
+		case CHANNEL_STATE_STARTING:
 		case CHANNEL_STATE_CHARGING: {
-			uint32_t price = get_current_price(channels_info, ts);
-			uint32_t delta_energy = channel_info->total_energy - channel_info->channel_record_item.total_energy;
-
-			//todo clear
-			channel_info->channel_record_item.energy_seg[get_price_seg_index(ts)] += delta_energy;
-			channel_info->channel_record_item.energy += delta_energy;
-			channel_info->channel_record_item.amount += delta_energy * price;
-
-			channel_info->channel_record_item.total_energy = channel_info->total_energy;
-
-			if(channel_info->channel_record_item.amount >= channel_info->channel_record_item.account_balance) {
-				//stop_reason
-				set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
-			}
+			handle_channel_stop_amount(channel_info);
 		}
 		break;
 
@@ -192,6 +218,7 @@ static void handle_channel_periodic(void *_channel_info, void *chain_ctx)
 	//debug("channel_info %d periodic!", channel_info->channel_id);
 
 	handle_channel_amount(channel_info);
+	handle_channel_stop(channel_info);
 	handle_channel_state(channel_info);
 }
 
