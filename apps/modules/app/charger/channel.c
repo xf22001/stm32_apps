@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分12秒
- *   修改日期：2021年06月10日 星期四 17时28分25秒
+ *   修改日期：2021年06月11日 星期五 09时25分06秒
  *   描    述：
  *
  *================================================================*/
@@ -305,9 +305,14 @@ static int channel_init(channel_info_t *channel_info)
 static void handle_channels_common_periodic(void *_channels_info, void *__channels_info)
 {
 	channels_info_t *channels_info = (channels_info_t *)_channels_info;
-	adc_info_t *adc_info = get_or_alloc_adc_info(channels_info->channels_config->board_temperature_adc);
+	adc_info_t *adc_info;
 	uint16_t temperature_ad;
 
+	if(channels_info->channels_config->board_temperature_adc == NULL) {
+		return;
+	}
+
+	adc_info = get_or_alloc_adc_info(channels_info->channels_config->board_temperature_adc);
 	OS_ASSERT(adc_info != NULL);
 
 	temperature_ad = get_adc_value(adc_info, channels_info->channels_config->board_temperature_adc_rank);
