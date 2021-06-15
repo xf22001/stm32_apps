@@ -6,7 +6,7 @@
  *   文件名称：power_modules.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时34分29秒
- *   修改日期：2021年05月25日 星期二 11时25分40秒
+ *   修改日期：2021年06月15日 星期二 09时34分13秒
  *   描    述：
  *
  *================================================================*/
@@ -74,9 +74,14 @@ char *get_power_modules_type_des(power_module_type_t type)
 
 	switch(type) {
 			add_des_case(POWER_MODULE_TYPE_UNKNOW);
+			add_des_case(POWER_MODULE_TYPE_PSEUDO);
 			add_des_case(POWER_MODULE_TYPE_HUAWEI);
 			add_des_case(POWER_MODULE_TYPE_INCREASE);
-			add_des_case(POWER_MODULE_TYPE_PSEUDO);
+			add_des_case(POWER_MODULE_TYPE_INFY);
+			add_des_case(POWER_MODULE_TYPE_STATEGRID);
+			add_des_case(POWER_MODULE_TYPE_YYLN);
+			add_des_case(POWER_MODULE_TYPE_WINLINE);
+			add_des_case(POWER_MODULE_TYPE_ZTE);
 
 		default: {
 		}

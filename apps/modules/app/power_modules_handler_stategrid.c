@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_stategrid.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月16日 星期五 16时31分34秒
- *   修改日期：2021年06月03日 星期四 16时36分21秒
+ *   修改日期：2021年06月15日 星期二 11时25分25秒
  *   描    述：
  *
  *================================================================*/
@@ -140,6 +140,13 @@ static void _set_out_voltage_current(power_modules_info_t *power_modules_info, i
 	if(power_module_info->power_module_status.poweroff == 0) {
 		power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_COMMAND_REMOTE_CONTROL].state = COMMAND_STATE_REQUEST;
 	}
+}
+
+static void _set_poweroff(power_modules_info_t *power_modules_info, int module_id)
+{
+	power_module_info_t *power_module_info = power_modules_info->power_module_info + module_id;
+
+	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_COMMAND_REMOTE_CONTROL].state = COMMAND_STATE_REQUEST;
 }
 
 static int request_remote_control(power_modules_info_t *power_modules_info, int module_id)
@@ -400,37 +407,38 @@ static stategrid_data_ctx_t *stategrid_data_ctx = NULL;
 
 static void _init(power_modules_info_t *power_modules_info)
 {
+	int module_id;
+
 	if(stategrid_data_ctx == NULL) {
 		stategrid_data_ctx = os_calloc(power_modules_info->power_module_number, sizeof(stategrid_data_ctx_t));
 		OS_ASSERT(stategrid_data_ctx != NULL);
 	}
-}
-
-static void _set_poweroff(power_modules_info_t *power_modules_info, int module_id)
-{
-	uint16_t crc;
-	stategrid_set_group_mode_t *stategrid_set_group_mode;
 
 	OS_ASSERT(stategrid_data_ctx != NULL);
 
-	stategrid_set_group_mode = &stategrid_data_ctx[module_id].stategrid_set_group_mode_ctx.set_group_mode_request;
+	for(module_id = 0; module_id < power_modules_info->power_module_number; module_id++) {
+		stategrid_set_group_mode_t *stategrid_set_group_mode = &stategrid_data_ctx[module_id].stategrid_set_group_mode_ctx.set_group_mode_request;
+		uint16_t crc;
+		stategrid_data_ctx[module_id].stategrid_set_group_mode_ctx.request_index = 0;
 
-	stategrid_set_group_mode->header.total_frame = (sizeof(stategrid_set_group_mode_t) + 7 - 1) / 7;
-	stategrid_set_group_mode->header.len_lo = get_u8_l_from_u16(sizeof(stategrid_set_group_mode_t));
-	stategrid_set_group_mode->header.len_hi = get_u8_h_from_u16(sizeof(stategrid_set_group_mode_t));
+		stategrid_set_group_mode->header.total_frame = (sizeof(stategrid_set_group_mode_t) + 7 - 1) / 7;
+		stategrid_set_group_mode->header.len_lo = get_u8_l_from_u16(sizeof(stategrid_set_group_mode_t));
+		stategrid_set_group_mode->header.len_hi = get_u8_h_from_u16(sizeof(stategrid_set_group_mode_t));
 
-	stategrid_set_group_mode->interface = 0;
-	stategrid_set_group_mode->type = 0x04;
-	stategrid_set_group_mode->addr = 0x01;
-	stategrid_set_group_mode->serial_lo = get_u8_l_from_u16(13);
-	stategrid_set_group_mode->serial_hi = get_u8_h_from_u16(13);
-	stategrid_set_group_mode->result = 0x00;
-	stategrid_set_group_mode->group_mode = 0x02;
-	crc = sum_crc16(stategrid_set_group_mode, sizeof(stategrid_set_group_mode_t) - sizeof(stategrid_multi_frame_data_crc_t));
-	stategrid_set_group_mode->crc.crc_lo = get_u8_l_from_u16(crc);
-	stategrid_set_group_mode->crc.crc_hi = get_u8_h_from_u16(crc);
+		stategrid_set_group_mode->interface = 0;
+		stategrid_set_group_mode->type = 0x04;
+		stategrid_set_group_mode->addr = module_id;
+		stategrid_set_group_mode->serial_lo = get_u8_l_from_u16(13);
+		stategrid_set_group_mode->serial_hi = get_u8_h_from_u16(13);
+		stategrid_set_group_mode->result = 0x00;
+		stategrid_set_group_mode->group_mode = 0x02;
+		crc = sum_crc16(stategrid_set_group_mode, sizeof(stategrid_set_group_mode_t) - sizeof(stategrid_multi_frame_data_crc_t));
+		stategrid_set_group_mode->crc.crc_lo = get_u8_l_from_u16(crc);
+		stategrid_set_group_mode->crc.crc_hi = get_u8_h_from_u16(crc);
 
-	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_COMMAND_CONFIG].state = COMMAND_STATE_REQUEST;
+		power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_COMMAND_CONFIG].state = COMMAND_STATE_REQUEST;
+	}
+
 }
 
 static int request_config(power_modules_info_t *power_modules_info, int module_id)
@@ -513,8 +521,6 @@ static int response_config(power_modules_info_t *power_modules_info, int module_
 	}
 
 	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_COMMAND_CONFIG].state = COMMAND_STATE_IDLE;
-
-	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_COMMAND_REMOTE_CONTROL].state = COMMAND_STATE_REQUEST;
 
 	ret = 0;
 

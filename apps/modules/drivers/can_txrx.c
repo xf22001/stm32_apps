@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时07分55秒
- *   修改日期：2021年04月14日 星期三 14时29分31秒
+ *   修改日期：2021年06月15日 星期二 15时27分28秒
  *   描    述：
  *
  *================================================================*/
@@ -39,9 +39,9 @@ static void free_can_info(can_info_t *can_info)
 	os_free(can_info);
 }
 
-static void receive_init(void *ctx)
+static void receive_init(void *_can_info)
 {
-	can_info_t *can_info = (can_info_t *)ctx;
+	can_info_t *can_info = (can_info_t *)_can_info;
 	CAN_FilterTypeDef filter;
 	HAL_StatusTypeDef status;
 	u_can_filter_id_t id;

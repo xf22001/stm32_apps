@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时29分22秒
- *   修改日期：2021年01月30日 星期六 08时05分00秒
+ *   修改日期：2021年06月15日 星期二 15时27分05秒
  *   描    述：
  *
  *================================================================*/
@@ -69,7 +69,7 @@ typedef struct {
 } can_rx_msg_t;
 
 typedef void (*can_hal_init_t)(void);
-typedef void (*receive_init_t)(void *ctx);
+typedef void (*receive_init_t)(void *_can_info);
 #define CAN_RX_MSG_BUFFER_SIZE 16
 
 typedef struct {
