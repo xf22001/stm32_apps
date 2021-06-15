@@ -6,7 +6,7 @@
  *   文件名称：can_config.h
  *   创 建 者：肖飞
  *   创建日期：2020年04月17日 星期五 09时20分02秒
- *   修改日期：2020年07月13日 星期一 14时01分09秒
+ *   修改日期：2021年06月15日 星期二 17时31分15秒
  *   描    述：
  *
  *================================================================*/
@@ -24,9 +24,18 @@ extern "C"
 }
 #endif
 
+typedef enum {
+	CAN_TYPE_CAN = 0,
+	CAN_TYPE_SPICAN,
+} can_type_t;
+
 typedef struct {
-	CAN_HandleTypeDef *hcan;
-	CAN_HandleTypeDef *config_can;
+	can_type_t type;
+	void *hcan;
+	void *config_can;
+
+	uint32_t tx_fifo;
+
 	uint32_t filter_number;
 	uint32_t filter_fifo;
 
@@ -58,6 +67,6 @@ typedef union {
 	uint32_t v;
 } u_can_filter_id_t;
 
-can_config_t *get_can_config(CAN_HandleTypeDef *hcan);
+can_config_t *get_can_config(void *hcan);
 
 #endif //_CAN_CONFIG_H
