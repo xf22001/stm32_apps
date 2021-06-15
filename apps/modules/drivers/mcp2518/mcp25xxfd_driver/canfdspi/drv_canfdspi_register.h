@@ -691,7 +691,7 @@ typedef union _REG_IOCON {
 typedef union _REG_CRC {
 
     struct {
-        uint32_t CRC_mcp2518 : 16;
+        uint32_t CRC_MCP2518 : 16;
         uint32_t CRCERRIF : 1;
         uint32_t FERRIF : 1;
         uint32_t unimplemented1 : 6;

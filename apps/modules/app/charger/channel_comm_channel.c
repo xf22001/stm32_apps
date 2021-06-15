@@ -6,7 +6,7 @@
  *   文件名称：channel_comm_channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年06月06日 星期日 15时02分49秒
- *   修改日期：2021年06月07日 星期一 10时47分16秒
+ *   修改日期：2021年06月15日 星期二 20时25分34秒
  *   描    述：
  *
  *================================================================*/
@@ -446,7 +446,7 @@ int start_channel_comm_channel(channel_info_t *channel_info)
 
 	debug("can_info->can_config->filter_id:%08x", can_info->can_config->filter_id);
 	debug("can_info->can_config->filter_mask_id:%08x", can_info->can_config->filter_mask_id);
-	can_info->receive_init(can_info->hcan);
+	can_init(can_info->hcan);
 	channel_comm_channel_info->can_info = can_info;
 
 	can_data_task_info = get_or_alloc_can_data_task_info(channel_comm_channel_info->can_info->hcan);

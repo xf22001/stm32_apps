@@ -47,9 +47,6 @@
 #include "drv_canfdspi_api.h"
 #include "drv_canfdspi_register.h"
 #include "drv_canfdspi_defines.h"
-#include "mcp2518_spi.h"
-
-
 
 // *****************************************************************************
 // *****************************************************************************
@@ -2268,7 +2265,7 @@ int8_t DRV_CANFDSPI_BusDiagnosticsGet(CANFDSPI_MODULE_ID index,
     CAN_BUS_DIAGNOSTIC b;
     b.word[0] = w[0];
     b.word[1] = w[1] & 0x0000ffff;
-//    b.word[2] = (w[1] >> 16) & 0x0000ffff;
+    b.word[2] = (w[1] >> 16) & 0x0000ffff;
     *bd = b;
 
     return spiTransferError;
@@ -2907,7 +2904,7 @@ int8_t DRV_CANFDSPI_BitTimeConfigureNominal40MHz(CANFDSPI_MODULE_ID index,
 
         default:
             return -1;
-//            break;
+            break;
     }
 
     // Write Bit time registers
@@ -3085,7 +3082,7 @@ int8_t DRV_CANFDSPI_BitTimeConfigureData40MHz(CANFDSPI_MODULE_ID index,
 
         default:
             return -1;
-//            break;
+            break;
     }
 
     // Write Bit time registers
@@ -3163,7 +3160,7 @@ int8_t DRV_CANFDSPI_BitTimeConfigureNominal20MHz(CANFDSPI_MODULE_ID index,
 
         default:
             return -1;
-//            break;
+            break;
     }
 
     // Write Bit time registers
@@ -3238,7 +3235,7 @@ int8_t DRV_CANFDSPI_BitTimeConfigureData20MHz(CANFDSPI_MODULE_ID index,
         case CAN_1000K_8M:
             //qDebug("Data Bitrate not feasible with this clock!");
             return -1;
-//            break;
+            break;
 
         case CAN_250K_500K:
         case CAN_125K_500K:
@@ -3291,7 +3288,7 @@ int8_t DRV_CANFDSPI_BitTimeConfigureData20MHz(CANFDSPI_MODULE_ID index,
         case CAN_250K_3M:
             //qDebug("Data Bitrate not feasible with this clock!");
             return -1;
-//            break;
+            break;
         case CAN_250K_4M:
             // Data BR
             ciDbtcfg.bF.BRP = 0;
@@ -3305,7 +3302,7 @@ int8_t DRV_CANFDSPI_BitTimeConfigureData20MHz(CANFDSPI_MODULE_ID index,
 
         default:
             return -1;
-//            break;
+            break;
     }
 
     // Write Bit time registers
@@ -3383,7 +3380,7 @@ int8_t DRV_CANFDSPI_BitTimeConfigureNominal10MHz(CANFDSPI_MODULE_ID index,
 
         default:
             return -1;
-//            break;
+            break;
     }
 
     // Write Bit time registers
@@ -3440,7 +3437,7 @@ int8_t DRV_CANFDSPI_BitTimeConfigureData10MHz(CANFDSPI_MODULE_ID index,
         case CAN_1000K_8M:
             //qDebug("Data Bitrate not feasible with this clock!");
             return -1;
-//            break;
+            break;
 
         case CAN_250K_500K:
         case CAN_125K_500K:
@@ -3475,7 +3472,7 @@ int8_t DRV_CANFDSPI_BitTimeConfigureData10MHz(CANFDSPI_MODULE_ID index,
         case CAN_250K_1M5:
             //qDebug("Data Bitrate not feasible with this clock!");
             return -1;
-//            break;
+            break;
         case CAN_250K_2M:
             ciDbtcfg.bF.BRP = 0;
             ciDbtcfg.bF.TSEG1 = 2;
@@ -3489,11 +3486,11 @@ int8_t DRV_CANFDSPI_BitTimeConfigureData10MHz(CANFDSPI_MODULE_ID index,
         case CAN_250K_4M:
             //qDebug("Data Bitrate not feasible with this clock!");
             return -1;
-//            break;
+            break;
 
         default:
             return -1;
-//            break;
+            break;
     }
 
     // Write Bit time registers
@@ -3715,7 +3712,7 @@ int8_t DRV_CANFDSPI_GpioPinSet(CANFDSPI_MODULE_ID index,
             break;
         default:
             return -1;
-//            break;
+            break;
     }
 
     // Write
@@ -3745,15 +3742,15 @@ int8_t DRV_CANFDSPI_GpioPinRead(CANFDSPI_MODULE_ID index,
 
     // Update data
     switch (pos) {
-        case GPIO_PIN_0:
+        case GPIO_PIN_0_MCP2518:
             *state = (GPIO_PIN_STATE) iocon.bF.GPIO0;
             break;
-        case GPIO_PIN_1:
+        case GPIO_PIN_1_MCP2518:
             *state = (GPIO_PIN_STATE) iocon.bF.GPIO1;
             break;
         default:
             return -1;
-//            break;
+            break;
     }
 
     return spiTransferError;

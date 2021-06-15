@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时29分22秒
- *   修改日期：2021年06月15日 星期二 15时27分05秒
+ *   修改日期：2021年06月15日 星期二 20时26分17秒
  *   描    述：
  *
  *================================================================*/
@@ -68,35 +68,41 @@ typedef struct {
                              This parameter must be a number between Min_Data = 0 and Max_Data = 0xFF */
 } can_rx_msg_t;
 
-typedef void (*can_hal_init_t)(void);
-typedef void (*receive_init_t)(void *_can_info);
+typedef void (*can_init_t)(void *_can_info);
+typedef int (*can_tx_data_t)(void *_can_info, can_tx_msg_t *msg, uint32_t timeout);
+typedef int (*can_rx_data_t)(void *_can_info, uint32_t timeout);
+
+typedef struct {
+	can_type_t type;
+	can_init_t can_init;
+	can_tx_data_t can_tx_data;
+	can_rx_data_t can_rx_data;
+} can_ops_t;
+
 #define CAN_RX_MSG_BUFFER_SIZE 16
 
 typedef struct {
-	CAN_HandleTypeDef *hcan;
-	CAN_HandleTypeDef *config_can;
+	void *hcan;
+	void *config_can;
 	os_mutex_t hcan_mutex;
 	os_signal_t tx_msg_q;
 	os_signal_t rx_msg_q;
 
 	uint32_t receive_fifo;
-	can_config_t *can_config;
-
-	can_hal_init_t can_hal_init;
-	receive_init_t receive_init;
 
 	can_rx_msg_t rx_msg[CAN_RX_MSG_BUFFER_SIZE];
 	uint8_t rx_msg_pos;
 	uint8_t rx_msg_r;
 	uint8_t rx_msg_w;
 	uint32_t tx_error;
+
+	can_config_t *can_config;
+	can_ops_t *can_ops;
 } can_info_t;
 
-can_info_t *get_or_alloc_can_info(CAN_HandleTypeDef *hcan);
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan);
-void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan);
+can_info_t *get_or_alloc_can_info(void *hcan);
+void can_init(can_info_t *can_info);
 int can_tx_data(can_info_t *can_info, can_tx_msg_t *msg, uint32_t timeout);
 int can_rx_data(can_info_t *can_info, uint32_t timeout);
-void set_can_info_hal_init(can_info_t *can_info, can_hal_init_t can_hal_init);
 can_rx_msg_t *can_get_msg(can_info_t *can_info);
 #endif //_CAN_TXRX_H
