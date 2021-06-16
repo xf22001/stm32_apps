@@ -6,7 +6,7 @@
  *   文件名称：can_ops_spi_can.c
  *   创 建 者：肖飞
  *   创建日期：2021年06月15日 星期二 20时36分26秒
- *   修改日期：2021年06月16日 星期三 11时48分18秒
+ *   修改日期：2021年06月16日 星期三 12时43分24秒
  *   描    述：
  *
  *================================================================*/
@@ -33,6 +33,17 @@ int8_t DRV_SPI_TransferData(uint8_t spiSlaveDeviceIndex, uint8_t *SpiTxData, uin
 	HAL_GPIO_WritePin(can_info->can_config->spi_cs_port, can_info->can_config->spi_cs_pin, GPIO_PIN_SET);
 
 	return ret;
+}
+
+void spi_can_isr(void *hcan)
+{
+	can_info_t *can_info = get_or_alloc_can_info(hcan);
+
+	if(can_info == NULL) {
+		return;
+	}
+
+	signal_send(can_info->rx_msg_q, 0, 0);
 }
 
 static void _can_init(void *_can_info)
@@ -177,7 +188,6 @@ static int _can_tx_data(void *_can_info, can_tx_msg_t *msg, uint32_t timeout)
 	return ret;
 }
 
-
 static int _can_rx_data(void *_can_info, uint32_t timeout)
 {
 	int ret = -1;
@@ -186,6 +196,7 @@ static int _can_rx_data(void *_can_info, uint32_t timeout)
 	if(can_info->rx_msg_r == can_info->rx_msg_w) {//没有数据
 		CAN_RX_MSGOBJ rxObj;
 		CAN_RX_FIFO_EVENT event = CAN_RX_FIFO_NO_EVENT;
+
 		ret = signal_wait(can_info->rx_msg_q, NULL, timeout);
 
 		if(ret == 0) {
@@ -201,10 +212,11 @@ static int _can_rx_data(void *_can_info, uint32_t timeout)
 				event = CAN_RX_FIFO_NO_EVENT;
 
 				rx_msg = &can_info->rx_msg[can_info->rx_msg_w];
-				can_info->rx_msg_w++;
 
-				if(can_info->rx_msg_w >= CAN_RX_MSG_BUFFER_SIZE) {
+				if(can_info->rx_msg_w + 1 >= CAN_RX_MSG_BUFFER_SIZE) {
 					can_info->rx_msg_w = 0;
+				} else {
+					can_info->rx_msg_w++;
 				}
 
 				// Get message
@@ -226,6 +238,12 @@ static int _can_rx_data(void *_can_info, uint32_t timeout)
 
 					rx_msg->DLC = rxObj.bF.ctrl.DLC;
 					ret = 0;
+				} else {
+					if(can_info->rx_msg_w == 0) {
+						can_info->rx_msg_w = CAN_RX_MSG_BUFFER_SIZE - 1;
+					} else {
+						can_info->rx_msg_w--;
+					}
 				}
 
 				if(DRV_CANFDSPI_ReceiveChannelEventGet(can_info->can_id, can_info->can_config->filter_fifo, &event) != 0) {

@@ -1,12 +1,12 @@
 
 
 /*================================================================
- *   
- *   
+ *
+ *
  *   文件名称：can_ops_hal.c
  *   创 建 者：肖飞
  *   创建日期：2021年06月15日 星期二 19时47分17秒
- *   修改日期：2021年06月15日 星期二 20时36分55秒
+ *   修改日期：2021年06月16日 星期三 12时31分31秒
  *   描    述：
  *
  *================================================================*/
@@ -78,10 +78,11 @@ static void can_rxfifo_pending_callback(CAN_HandleTypeDef *hcan)
 	}
 
 	rx_msg = &can_info->rx_msg[can_info->rx_msg_w];
-	can_info->rx_msg_w++;
 
-	if(can_info->rx_msg_w >= CAN_RX_MSG_BUFFER_SIZE) {
+	if(can_info->rx_msg_w + 1 >= CAN_RX_MSG_BUFFER_SIZE) {
 		can_info->rx_msg_w = 0;
+	} else {
+		can_info->rx_msg_w++;
 	}
 
 	status = HAL_CAN_GetRxMessage(can_info->hcan, can_info->can_config->filter_fifo, &rx_header, rx_msg->Data);
