@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时07分55秒
- *   修改日期：2021年06月16日 星期三 12时46分02秒
+ *   修改日期：2021年06月16日 星期三 13时36分04秒
  *   描    述：
  *
  *================================================================*/
@@ -16,14 +16,18 @@
 #include "object_class.h"
 
 extern can_ops_t can_ops_hal;
+#if defined(SPI_CAN)
 extern can_ops_t can_ops_spi_can;
+#endif//#if defined(SPI_CAN)
 
 static object_class_t *can_class = NULL;
 static uint8_t can_id = 0;
 
 static can_ops_t *can_ops_sz[] = {
 	&can_ops_hal,
+#if defined(SPI_CAN)
 	&can_ops_spi_can,
+#endif//#if defined(SPI_CAN)
 };
 
 static can_ops_t *get_can_ops(can_type_t type)
