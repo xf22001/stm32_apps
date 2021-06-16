@@ -6,7 +6,7 @@
  *   文件名称：can_ops_hal.c
  *   创 建 者：肖飞
  *   创建日期：2021年06月15日 星期二 19时47分17秒
- *   修改日期：2021年06月16日 星期三 12时31分31秒
+ *   修改日期：2021年06月16日 星期三 15时48分13秒
  *   描    述：
  *
  *================================================================*/
@@ -146,7 +146,7 @@ static int _can_tx_data(void *_can_info, can_tx_msg_t *msg, uint32_t timeout)
 
 		mutex_unlock(can_info->hcan_mutex);
 
-		if(ticks_duration(osKernelSysTick(), - stamp) >= timeout) {
+		if(ticks_duration(osKernelSysTick(), stamp) >= timeout) {
 			break;
 		}
 
