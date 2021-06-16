@@ -17,10 +17,11 @@ extern CAN_HandleTypeDef hcan1;
 extern CAN_HandleTypeDef hcan2;
 
 can_config_t can_config_can1 = {
+	.type = CAN_TYPE_HAL,
 	.hcan = &hcan1,
+	.config_can = &hcan1,
 	.filter_number = 0,
 	.filter_fifo = CAN_FILTER_FIFO0,
-	.config_can = &hcan1,
 	.filter_id = 0,
 	.filter_mask_id = 0,
 	.filter_rtr = 0,
@@ -30,10 +31,11 @@ can_config_t can_config_can1 = {
 };
 
 can_config_t can_config_can2 = {
+	.type = CAN_TYPE_HAL,
 	.hcan = &hcan2,
+	.config_can = &hcan1,
 	.filter_number = 14,
 	.filter_fifo = CAN_FILTER_FIFO1,
-	.config_can = &hcan1,
 	.filter_id = 0,
 	.filter_mask_id = 0,
 	.filter_rtr = 0,
@@ -47,7 +49,7 @@ static can_config_t *can_config_sz[] = {
 	&can_config_can2,
 };
 
-can_config_t *get_can_config(CAN_HandleTypeDef *hcan)
+can_config_t *get_can_config(void *hcan)
 {
 	uint8_t i;
 	can_config_t *can_config = NULL;
