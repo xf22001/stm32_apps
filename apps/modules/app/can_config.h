@@ -6,7 +6,7 @@
  *   文件名称：can_config.h
  *   创 建 者：肖飞
  *   创建日期：2020年04月17日 星期五 09时20分02秒
- *   修改日期：2021年06月15日 星期二 20时01分37秒
+ *   修改日期：2021年06月16日 星期三 10时38分00秒
  *   描    述：
  *
  *================================================================*/
@@ -34,8 +34,6 @@ typedef struct {
 	void *hcan;
 	void *config_can;
 
-	uint32_t tx_fifo;
-
 	uint32_t filter_number;
 	uint32_t filter_fifo;
 
@@ -47,6 +45,12 @@ typedef struct {
 
 	uint8_t filter_ext;
 	uint8_t filter_mask_ext;
+
+	uint32_t tx_fifo;
+	uint32_t rx_fifo;
+
+	GPIO_TypeDef *spi_cs_port;
+	uint16_t spi_cs_pin;
 } can_config_t;
 
 typedef struct {

@@ -6,7 +6,7 @@
  *   文件名称：can_txrx.h
  *   创 建 者：肖飞
  *   创建日期：2019年10月28日 星期一 14时29分22秒
- *   修改日期：2021年06月15日 星期二 20时26分17秒
+ *   修改日期：2021年06月16日 星期三 10时13分17秒
  *   描    述：
  *
  *================================================================*/
@@ -82,6 +82,7 @@ typedef struct {
 #define CAN_RX_MSG_BUFFER_SIZE 16
 
 typedef struct {
+	uint8_t can_id;
 	void *hcan;
 	void *config_can;
 	os_mutex_t hcan_mutex;
@@ -100,9 +101,12 @@ typedef struct {
 	can_ops_t *can_ops;
 } can_info_t;
 
+extern can_ops_t can_ops_hal;;
 can_info_t *get_or_alloc_can_info(void *hcan);
+can_info_t *get_can_info_by_id(uint8_t id);
 void can_init(can_info_t *can_info);
 int can_tx_data(can_info_t *can_info, can_tx_msg_t *msg, uint32_t timeout);
 int can_rx_data(can_info_t *can_info, uint32_t timeout);
 can_rx_msg_t *can_get_msg(can_info_t *can_info);
+
 #endif //_CAN_TXRX_H
