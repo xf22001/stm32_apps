@@ -6,7 +6,7 @@
  *   文件名称：power_modules.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时34分29秒
- *   修改日期：2021年06月15日 星期二 09时34分13秒
+ *   修改日期：2021年06月17日 星期四 09时41分08秒
  *   描    述：
  *
  *================================================================*/
@@ -16,9 +16,14 @@
 
 #include "os_utils.h"
 #include "object_class.h"
+#include "power_modules_handler_pseudo.h"
 #include "power_modules_handler_huawei.h"
 #include "power_modules_handler_increase.h"
-#include "power_modules_handler_pseudo.h"
+#include "power_modules_handler_infy.h"
+#include "power_modules_handler_stategrid.h"
+#include "power_modules_handler_yyln.h"
+#include "power_modules_handler_winline.h"
+#include "power_modules_handler_zte.h"
 #include "channels.h"
 #include "can_data_task.h"
 
@@ -28,9 +33,14 @@
 static object_class_t *power_modules_class = NULL;
 
 static power_modules_handler_t *power_modules_handler_sz[] = {
+	&power_modules_handler_pseudo,
 	&power_modules_handler_huawei,
 	&power_modules_handler_increase,
-	&power_modules_handler_pseudo,
+	&power_modules_handler_infy,
+	&power_modules_handler_stategrid,
+	&power_modules_handler_yyln,
+	&power_modules_handler_winline,
+	&power_modules_handler_zte,
 };
 
 static power_modules_handler_t *get_power_modules_handler(power_module_type_t power_module_type)
@@ -73,7 +83,6 @@ char *get_power_modules_type_des(power_module_type_t type)
 	char *des = "unknow";
 
 	switch(type) {
-			add_des_case(POWER_MODULE_TYPE_UNKNOW);
 			add_des_case(POWER_MODULE_TYPE_PSEUDO);
 			add_des_case(POWER_MODULE_TYPE_HUAWEI);
 			add_des_case(POWER_MODULE_TYPE_INCREASE);

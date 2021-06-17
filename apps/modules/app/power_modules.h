@@ -6,7 +6,7 @@
  *   文件名称：power_modules.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 15时37分07秒
- *   修改日期：2021年06月09日 星期三 15时13分33秒
+ *   修改日期：2021年06月17日 星期四 09时06分52秒
  *   描    述：
  *
  *================================================================*/
@@ -34,8 +34,7 @@ extern "C"
 #define LINE_TO_PHASE_COEFFICIENT 0.5773502691896258f
 
 typedef enum {
-	POWER_MODULE_TYPE_UNKNOW = 0,
-	POWER_MODULE_TYPE_PSEUDO,
+	POWER_MODULE_TYPE_PSEUDO = 0,
 	POWER_MODULE_TYPE_HUAWEI,
 	POWER_MODULE_TYPE_INCREASE,
 	POWER_MODULE_TYPE_INFY,
