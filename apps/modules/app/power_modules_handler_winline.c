@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_winline.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月22日 星期四 14时48分47秒
- *   修改日期：2021年04月23日 星期五 09时35分40秒
+ *   修改日期：2021年06月17日 星期四 15时07分25秒
  *   描    述：
  *
  *================================================================*/
@@ -14,6 +14,7 @@
 
 #include <string.h>
 
+#define LOG_DISABLE
 #include "log.h"
 
 #define LOCAL_ADDR 0xf0
@@ -57,6 +58,7 @@ typedef enum {
 
 typedef enum {
 	WINLINE_DATA_STATUS_OK = 0xf0,
+	WINLINE_DATA_STATUS_FAIL = 0xf2,
 } winline_data_status_t;
 
 typedef union {
@@ -661,7 +663,8 @@ static int _power_modules_response(power_modules_info_t *power_modules_info, can
 
 		update_connect_state(connect_state, 1);
 
-		if(0xf0 != data[1]) {
+		if((WINLINE_DATA_STATUS_OK != data[1]) && (WINLINE_DATA_STATUS_FAIL != data[1])) {
+			_hexdump("response data", data, 8);
 			debug("module_id %d cmd %d(%s) response failed!",
 			      module_id,
 			      item->cmd,

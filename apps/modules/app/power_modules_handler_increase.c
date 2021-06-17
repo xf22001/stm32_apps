@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_increase.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月15日 星期五 17时36分29秒
- *   修改日期：2021年05月25日 星期二 11时26分20秒
+ *   修改日期：2021年06月17日 星期四 15时35分33秒
  *   描    述：
  *
  *================================================================*/
@@ -331,6 +331,10 @@ static int response_1(power_modules_info_t *power_modules_info, int module_id)
 	//debug("module_id %d protect_overcurrent:%d", module_id, power_modules_info->power_module_info[module_id].power_module_status.protect_overcurrent);
 	//debug("module_id %d protect_overtemperature:%d", module_id, power_modules_info->power_module_info[module_id].power_module_status.protect_overtemperature);
 	//debug("module_id %d setting_poweroff:%d", module_id, power_modules_info->power_module_info[module_id].power_module_status.setting_poweroff);
+	
+	power_modules_info->power_module_info[module_id].input_aline_voltage = 2200;
+	power_modules_info->power_module_info[module_id].input_bline_voltage = 2200;
+	power_modules_info->power_module_info[module_id].input_cline_voltage = 2200;
 
 	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_CMD_1_1].state = COMMAND_STATE_IDLE;
 	ret = 0;
@@ -704,9 +708,9 @@ power_modules_handler_t power_modules_handler_increase = {
 	.set_out_voltage_current = _set_out_voltage_current,
 	.set_poweroff = _set_poweroff,
 	.query_status = _query_status,
-	.query_a_line_input_voltage = _query_a_line_input_voltage,
-	.query_b_line_input_voltage =  _query_b_line_input_voltage,
-	.query_c_line_input_voltage = _query_c_line_input_voltage,
+	.query_a_line_input_voltage = NULL,
+	.query_b_line_input_voltage =  NULL,
+	.query_c_line_input_voltage = NULL,
 	.power_modules_request = _power_modules_request,
 	.power_modules_response = _power_modules_response,
 };
