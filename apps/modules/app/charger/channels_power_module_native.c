@@ -6,7 +6,7 @@
  *   文件名称：channels_power_module_native.c
  *   创 建 者：肖飞
  *   创建日期：2021年03月26日 星期五 15时31分18秒
- *   修改日期：2021年05月11日 星期二 11时37分24秒
+ *   修改日期：2021年06月17日 星期四 17时23分02秒
  *   描    述：
  *
  *================================================================*/
@@ -99,10 +99,6 @@ static int init(void *_channels_power_module)
 	power_modules_info = (power_modules_info_t *)get_or_alloc_power_modules_info(channels_info->channels_config);
 	OS_ASSERT(power_modules_info != NULL);
 	channels_power_module_ctx->power_modules_info = power_modules_info;
-
-	if(channels_info->channels_settings.power_module_type == POWER_MODULE_TYPE_UNKNOW) {
-		channels_info->channels_settings.power_module_type = POWER_MODULE_TYPE_PSEUDO;
-	}
 
 	power_modules_set_type(power_modules_info, channels_info->channels_settings.power_module_type);
 
