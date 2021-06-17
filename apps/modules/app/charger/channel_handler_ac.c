@@ -6,7 +6,7 @@
  *   文件名称：channel_handler_ac.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月11日 星期二 09时20分53秒
- *   修改日期：2021年06月11日 星期五 11时44分34秒
+ *   修改日期：2021年06月17日 星期四 21时18分26秒
  *   描    述：
  *
  *================================================================*/
@@ -29,6 +29,7 @@ typedef struct {
 	callback_item_t state_changed_callback_item;
 
 	uint8_t state;
+	uint8_t state_0;
 	uint32_t state_stamps;
 
 } channel_handler_ctx_t;
@@ -108,6 +109,70 @@ static void output_relay_off(channel_info_t *channel_info)
 	HAL_GPIO_WritePin(channel_config->charger_config.kn_gpio, channel_config->charger_config.kn_pin, GPIO_PIN_RESET);
 }
 
+typedef enum {
+	STARTING_STATE_START_PWM = 0,
+	STARTING_STATE_START_ADHESION_CHECK_L,
+	STARTING_STATE_START_ADHESION_CHECK_N,
+	STARTING_STATE_START_OUTPUT,
+} starting_state_t;
+
+static int ac_adhesion_check_ln(channel_info_t *channel_info, uint8_t ln)
+{
+	int ret = 1;
+	channel_handler_ctx_t *channel_handler_ctx = (channel_handler_ctx_t *)channel_info->channel_handler_ctx;
+
+	switch(channel_handler_ctx->state_0) {
+		case 0: {//todo
+			if(ln == 0) {
+				HAL_GPIO_WritePin(rey3_GPIO_Port, rey3_Pin, GPIO_PIN_SET);
+				HAL_GPIO_WritePin(rey4_GPIO_Port, rey4_Pin, GPIO_PIN_RESET);
+			} else {
+				HAL_GPIO_WritePin(rey3_GPIO_Port, rey3_Pin, GPIO_PIN_RESET);
+				HAL_GPIO_WritePin(rey4_GPIO_Port, rey4_Pin, GPIO_PIN_SET);
+			}
+
+			channel_handler_ctx->state_0 = 1;
+		}
+		break;
+
+		case 128: {
+			switch(channel_info->channel_id) {
+				case 0: {
+					if(HAL_GPIO_ReadPin(adhe_1_GPIO_Port, adhe_1_Pin) == GPIO_PIN_SET) {
+						ret = -1;
+					} else {
+						ret = 0;
+					}
+				}
+				break;
+
+				case 1: {
+					if(HAL_GPIO_ReadPin(adhe_2_GPIO_Port, adhe_2_Pin) == GPIO_PIN_SET) {
+						ret = -1;
+					} else {
+						ret = 0;
+					}
+				}
+				break;
+
+				default: {
+					app_panic();
+				}
+				break;
+			}
+
+		}
+		break;
+
+		default: {
+			channel_handler_ctx->state_0++;
+		}
+		break;
+	}
+
+	return ret;
+}
+
 static void starting(void *_channel_info, void *__channel_info)
 {
 	channel_info_t *channel_info = (channel_info_t *)_channel_info;
@@ -115,19 +180,59 @@ static void starting(void *_channel_info, void *__channel_info)
 	uint32_t ticks = osKernelSysTick();
 
 	switch(channel_handler_ctx->state) {
-		case 0: {
+		case STARTING_STATE_START_PWM: {
 			start_cp_pwm(channel_info);
-			channel_handler_ctx->state = 1;
+			channel_handler_ctx->state = STARTING_STATE_START_ADHESION_CHECK_L;
+			channel_handler_ctx->state_0 = 0;
 			channel_handler_ctx->state_stamps = ticks;
 		}
 		break;
 
-		case 1: {
+		case STARTING_STATE_START_ADHESION_CHECK_L: {
+			if(ticks_duration(ticks, channel_handler_ctx->state_stamps) >= 5 * 1000) {
+				set_fault(channel_info->faults, CHANNEL_FAULT_AC_CHARGER_ADHESION_CHECK_TIMEOUT, 1);
+				set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
+			} else {
+				int ret = ac_adhesion_check_ln(channel_info, 0);
+
+				if(ret == 0) {
+					channel_handler_ctx->state = STARTING_STATE_START_ADHESION_CHECK_N;
+					channel_handler_ctx->state_0 = 0;
+					channel_handler_ctx->state_stamps = ticks;
+				} else if(ret == -1) {
+					set_fault(channel_info->faults, CHANNEL_FAULT_AC_CHARGER_ADHESION_L, 1);
+					set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
+				}
+			}
+		}
+		break;
+
+		case STARTING_STATE_START_ADHESION_CHECK_N: {
+			if(ticks_duration(ticks, channel_handler_ctx->state_stamps) >= 5 * 1000) {
+				set_fault(channel_info->faults, CHANNEL_FAULT_AC_CHARGER_ADHESION_CHECK_TIMEOUT, 1);
+				set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
+			} else {
+				int ret = ac_adhesion_check_ln(channel_info, 1);
+
+				if(ret == 0) {
+					channel_handler_ctx->state = STARTING_STATE_START_OUTPUT;
+					channel_handler_ctx->state_stamps = ticks;
+				} else if(ret == -1) {
+					set_fault(channel_info->faults, CHANNEL_FAULT_AC_CHARGER_ADHESION_N, 1);
+					set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
+				}
+			}
+		}
+		break;
+
+		case STARTING_STATE_START_OUTPUT: {
 			if(ticks_duration(ticks, channel_handler_ctx->state_stamps) >= 5 * 1000) {
 				set_fault(channel_info->faults, CHANNEL_FAULT_AC_CHARGER_CC1_READY_1_TIMEOUT, 1);
 				set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
 			} else {
 				if(channel_info->vehicle_relay_state == 1) {
+					HAL_GPIO_WritePin(rey3_GPIO_Port, rey3_Pin, GPIO_PIN_SET);
+					HAL_GPIO_WritePin(rey4_GPIO_Port, rey4_Pin, GPIO_PIN_SET);
 					output_relay_on(channel_info);
 					set_channel_request_state(channel_info, CHANNEL_STATE_CHARGING);
 				}
@@ -166,6 +271,8 @@ static void stopping(void *_channel_info, void *__channel_info)
 			} else {
 				if(channel_info->vehicle_relay_state == 0) {
 					output_relay_off(channel_info);
+					HAL_GPIO_WritePin(rey3_GPIO_Port, rey3_Pin, GPIO_PIN_RESET);
+					HAL_GPIO_WritePin(rey4_GPIO_Port, rey4_Pin, GPIO_PIN_RESET);
 					channel_handler_ctx->state = 2;
 				}
 			}
