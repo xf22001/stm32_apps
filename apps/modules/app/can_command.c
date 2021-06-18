@@ -6,7 +6,7 @@
  *   文件名称：can_command.c
  *   创 建 者：肖飞
  *   创建日期：2020年07月07日 星期二 08时29分24秒
- *   修改日期：2021年04月13日 星期二 17时38分05秒
+ *   修改日期：2021年06月18日 星期五 16时16分05秒
  *   描    述：
  *
  *================================================================*/
@@ -34,7 +34,7 @@ char *get_can_com_response_status_des(can_com_response_status_t status)
 }
 
 //准备请求数据 发
-int can_com_prepare_tx_request(command_status_t *command_status, can_com_cmd_common_t *can_com_cmd_common, uint8_t cmd, uint8_t *data, uint8_t data_size)
+int can_com_prepare_tx_request(command_status_t *command_status, can_com_cmd_common_t *can_com_cmd_common, uint8_t *data, uint8_t data_size)
 {
 	int ret = -1;
 
@@ -69,8 +69,8 @@ int can_com_prepare_tx_request(command_status_t *command_status, can_com_cmd_com
 	return ret;
 }
 
-//请求数据后,处理响应响应 收
-int can_com_process_rx_response(command_status_t *command_status, can_com_cmd_response_t *can_com_cmd_response, uint8_t cmd, uint8_t data_size)
+//请求数据后,处理响应数据 收
+int can_com_process_rx_response(command_status_t *command_status, can_com_cmd_response_t *can_com_cmd_response, uint8_t data_size)
 {
 	int ret = -1;
 	uint8_t index = command_status->index;
@@ -108,7 +108,7 @@ int can_com_process_rx_response(command_status_t *command_status, can_com_cmd_re
 }
 
 //处理请求后，准备响应数据 发
-int can_com_prepare_tx_response(command_status_t *command_status, can_com_cmd_response_t *can_com_cmd_response, uint8_t cmd, uint8_t data_size)
+int can_com_prepare_tx_response(command_status_t *command_status, can_com_cmd_response_t *can_com_cmd_response, uint8_t data_size)
 {
 	int ret = -1;
 
@@ -135,7 +135,7 @@ int can_com_prepare_tx_response(command_status_t *command_status, can_com_cmd_re
 }
 
 //处理请求数据 收
-int can_com_process_rx_request(command_status_t *command_status, can_com_cmd_common_t *can_com_cmd_common, uint8_t cmd, uint8_t *data, uint8_t data_size)
+int can_com_process_rx_request(command_status_t *command_status, can_com_cmd_common_t *can_com_cmd_common, uint8_t *data, uint8_t data_size)
 {
 	int ret = -1;
 	uint8_t index = can_com_cmd_common->index;
@@ -169,7 +169,7 @@ int can_com_process_rx_request(command_status_t *command_status, can_com_cmd_com
 
 
 //准备请求数据 发
-int can_com_prepare_tx_request_broadcast(command_status_t *command_status, can_com_cmd_common_t *can_com_cmd_common, uint8_t cmd, uint8_t *data, uint8_t data_size)
+int can_com_prepare_tx_request_broadcast(command_status_t *command_status, can_com_cmd_common_t *can_com_cmd_common, uint8_t *data, uint8_t data_size)
 {
 	int ret = -1;
 
@@ -205,6 +205,41 @@ int can_com_prepare_tx_request_broadcast(command_status_t *command_status, can_c
 	}
 
 	command_status->index++;
+
+	ret = 0;
+
+	return ret;
+}
+
+//处理请求数据 收
+int can_com_process_rx_request_broadcast(command_status_t *command_status, can_com_cmd_common_t *can_com_cmd_common, uint8_t *data, uint8_t data_size)
+{
+	int ret = -1;
+	uint8_t index = can_com_cmd_common->index;
+	uint8_t *buffer = can_com_cmd_common->data;
+	uint8_t buffer_size = sizeof(can_com_cmd_common->data);
+	uint8_t received = buffer_size * index;
+	uint8_t receive;
+
+	if(received >= data_size) {
+		debug("received:%d, data_size:%d", received, data_size);
+		return ret;
+	}
+
+	receive = data_size - received;
+
+	if(receive > buffer_size) {
+		receive = buffer_size;
+	}
+
+	memcpy(data + received, buffer, receive);
+
+	//debug("received %d/%d", received + receive, data_size);
+	
+	index++;
+
+	command_status->index = index;
+	command_status->state = COMMAND_STATE_IDLE;
 
 	ret = 0;
 

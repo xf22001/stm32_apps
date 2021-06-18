@@ -6,7 +6,7 @@
  *   文件名称：channel_comm_channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年06月06日 星期日 15时02分49秒
- *   修改日期：2021年06月15日 星期二 20时25分34秒
+ *   修改日期：2021年06月18日 星期五 16时21分30秒
  *   描    述：
  *
  *================================================================*/
@@ -84,7 +84,7 @@ static int prepare_tx_request(channel_comm_channel_info_t *channel_comm_channel_
 	command_status_t *cmd_ctx = channel_comm_channel_info->cmd_ctx + cmd;
 	can_com_cmd_common_t *can_com_cmd_common = (can_com_cmd_common_t *)channel_comm_channel_info->can_tx_msg.Data;
 
-	ret = can_com_prepare_tx_request(cmd_ctx, can_com_cmd_common, cmd, data, data_size);
+	ret = can_com_prepare_tx_request(cmd_ctx, can_com_cmd_common, data, data_size);
 
 	return ret;
 }
@@ -96,7 +96,7 @@ static int process_rx_response(channel_comm_channel_info_t *channel_comm_channel
 	command_status_t *cmd_ctx = channel_comm_channel_info->cmd_ctx + cmd;
 	can_com_cmd_response_t *can_com_cmd_response = (can_com_cmd_response_t *)channel_comm_channel_info->can_rx_msg->Data;
 
-	ret = can_com_process_rx_response(cmd_ctx, can_com_cmd_response, cmd, data_size);
+	ret = can_com_process_rx_response(cmd_ctx, can_com_cmd_response, data_size);
 
 	return ret;
 }
@@ -108,7 +108,7 @@ static int prepare_tx_response(channel_comm_channel_info_t *channel_comm_channel
 	command_status_t *cmd_ctx = channel_comm_channel_info->cmd_ctx + cmd;
 	can_com_cmd_response_t *can_com_cmd_response = (can_com_cmd_response_t *)channel_comm_channel_info->can_tx_msg.Data;
 
-	ret = can_com_prepare_tx_response(cmd_ctx, can_com_cmd_response, cmd, data_size);
+	ret = can_com_prepare_tx_response(cmd_ctx, can_com_cmd_response, data_size);
 
 	return ret;
 }
@@ -120,7 +120,7 @@ static int process_rx_request(channel_comm_channel_info_t *channel_comm_channel_
 	command_status_t *cmd_ctx = channel_comm_channel_info->cmd_ctx + cmd;
 	can_com_cmd_common_t *can_com_cmd_common = (can_com_cmd_common_t *)channel_comm_channel_info->can_rx_msg->Data;
 
-	ret = can_com_process_rx_request(cmd_ctx, can_com_cmd_common, cmd, data, data_size);
+	ret = can_com_process_rx_request(cmd_ctx, can_com_cmd_common, data, data_size);
 
 	return ret;
 }

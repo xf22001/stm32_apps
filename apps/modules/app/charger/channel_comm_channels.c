@@ -6,7 +6,7 @@
  *   文件名称：channel_comm_channels.c
  *   创 建 者：肖飞
  *   创建日期：2021年06月06日 星期日 15时02分53秒
- *   修改日期：2021年06月07日 星期一 10时43分46秒
+ *   修改日期：2021年06月18日 星期五 16时22分04秒
  *   描    述：
  *
  *================================================================*/
@@ -109,7 +109,7 @@ static int prepare_tx_request(channel_comm_channels_info_t *channel_comm_channel
 		return ret;
 	}
 
-	ret = can_com_prepare_tx_request(cmd_ctx, can_com_cmd_common, cmd, data, data_size);
+	ret = can_com_prepare_tx_request(cmd_ctx, can_com_cmd_common, data, data_size);
 
 	return ret;
 }
@@ -128,7 +128,7 @@ static int process_rx_response(channel_comm_channels_info_t *channel_comm_channe
 		return ret;
 	}
 
-	ret = can_com_process_rx_response(cmd_ctx, can_com_cmd_response, cmd, data_size);
+	ret = can_com_process_rx_response(cmd_ctx, can_com_cmd_response, data_size);
 
 	return ret;
 }
@@ -148,7 +148,7 @@ static int prepare_tx_response(channel_comm_channels_info_t *channel_comm_channe
 		return ret;
 	}
 
-	ret = can_com_prepare_tx_response(cmd_ctx, can_com_cmd_response, cmd, data_size);
+	ret = can_com_prepare_tx_response(cmd_ctx, can_com_cmd_response, data_size);
 
 	return ret;
 }
@@ -167,7 +167,7 @@ static int process_rx_request(channel_comm_channels_info_t *channel_comm_channel
 		return ret;
 	}
 
-	ret = can_com_process_rx_request(cmd_ctx, can_com_cmd_common, cmd, data, data_size);
+	ret = can_com_process_rx_request(cmd_ctx, can_com_cmd_common, data, data_size);
 
 	return ret;
 }

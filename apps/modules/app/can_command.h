@@ -6,7 +6,7 @@
  *   文件名称：can_command.h
  *   创 建 者：肖飞
  *   创建日期：2020年07月07日 星期二 08时26分08秒
- *   修改日期：2021年04月13日 星期二 17时28分53秒
+ *   修改日期：2021年06月18日 星期五 16时20分16秒
  *   描    述：
  *
  *================================================================*/
@@ -50,10 +50,11 @@ typedef struct {
 #pragma pack(pop)
 
 char *get_can_com_response_status_des(can_com_response_status_t status);
-int can_com_prepare_tx_request(command_status_t *command_status, can_com_cmd_common_t *can_com_cmd_common, uint8_t cmd, uint8_t *data, uint8_t data_size);
-int can_com_process_rx_response(command_status_t *command_status, can_com_cmd_response_t *can_com_cmd_response, uint8_t cmd, uint8_t data_size);
-int can_com_prepare_tx_response(command_status_t *command_status, can_com_cmd_response_t *can_com_cmd_response, uint8_t cmd, uint8_t data_size);
-int can_com_process_rx_request(command_status_t *command_status, can_com_cmd_common_t *can_com_cmd_common, uint8_t cmd, uint8_t *data, uint8_t data_size);
-int can_com_prepare_tx_request_broadcast(command_status_t *command_status, can_com_cmd_common_t *can_com_cmd_common, uint8_t cmd, uint8_t *data, uint8_t data_size);
+int can_com_prepare_tx_request(command_status_t *command_status, can_com_cmd_common_t *can_com_cmd_common, uint8_t *data, uint8_t data_size);
+int can_com_process_rx_response(command_status_t *command_status, can_com_cmd_response_t *can_com_cmd_response, uint8_t data_size);
+int can_com_prepare_tx_response(command_status_t *command_status, can_com_cmd_response_t *can_com_cmd_response, uint8_t data_size);
+int can_com_process_rx_request(command_status_t *command_status, can_com_cmd_common_t *can_com_cmd_common, uint8_t *data, uint8_t data_size);
+int can_com_prepare_tx_request_broadcast(command_status_t *command_status, can_com_cmd_common_t *can_com_cmd_common, uint8_t *data, uint8_t data_size);
+int can_com_process_rx_request_broadcast(command_status_t *command_status, can_com_cmd_common_t *can_com_cmd_common, uint8_t *data, uint8_t data_size);
 
 #endif //_CAN_COMMAND_H

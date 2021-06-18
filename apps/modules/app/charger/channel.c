@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分12秒
- *   修改日期：2021年06月11日 星期五 11时42分11秒
+ *   修改日期：2021年06月18日 星期五 14时03分30秒
  *   描    述：
  *
  *================================================================*/
@@ -77,6 +77,25 @@ int set_channel_request_state(channel_info_t *channel_info, channel_state_t stat
 	channel_info->request_state = state;
 
 	return ret;
+}
+
+void channel_set_stop_reason(channel_info_t *channel_info, channel_record_item_stop_reason_t stop_reason)
+{
+	switch(channel_info->state) {
+		case CHANNEL_STATE_NONE:
+		case CHANNEL_STATE_IDLE: {
+			return;
+		}
+		break;
+
+		default: {
+		}
+		break;
+	}
+
+	if(channel_info->channel_record_item.stop_reason == CHANNEL_RECORD_ITEM_STOP_REASON_NONE) {
+		channel_info->channel_record_item.stop_reason = stop_reason;
+	}
 }
 
 static void handle_channel_request_state(channel_info_t *channel_info)
@@ -175,22 +194,12 @@ void handle_channel_amount(channel_info_t *channel_info)
 	channel_info->channel_record_item.amount += delta_energy * price;
 
 	channel_info->channel_record_item.total_energy = channel_info->total_energy;
-
-	if(channel_info->channel_record_item.amount >= channel_info->channel_record_item.account_balance) {
-		//stop_reason
-		set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
-	}
 }
 
 static void handle_channel_stop_amount(channel_info_t *channel_info)
 {
-	if(channel_info->request_state != CHANNEL_STATE_NONE) {
-		return;
-	}
-
 	if(channel_info->channel_record_item.amount >= channel_info->channel_record_item.account_balance) {
-		OS_ASSERT(channel_info->channel_record_item.stop_reason == CHANNEL_RECORD_ITEM_STOP_REASON_NONE);
-		channel_info->channel_record_item.stop_reason = CHANNEL_RECORD_ITEM_STOP_REASON_AMOUNT;
+		channel_set_stop_reason(channel_info, CHANNEL_RECORD_ITEM_STOP_REASON_AMOUNT);
 		set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
 	}
 }
@@ -235,7 +244,7 @@ static int _handle_channel_event(channel_info_t *channel_info, channel_event_t *
 		break;
 
 		case CHANNEL_EVENT_TYPE_STOP_CHANNEL: {
-			//stop_reason
+			channel_set_stop_reason(channel_info, channel_event->reason);
 			set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
 		}
 		break;

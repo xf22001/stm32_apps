@@ -6,7 +6,7 @@
  *   文件名称：channels_config.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 11时00分11秒
- *   修改日期：2021年06月11日 星期五 11时46分44秒
+ *   修改日期：2021年06月18日 星期五 14时59分57秒
  *   描    述：
  *
  *================================================================*/
@@ -51,6 +51,13 @@ typedef struct {
 	uint16_t kl_pin;
 	GPIO_TypeDef *kn_gpio;
 	uint16_t kn_pin;
+	GPIO_TypeDef *rey3_gpio;
+	uint16_t rey3_pin;
+	GPIO_TypeDef *rey4_gpio;
+	uint16_t rey4_pin;
+
+	GPIO_TypeDef *adhe_gpio;
+	uint16_t adhe_pin;
 
 	//dc
 	CAN_HandleTypeDef *hcan_bms;

@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年06月10日 星期四 14时00分16秒
+ *   修改日期：2021年06月18日 星期五 14时52分04秒
  *   描    述：
  *
  *================================================================*/
@@ -912,102 +912,7 @@ static uint8_t get_sse_report_channel_charger_bms_state(channel_info_t *channel_
 			break;
 
 			case CHANNEL_STATE_STOPPING: {
-				int ret = get_first_fault(channel_info->faults);
-
-				if(ret == -1) {
-					state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_NONE;
-				} else {
-					switch(ret) {
-						case CHANNEL_FAULT_DC_BMS_GB_BRM_TIMEOUT: {
-							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_BRM_TIMEOUT;
-						}
-						break;
-
-						case CHANNEL_FAULT_DC_BMS_GB_BCP_TIMEOUT: {
-							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_BCP_TIMEOUT;
-						}
-						break;
-
-						case CHANNEL_FAULT_DC_BMS_GB_BRO_READY_TIMEOUT: {
-							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_BRO_READY_TIMEOUT;
-						}
-						break;
-
-						case CHANNEL_FAULT_DC_BMS_GB_BCS_TIMEOUT: {
-							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_BCS_TIMEOUT;
-						}
-						break;
-
-						case CHANNEL_FAULT_DC_BMS_GB_BCL_TIMEOUT: {
-							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_BCL_TIMEOUT;
-						}
-						break;
-
-						case CHANNEL_FAULT_DC_BMS_GB_BST_TIMEOUT: {
-							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_BST_TIMEOUT;
-						}
-						break;
-
-						case CHANNEL_FAULT_DC_BMS_GB_BSD_TIMEOUT: {
-							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_BSD_TIMEOUT;
-						}
-						break;
-
-						case CHANNEL_FAULT_DC_BMS_GB_CRO_NOT_READY_TIMEOUT: {
-							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_CRO_NOT_READY;
-						}
-						break;
-
-						case CHANNEL_FAULT_DC_BMS_GB_INSULATION_CHECK_TIMEOUT: {
-							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_INSULATION_CHECK_TIMEOUT;
-						}
-						break;
-
-						case CHANNEL_FAULT_DC_BMS_GB_INSULATION_FAULT: {
-							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_INSULATION_FAULT;
-						}
-						break;
-
-						case CHANNEL_FAULT_DC_BMS_GB_DISCHARGE_TIMEOUT: {
-							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_DISCHARGE_TIMEOUT;
-						}
-						break;
-
-						case CHANNEL_FAULT_DC_BMS_GB_DISCHARGE_FAULT: {
-							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_DISCHARGE_FAULT;
-						}
-						break;
-
-						case CHANNEL_FAULT_DC_BMS_GB_ADHESION_CHECK_TIMEOUT: {
-							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_ADHESION_CHECK_TIMEOUT;
-						}
-						break;
-
-						case CHANNEL_FAULT_DC_BMS_GB_ADHESION_FAULT: {
-							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_ADHESION_FAULT;
-						}
-						break;
-
-						case CHANNEL_FAULT_DC_BMS_GB_INSULATION_CHECK_WITH_ELECTRIFIED: {
-							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_INSULATION_CHECK_WITH_ELECTRIFIED;
-						}
-						break;
-
-						case CHANNEL_FAULT_DC_BMS_GB_ABNORMAL_VOLTAGE: {
-							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_ABNORMAL_VOLTAGE;
-						}
-						break;
-
-						case CHANNEL_FAULT_AC_CHARGER_CONNECT_STATE_OFF: {
-							state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_ABNORMAL_VOLTAGE;
-						}
-						break;
-
-						default: {
-						}
-						break;
-					}
-				}
+				state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_NONE;
 			}
 			break;
 

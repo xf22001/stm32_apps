@@ -6,7 +6,7 @@
  *   文件名称：channel.h
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分16秒
- *   修改日期：2021年05月31日 星期一 10时17分25秒
+ *   修改日期：2021年06月18日 星期五 15时08分20秒
  *   描    述：
  *
  *================================================================*/
@@ -28,6 +28,8 @@ extern "C"
 
 char *get_channel_state_des(channel_state_t state);
 int set_channel_request_state(channel_info_t *channel_info, channel_state_t state);
+void channel_set_stop_reason(channel_info_t *channel_info, channel_record_item_stop_reason_t stop_reason);
+void handle_channel_amount(channel_info_t *channel_info);
 channel_info_t *alloc_channels_channel_info(channels_info_t *channels_info);
 
 #endif //_CHANNEL_H
