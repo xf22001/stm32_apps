@@ -6,7 +6,7 @@
  *   文件名称：channel_record.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月23日 星期日 13时40分21秒
- *   修改日期：2021年06月19日 星期六 13时11分49秒
+ *   修改日期：2021年06月19日 星期六 17时42分24秒
  *   描    述：
  *
  *================================================================*/
@@ -82,6 +82,7 @@ int alloc_channel_record_item_id(channel_record_task_info_t *channel_record_task
 	}
 
 	channel_record_item->id = id;
+	channel_record_item->start_time = get_time();
 
 	OS_ASSERT(channel_record_info_save(channel_record_task_info, channel_record_info));
 	OS_ASSERT(channel_record_item_save(channel_record_task_info, channel_record_item));

@@ -6,7 +6,7 @@
  *   文件名称：channel_record.h
  *   创 建 者：肖飞
  *   创建日期：2021年05月23日 星期日 13时40分28秒
- *   修改日期：2021年06月19日 星期六 12时44分43秒
+ *   修改日期：2021年06月19日 星期六 17时33分44秒
  *   描    述：
  *
  *================================================================*/
@@ -104,6 +104,12 @@ typedef struct {
 	uint8_t channel_id;
 	uint8_t state;//channel_record_item_state_t
 	uint8_t stop_reason;//channel_record_item_stop_reason_t
+
+	time_t start_time;
+	time_t end_time;
+
+	uint8_t start_soc;
+	uint8_t end_soc;
 
 	uint32_t account_balance;
 	uint32_t amount;
