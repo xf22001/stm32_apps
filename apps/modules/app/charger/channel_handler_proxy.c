@@ -6,7 +6,7 @@
  *   文件名称：channel_handler_proxy.c
  *   创 建 者：肖飞
  *   创建日期：2021年06月05日 星期六 22时43分22秒
- *   修改日期：2021年06月19日 星期六 22时23分21秒
+ *   修改日期：2021年06月20日 星期日 00时06分05秒
  *   描    述：
  *
  *================================================================*/
@@ -26,8 +26,9 @@ typedef struct {
 	callback_item_t start_callback_item;
 	callback_item_t starting_callback_item;
 	callback_item_t charging_callback_item;
-	callback_item_t stopping_callback_item;
 	callback_item_t stop_callback_item;
+	callback_item_t stopping_callback_item;
+	callback_item_t end_callback_item;
 	callback_item_t state_changed_callback_item;
 } channel_handler_ctx_t;
 
@@ -51,15 +52,20 @@ static void charging(void *_channel_info, void *__channel_info)
 {
 }
 
+static void stop(void *_channel_info, void *__channel_info)
+{
+	channel_info_t *channel_info = (channel_info_t *)_channel_info;
+	charger_info_t *charger_info = (charger_info_t *)channel_info->charger_info;
+
+	set_charger_bms_request_action(charger_info, CHARGER_BMS_REQUEST_ACTION_STOP);
+}
+
 static void stopping(void *_channel_info, void *__channel_info)
 {
 }
 
-static void stop(void *_channel_info, void *__channel_info)
+static void end(void *_channel_info, void *__channel_info)
 {
-	channel_info_t *channel_info = (channel_info_t *)_channel_info;
-
-	set_channel_request_state(channel_info, CHANNEL_STATE_IDLE);
 }
 
 static void state_changed(void *_channel_info, void *_pre_state)
@@ -143,13 +149,17 @@ static int init(void *_channel_info)
 	channel_handler_ctx->charging_callback_item.fn_ctx = channel_info;
 	OS_ASSERT(register_callback(channel_info->charging_chain, &channel_handler_ctx->charging_callback_item) == 0);
 
+	channel_handler_ctx->stop_callback_item.fn = stop;
+	channel_handler_ctx->stop_callback_item.fn_ctx = channel_info;
+	OS_ASSERT(register_callback(channel_info->end_chain, &channel_handler_ctx->stop_callback_item) == 0);
+
 	channel_handler_ctx->stopping_callback_item.fn = stopping;
 	channel_handler_ctx->stopping_callback_item.fn_ctx = channel_info;
 	OS_ASSERT(register_callback(channel_info->stopping_chain, &channel_handler_ctx->stopping_callback_item) == 0);
 
-	channel_handler_ctx->stop_callback_item.fn = stop;
-	channel_handler_ctx->stop_callback_item.fn_ctx = channel_info;
-	OS_ASSERT(register_callback(channel_info->stop_chain, &channel_handler_ctx->stop_callback_item) == 0);
+	channel_handler_ctx->end_callback_item.fn = end;
+	channel_handler_ctx->end_callback_item.fn_ctx = channel_info;
+	OS_ASSERT(register_callback(channel_info->end_chain, &channel_handler_ctx->end_callback_item) == 0);
 
 	channel_handler_ctx->state_changed_callback_item.fn = state_changed;
 	channel_handler_ctx->state_changed_callback_item.fn_ctx = channel_info;

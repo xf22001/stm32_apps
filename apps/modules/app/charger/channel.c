@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分12秒
- *   修改日期：2021年06月19日 星期六 22时40分23秒
+ *   修改日期：2021年06月20日 星期日 00时26分57秒
  *   描    述：
  *
  *================================================================*/
@@ -55,8 +55,9 @@ char *get_channel_state_des(channel_state_t state)
 			add_des_case(CHANNEL_STATE_START);
 			add_des_case(CHANNEL_STATE_STARTING);
 			add_des_case(CHANNEL_STATE_CHARGING);
-			add_des_case(CHANNEL_STATE_STOPPING);
 			add_des_case(CHANNEL_STATE_STOP);
+			add_des_case(CHANNEL_STATE_STOPPING);
+			add_des_case(CHANNEL_STATE_END);
 
 		default: {
 		}
@@ -122,6 +123,7 @@ static void handle_channel_state(channel_info_t *channel_info)
 
 		case CHANNEL_STATE_START: {
 			do_callback_chain(channel_info->start_chain, channel_info);
+			set_channel_request_state(channel_info, CHANNEL_STATE_STARTING);
 		}
 		break;
 
@@ -135,13 +137,20 @@ static void handle_channel_state(channel_info_t *channel_info)
 		}
 		break;
 
+		case CHANNEL_STATE_STOP: {
+			do_callback_chain(channel_info->stop_chain, channel_info);
+			set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
+		}
+		break;
+
 		case CHANNEL_STATE_STOPPING: {
 			do_callback_chain(channel_info->stopping_chain, channel_info);
 		}
 		break;
 
-		case CHANNEL_STATE_STOP: {
-			do_callback_chain(channel_info->stop_chain, channel_info);
+		case CHANNEL_STATE_END: {
+			do_callback_chain(channel_info->end_chain, channel_info);
+			set_channel_request_state(channel_info, CHANNEL_STATE_IDLE);
 		}
 		break;
 
@@ -201,7 +210,7 @@ static void handle_channel_stop_amount(channel_info_t *channel_info)
 {
 	if(channel_info->channel_record_item.amount >= channel_info->channel_record_item.account_balance) {
 		channel_set_stop_reason(channel_info, CHANNEL_RECORD_ITEM_STOP_REASON_AMOUNT);
-		set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
+		set_channel_request_state(channel_info, CHANNEL_STATE_STOP);
 	}
 }
 
@@ -260,7 +269,7 @@ static int _handle_channel_event(channel_info_t *channel_info, channel_event_t *
 				case CHANNEL_STATE_STARTING:
 				case CHANNEL_STATE_CHARGING: {
 					channel_set_stop_reason(channel_info, channel_event->reason);
-					set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
+					set_channel_request_state(channel_info, CHANNEL_STATE_STOP);
 					ret = 0;
 				}
 				break;
@@ -328,10 +337,12 @@ static int channel_init(channel_info_t *channel_info)
 	OS_ASSERT(channel_info->starting_chain != NULL);
 	channel_info->charging_chain = alloc_callback_chain();
 	OS_ASSERT(channel_info->charging_chain != NULL);
-	channel_info->stopping_chain = alloc_callback_chain();
-	OS_ASSERT(channel_info->stopping_chain != NULL);
 	channel_info->stop_chain = alloc_callback_chain();
 	OS_ASSERT(channel_info->stop_chain != NULL);
+	channel_info->stopping_chain = alloc_callback_chain();
+	OS_ASSERT(channel_info->stopping_chain != NULL);
+	channel_info->end_chain = alloc_callback_chain();
+	OS_ASSERT(channel_info->end_chain != NULL);
 	channel_info->state_changed_chain = alloc_callback_chain();
 	OS_ASSERT(channel_info->state_changed_chain != NULL);
 	channel_info->charger_connect_changed_chain = alloc_callback_chain();

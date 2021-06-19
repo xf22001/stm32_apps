@@ -6,7 +6,7 @@
  *   文件名称：charger_bms_ac.c
  *   创 建 者：肖飞
  *   创建日期：2021年06月19日 星期六 19时12分21秒
- *   修改日期：2021年06月19日 星期六 23时10分46秒
+ *   修改日期：2021年06月20日 星期日 00时20分13秒
  *   描    述：
  *
  *================================================================*/
@@ -243,11 +243,10 @@ static int handle_request_bms_state_idle(void *_charger_info)
 		charger_info->charger_bms_request_action = CHARGER_BMS_REQUEST_ACTION_NONE;
 
 		if(charger_info->charger_connect_state == 1) {
-			set_channel_request_state(channel_info, CHANNEL_STATE_STARTING);
 			set_charger_bms_request_state(charger_info, CHARGER_BMS_STATE_STARTING);
 		} else {
 			channel_set_stop_reason(channel_info, CHANNEL_RECORD_ITEM_STOP_REASON_CHARGER_NOT_CONNECTED);
-			set_channel_request_state(channel_info, CHANNEL_STATE_STOP);
+			set_channel_request_state(channel_info, CHANNEL_STATE_END);
 			set_charger_bms_request_state(charger_info, CHARGER_BMS_STATE_IDLE);//todo
 		}
 	}
@@ -412,7 +411,7 @@ static int handle_request_bms_state_stopping(void *_charger_info)
 
 		case 2: {
 			stop_cp_pwm(charger_info);
-			set_channel_request_state(channel_info, CHANNEL_STATE_STOP);
+			set_channel_request_state(channel_info, CHANNEL_STATE_END);
 		}
 		break;
 

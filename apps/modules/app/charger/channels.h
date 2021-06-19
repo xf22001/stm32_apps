@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2021年06月19日 星期六 22时39分13秒
+ *   修改日期：2021年06月19日 星期六 23时57分36秒
  *   描    述：
  *
  *================================================================*/
@@ -79,8 +79,9 @@ typedef enum {
 	CHANNEL_STATE_START,
 	CHANNEL_STATE_STARTING,
 	CHANNEL_STATE_CHARGING,
-	CHANNEL_STATE_STOPPING,
 	CHANNEL_STATE_STOP,
+	CHANNEL_STATE_STOPPING,
+	CHANNEL_STATE_END,
 } channel_state_t;
 
 typedef enum {
@@ -142,8 +143,9 @@ typedef struct {
 	callback_chain_t *start_chain;
 	callback_chain_t *starting_chain;
 	callback_chain_t *charging_chain;
-	callback_chain_t *stopping_chain;
 	callback_chain_t *stop_chain;
+	callback_chain_t *stopping_chain;
+	callback_chain_t *end_chain;
 	callback_chain_t *state_changed_chain;
 
 	callback_chain_t *charger_connect_changed_chain;

@@ -6,7 +6,7 @@
  *   文件名称：channel_record_handler.c
  *   创 建 者：肖飞
  *   创建日期：2021年06月19日 星期六 12时12分16秒
- *   修改日期：2021年06月19日 星期六 17时38分26秒
+ *   修改日期：2021年06月19日 星期六 23时53分27秒
  *   描    述：
  *
  *================================================================*/
@@ -19,7 +19,7 @@ typedef struct {
 	channel_record_task_info_t *channel_record_task_info;
 	callback_item_t channel_record_sync_callback_item;
 	callback_item_t start_callback_item;
-	callback_item_t stop_callback_item;
+	callback_item_t end_callback_item;
 } channel_record_handler_ctx_t;
 
 static void channel_record_sync_data(void *_channel_info, void *_channel_record_task_info)
@@ -47,7 +47,7 @@ static void start(void *_channel_info, void *__channel_info)
 	debug("");
 }
 
-static void stop(void *_channel_info, void *__channel_info)
+static void end(void *_channel_info, void *__channel_info)
 {
 	channel_info_t *channel_info = (channel_info_t *)_channel_info;
 	channel_record_handler_ctx_t *channel_record_handler_ctx = channel_info->channel_record_handler_ctx;
@@ -71,9 +71,9 @@ int channel_record_handler_init(channel_info_t *channel_info)
 	channel_record_handler_ctx->start_callback_item.fn_ctx = channel_info;
 	OS_ASSERT(register_callback(channel_info->start_chain, &channel_record_handler_ctx->start_callback_item) == 0);
 
-	channel_record_handler_ctx->stop_callback_item.fn = stop;
-	channel_record_handler_ctx->stop_callback_item.fn_ctx = channel_info;
-	OS_ASSERT(register_callback(channel_info->stop_chain, &channel_record_handler_ctx->stop_callback_item) == 0);
+	channel_record_handler_ctx->end_callback_item.fn = end;
+	channel_record_handler_ctx->end_callback_item.fn_ctx = channel_info;
+	OS_ASSERT(register_callback(channel_info->end_chain, &channel_record_handler_ctx->end_callback_item) == 0);
 
 	channel_info->channel_record_handler_ctx = channel_record_handler_ctx;
 
