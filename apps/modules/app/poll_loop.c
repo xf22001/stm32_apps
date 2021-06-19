@@ -6,7 +6,7 @@
  *   文件名称：poll_loop.c
  *   创 建 者：肖飞
  *   创建日期：2020年08月11日 星期二 09时54分20秒
- *   修改日期：2021年05月19日 星期三 08时50分17秒
+ *   修改日期：2021年06月19日 星期六 12时46分22秒
  *   描    述：
  *
  *================================================================*/
@@ -286,9 +286,10 @@ void free_poll_loop(poll_loop_t *poll_loop)
 	os_free(poll_loop);
 }
 
-static poll_loop_t *alloc_poll_loop(uint8_t id)
+static poll_loop_t *alloc_poll_loop(void *ctx)
 {
 	poll_loop_t *poll_loop = NULL;
+	uint8_t *id = (uint8_t *)ctx;
 
 	poll_loop = (poll_loop_t *)os_alloc(sizeof(poll_loop_t));
 
@@ -298,7 +299,7 @@ static poll_loop_t *alloc_poll_loop(uint8_t id)
 
 	memset(poll_loop, 0, sizeof(poll_loop_t));
 
-	poll_loop->id = id;
+	poll_loop->id = *id;
 	INIT_LIST_HEAD(&poll_loop->poll_ctx_list);
 
 	poll_loop->poll_ctx_list_mutex = mutex_create();
@@ -331,7 +332,7 @@ static int object_filter(void *o, void *ctx)
 	return ret;
 }
 
-poll_loop_t *get_or_alloc_poll_loop(uint32_t id)
+poll_loop_t *get_or_alloc_poll_loop(uint8_t id)
 {
 	poll_loop_t *poll_loop = NULL;
 
@@ -343,7 +344,7 @@ poll_loop_t *get_or_alloc_poll_loop(uint32_t id)
 
 	os_leave_critical();
 
-	poll_loop = (poll_loop_t *)object_class_get_or_alloc_object(poll_loop_class, object_filter, (void *)id, (object_alloc_t)alloc_poll_loop, (object_free_t)free_poll_loop);
+	poll_loop = (poll_loop_t *)object_class_get_or_alloc_object(poll_loop_class, object_filter, (void *)&id, (object_alloc_t)alloc_poll_loop, (object_free_t)free_poll_loop);
 
 	return poll_loop;
 }

@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分12秒
- *   修改日期：2021年06月18日 星期五 14时03分30秒
+ *   修改日期：2021年06月19日 星期六 13时23分45秒
  *   描    述：
  *
  *================================================================*/
@@ -15,6 +15,7 @@
 #include "channel_handler_dc.h"
 #include "channel_handler_ac.h"
 #include "channel_handler_proxy.h"
+#include "channel_record_handler.h"
 #include "charger.h"
 #include "energy_meter.h"
 #include "hw_adc.h"
@@ -314,6 +315,10 @@ static int channel_init(channel_info_t *channel_info)
 	OS_ASSERT(channel_info->state_changed_chain != NULL);
 	channel_info->charger_connect_changed_chain = alloc_callback_chain();
 	OS_ASSERT(channel_info->charger_connect_changed_chain != NULL);
+
+
+	debug("channel %d init channel record %s", channel_info->channel_id, get_channel_config_charger_type(channel_config->charger_config.channel_charger_type));
+	channel_record_handler_init(channel_info);
 
 	debug("channel %d init charger %s", channel_info->channel_id, get_channel_config_channel_type(channel_config->channel_type));
 	channel_info->channel_handler = get_channel_handler(channel_config->channel_type);

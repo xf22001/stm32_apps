@@ -6,7 +6,7 @@
  *   文件名称：soft_timer.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月22日 星期五 10时28分46秒
- *   修改日期：2021年05月25日 星期二 11时27分53秒
+ *   修改日期：2021年06月19日 星期六 12时48分14秒
  *   描    述：
  *
  *================================================================*/
@@ -290,9 +290,10 @@ static void free_soft_timer_info(soft_timer_info_t *soft_timer_info)
 	os_free(soft_timer_info);
 }
 
-static soft_timer_info_t *alloc_soft_timer_info(uint32_t id)
+static soft_timer_info_t *alloc_soft_timer_info(void *ctx)
 {
 	soft_timer_info_t *soft_timer_info = NULL;
+	uint8_t *id = (uint8_t *)ctx;
 
 	soft_timer_info = (soft_timer_info_t *)os_alloc(sizeof(soft_timer_info_t));
 
@@ -302,7 +303,7 @@ static soft_timer_info_t *alloc_soft_timer_info(uint32_t id)
 
 	memset(soft_timer_info, 0, sizeof(soft_timer_info_t));
 
-	soft_timer_info->id = id;
+	soft_timer_info->id = *id;
 
 	INIT_LIST_HEAD(&soft_timer_info->deactive_timers);
 	INIT_LIST_HEAD(&soft_timer_info->active_timers);
@@ -352,7 +353,7 @@ static int object_filter(void *o, void *ctx)
 	return ret;
 }
 
-soft_timer_info_t *get_or_alloc_soft_timer_info(uint32_t id)
+soft_timer_info_t *get_or_alloc_soft_timer_info(uint8_t id)
 {
 	soft_timer_info_t *soft_timer_info = NULL;
 
@@ -364,7 +365,7 @@ soft_timer_info_t *get_or_alloc_soft_timer_info(uint32_t id)
 
 	os_leave_critical();
 
-	soft_timer_info = (soft_timer_info_t *)object_class_get_or_alloc_object(soft_timer_class, object_filter, (void *)id, (object_alloc_t)alloc_soft_timer_info, (object_free_t)free_soft_timer_info);
+	soft_timer_info = (soft_timer_info_t *)object_class_get_or_alloc_object(soft_timer_class, object_filter, (void *)&id, (object_alloc_t)alloc_soft_timer_info, (object_free_t)free_soft_timer_info);
 
 	return soft_timer_info;
 }

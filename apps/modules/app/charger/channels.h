@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2021年06月18日 星期五 14时35分49秒
+ *   修改日期：2021年06月19日 星期六 12时17分08秒
  *   描    述：
  *
  *================================================================*/
@@ -124,6 +124,7 @@ typedef struct {
 	void *channels_info;
 	channel_handler_t *channel_handler;
 	void *channel_handler_ctx;
+	void *channel_record_handler_ctx;
 
 	channel_settings_t channel_settings;
 
@@ -155,6 +156,7 @@ typedef struct {
 	void *energy_meter_info;
 
 	uint16_t cp_ad;
+	uint16_t adhe_ad;
 
 	uint32_t total_energy;
 

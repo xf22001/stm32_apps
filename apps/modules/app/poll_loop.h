@@ -6,7 +6,7 @@
  *   文件名称：poll_loop.h
  *   创 建 者：肖飞
  *   创建日期：2020年08月11日 星期二 09时54分24秒
- *   修改日期：2021年05月24日 星期一 09时35分59秒
+ *   修改日期：2021年06月19日 星期六 12时48分35秒
  *   描    述：
  *
  *================================================================*/
@@ -62,7 +62,7 @@ typedef struct {
 	struct list_head poll_ctx_list;
 } poll_loop_t;
 
-poll_loop_t *get_or_alloc_poll_loop(uint32_t id);
+poll_loop_t *get_or_alloc_poll_loop(uint8_t id);
 poll_ctx_t *alloc_poll_ctx(void);
 void free_poll_ctx(poll_ctx_t *poll_ctx);
 int add_poll_loop_ctx_item(poll_loop_t *poll_loop, poll_ctx_t *poll_ctx);

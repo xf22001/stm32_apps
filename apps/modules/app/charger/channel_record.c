@@ -6,7 +6,7 @@
  *   文件名称：channel_record.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月23日 星期日 13时40分21秒
- *   修改日期：2021年06月02日 星期三 14时41分07秒
+ *   修改日期：2021年06月19日 星期六 13时11分49秒
  *   描    述：
  *
  *================================================================*/
@@ -54,7 +54,6 @@ static int channel_record_item_save(channel_record_task_info_t *channel_record_t
 
 int alloc_channel_record_item_id(channel_record_task_info_t *channel_record_task_info, channel_record_item_t *channel_record_item)
 {
-	int ret = -1;
 	uint16_t id;
 	channel_record_info_t *channel_record_info = &channel_record_task_info->channel_record_info;
 
@@ -89,7 +88,7 @@ int alloc_channel_record_item_id(channel_record_task_info_t *channel_record_task
 
 	mutex_unlock(channel_record_task_info->mutex);
 
-	return ret;
+	return 0;
 }
 
 int get_channel_record_item_by_id(channel_record_task_info_t *channel_record_task_info, uint16_t id, channel_record_item_t *channel_record_item)
@@ -164,10 +163,11 @@ static void channel_record_task(void const *argument)
 	}
 }
 
-static channel_record_task_info_t *alloc_channel_record_task_info(uint32_t id)
+static channel_record_task_info_t *alloc_channel_record_task_info(void *ctx)
 {
 	channel_record_task_info_t *channel_record_task_info = NULL;
 	app_info_t *app_info = get_app_info();
+	uint8_t *id = (uint8_t *)ctx;
 
 	OS_ASSERT(app_info != NULL);
 	OS_ASSERT(app_info->eeprom_info != NULL);
@@ -175,7 +175,7 @@ static channel_record_task_info_t *alloc_channel_record_task_info(uint32_t id)
 	channel_record_task_info = (channel_record_task_info_t *)os_calloc(1, sizeof(channel_record_task_info_t));
 	OS_ASSERT(channel_record_task_info != NULL);
 
-	channel_record_task_info->id = id;
+	channel_record_task_info->id = *id;
 
 	channel_record_task_info->eeprom_info = app_info->eeprom_info;
 
@@ -208,16 +208,16 @@ static int object_filter(void *o, void *ctx)
 {
 	int ret = -1;
 	channel_record_task_info_t *channel_record_task_info = (channel_record_task_info_t *)o;
-	uint32_t id = (uint32_t)ctx;
+	uint32_t *id = (uint32_t *)ctx;
 
-	if(channel_record_task_info->id == id) {
+	if(channel_record_task_info->id == *id) {
 		ret = 0;
 	}
 
 	return ret;
 }
 
-channel_record_task_info_t *get_or_alloc_channel_record_task_info(uint32_t id)
+channel_record_task_info_t *get_or_alloc_channel_record_task_info(uint8_t id)
 {
 	channel_record_task_info_t *channel_record_task_info = NULL;
 
@@ -229,7 +229,7 @@ channel_record_task_info_t *get_or_alloc_channel_record_task_info(uint32_t id)
 
 	os_leave_critical();
 
-	channel_record_task_info = (channel_record_task_info_t *)object_class_get_or_alloc_object(channel_record_task_class, object_filter, (void *)id, (object_alloc_t)alloc_channel_record_task_info, (object_free_t)free_channel_record_task_info);
+	channel_record_task_info = (channel_record_task_info_t *)object_class_get_or_alloc_object(channel_record_task_class, object_filter, (void *)&id, (object_alloc_t)alloc_channel_record_task_info, (object_free_t)free_channel_record_task_info);
 
 	return channel_record_task_info;
 }

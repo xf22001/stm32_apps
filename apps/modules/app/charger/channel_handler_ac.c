@@ -6,7 +6,7 @@
  *   文件名称：channel_handler_ac.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月11日 星期二 09时20分53秒
- *   修改日期：2021年06月18日 星期五 15时02分57秒
+ *   修改日期：2021年06月19日 星期六 11时51分37秒
  *   描    述：
  *
  *================================================================*/
@@ -151,14 +151,18 @@ static int ac_adhesion_check_ln(channel_info_t *channel_info, uint8_t ln)
 		break;
 
 		case 2: {
-			channel_config_t *channel_config = channel_info->channel_config;
+			adc_info_t *adc_info = get_or_alloc_adc_info(channel_info->channel_config->adhe_ad_adc);
+			uint16_t adhe_ad_voltage;
 
-			if(HAL_GPIO_ReadPin(channel_config->charger_config.adhe_gpio, channel_config->charger_config.adhe_pin) == GPIO_PIN_SET) {
-				ret = -1;
-			} else {
+			OS_ASSERT(adc_info != NULL);
+			channel_info->adhe_ad = get_adc_value(adc_info, channel_info->channel_config->adhe_ad_adc_rank);
+			adhe_ad_voltage = (int)(channel_info->adhe_ad * 3 * 95 * 10) >> 12;//0.1v
+
+			if(adhe_ad_voltage <= 240) {//todo
 				ret = 0;
+			} else {
+				ret = -1;
 			}
-
 		}
 		break;
 

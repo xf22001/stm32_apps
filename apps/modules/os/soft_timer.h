@@ -6,7 +6,7 @@
  *   文件名称：soft_timer.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月22日 星期五 10时28分59秒
- *   修改日期：2021年01月28日 星期四 15时45分12秒
+ *   修改日期：2021年06月19日 星期六 12时48分08秒
  *   描    述：
  *
  *================================================================*/
@@ -26,7 +26,7 @@ extern "C"
 #endif
 
 typedef struct {
-	uint32_t id;
+	uint8_t id;
 	os_mutex_t mutex;
 	struct list_head deactive_timers;
 	struct list_head active_timers;
@@ -56,6 +56,6 @@ soft_timer_ctx_t *add_soft_timer(soft_timer_info_t *soft_timer_info, callback_fn
 int start_soft_timer(soft_timer_ctx_t *soft_timer_ctx);
 int stop_soft_timer(soft_timer_ctx_t *soft_timer_ctx);
 int remove_soft_timer(soft_timer_ctx_t *soft_timer_ctx);
-soft_timer_info_t *get_or_alloc_soft_timer_info(uint32_t id);
+soft_timer_info_t *get_or_alloc_soft_timer_info(uint8_t id);
 
 #endif //_SOFT_TIMER_H

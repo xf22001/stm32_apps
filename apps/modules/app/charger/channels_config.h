@@ -6,7 +6,7 @@
  *   文件名称：channels_config.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 11时00分11秒
- *   修改日期：2021年06月18日 星期五 14时59分57秒
+ *   修改日期：2021年06月19日 星期六 11时43分22秒
  *   描    述：
  *
  *================================================================*/
@@ -56,9 +56,6 @@ typedef struct {
 	GPIO_TypeDef *rey4_gpio;
 	uint16_t rey4_pin;
 
-	GPIO_TypeDef *adhe_gpio;
-	uint16_t adhe_pin;
-
 	//dc
 	CAN_HandleTypeDef *hcan_bms;
 } channel_charger_config_t;
@@ -80,6 +77,9 @@ typedef struct {
 	channel_charger_config_t charger_config;
 	channel_energy_meter_config_t energy_meter_config;
 	CAN_HandleTypeDef *hcan_channel_comm;
+	//ac
+	ADC_HandleTypeDef *adhe_ad_adc;
+	uint8_t adhe_ad_adc_rank;
 	ADC_HandleTypeDef *cp_ad_adc;
 	uint8_t cp_ad_adc_rank;
 } channel_config_t;
