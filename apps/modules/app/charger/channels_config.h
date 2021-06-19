@@ -6,7 +6,7 @@
  *   文件名称：channels_config.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 11时00分11秒
- *   修改日期：2021年06月19日 星期六 11时43分22秒
+ *   修改日期：2021年06月19日 星期六 19时14分35秒
  *   描    述：
  *
  *================================================================*/
@@ -37,6 +37,7 @@ typedef enum {
 typedef enum {
 	CHANNEL_CHARGER_TYPE_BMS_NONE = 0,
 	CHANNEL_CHARGER_TYPE_BMS_GB,
+	CHANNEL_CHARGER_TYPE_BMS_AC,
 	CHANNEL_CHARGER_TYPE_BMS_PROXY,
 } channel_charger_type_t;
 
@@ -124,6 +125,8 @@ typedef struct {
 	CAN_HandleTypeDef *hcan_channel_comm;
 	ADC_HandleTypeDef *board_temperature_adc;
 	uint8_t board_temperature_adc_rank;
+	GPIO_TypeDef *force_stop_port;
+	uint16_t force_stop_pin;
 } channels_config_t;
 
 char *get_channel_config_channel_type(channel_type_t type);

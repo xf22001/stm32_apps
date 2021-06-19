@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分12秒
- *   修改日期：2021年06月19日 星期六 13时23分45秒
+ *   修改日期：2021年06月19日 星期六 22时40分23秒
  *   描    述：
  *
  *================================================================*/
@@ -240,13 +240,35 @@ static int _handle_channel_event(channel_info_t *channel_info, channel_event_t *
 
 	switch(channel_event->type) {
 		case CHANNEL_EVENT_TYPE_START_CHANNEL: {
-			set_channel_request_state(channel_info, CHANNEL_STATE_START);
+			switch(channel_info->state) {
+				case CHANNEL_STATE_IDLE: {
+					set_channel_request_state(channel_info, CHANNEL_STATE_START);
+					ret = 0;
+				}
+				break;
+
+				default: {
+				}
+				break;
+			}
 		}
 		break;
 
 		case CHANNEL_EVENT_TYPE_STOP_CHANNEL: {
-			channel_set_stop_reason(channel_info, channel_event->reason);
-			set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
+			switch(channel_info->state) {
+				case CHANNEL_STATE_START:
+				case CHANNEL_STATE_STARTING:
+				case CHANNEL_STATE_CHARGING: {
+					channel_set_stop_reason(channel_info, channel_event->reason);
+					set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
+					ret = 0;
+				}
+				break;
+
+				default: {
+				}
+				break;
+			}
 		}
 		break;
 
@@ -297,7 +319,6 @@ static int channel_init(channel_info_t *channel_info)
 
 	channel_info->request_state = CHANNEL_STATE_NONE;
 	channel_info->state = CHANNEL_STATE_IDLE;
-	channel_info->charger_connect_state = 0;
 
 	channel_info->idle_chain = alloc_callback_chain();
 	OS_ASSERT(channel_info->idle_chain != NULL);
@@ -343,9 +364,8 @@ static int channel_init(channel_info_t *channel_info)
 	return ret;
 }
 
-static void handle_channels_common_periodic(void *_channels_info, void *__channels_info)
+static void handle_channels_temperature(channels_info_t *channels_info)
 {
-	channels_info_t *channels_info = (channels_info_t *)_channels_info;
 	adc_info_t *adc_info;
 	uint16_t temperature_ad;
 
@@ -359,6 +379,32 @@ static void handle_channels_common_periodic(void *_channels_info, void *__channe
 	temperature_ad = get_adc_value(adc_info, channels_info->channels_config->board_temperature_adc_rank);
 	channels_info->temperature = get_ntc_temperature(10000, temperature_ad, 4095);
 	//debug("current temperature:%d", channels_info->temperature);
+}
+
+static void handle_channels_force_stop(channels_info_t *channels_info)
+{
+	uint8_t force_stop = 0;
+
+	if(channels_info->channels_config->force_stop_port == NULL) {
+		return;
+	}
+
+	if (HAL_GPIO_ReadPin(channels_info->channels_config->force_stop_port, channels_info->channels_config->force_stop_pin) == GPIO_PIN_SET) {
+		force_stop = 1;
+	}
+
+	if(get_fault(channels_info->faults, CHANNELS_FAULT_FORCE_STOP) != force_stop) {
+		set_fault(channels_info->faults, CHANNELS_FAULT_FORCE_STOP, force_stop);
+	}
+}
+
+static void handle_channels_common_periodic(void *_channels_info, void *__channels_info)
+{
+	channels_info_t *channels_info = (channels_info_t *)_channels_info;
+
+	//debug("channels periodic!");
+	handle_channels_temperature(channels_info);
+	handle_channels_force_stop(channels_info);
 }
 
 static void handle_channels_common_event(void *_channels_info, void *_channels_event)

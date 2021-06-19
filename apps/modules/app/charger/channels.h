@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2021年06月19日 星期六 12时17分08秒
+ *   修改日期：2021年06月19日 星期六 22时39分13秒
  *   描    述：
  *
  *================================================================*/
@@ -71,8 +71,6 @@ typedef int (*channel_stop_t)(void *_channel_info);
 typedef struct {
 	channel_type_t channel_type;
 	channel_init_t init;
-	channel_start_t channel_start;
-	channel_stop_t channel_stop;
 } channel_handler_t;
 
 typedef enum {
@@ -133,9 +131,7 @@ typedef struct {
 	channel_state_t request_state;
 	channel_state_t state;
 
-	uint8_t charger_connect_state;
 	uint8_t charger_lock_state;
-	uint8_t vehicle_relay_state;
 
 	uint8_t bms_state;
 
@@ -221,7 +217,7 @@ typedef struct {
 	void *card_reader_info;
 	void *channels_power_module;
 	channels_settings_t channels_settings;
-	bitmap_t *faults;
+	bitmap_t *faults;//channels_fault_t
 	void *channel_comm_channel_info;
 	void *channel_comm_channels_info;
 	int8_t temperature;

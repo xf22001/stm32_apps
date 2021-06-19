@@ -6,7 +6,7 @@
  *   文件名称：poll_loop.c
  *   创 建 者：肖飞
  *   创建日期：2020年08月11日 星期二 09时54分20秒
- *   修改日期：2021年06月19日 星期六 12时46分22秒
+ *   修改日期：2021年06月19日 星期六 22时12分13秒
  *   描    述：
  *
  *================================================================*/
@@ -323,9 +323,9 @@ static int object_filter(void *o, void *ctx)
 {
 	int ret = -1;
 	poll_loop_t *poll_loop = (poll_loop_t *)o;
-	uint32_t id = (uint32_t)ctx;
+	uint8_t *id = (uint8_t *)ctx;
 
-	if(poll_loop->id == id) {
+	if(poll_loop->id == *id) {
 		ret = 0;
 	}
 

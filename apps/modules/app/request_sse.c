@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年06月18日 星期五 14时52分04秒
+ *   修改日期：2021年06月19日 星期六 22时39分51秒
  *   描    述：
  *
  *================================================================*/
@@ -880,10 +880,10 @@ static uint8_t get_channel_device_state(channel_info_t *channel_info)
 	u_sse_channel_device_state_t u_sse_channel_device_state;
 	u_sse_channel_device_state.v = 0;
 
-	u_sse_channel_device_state.s.connect = channel_info->charger_connect_state;
+	u_sse_channel_device_state.s.connect = ((charger_info_t *)(channel_info->charger_info))->charger_connect_state;
 	u_sse_channel_device_state.s.auxiliary_power_12 = (channel_info->channel_settings.auxiliary_power_type == AUXILIARY_POWER_TYPE_12) ? 1 : 0;
 	u_sse_channel_device_state.s.auxiliary_power_24 = (channel_info->channel_settings.auxiliary_power_type == AUXILIARY_POWER_TYPE_24) ? 1 : 0;
-	u_sse_channel_device_state.s.vehicle_relay_state = channel_info->vehicle_relay_state;
+	u_sse_channel_device_state.s.vehicle_relay_state = ((charger_info_t *)(channel_info->charger_info))->vehicle_relay_state;
 	u_sse_channel_device_state.s.charger_lock_state = channel_info->charger_lock_state;
 
 	return u_sse_channel_device_state.v;

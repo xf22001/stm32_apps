@@ -6,12 +6,15 @@
  *   文件名称：channel_handler_proxy.c
  *   创 建 者：肖飞
  *   创建日期：2021年06月05日 星期六 22时43分22秒
- *   修改日期：2021年06月07日 星期一 10时49分25秒
+ *   修改日期：2021年06月19日 星期六 22时23分21秒
  *   描    述：
  *
  *================================================================*/
 #include "channel_handler_proxy.h"
+
 #include "channel_comm_channel.h"
+#include "charger.h"
+#include "charger_bms.h"
 
 #include "log.h"
 
@@ -26,9 +29,6 @@ typedef struct {
 	callback_item_t stopping_callback_item;
 	callback_item_t stop_callback_item;
 	callback_item_t state_changed_callback_item;
-
-	uint8_t state;
-	uint32_t state_stamps;
 } channel_handler_ctx_t;
 
 static void idle(void *_channel_info, void *__channel_info)
@@ -37,6 +37,10 @@ static void idle(void *_channel_info, void *__channel_info)
 
 static void start(void *_channel_info, void *__channel_info)
 {
+	channel_info_t *channel_info = (channel_info_t *)_channel_info;
+	charger_info_t *charger_info = (charger_info_t *)channel_info->charger_info;
+
+	set_charger_bms_request_action(charger_info, CHARGER_BMS_REQUEST_ACTION_START);
 }
 
 static void starting(void *_channel_info, void *__channel_info)
@@ -53,16 +57,17 @@ static void stopping(void *_channel_info, void *__channel_info)
 
 static void stop(void *_channel_info, void *__channel_info)
 {
+	channel_info_t *channel_info = (channel_info_t *)_channel_info;
+
+	set_channel_request_state(channel_info, CHANNEL_STATE_IDLE);
 }
 
 static void state_changed(void *_channel_info, void *_pre_state)
 {
 	channel_info_t *channel_info = (channel_info_t *)_channel_info;
-	channel_handler_ctx_t *channel_handler_ctx = (channel_handler_ctx_t *)channel_info->channel_handler_ctx;
 
 	debug("channel state:%s -> %s!", get_channel_state_des(channel_info->state), get_channel_state_des(channel_info->request_state));
 	channel_info->state = channel_info->request_state;
-	channel_handler_ctx->state = 0;
 }
 
 static void handle_channel_handler_periodic(void *_channel_info, void *_channels_info)
@@ -165,50 +170,7 @@ static int init(void *_channel_info)
 	return ret;
 }
 
-static int channel_start(void *_channel_info)
-{
-	int ret = -1;
-	channel_info_t *channel_info = (channel_info_t *)_channel_info;
-
-	switch(channel_info->state) {
-		case CHANNEL_STATE_IDLE: {
-			set_channel_request_state(channel_info, CHANNEL_STATE_START);
-			ret = 0;
-		}
-		break;
-
-		default: {
-		}
-		break;
-	}
-
-	return ret;
-}
-
-static int channel_stop(void *_channel_info)
-{
-	int ret = -1;
-	channel_info_t *channel_info = (channel_info_t *)_channel_info;
-
-	switch(channel_info->state) {
-		case CHANNEL_STATE_START:
-		case CHANNEL_STATE_STARTING:
-		case CHANNEL_STATE_CHARGING: {
-			set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
-			ret = 0;
-		}
-		break;
-
-		default: {
-		}
-		break;
-	}
-
-	return ret;
-}
 channel_handler_t channel_handler_proxy = {
 	.channel_type = CHANNEL_TYPE_PROXY,
 	.init = init,
-	.channel_start = channel_start,
-	.channel_stop = channel_stop,
 };

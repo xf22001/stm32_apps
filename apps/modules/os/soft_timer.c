@@ -6,7 +6,7 @@
  *   文件名称：soft_timer.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月22日 星期五 10时28分46秒
- *   修改日期：2021年06月19日 星期六 12时48分14秒
+ *   修改日期：2021年06月19日 星期六 22时13分40秒
  *   描    述：
  *
  *================================================================*/
@@ -344,9 +344,9 @@ static int object_filter(void *o, void *ctx)
 {
 	int ret = -1;
 	soft_timer_info_t *soft_timer_info = (soft_timer_info_t *)o;
-	uint32_t id = (uint32_t)ctx;
+	uint8_t *id = (uint8_t *)ctx;
 
-	if(soft_timer_info->id == id) {
+	if(soft_timer_info->id == *id) {
 		ret = 0;
 	}
 

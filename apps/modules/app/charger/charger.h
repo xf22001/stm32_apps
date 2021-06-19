@@ -6,7 +6,7 @@
  *   文件名称：charger.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月19日 星期二 12时32分24秒
- *   修改日期：2021年06月07日 星期一 15时54分10秒
+ *   修改日期：2021年06月19日 星期六 22时48分57秒
  *   描    述：
  *
  *================================================================*/
@@ -19,6 +19,7 @@ extern "C"
 
 #include "app_platform.h"
 #include "cmsis_os.h"
+
 #include "can_txrx.h"
 #include "callback_chain.h"
 #include "channels_config.h"
@@ -74,6 +75,8 @@ typedef struct {
 	callback_item_t can_data_request_cb;
 	callback_item_t can_data_response_cb;
 
+	callback_item_t periodic_request_cb;
+
 	charger_handler_t *charger_handler;
 
 	charger_bms_handler_t *charger_bms_handler;
@@ -92,6 +95,11 @@ typedef struct {
 
 	uint8_t connect_state;
 	uint32_t periodic_stamps;
+
+	uint8_t vehicle_relay_state;
+	uint8_t charger_connect_state;
+
+	void *charger_bms_ctx;
 } charger_info_t;
 
 charger_info_t *alloc_charger_info(channel_info_t *channel_info);

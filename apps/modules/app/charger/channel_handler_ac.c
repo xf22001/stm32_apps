@@ -6,13 +6,14 @@
  *   文件名称：channel_handler_ac.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月11日 星期二 09时20分53秒
- *   修改日期：2021年06月19日 星期六 11时51分37秒
+ *   修改日期：2021年06月19日 星期六 22时58分38秒
  *   描    述：
  *
  *================================================================*/
 #include "channel_handler_ac.h"
 
-#include "hw_adc.h"
+#include "charger.h"
+#include "charger_bms.h"
 
 #include "log.h"
 
@@ -27,20 +28,7 @@ typedef struct {
 	callback_item_t stopping_callback_item;
 	callback_item_t stop_callback_item;
 	callback_item_t state_changed_callback_item;
-
-	uint8_t state;
-	uint32_t state_stamps;
-	uint8_t state_0;
-	uint32_t state_0_stamps;
-
 } channel_handler_ctx_t;
-
-typedef enum {
-	CP_PWM_DUTY_STOP = 1000,//pwm占空比 100%
-	CP_PWM_DUTY_16A = 266,//pwm占空比 26.67%
-	CP_PWM_DUTY_32A = 533,//pwm占空比 53.33%
-	CP_PWM_DUTY_63A = 892,//pwm占空比 89.2%
-} cp_pwm_duty_t;
 
 static void idle(void *_channel_info, void *__channel_info)
 {
@@ -49,261 +37,21 @@ static void idle(void *_channel_info, void *__channel_info)
 static void start(void *_channel_info, void *__channel_info)
 {
 	channel_info_t *channel_info = (channel_info_t *)_channel_info;
+	charger_info_t *charger_info = (charger_info_t *)channel_info->charger_info;
 
-	if(channel_info->charger_connect_state == 1) {
-		set_channel_request_state(channel_info, CHANNEL_STATE_STARTING);
-	} else {
-		channel_set_stop_reason(channel_info, CHANNEL_RECORD_ITEM_STOP_REASON_CHARGER_NOT_CONNECTED);
-		set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
-	}
-}
-
-static void start_cp_pwm(channel_info_t *channel_info)
-{
-	uint16_t duty = CP_PWM_DUTY_STOP;
-	channel_config_t *channel_config = channel_info->channel_config;
-
-	switch(channel_info->channel_settings.ac_current_limit) {
-		case AC_CURRENT_LIMIT_16A: {
-			duty = CP_PWM_DUTY_16A;
-		}
-		break;
-
-		case AC_CURRENT_LIMIT_32A: {
-			duty = CP_PWM_DUTY_32A;
-		}
-		break;
-
-		case AC_CURRENT_LIMIT_63A: {
-			duty = CP_PWM_DUTY_63A;
-		}
-		break;
-
-		default: {
-		}
-		break;
-	}
-
-	__HAL_TIM_SET_COMPARE(channel_config->charger_config.cp_pwm_timer, channel_config->charger_config.cp_pwm_channel, duty);
-}
-
-static void stop_cp_pwm(channel_info_t *channel_info)
-{
-	channel_config_t *channel_config = channel_info->channel_config;
-
-	__HAL_TIM_SET_COMPARE(channel_config->charger_config.cp_pwm_timer, channel_config->charger_config.cp_pwm_channel, CP_PWM_DUTY_STOP);
-}
-
-static void output_relay_on(channel_info_t *channel_info)
-{
-	channel_config_t *channel_config = channel_info->channel_config;
-
-	HAL_GPIO_WritePin(channel_config->charger_config.kl_gpio, channel_config->charger_config.kl_pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(channel_config->charger_config.kn_gpio, channel_config->charger_config.kn_pin, GPIO_PIN_SET);
-}
-
-static void output_relay_off(channel_info_t *channel_info)
-{
-	channel_config_t *channel_config = channel_info->channel_config;
-
-	HAL_GPIO_WritePin(channel_config->charger_config.kl_gpio, channel_config->charger_config.kl_pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(channel_config->charger_config.kn_gpio, channel_config->charger_config.kn_pin, GPIO_PIN_RESET);
-}
-
-typedef enum {
-	STARTING_STATE_START_PWM = 0,
-	STARTING_STATE_START_ADHESION_CHECK_L,
-	STARTING_STATE_START_ADHESION_CHECK_N,
-	STARTING_STATE_START_OUTPUT,
-} starting_state_t;
-
-static void relay_mode_adhesion_ln(channel_info_t *channel_info, uint8_t ln)
-{
-	channel_config_t *channel_config = channel_info->channel_config;
-
-	if(ln == 0) {
-		HAL_GPIO_WritePin(channel_config->charger_config.rey3_gpio, channel_config->charger_config.rey3_pin, GPIO_PIN_SET);
-		HAL_GPIO_WritePin(channel_config->charger_config.rey4_gpio, channel_config->charger_config.rey4_pin, GPIO_PIN_RESET);
-	} else {
-		HAL_GPIO_WritePin(channel_config->charger_config.rey3_gpio, channel_config->charger_config.rey3_pin, GPIO_PIN_RESET);
-		HAL_GPIO_WritePin(channel_config->charger_config.rey4_gpio, channel_config->charger_config.rey4_pin, GPIO_PIN_SET);
-	}
-}
-
-static int ac_adhesion_check_ln(channel_info_t *channel_info, uint8_t ln)
-{
-	int ret = 1;
-	channel_handler_ctx_t *channel_handler_ctx = (channel_handler_ctx_t *)channel_info->channel_handler_ctx;
-	uint32_t ticks = osKernelSysTick();
-
-	switch(channel_handler_ctx->state_0) {
-		case 0: {
-			relay_mode_adhesion_ln(channel_info, ln);
-			channel_handler_ctx->state_0 = 1;
-		}
-		break;
-
-		case 1: {
-			if(ticks_duration(ticks, channel_handler_ctx->state_0_stamps) >= 100) {
-				channel_handler_ctx->state_0 = 2;
-			}
-		}
-		break;
-
-		case 2: {
-			adc_info_t *adc_info = get_or_alloc_adc_info(channel_info->channel_config->adhe_ad_adc);
-			uint16_t adhe_ad_voltage;
-
-			OS_ASSERT(adc_info != NULL);
-			channel_info->adhe_ad = get_adc_value(adc_info, channel_info->channel_config->adhe_ad_adc_rank);
-			adhe_ad_voltage = (int)(channel_info->adhe_ad * 3 * 95 * 10) >> 12;//0.1v
-
-			if(adhe_ad_voltage <= 240) {//todo
-				ret = 0;
-			} else {
-				ret = -1;
-			}
-		}
-		break;
-
-		default: {
-		}
-		break;
-	}
-
-	return ret;
-}
-
-static void relay_mode_output_voltage(channel_info_t *channel_info)
-{
-	channel_config_t *channel_config = channel_info->channel_config;
-	HAL_GPIO_WritePin(channel_config->charger_config.rey3_gpio, channel_config->charger_config.rey3_pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(channel_config->charger_config.rey4_gpio, channel_config->charger_config.rey4_pin, GPIO_PIN_SET);
+	set_charger_bms_request_action(charger_info, CHARGER_BMS_REQUEST_ACTION_START);
 }
 
 static void starting(void *_channel_info, void *__channel_info)
 {
-	channel_info_t *channel_info = (channel_info_t *)_channel_info;
-	channel_handler_ctx_t *channel_handler_ctx = (channel_handler_ctx_t *)channel_info->channel_handler_ctx;
-	uint32_t ticks = osKernelSysTick();
-
-	switch(channel_handler_ctx->state) {
-		case STARTING_STATE_START_PWM: {
-			start_cp_pwm(channel_info);
-			channel_handler_ctx->state = STARTING_STATE_START_ADHESION_CHECK_L;
-			channel_handler_ctx->state_stamps = ticks;
-			channel_handler_ctx->state_0 = 0;
-			channel_handler_ctx->state_0_stamps = ticks;
-		}
-		break;
-
-		case STARTING_STATE_START_ADHESION_CHECK_L: {
-			if(ticks_duration(ticks, channel_handler_ctx->state_stamps) >= 5 * 1000) {
-				channel_set_stop_reason(channel_info, CHANNEL_RECORD_ITEM_STOP_REASON_AC_CHARGER_ADHESION_CHECK_L_TIMEOUT);
-				set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
-			} else {
-				int ret = ac_adhesion_check_ln(channel_info, 0);
-
-				if(ret == 0) {
-					channel_handler_ctx->state = STARTING_STATE_START_ADHESION_CHECK_N;
-					channel_handler_ctx->state_stamps = ticks;
-					channel_handler_ctx->state_0 = 0;
-					channel_handler_ctx->state_0_stamps = ticks;
-				} else if(ret == -1) {
-					channel_set_stop_reason(channel_info, CHANNEL_RECORD_ITEM_STOP_REASON_AC_CHARGER_ADHESION_L);
-					set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
-				}
-			}
-		}
-		break;
-
-		case STARTING_STATE_START_ADHESION_CHECK_N: {
-			if(ticks_duration(ticks, channel_handler_ctx->state_stamps) >= 5 * 1000) {
-				channel_set_stop_reason(channel_info, CHANNEL_RECORD_ITEM_STOP_REASON_AC_CHARGER_ADHESION_CHECK_N_TIMEOUT);
-				set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
-			} else {
-				int ret = ac_adhesion_check_ln(channel_info, 1);
-
-				if(ret == 0) {
-					channel_handler_ctx->state = STARTING_STATE_START_OUTPUT;
-					channel_handler_ctx->state_stamps = ticks;
-				} else if(ret == -1) {
-					channel_set_stop_reason(channel_info, CHANNEL_RECORD_ITEM_STOP_REASON_AC_CHARGER_ADHESION_L);
-					set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
-				}
-			}
-		}
-		break;
-
-		case STARTING_STATE_START_OUTPUT: {
-			if(ticks_duration(ticks, channel_handler_ctx->state_stamps) >= 5 * 1000) {
-				channel_set_stop_reason(channel_info, CHANNEL_RECORD_ITEM_STOP_REASON_AC_CHARGER_CC1_READY_1_TIMEOUT);
-				set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
-			} else {
-				if(channel_info->vehicle_relay_state == 1) {
-					relay_mode_output_voltage(channel_info);
-					output_relay_on(channel_info);
-					set_channel_request_state(channel_info, CHANNEL_STATE_CHARGING);
-				}
-			}
-		}
-		break;
-
-		default: {
-		}
-		break;
-	}
 }
 
 static void charging(void *_channel_info, void *__channel_info)
 {
 }
 
-static void relay_mode_input_voltage(channel_info_t *channel_info)
-{
-	channel_config_t *channel_config = channel_info->channel_config;
-	HAL_GPIO_WritePin(channel_config->charger_config.rey3_gpio, channel_config->charger_config.rey3_pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(channel_config->charger_config.rey4_gpio, channel_config->charger_config.rey4_pin, GPIO_PIN_RESET);
-}
-
 static void stopping(void *_channel_info, void *__channel_info)
 {
-	channel_info_t *channel_info = (channel_info_t *)_channel_info;
-	channel_handler_ctx_t *channel_handler_ctx = (channel_handler_ctx_t *)channel_info->channel_handler_ctx;
-	uint32_t ticks = osKernelSysTick();
-
-	switch(channel_handler_ctx->state) {
-		case 0: {
-			channel_handler_ctx->state = 1;
-			channel_handler_ctx->state_stamps = ticks;
-		}
-		break;
-
-		case 1: {
-			if(ticks_duration(ticks, channel_handler_ctx->state_stamps) >= 5 * 1000) {
-				channel_set_stop_reason(channel_info, CHANNEL_RECORD_ITEM_STOP_REASON_AC_CHARGER_CC1_READY_0_TIMEOUT);
-				output_relay_off(channel_info);
-				channel_handler_ctx->state = 2;
-			} else {
-				if(channel_info->vehicle_relay_state == 0) {
-					output_relay_off(channel_info);
-					relay_mode_input_voltage(channel_info);
-					channel_handler_ctx->state = 2;
-				}
-			}
-		}
-		break;
-
-		case 2: {
-			stop_cp_pwm(channel_info);
-			set_channel_request_state(channel_info, CHANNEL_STATE_STOP);
-		}
-		break;
-
-		default: {
-		}
-		break;
-	}
 }
 
 static void stop(void *_channel_info, void *__channel_info)
@@ -316,65 +64,14 @@ static void stop(void *_channel_info, void *__channel_info)
 static void state_changed(void *_channel_info, void *_pre_state)
 {
 	channel_info_t *channel_info = (channel_info_t *)_channel_info;
-	channel_handler_ctx_t *channel_handler_ctx = (channel_handler_ctx_t *)channel_info->channel_handler_ctx;
 
 	debug("channel state:%s -> %s!", get_channel_state_des(channel_info->state), get_channel_state_des(channel_info->request_state));
 	channel_info->state = channel_info->request_state;
-	channel_handler_ctx->state = 0;
-}
-
-#define CP_AD_VOLTAGE_CONNECT_OFF 110
-#define CP_AD_VOLTAGE_CONNECT_ON 80
-#define CP_AD_VOLTAGE_READY 50
-#define CP_AD_VOLTAGE_READY_3 20
-
-void handle_charger_connect_state(channel_info_t *channel_info)
-{
-	adc_info_t *adc_info = get_or_alloc_adc_info(channel_info->channel_config->cp_ad_adc);
-	uint16_t cp_ad_voltage = 0;
-	uint8_t charger_connect_state;
-	uint8_t cc1_ready;
-
-	OS_ASSERT(adc_info != NULL);
-
-	channel_info->cp_ad = get_adc_value(adc_info, channel_info->channel_config->cp_ad_adc_rank);
-
-	cp_ad_voltage = (int)(channel_info->cp_ad * 33 * 4.5) >> 12;//0v-14.85v
-
-	if(cp_ad_voltage >= CP_AD_VOLTAGE_CONNECT_OFF) {
-		charger_connect_state = 0;
-		cc1_ready = 0;
-	} else if(cp_ad_voltage >= CP_AD_VOLTAGE_CONNECT_ON) {
-		charger_connect_state = 1;
-		cc1_ready = 0;
-	} else if(cp_ad_voltage >= CP_AD_VOLTAGE_READY) {
-		charger_connect_state = 1;
-		cc1_ready = 1;
-	} else if(cp_ad_voltage >= CP_AD_VOLTAGE_READY_3) {
-		charger_connect_state = 1;
-		cc1_ready = 1;
-	} else {
-		charger_connect_state = 0;
-		cc1_ready = 0;
-	}
-
-	if(channel_info->charger_connect_state != charger_connect_state) {
-		channel_info->charger_connect_state = charger_connect_state;
-		do_callback_chain(channel_info->charger_connect_changed_chain, channel_info);
-	}
-
-	if(channel_info->vehicle_relay_state != cc1_ready) {
-		channel_info->vehicle_relay_state = cc1_ready;
-	}
-
-	debug("channel %d charger_connect_state:%d, cc1_ready:%d", channel_info->channel_id, channel_info->charger_connect_state, cc1_ready);
 }
 
 static void handle_channel_handler_periodic(void *_channel_info, void *_channels_info)
 {
-	channel_info_t *channel_info = (channel_info_t *)_channel_info;
 	//debug("channel_id %d handler periodic!", ((channel_info_t *)_channel_info)->channel_id);
-	handle_charger_connect_state(channel_info);
 }
 
 static int _handle_channel_handler_event(channel_info_t *channel_info, channel_event_t *channel_event)
@@ -470,51 +167,7 @@ static int init(void *_channel_info)
 	return ret;
 }
 
-static int channel_start(void *_channel_info)
-{
-	int ret = -1;
-	channel_info_t *channel_info = (channel_info_t *)_channel_info;
-
-	switch(channel_info->state) {
-		case CHANNEL_STATE_IDLE: {
-			set_channel_request_state(channel_info, CHANNEL_STATE_START);
-			ret = 0;
-		}
-		break;
-
-		default: {
-		}
-		break;
-	}
-
-	return ret;
-}
-
-static int channel_stop(void *_channel_info)
-{
-	int ret = -1;
-	channel_info_t *channel_info = (channel_info_t *)_channel_info;
-
-	switch(channel_info->state) {
-		case CHANNEL_STATE_START:
-		case CHANNEL_STATE_STARTING:
-		case CHANNEL_STATE_CHARGING: {
-			set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
-			ret = 0;
-		}
-		break;
-
-		default: {
-		}
-		break;
-	}
-
-	return ret;
-}
-
 channel_handler_t channel_handler_ac = {
 	.channel_type = CHANNEL_TYPE_AC,
 	.init = init,
-	.channel_start = channel_start,
-	.channel_stop = channel_stop,
 };

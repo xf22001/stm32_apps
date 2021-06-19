@@ -6,17 +6,19 @@
  *   文件名称：charger_bms.c
  *   创 建 者：肖飞
  *   创建日期：2021年06月04日 星期五 16时51分31秒
- *   修改日期：2021年06月05日 星期六 13时40分26秒
+ *   修改日期：2021年06月19日 星期六 23时09分39秒
  *   描    述：
  *
  *================================================================*/
 #include "charger_bms.h"
 #include "charger_bms_gb.h"
+#include "charger_bms_ac.h"
 
 #include "log.h"
 
 static charger_bms_handler_t *charger_bms_handler_sz[] = {
 	&charger_bms_handler_gb,
+	&charger_bms_handler_ac,
 };
 
 static charger_bms_handler_t *get_charger_bms_handler(channel_charger_type_t channel_charger_type)
@@ -35,9 +37,65 @@ static charger_bms_handler_t *get_charger_bms_handler(channel_charger_type_t cha
 	return charger_bms_handler;
 }
 
-void set_charger_bms_request_action(charger_info_t *charger_info, charger_bms_request_action_t charger_bms_request_action)
+static char *get_charger_bms_work_state_des(charger_bms_work_state_t state)
 {
-	charger_info->charger_bms_request_action = charger_bms_request_action;
+	char *des = "unknow";
+
+	switch(state) {
+			add_des_case(CHARGER_BMS_WORK_STATE_IDLE);
+			add_des_case(CHARGER_BMS_WORK_STATE_STARTING);
+			add_des_case(CHARGER_BMS_WORK_STATE_RUNNING);
+			add_des_case(CHARGER_BMS_WORK_STATE_STOPPING);
+
+		default: {
+		}
+		break;
+	}
+
+	return des;
+}
+
+int set_charger_bms_work_state(charger_info_t *charger_info, charger_bms_work_state_t state)
+{
+	int ret = 0;
+
+	channel_info_t *channel_info = charger_info->channel_info;
+
+	debug("charger %d bms work state %s -> %s", channel_info->channel_id, get_charger_bms_work_state_des(charger_info->charger_bms_work_state), get_charger_bms_work_state_des(state));
+	charger_info->charger_bms_work_state = state;
+
+	return ret;
+}
+
+static char *get_charger_bms_request_action_des(charger_bms_request_action_t action)
+{
+	char *des = "unknow";
+
+	switch(action) {
+			add_des_case(CHARGER_BMS_REQUEST_ACTION_NONE);
+			add_des_case(CHARGER_BMS_REQUEST_ACTION_START);
+			add_des_case(CHARGER_BMS_REQUEST_ACTION_STOP);
+
+		default: {
+		}
+		break;
+	}
+
+	return des;
+}
+
+int set_charger_bms_request_action(charger_info_t *charger_info, charger_bms_request_action_t action)
+{
+	int ret = -1;
+
+	if(charger_info->charger_bms_request_action == CHARGER_BMS_REQUEST_ACTION_NONE) {
+		ret = 0;
+	}
+
+	debug("charger bms request action %s -> %s", get_charger_bms_request_action_des(charger_info->charger_bms_request_action), get_charger_bms_request_action_des(action));
+	charger_info->charger_bms_request_action = action;
+
+	return ret;
 }
 
 void set_charger_bms_request_state(charger_info_t *charger_info, uint8_t request_state)

@@ -6,7 +6,7 @@
  *   文件名称：channel_record.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月23日 星期日 13时40分21秒
- *   修改日期：2021年06月19日 星期六 17时42分24秒
+ *   修改日期：2021年06月19日 星期六 22时10分51秒
  *   描    述：
  *
  *================================================================*/
@@ -209,7 +209,7 @@ static int object_filter(void *o, void *ctx)
 {
 	int ret = -1;
 	channel_record_task_info_t *channel_record_task_info = (channel_record_task_info_t *)o;
-	uint32_t *id = (uint32_t *)ctx;
+	uint8_t *id = (uint8_t *)ctx;
 
 	if(channel_record_task_info->id == *id) {
 		ret = 0;

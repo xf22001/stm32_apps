@@ -6,7 +6,7 @@
  *   文件名称：charger_bms_gb.h
  *   创 建 者：肖飞
  *   创建日期：2021年04月10日 星期六 17时01分34秒
- *   修改日期：2021年06月05日 星期六 13时39分34秒
+ *   修改日期：2021年06月19日 星期六 22时26分59秒
  *   描    述：
  *
  *================================================================*/
@@ -25,17 +25,6 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif
-
-typedef enum {
-	CHARGER_BMS_STATE_IDLE = 0,
-	CHARGER_BMS_STATE_CHM,
-	CHARGER_BMS_STATE_CRM,
-	CHARGER_BMS_STATE_CTS_CML,
-	CHARGER_BMS_STATE_CRO,
-	CHARGER_BMS_STATE_CCS,
-	CHARGER_BMS_STATE_CST,
-	CHARGER_BMS_STATE_CSD_CEM,
-} charger_bms_state_t;
 
 typedef enum {
 	CHARGER_BMS_INFO_STATUS_CHANGE = 0,

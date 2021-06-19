@@ -6,15 +6,28 @@
  *   文件名称：charger_bms_gb.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月10日 星期六 17时01分30秒
- *   修改日期：2021年06月05日 星期六 13时41分37秒
+ *   修改日期：2021年06月19日 星期六 23时11分20秒
  *   描    述：
  *
  *================================================================*/
 #include "charger_bms_gb.h"
+
+#include "channel.h"
 #include "charger_bms.h"
 #include "can_data_task.h"
 
 #include "log.h"
+
+typedef enum {
+	CHARGER_BMS_STATE_IDLE = 0,
+	CHARGER_BMS_STATE_CHM,
+	CHARGER_BMS_STATE_CRM,
+	CHARGER_BMS_STATE_CTS_CML,
+	CHARGER_BMS_STATE_CRO,
+	CHARGER_BMS_STATE_CCS,
+	CHARGER_BMS_STATE_CST,
+	CHARGER_BMS_STATE_CSD_CEM,
+} charger_bms_state_t;
 
 static int prepare_bms_state_idle(void *_charger_info)
 {
@@ -249,46 +262,30 @@ static charger_bms_state_handler_t *get_charger_bms_state_handler(uint8_t bms_st
 	return charger_bms_state_handler;
 }
 
-static void set_charger_bms_work_state(charger_info_t *charger_info)
+static void update_charger_bms_work_state(charger_info_t *charger_info)
 {
 	switch(charger_info->state) {
 		case CHARGER_BMS_STATE_IDLE: {
-			charger_info->charger_bms_work_state = CHARGER_BMS_WORK_STATE_IDLE;
+			set_charger_bms_work_state(charger_info, CHARGER_BMS_WORK_STATE_IDLE);
 		}
 		break;
 
-		case CHARGER_BMS_STATE_CHM: {
-			charger_info->charger_bms_work_state = CHARGER_BMS_WORK_STATE_STARTING;
-		}
-		break;
-
-		case CHARGER_BMS_STATE_CRM: {
-			charger_info->charger_bms_work_state = CHARGER_BMS_WORK_STATE_STARTING;
-		}
-		break;
-
-		case CHARGER_BMS_STATE_CTS_CML: {
-			charger_info->charger_bms_work_state = CHARGER_BMS_WORK_STATE_STARTING;
-		}
-		break;
-
+		case CHARGER_BMS_STATE_CHM:
+		case CHARGER_BMS_STATE_CRM:
+		case CHARGER_BMS_STATE_CTS_CML:
 		case CHARGER_BMS_STATE_CRO: {
-			charger_info->charger_bms_work_state = CHARGER_BMS_WORK_STATE_STARTING;
+			set_charger_bms_work_state(charger_info, CHARGER_BMS_WORK_STATE_STARTING);
 		}
 		break;
 
 		case CHARGER_BMS_STATE_CCS: {
-			charger_info->charger_bms_work_state = CHARGER_BMS_WORK_STATE_RUNNING;
+			set_charger_bms_work_state(charger_info, CHARGER_BMS_WORK_STATE_RUNNING);
 		}
 		break;
 
-		case CHARGER_BMS_STATE_CST: {
-			charger_info->charger_bms_work_state = CHARGER_BMS_WORK_STATE_STOPPING;
-		}
-		break;
-
+		case CHARGER_BMS_STATE_CST:
 		case CHARGER_BMS_STATE_CSD_CEM: {
-			charger_info->charger_bms_work_state = CHARGER_BMS_WORK_STATE_STOPPING;
+			set_charger_bms_work_state(charger_info, CHARGER_BMS_WORK_STATE_STOPPING);
 		}
 		break;
 
@@ -323,6 +320,7 @@ static char *get_charger_bms_state_des(uint8_t state)
 
 static void update_charger_bms_state(charger_info_t *charger_info)
 {
+	channel_info_t *channel_info = charger_info->channel_info;
 	charger_bms_state_handler_t *charger_bms_state_handler = NULL;
 	uint8_t request_state = charger_info->request_state;
 
@@ -333,10 +331,11 @@ static void update_charger_bms_state(charger_info_t *charger_info)
 	charger_bms_state_handler = get_charger_bms_state_handler(request_state);
 	OS_ASSERT(charger_bms_state_handler != NULL);
 
-	debug("change state: %s -> %s!", get_charger_bms_state_des(charger_info->state), get_charger_bms_state_des(request_state));
+	debug("charger %d change state: %s -> %s!", channel_info->channel_id, get_charger_bms_state_des(charger_info->state), get_charger_bms_state_des(request_state));
 
 	charger_info->state = request_state;
-	set_charger_bms_work_state(charger_info);
+
+	update_charger_bms_work_state(charger_info);
 
 	if(charger_bms_state_handler->prepare != NULL) {
 		charger_bms_state_handler->prepare(charger_info);
