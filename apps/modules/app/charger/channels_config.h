@@ -6,7 +6,7 @@
  *   文件名称：channels_config.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 11时00分11秒
- *   修改日期：2021年06月19日 星期六 19时14分35秒
+ *   修改日期：2021年06月20日 星期日 10时33分15秒
  *   描    述：
  *
  *================================================================*/
@@ -79,6 +79,8 @@ typedef struct {
 	channel_energy_meter_config_t energy_meter_config;
 	CAN_HandleTypeDef *hcan_channel_comm;
 	//ac
+	ADC_HandleTypeDef *temperature_adc;
+	uint8_t temperature_adc_rank;
 	ADC_HandleTypeDef *adhe_ad_adc;
 	uint8_t adhe_ad_adc_rank;
 	ADC_HandleTypeDef *cp_ad_adc;
