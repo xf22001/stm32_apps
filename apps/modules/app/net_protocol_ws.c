@@ -6,7 +6,7 @@
  *   文件名称：net_protocol_ws.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月23日 星期日 12时23分31秒
- *   修改日期：2021年05月25日 星期二 19时57分36秒
+ *   修改日期：2021年06月20日 星期日 12时10分25秒
  *   描    述：
  *
  *================================================================*/
@@ -91,7 +91,7 @@ static int ws_client_connect(void *ctx)
 	if(ret != 0) {
 		http_close(hi);
 		net_client_info->sock_fd = -1;
-		set_connect_enable(0);
+		//set_connect_enable(0);
 		debug("");
 		return ret;
 	}
@@ -105,7 +105,7 @@ static int ws_client_connect(void *ctx)
 	if(ret != 0) {
 		http_close(hi);
 		net_client_info->sock_fd = -1;
-		set_connect_enable(0);
+		//set_connect_enable(0);
 		debug("");
 		return ret;
 	}
@@ -115,13 +115,13 @@ static int ws_client_connect(void *ctx)
 	if(net_client_info->sock_fd == -1) {
 		http_close(hi);
 		net_client_info->sock_fd = -1;
-		set_connect_enable(0);
+		//set_connect_enable(0);
 		debug("");
 		return ret;
 	}
 
 	ret = 0;
-	set_connect_enable(0);
+	//set_connect_enable(0);
 
 	return ret;
 }
