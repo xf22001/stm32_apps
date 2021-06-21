@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2021年06月20日 星期日 10时36分16秒
+ *   修改日期：2021年06月21日 星期一 10时43分56秒
  *   描    述：
  *
  *================================================================*/
@@ -116,7 +116,6 @@ typedef struct {
 
 #pragma pack(pop)
 
-
 typedef struct {
 	channel_config_t *channel_config;
 	uint8_t channel_id;
@@ -198,8 +197,29 @@ typedef enum {
 	CHANNELS_FAULT_FORCE_STOP,
 	CHANNELS_FAULT_INPUT_OVER_VOLTAGE,
 	CHANNELS_FAULT_INPUT_LOW_VOLTAGE,
+	CHANNELS_FAULT_ELECTRIC_LEAK_CALIBRATION,
+	CHANNELS_FAULT_ELECTRIC_LEAK_PROTECT,
+	CHANNELS_FAULT_PE_PROTECT,
 	CHANNELS_FAULT_SIZE,
 } channels_fault_t;
+
+typedef enum {
+	ELECTRIC_LEAKAGE_DETECT_TYPE_UNKNOW = 0,
+	ELECTRIC_LEAKAGE_DETECT_TYPE_A,
+	ELECTRIC_LEAKAGE_DETECT_TYPE_B,
+	ELECTRIC_LEAKAGE_DETECT_TYPE_C,
+} electric_leakage_detect_type_t;
+
+typedef enum {
+	ELECTRIC_LEAKAGE_DETECT_B_STATE_CAL_PREPARE = 0,//cal to high, test to low, trip to low
+	ELECTRIC_LEAKAGE_DETECT_B_STATE_CAL_START,//cal keep high >= 100ms, then cal to low
+	ELECTRIC_LEAKAGE_DETECT_B_STATE_TEST_PREPARE,//cal 100ms >= keep >= 50ms, then cal to high
+	ELECTRIC_LEAKAGE_DETECT_B_STATE_TEST_START,//test keep low >=500ms, then to high
+	ELECTRIC_LEAKAGE_DETECT_B_STATE_WAIT_TRIP,//test keep high 400ms, then to low, wait trip;
+	ELECTRIC_LEAKAGE_DETECT_B_STATE_PREPARE_DETECT,//wait trip to low = 100ms
+	ELECTRIC_LEAKAGE_DETECT_B_STATE_DETECT,//wait trip
+	ELECTRIC_LEAKAGE_DETECT_B_STATE_ERROR,
+} electric_leakage_detect_b_state_t;
 
 typedef struct {
 	channels_config_t *channels_config;
@@ -224,6 +244,10 @@ typedef struct {
 	void *channel_comm_channel_info;
 	void *channel_comm_channels_info;
 	int8_t temperature;
+
+	uint8_t electric_leakage_detect_type;//electric_leakage_detect_type_t;
+	uint8_t electric_leakage_detect_b_state;//electric_leakage_detect_b_state_t
+	uint32_t electric_leakage_detect_b_stamps;
 } channels_info_t;
 
 char *get_channel_event_type_des(channel_event_type_t type);

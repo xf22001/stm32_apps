@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分12秒
- *   修改日期：2021年06月20日 星期日 00时26分57秒
+ *   修改日期：2021年06月21日 星期一 10时45分11秒
  *   描    述：
  *
  *================================================================*/
@@ -409,6 +409,149 @@ static void handle_channels_force_stop(channels_info_t *channels_info)
 	}
 }
 
+static int handle_channel_electric_leakage_detect_b(channels_info_t *channels_info)
+{
+	int ret = 0;
+	uint32_t ticks = osKernelSysTick();
+
+	switch(channels_info->electric_leakage_detect_b_state) {
+		case ELECTRIC_LEAKAGE_DETECT_B_STATE_CAL_PREPARE: {
+			OS_ASSERT(channels_info->channels_config->electric_leakage_detect_cal_port != NULL);
+			OS_ASSERT(channels_info->channels_config->electric_leakage_detect_test_port != NULL);
+			OS_ASSERT(channels_info->channels_config->electric_leakage_detect_trip_port != NULL);
+			HAL_GPIO_WritePin(channels_info->channels_config->electric_leakage_detect_cal_port, channels_info->channels_config->electric_leakage_detect_cal_pin, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(channels_info->channels_config->electric_leakage_detect_test_port, channels_info->channels_config->electric_leakage_detect_test_pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(channels_info->channels_config->electric_leakage_detect_trip_port, channels_info->channels_config->electric_leakage_detect_trip_pin, GPIO_PIN_RESET);
+			channels_info->electric_leakage_detect_b_stamps = ticks;
+			channels_info->electric_leakage_detect_b_state = ELECTRIC_LEAKAGE_DETECT_B_STATE_CAL_START;
+		}
+		break;
+
+		case ELECTRIC_LEAKAGE_DETECT_B_STATE_CAL_START: {
+			if(ticks_duration(ticks, channels_info->electric_leakage_detect_b_stamps) >= 100) {
+				OS_ASSERT(channels_info->channels_config->electric_leakage_detect_cal_port != NULL);
+				HAL_GPIO_WritePin(channels_info->channels_config->electric_leakage_detect_cal_port, channels_info->channels_config->electric_leakage_detect_cal_pin, GPIO_PIN_RESET);
+				channels_info->electric_leakage_detect_b_stamps = ticks;
+				channels_info->electric_leakage_detect_b_state = ELECTRIC_LEAKAGE_DETECT_B_STATE_TEST_PREPARE;
+			}
+		}
+		break;
+
+		case ELECTRIC_LEAKAGE_DETECT_B_STATE_TEST_PREPARE: {
+			if(ticks_duration(ticks, channels_info->electric_leakage_detect_b_stamps) >= 75) {
+				OS_ASSERT(channels_info->channels_config->electric_leakage_detect_cal_port != NULL);
+				HAL_GPIO_WritePin(channels_info->channels_config->electric_leakage_detect_cal_port, channels_info->channels_config->electric_leakage_detect_cal_pin, GPIO_PIN_SET);
+				channels_info->electric_leakage_detect_b_stamps = ticks;
+				channels_info->electric_leakage_detect_b_state = ELECTRIC_LEAKAGE_DETECT_B_STATE_TEST_START;
+			}
+		}
+		break;
+
+		case ELECTRIC_LEAKAGE_DETECT_B_STATE_TEST_START: {
+			if(ticks_duration(ticks, channels_info->electric_leakage_detect_b_stamps) >= 500) {
+				OS_ASSERT(channels_info->channels_config->electric_leakage_detect_test_port != NULL);
+				HAL_GPIO_WritePin(channels_info->channels_config->electric_leakage_detect_test_port, channels_info->channels_config->electric_leakage_detect_test_pin, GPIO_PIN_SET);
+				channels_info->electric_leakage_detect_b_stamps = ticks;
+				channels_info->electric_leakage_detect_b_state = ELECTRIC_LEAKAGE_DETECT_B_STATE_WAIT_TRIP;
+			}
+		}
+		break;
+
+		case ELECTRIC_LEAKAGE_DETECT_B_STATE_WAIT_TRIP: {
+			if(ticks_duration(ticks, channels_info->electric_leakage_detect_b_stamps) >= 400) {
+				OS_ASSERT(channels_info->channels_config->electric_leakage_detect_test_port != NULL);
+				HAL_GPIO_WritePin(channels_info->channels_config->electric_leakage_detect_test_port, channels_info->channels_config->electric_leakage_detect_test_pin, GPIO_PIN_RESET);
+				channels_info->electric_leakage_detect_b_state = ELECTRIC_LEAKAGE_DETECT_B_STATE_ERROR;
+			} else {
+				if(channels_info->channels_config->electric_leakage_detect_trip_port != NULL) {
+					if(HAL_GPIO_ReadPin(channels_info->channels_config->electric_leakage_detect_trip_port, channels_info->channels_config->electric_leakage_detect_trip_pin) == GPIO_PIN_SET) {
+						channels_info->electric_leakage_detect_b_stamps = ticks;
+						channels_info->electric_leakage_detect_b_state = ELECTRIC_LEAKAGE_DETECT_B_STATE_PREPARE_DETECT;
+					}
+				}
+			}
+		}
+		break;
+
+		case ELECTRIC_LEAKAGE_DETECT_B_STATE_PREPARE_DETECT: {
+			if(ticks_duration(ticks, channels_info->electric_leakage_detect_b_stamps) >= 200) {
+				channels_info->electric_leakage_detect_b_state = ELECTRIC_LEAKAGE_DETECT_B_STATE_DETECT;
+			}
+		}
+		break;
+
+		case ELECTRIC_LEAKAGE_DETECT_B_STATE_DETECT: {
+			if(HAL_GPIO_ReadPin(channels_info->channels_config->electric_leakage_detect_trip_port, channels_info->channels_config->electric_leakage_detect_trip_pin) == GPIO_PIN_SET) {
+				ret = -1;
+			}
+		}
+		break;
+
+		case ELECTRIC_LEAKAGE_DETECT_B_STATE_ERROR: {
+			ret = -2;
+		}
+		break;
+
+		default: {
+		}
+		break;
+	}
+
+	return ret;
+}
+
+static void handle_channels_electric_leakage_detect(channels_info_t *channels_info)
+{
+	uint8_t electric_leakage_trip = 0;
+	uint8_t electric_leakage_cal = 0;
+
+	switch(channels_info->electric_leakage_detect_type) {
+		case ELECTRIC_LEAKAGE_DETECT_TYPE_B: {
+			int ret = handle_channel_electric_leakage_detect_b(channels_info);
+
+			if(ret == -1) {
+				electric_leakage_trip = 1;
+			} else if(ret == -2) {
+				electric_leakage_cal = 1;
+			}
+		}
+		break;
+
+		default: {
+			if(channels_info->channels_config->electric_leakage_detect_trip_port != NULL) {
+				if(HAL_GPIO_ReadPin(channels_info->channels_config->electric_leakage_detect_trip_port, channels_info->channels_config->electric_leakage_detect_trip_pin) == GPIO_PIN_SET) {
+					electric_leakage_trip = 1;
+				}
+			}
+
+		}
+		break;
+	}
+
+	if(get_fault(channels_info->faults, CHANNELS_FAULT_ELECTRIC_LEAK_CALIBRATION) != electric_leakage_cal) {
+		set_fault(channels_info->faults, CHANNELS_FAULT_ELECTRIC_LEAK_CALIBRATION, electric_leakage_cal);
+	}
+
+	if(get_fault(channels_info->faults, CHANNELS_FAULT_ELECTRIC_LEAK_PROTECT) != electric_leakage_trip) {
+		set_fault(channels_info->faults, CHANNELS_FAULT_ELECTRIC_LEAK_PROTECT, electric_leakage_trip);
+	}
+}
+
+static void handle_channels_pe_detect(channels_info_t *channels_info)
+{
+	uint8_t pd_detect = 0;
+
+	if(channels_info->channels_config->pe_detect_port != NULL) {
+		if(HAL_GPIO_ReadPin(channels_info->channels_config->pe_detect_port, channels_info->channels_config->pe_detect_pin) == GPIO_PIN_SET) {
+			pd_detect = 1;
+		}
+	}
+
+	if(get_fault(channels_info->faults, CHANNELS_FAULT_PE_PROTECT) != pd_detect) {
+		set_fault(channels_info->faults, CHANNELS_FAULT_PE_PROTECT, pd_detect);
+	}
+}
+
 static void handle_channels_common_periodic(void *_channels_info, void *__channels_info)
 {
 	channels_info_t *channels_info = (channels_info_t *)_channels_info;
@@ -416,6 +559,8 @@ static void handle_channels_common_periodic(void *_channels_info, void *__channe
 	//debug("channels periodic!");
 	handle_channels_temperature(channels_info);
 	handle_channels_force_stop(channels_info);
+	handle_channels_electric_leakage_detect(channels_info);
+	handle_channels_pe_detect(channels_info);
 }
 
 static void handle_channels_common_event(void *_channels_info, void *_channels_event)

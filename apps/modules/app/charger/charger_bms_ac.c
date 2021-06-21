@@ -6,7 +6,7 @@
  *   文件名称：charger_bms_ac.c
  *   创 建 者：肖飞
  *   创建日期：2021年06月19日 星期六 19时12分21秒
- *   修改日期：2021年06月20日 星期日 10时45分49秒
+ *   修改日期：2021年06月21日 星期一 10时47分29秒
  *   描    述：
  *
  *================================================================*/
@@ -223,20 +223,6 @@ void handle_charger_connect_state(charger_info_t *charger_info)
 	}
 
 	//debug("charger %d charger_connect_state:%d, cc1_ready:%d", channel_info->channel_id, charger_info->charger_connect_state, cc1_ready);
-}
-
-void handle_charger_temperature(charger_info_t *charger_info)
-{
-	channel_info_t *channel_info = charger_info->channel_info;
-	adc_info_t *adc_info = get_or_alloc_adc_info(channel_info->channel_config->temperature_adc);
-	int temperature = 0;
-
-	OS_ASSERT(adc_info != NULL);
-	channel_info->temperature_ad = get_adc_value(adc_info, channel_info->channel_config->temperature_adc_rank);
-
-	temperature = get_ntc_temperature(10000, channel_info->temperature_ad, 4095);
-
-	//debug("charger %d temperature %d", channel_info->channel_id, temperature);
 }
 
 static int prepare_bms_state_idle(void *_charger_info)
@@ -582,7 +568,6 @@ static void charger_bms_periodic(void *_charger_info, void *_channels_info)
 	charger_info_t *charger_info = (charger_info_t *)_charger_info;
 
 	handle_charger_connect_state(charger_info);
-	handle_charger_temperature(charger_info);
 	update_charger_bms_state(charger_info);
 	charger_handle_request(charger_info);
 }
