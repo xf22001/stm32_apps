@@ -6,7 +6,7 @@
  *   文件名称：energy_meter.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月07日 星期三 15时56分19秒
- *   修改日期：2021年06月05日 星期六 13时46分09秒
+ *   修改日期：2021年06月22日 星期二 10时23分46秒
  *   描    述：
  *
  *================================================================*/
@@ -14,10 +14,12 @@
 #include "channels.h"
 #include "uart_data_task.h"
 #include "energy_meter_handler_ac.h"
+#include "energy_meter_handler_ac_hlw8032.h"
 #include "energy_meter_handler_dc.h"
 
 energy_meter_handler_t *energy_meter_handler_sz[] = {
 	&energy_meter_handler_ac,
+	&energy_meter_handler_ac_hlw8032,
 	&energy_meter_handler_dc,
 };
 

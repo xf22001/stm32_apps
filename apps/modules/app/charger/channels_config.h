@@ -6,7 +6,7 @@
  *   文件名称：channels_config.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 11时00分11秒
- *   修改日期：2021年06月21日 星期一 10时47分14秒
+ *   修改日期：2021年06月22日 星期二 10时22分42秒
  *   描    述：
  *
  *================================================================*/
@@ -66,6 +66,7 @@ typedef enum {
 	CHANNEL_ENERGY_METER_TYPE_PROXY,
 	CHANNEL_ENERGY_METER_TYPE_DC,
 	CHANNEL_ENERGY_METER_TYPE_AC,
+	CHANNEL_ENERGY_METER_TYPE_AC_HLW8032,
 } channel_energy_meter_type_t;
 
 typedef struct {

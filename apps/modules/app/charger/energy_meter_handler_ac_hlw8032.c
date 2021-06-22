@@ -6,13 +6,15 @@
  *   文件名称：energy_meter_handler_ac_hlw8032.c
  *   创 建 者：肖飞
  *   创建日期：2021年06月21日 星期一 11时09分49秒
- *   修改日期：2021年06月21日 星期一 11时57分01秒
+ *   修改日期：2021年06月22日 星期二 10时27分04秒
  *   描    述：
  *
  *================================================================*/
 #include "energy_meter_handler_ac_hlw8032.h"
 
 #include "uart_data_task.h"
+
+#include "log.h"
 
 #pragma pack(push, 1)
 
@@ -77,38 +79,90 @@ typedef struct {
 } hlw8032_regs_t;
 
 #pragma pack(pop)
+
+#define UART_BUFFER_SIZE 32
 #define VOLTAGE_COEFFICIENT 1.88
 #define CURRENT_COEFFICIENT 1
 #define POWER_COEFFICIENT 0x34630b8a000
-//pulse_number_per_kwh = POWER_COEFFICIENT * VOLTAGE_COEFFICIENT * CURRENT_COEFFICIENT / power_parameter
+//pulse_number_per_kwh = POWER_COEFFICIENT * VOLTAGE_COEFFICIENT * CURRENT_COEFFICIENT / power_parameter = 0x627cc3c6000 / power_parameter
 
 typedef struct {
 	uint8_t state;
 	uint32_t stamps;
+	uint8_t rx_buffer[UART_BUFFER_SIZE];
+	size_t rx_size;
+	uint16_t pf_n;//n 是上电时PF 寄存器(PF REG)的寄存器值
+	uint8_t pf_c;//c PF 寄存器进位标志位;当 PF 寄存器溢出时，取反一次
+	uint32_t pf_count;//PF取反次数
 } energy_meter_handler_ctx_t;
+
+static uint8_t calc_hlw_crc(uint8_t *data, size_t size)
+{
+	int i;
+	uint8_t crc = 0;
+
+	for(i = 0; i < size; i++) {
+		crc += data[i];
+	}
+
+	return crc;
+}
 
 static void uart_data_request(void *fn_ctx, void *chain_ctx)
 {
 	energy_meter_info_t *energy_meter_info = (energy_meter_info_t *)fn_ctx;
+	uart_data_task_info_t *uart_data_task_info = (uart_data_task_info_t *)chain_ctx;
 	energy_meter_handler_ctx_t *energy_meter_handler_ctx = (energy_meter_handler_ctx_t *)energy_meter_info->ctx;
 	channel_info_t *channel_info = energy_meter_info->channel_info;
-	int ret;
-	uint32_t ticks = osKernelSysTick();
 
-	if(ticks_duration(ticks, energy_meter_handler_ctx->stamps) <= 1000) {
-		return;
-	}
+	energy_meter_handler_ctx->rx_size = uart_rx_data(uart_data_task_info->uart_info, energy_meter_handler_ctx->rx_buffer, UART_BUFFER_SIZE, 100);
 
-	energy_meter_handler_ctx->stamps = ticks;
+	if(energy_meter_handler_ctx->rx_size == sizeof(hlw8032_regs_t)) {
+		hlw8032_regs_t *hlw8032_regs = (hlw8032_regs_t *)energy_meter_handler_ctx->rx_buffer;
+		u_uint8_bits_t *u_uint8_bits = (u_uint8_bits_t *)&hlw8032_regs->data_update;
 
-	switch(energy_meter_handler_ctx->state) {
-		case 0: {
+		if(hlw8032_regs->crc == calc_hlw_crc(&hlw8032_regs->voltage_parameter_2, &hlw8032_regs->crc - &hlw8032_regs->voltage_parameter_2)) {
+		} else {
+			debug("crc error!");
 		}
-		break;
 
-		default: {
+		switch(energy_meter_handler_ctx->state) {
+			case 0: {
+				energy_meter_handler_ctx->pf_n = get_u16_from_u8_lh(hlw8032_regs->pf_0, hlw8032_regs->pf_1);
+				energy_meter_handler_ctx->pf_c = u_uint8_bits->s.bit7;
+				energy_meter_handler_ctx->state = 1;
+			}
+			break;
+
+			case 1: {
+				if(energy_meter_handler_ctx->pf_c != u_uint8_bits->s.bit7) {
+					energy_meter_handler_ctx->pf_c = u_uint8_bits->s.bit7;
+					energy_meter_handler_ctx->pf_count++;
+				}
+			}
+			break;
+
+			default: {
+			}
+			break;
 		}
-		break;
+
+		{
+			uint32_t power_parameter = get_u32_from_u8_b0123(hlw8032_regs->power_parameter_0, hlw8032_regs->power_parameter_1, hlw8032_regs->power_parameter_2, 0);
+			uint64_t pulse_number_per_kwh;
+			uint64_t pf_count;
+
+			pulse_number_per_kwh = 0x627cc3c6000;
+			pulse_number_per_kwh /= power_parameter;
+			pf_count = energy_meter_handler_ctx->pf_count;
+			pf_count = pf_count << 16;
+			pf_count += get_u16_from_u8_lh(hlw8032_regs->pf_0, hlw8032_regs->pf_1);
+			pf_count *= 10;//0.1kwh
+			channel_info->total_energy = pf_count / pulse_number_per_kwh;
+
+			channel_info->voltage = get_u32_from_bcd_b0123(hlw8032_regs->voltage_0, hlw8032_regs->voltage_1, hlw8032_regs->voltage_2, 0);
+			channel_info->current = get_u32_from_bcd_b0123(hlw8032_regs->current_0, hlw8032_regs->current_1, hlw8032_regs->current_2, 0);
+		}
 	}
 }
 
@@ -135,7 +189,7 @@ static int handle_init_ac_hlw8032(void *_energy_meter_info)
 	return ret;
 }
 
-energy_meter_handler_t energy_meter_handler_ac = {
+energy_meter_handler_t energy_meter_handler_ac_hlw8032 = {
 	.energy_meter_type = CHANNEL_ENERGY_METER_TYPE_AC_HLW8032,
 	.handle_init = handle_init_ac_hlw8032,
 };

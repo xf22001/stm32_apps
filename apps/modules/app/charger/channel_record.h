@@ -6,7 +6,7 @@
  *   文件名称：channel_record.h
  *   创 建 者：肖飞
  *   创建日期：2021年05月23日 星期日 13时40分28秒
- *   修改日期：2021年06月19日 星期六 17时33分44秒
+ *   修改日期：2021年06月22日 星期二 10时26分46秒
  *   描    述：
  *
  *================================================================*/
@@ -117,8 +117,6 @@ typedef struct {
 	uint32_t energy_seg[PRICE_SEGMENT_SIZE];
 
 	uint32_t energy;
-	uint32_t voltage;
-	uint32_t current;
 } channel_record_item_t;
 
 #pragma pack(pop)

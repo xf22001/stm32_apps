@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年06月19日 星期六 22时39分51秒
+ *   修改日期：2021年06月22日 星期二 10时27分40秒
  *   描    述：
  *
  *================================================================*/
@@ -1072,8 +1072,8 @@ static void udpate_sse_chennel_charger_report(sse_channel_report_t *sse_channel_
 		sse_report_channel_charge_info_dc->soc = charger_info->bms_data.bcs_data.soc;
 		sse_report_channel_charge_info_dc->bcl_require_voltage = charger_info->bms_data.bcl_data.require_voltage;
 		sse_report_channel_charge_info_dc->bcl_require_current = charger_info->bms_data.bcl_data.require_current;
-		sse_report_channel_charge_info_dc->output_voltage = channel_info->channel_record_item.voltage;
-		sse_report_channel_charge_info_dc->output_current = channel_info->channel_record_item.current;
+		sse_report_channel_charge_info_dc->output_voltage = channel_info->voltage;
+		sse_report_channel_charge_info_dc->output_current = channel_info->current;
 		sse_report_channel_charge_info_dc->bcs_charge_voltage = charger_info->bms_data.bcs_data.charge_voltage;
 		sse_report_channel_charge_info_dc->bcs_charge_current = charger_info->bms_data.bcs_data.charge_current;
 		sse_report_channel_charge_info_dc->telemeter_total = channel_info->total_energy;
@@ -1086,8 +1086,8 @@ static void udpate_sse_chennel_charger_report(sse_channel_report_t *sse_channel_
 		sse_report_channel_charge_info_dc->dc_n_temperature = charger_info->dc_n_temperature;
 	} else if(channel_info->channel_config->channel_type == CHANNEL_TYPE_AC) {
 		sse_report_channel_charge_info_ac_t *sse_report_channel_charge_info_ac = sse_channel_report->sse_report_channel_charge_info_ac;
-		sse_report_channel_charge_info_ac->output_voltage = channel_info->channel_record_item.voltage;
-		sse_report_channel_charge_info_ac->output_current = channel_info->channel_record_item.current;
+		sse_report_channel_charge_info_ac->output_voltage = channel_info->voltage;
+		sse_report_channel_charge_info_ac->output_current = channel_info->current;
 		sse_report_channel_charge_info_ac->telemeter_total = channel_info->total_energy;
 		sse_report_channel_charge_info_ac->charge_energy = channel_info->channel_record_item.energy;
 		sse_report_channel_charge_info_ac->charge_amount = channel_info->channel_record_item.amount;
