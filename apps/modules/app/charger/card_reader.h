@@ -6,7 +6,7 @@
  *   文件名称：card_reader.h
  *   创 建 者：肖飞
  *   创建日期：2021年05月24日 星期一 16时08分43秒
- *   修改日期：2021年05月25日 星期二 14时00分00秒
+ *   修改日期：2021年06月23日 星期三 10时09分31秒
  *   描    述：
  *
  *================================================================*/
@@ -32,10 +32,12 @@ extern "C"
 #define CARD_READ_BUFFER_LENGTH 64
 
 typedef int (*card_reader_handler_init_t)(void *_card_reader_info);
+typedef int (*card_reader_handler_deinit_t)(void *_card_reader_info);
 
 typedef struct {
 	card_reader_type_t card_reader_type;
 	card_reader_handler_init_t init;
+	card_reader_handler_deinit_t deinit;
 } card_reader_handler_t;
 
 typedef struct {

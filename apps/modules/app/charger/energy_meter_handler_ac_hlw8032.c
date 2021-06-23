@@ -6,7 +6,7 @@
  *   文件名称：energy_meter_handler_ac_hlw8032.c
  *   创 建 者：肖飞
  *   创建日期：2021年06月21日 星期一 11时09分49秒
- *   修改日期：2021年06月22日 星期二 10时27分04秒
+ *   修改日期：2021年06月23日 星期三 10时15分36秒
  *   描    述：
  *
  *================================================================*/
@@ -182,6 +182,7 @@ static int handle_init_ac_hlw8032(void *_energy_meter_info)
 	uart_data_task_info = get_or_alloc_uart_data_task_info(channel_config->energy_meter_config.huart_energy_meter);
 	OS_ASSERT(uart_data_task_info != NULL);
 
+	set_uart_data_task_request_delay(uart_data_task_info, 0);
 	energy_meter_info->uart_data_request_cb.fn = uart_data_request;
 	energy_meter_info->uart_data_request_cb.fn_ctx = energy_meter_info;
 	add_uart_data_task_info_cb(uart_data_task_info, &energy_meter_info->uart_data_request_cb);

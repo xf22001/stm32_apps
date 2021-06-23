@@ -6,7 +6,7 @@
  *   文件名称：callback_chain.c
  *   创 建 者：肖飞
  *   创建日期：2020年03月20日 星期五 08时20分36秒
- *   修改日期：2021年02月02日 星期二 11时35分49秒
+ *   修改日期：2021年06月23日 星期三 10时04分11秒
  *   描    述：
  *
  *================================================================*/
@@ -15,9 +15,7 @@
 
 void free_callback_chain(callback_chain_t *callback_chain)
 {
-	if(callback_chain == NULL) {
-		return;
-	}
+	OS_ASSERT(callback_chain != NULL);
 
 	mutex_lock(callback_chain->callback_mutex);
 
@@ -41,22 +39,13 @@ callback_chain_t *alloc_callback_chain(void)
 {
 	callback_chain_t *callback_chain = (callback_chain_t *)os_alloc(sizeof(callback_chain_t));
 
-	if(callback_chain == NULL) {
-		return callback_chain;
-	}
+	OS_ASSERT(callback_chain != NULL);
 
 	callback_chain->callback_mutex = mutex_create();
 
-	if(callback_chain->callback_mutex == NULL) {
-		goto failed;
-	}
+	OS_ASSERT(callback_chain->callback_mutex != NULL);
 
 	INIT_LIST_HEAD(&callback_chain->list_callback);
-
-	return callback_chain;
-failed:
-	free_callback_chain(callback_chain);
-	callback_chain = NULL;
 
 	return callback_chain;
 }
@@ -66,13 +55,8 @@ int register_callback(callback_chain_t *callback_chain, callback_item_t *callbac
 	int ret = -1;
 	uint8_t found = 0;
 
-	if(callback_chain == NULL) {
-		return ret;
-	}
-
-	if(callback_item == NULL) {
-		return ret;
-	}
+	OS_ASSERT(callback_chain != NULL);
+	OS_ASSERT(callback_item != NULL);
 
 	mutex_lock(callback_chain->callback_mutex);
 
@@ -102,13 +86,8 @@ callback_item_t *get_callback(callback_chain_t *callback_chain, callback_item_fi
 {
 	callback_item_t *callback_item = NULL;
 
-	if(callback_chain == NULL) {
-		return callback_item;
-	}
-
-	if(filter == NULL) {
-		return callback_item;
-	}
+	OS_ASSERT(callback_chain != NULL);
+	OS_ASSERT(filter != NULL);
 
 	mutex_lock(callback_chain->callback_mutex);
 
@@ -133,13 +112,8 @@ int remove_callback(callback_chain_t *callback_chain, callback_item_t *callback_
 {
 	int ret = -1;
 
-	if(callback_chain == NULL) {
-		return ret;
-	}
-
-	if(callback_item == NULL) {
-		return ret;
-	}
+	OS_ASSERT(callback_chain != NULL);
+	OS_ASSERT(callback_item != NULL);
 
 	mutex_lock(callback_chain->callback_mutex);
 
@@ -166,9 +140,7 @@ void do_callback_chain(callback_chain_t *callback_chain, void *chain_ctx)
 {
 	callback_item_t *callback_item = NULL;
 
-	if(callback_chain == NULL) {
-		return;
-	}
+	OS_ASSERT(callback_chain != NULL);
 
 	mutex_lock(callback_chain->callback_mutex);
 
@@ -194,9 +166,7 @@ int callback_chain_empty(callback_chain_t *callback_chain)
 {
 	int ret;
 
-	if(callback_chain == NULL) {
-		return 1;
-	}
+	OS_ASSERT(callback_chain != NULL);
 
 	mutex_lock(callback_chain->callback_mutex);
 
