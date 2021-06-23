@@ -6,7 +6,7 @@
  *   文件名称：card_reader.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月24日 星期一 16时08分40秒
- *   修改日期：2021年05月25日 星期二 11时48分37秒
+ *   修改日期：2021年06月23日 星期三 15时49分32秒
  *   描    述：
  *
  *================================================================*/
@@ -15,7 +15,7 @@
 #include "uart_data_task.h"
 #include "card_reader_handler_zlg.h"
 
-card_reader_handler_t *card_reader_handler_sz[] = {
+static card_reader_handler_t *card_reader_handler_sz[] = {
 	&card_reader_handler_zlg,
 };
 
@@ -35,6 +35,18 @@ static card_reader_handler_t *get_card_reader_handler(card_reader_type_t card_re
 	return card_reader_handler;
 }
 
+int start_card_reader_cb(card_reader_info_t *card_reader_info, callback_fn_t fn, void *fn_ctx)
+{
+	int ret;
+
+	ret = remove_callback(card_reader_info->card_reader_callback_chain, &card_reader_info->card_reader_callback_item);
+	card_reader_info->card_reader_callback_item.fn = fn;
+	card_reader_info->card_reader_callback_item.fn_ctx = fn_ctx;
+	ret = register_callback(card_reader_info->card_reader_callback_chain, &card_reader_info->card_reader_callback_item);
+
+	return ret;
+}
+
 card_reader_info_t *alloc_card_reader_info(channels_info_t *channels_info)
 {
 	channels_config_t *channels_config = channels_info->channels_config;
@@ -43,6 +55,9 @@ card_reader_info_t *alloc_card_reader_info(channels_info_t *channels_info)
 
 	OS_ASSERT(card_reader_info != NULL);
 	card_reader_info->channels_info = channels_info;
+
+	card_reader_info->card_reader_callback_chain = alloc_callback_chain();
+	OS_ASSERT(card_reader_info->card_reader_callback_chain != NULL);
 
 	card_reader_info->card_reader_handler = get_card_reader_handler(card_reader_config->card_reader_type);
 

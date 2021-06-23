@@ -6,7 +6,7 @@
  *   文件名称：card_reader_handler_zlg.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月24日 星期一 16时49分13秒
- *   修改日期：2021年05月25日 星期二 14时43分36秒
+ *   修改日期：2021年06月23日 星期三 15时51分09秒
  *   描    述：
  *
  *================================================================*/
@@ -415,9 +415,12 @@ static void uart_data_request(void *fn_ctx, void *chain_ctx)
 		break;
 
 		case CARD_READER_HANDLER_STATE_CARD_DATA_READ: {
+			card_reader_data_t card_reader_data = {0};
 			ret = card_reader_card_data_read(card_reader_info);
 
 			if(ret == 0) {
+				card_reader_data.id = card_reader_handler_ctx->card_data.sn;
+				do_callback_chain(card_reader_info->card_reader_callback_chain, &card_reader_data);
 				card_reader_handler_ctx->state = CARD_READER_HANDLER_STATE_CARD_DATA_WRITE;
 			}
 		}
