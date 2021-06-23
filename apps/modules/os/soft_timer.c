@@ -6,7 +6,7 @@
  *   文件名称：soft_timer.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月22日 星期五 10时28分46秒
- *   修改日期：2021年06月19日 星期六 22时13分40秒
+ *   修改日期：2021年06月23日 星期三 13时47分05秒
  *   描    述：
  *
  *================================================================*/
@@ -294,6 +294,7 @@ static soft_timer_info_t *alloc_soft_timer_info(void *ctx)
 {
 	soft_timer_info_t *soft_timer_info = NULL;
 	uint8_t *id = (uint8_t *)ctx;
+	osThreadDef(soft_timer, soft_timer_task, osPriorityNormal, 0, 128 * 2 * 2);
 
 	soft_timer_info = (soft_timer_info_t *)os_alloc(sizeof(soft_timer_info_t));
 
@@ -330,7 +331,6 @@ static soft_timer_info_t *alloc_soft_timer_info(void *ctx)
 		goto failed;
 	}
 
-	osThreadDef(soft_timer, soft_timer_task, osPriorityNormal, 0, 128 * 2 * 2);
 	osThreadCreate(osThread(soft_timer), soft_timer_info);
 
 	return soft_timer_info;
