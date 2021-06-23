@@ -6,7 +6,7 @@
  *   文件名称：channel_record.h
  *   创 建 者：肖飞
  *   创建日期：2021年05月23日 星期日 13时40分28秒
- *   修改日期：2021年06月22日 星期二 10时26分46秒
+ *   修改日期：2021年06月23日 星期三 17时24分35秒
  *   描    述：
  *
  *================================================================*/
@@ -44,6 +44,15 @@ typedef enum {
 	CHANNEL_RECORD_ITEM_STATE_FINISH,
 	CHANNEL_RECORD_ITEM_STATE_UPLOAD,
 } channel_record_item_state_t;
+
+typedef enum {
+	CHANNEL_RECORD_ITEM_START_REASON_MANUAL = 0,
+	CHANNEL_RECORD_ITEM_START_REASON_CARD,
+	CHANNEL_RECORD_ITEM_START_REASON_REMOTE,
+	CHANNEL_RECORD_ITEM_START_REASON_VIN,
+	CHANNEL_RECORD_ITEM_START_REASON_BMS,
+	CHANNEL_RECORD_ITEM_START_REASON_CHARGER,
+} channel_record_item_start_reason_t;
 
 typedef enum {
 	CHANNEL_RECORD_ITEM_STOP_REASON_NONE = 0,
@@ -103,7 +112,9 @@ typedef struct {
 	uint16_t id;
 	uint8_t channel_id;
 	uint8_t state;//channel_record_item_state_t
+	uint8_t start_reason;//channel_record_item_start_reason_t
 	uint8_t stop_reason;//channel_record_item_stop_reason_t
+	uint64_t card_id;
 
 	time_t start_time;
 	time_t end_time;
