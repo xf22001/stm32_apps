@@ -6,7 +6,7 @@
  *   文件名称：energy_meter_handler_dc.c
  *   创 建 者：肖飞
  *   创建日期：2021年06月05日 星期六 12时59分07秒
- *   修改日期：2021年06月23日 星期三 10时17分29秒
+ *   修改日期：2021年06月23日 星期三 10时57分28秒
  *   描    述：
  *
  *================================================================*/
@@ -55,7 +55,7 @@ static void uart_data_request(void *fn_ctx, void *chain_ctx)
 	}
 }
 
-static int handle_init_dc(void *_energy_meter_info)
+static int init_dc(void *_energy_meter_info)
 {
 	int ret = 0;
 	energy_meter_info_t *energy_meter_info = (energy_meter_info_t *)_energy_meter_info;
@@ -85,6 +85,6 @@ static int handle_init_dc(void *_energy_meter_info)
 
 energy_meter_handler_t energy_meter_handler_dc = {
 	.energy_meter_type = CHANNEL_ENERGY_METER_TYPE_DC,
-	.handle_init = handle_init_dc,
+	.init = init_dc,
 };
 

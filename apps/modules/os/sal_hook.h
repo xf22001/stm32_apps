@@ -6,7 +6,7 @@
  *   文件名称：sal_hook.h
  *   创 建 者：肖飞
  *   创建日期：2021年05月19日 星期三 08时14分01秒
- *   修改日期：2021年05月25日 星期二 21时12分35秒
+ *   修改日期：2021年06月23日 星期三 11时17分18秒
  *   描    述：
  *
  *================================================================*/
@@ -59,7 +59,7 @@ extern "C"
 #define sendto(s, dataptr, size, flags, to, tolen) sal_sendto(s, dataptr, size, flags, to, tolen)
 #define socket(domain, type, protocol) sal_socket(domain, type, protocol)
 #define select(maxfdp1, readset, writeset, exceptset, timeout) sal_select(maxfdp1, readset, writeset, exceptset, timeout)
-#define fcntl(s, cmd, val) sal_ioctlsocket(s, cmd, val)
+#define fcntl(s, cmd, val) sal_ioctlsocket(s, cmd, (void *)(val))
 #define setsockopt(s,level,optname,opval,optlen)  sal_setsockopt(s,level,optname,opval,optlen)
 #define getsockopt(s,level,optname,opval,optlen)  sal_getsockopt(s,level,optname,opval,optlen)
 #define getsockname(s,name,namelen)  sal_getsockname(s,name,namelen)

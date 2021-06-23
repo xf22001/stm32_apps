@@ -6,7 +6,7 @@
  *   文件名称：energy_meter.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月07日 星期三 15时56分19秒
- *   修改日期：2021年06月22日 星期二 10时23分46秒
+ *   修改日期：2021年06月23日 星期三 10时58分08秒
  *   描    述：
  *
  *================================================================*/
@@ -50,8 +50,8 @@ energy_meter_info_t *alloc_energy_meter_info(channel_info_t *channel_info)
 
 	energy_meter_info->energy_meter_handler = get_energy_meter_handler(channel_energy_meter_config->energy_meter_type);
 
-	if((energy_meter_info->energy_meter_handler != NULL) && (energy_meter_info->energy_meter_handler->handle_init != NULL)) {
-		energy_meter_info->energy_meter_handler->handle_init(energy_meter_info);
+	if((energy_meter_info->energy_meter_handler != NULL) && (energy_meter_info->energy_meter_handler->init != NULL)) {
+		energy_meter_info->energy_meter_handler->init(energy_meter_info);
 	}
 
 	return energy_meter_info;

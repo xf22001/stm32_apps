@@ -6,7 +6,7 @@
  *   文件名称：energy_meter_handler_ac.c
  *   创 建 者：肖飞
  *   创建日期：2021年06月05日 星期六 12时56分40秒
- *   修改日期：2021年06月23日 星期三 10时16分58秒
+ *   修改日期：2021年06月23日 星期三 10时57分46秒
  *   描    述：
  *
  *================================================================*/
@@ -25,7 +25,6 @@ static void uart_data_request(void *fn_ctx, void *chain_ctx)
 	energy_meter_handler_ctx_t *energy_meter_handler_ctx = (energy_meter_handler_ctx_t *)energy_meter_info->ctx;
 	channel_info_t *channel_info = energy_meter_info->channel_info;
 	int ret;
-	uint32_t ticks = osKernelSysTick();
 
 	switch(energy_meter_handler_ctx->state) {
 		case 0: {
@@ -55,7 +54,7 @@ static void uart_data_request(void *fn_ctx, void *chain_ctx)
 	}
 }
 
-static int handle_init_ac(void *_energy_meter_info)
+static int init_ac(void *_energy_meter_info)
 {
 	int ret = 0;
 	energy_meter_info_t *energy_meter_info = (energy_meter_info_t *)_energy_meter_info;
@@ -85,6 +84,6 @@ static int handle_init_ac(void *_energy_meter_info)
 
 energy_meter_handler_t energy_meter_handler_ac = {
 	.energy_meter_type = CHANNEL_ENERGY_METER_TYPE_AC,
-	.handle_init = handle_init_ac,
+	.init = init_ac,
 };
 

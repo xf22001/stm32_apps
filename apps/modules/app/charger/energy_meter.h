@@ -6,7 +6,7 @@
  *   文件名称：energy_meter.h
  *   创 建 者：肖飞
  *   创建日期：2021年04月07日 星期三 15时56分25秒
- *   修改日期：2021年06月05日 星期六 12时50分54秒
+ *   修改日期：2021年06月23日 星期三 10时55分52秒
  *   描    述：
  *
  *================================================================*/
@@ -31,10 +31,12 @@ extern "C"
 #endif
 
 typedef int (*energy_meter_handler_init_t)(void *_energy_meter_info);
+typedef int (*energy_meter_handler_deinit_t)(void *_energy_meter_info);
 
 typedef struct {
 	channel_energy_meter_type_t energy_meter_type;
-	energy_meter_handler_init_t handle_init;
+	energy_meter_handler_init_t init;
+	energy_meter_handler_deinit_t deinit;
 } energy_meter_handler_t;
 
 typedef struct {
