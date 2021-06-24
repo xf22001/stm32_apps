@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2021年06月22日 星期二 10时26分50秒
+ *   修改日期：2021年06月24日 星期四 11时28分25秒
  *   描    述：
  *
  *================================================================*/
@@ -111,7 +111,7 @@ typedef enum {
 
 typedef struct {
 	uint8_t ac_current_limit;//ac_current_limit_t
-	uint8_t auxiliary_power_type;//auxiliary_power_type_t
+	uint32_t withholding;//告诉后台此卡的预扣款是多少 0.01 元
 } channel_settings_t;
 
 #pragma pack(pop)
@@ -156,7 +156,7 @@ typedef struct {
 	uint16_t cp_ad;
 	uint16_t adhe_ad;
 
-	uint32_t total_energy;
+	uint32_t total_energy;//0.0001kwh
 	uint32_t voltage;
 	uint32_t current;
 
@@ -168,6 +168,8 @@ typedef struct {
 	uint16_t cc;
 
 	channel_record_item_t channel_record_item;
+
+	uint8_t auxiliary_power_type;//auxiliary_power_type_t
 } channel_info_t;
 
 #pragma pack(push, 1)

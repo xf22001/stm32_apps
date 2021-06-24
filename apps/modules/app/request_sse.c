@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年06月23日 星期三 17时19分22秒
+ *   修改日期：2021年06月24日 星期四 11时34分13秒
  *   描    述：
  *
  *================================================================*/
@@ -492,6 +492,7 @@ typedef struct {
 	uint8_t start_code;
 	uint8_t start_failed_reason;
 	uint8_t retry;
+	uint16_t serial_event_start;
 
 	command_status_t *channel_cmd_ctx;
 } net_client_channel_data_ctx_t;
@@ -508,12 +509,11 @@ typedef struct {
 
 typedef enum {
 	NET_CLIENT_DEVICE_COMMAND_REPORT = 0,
-	NET_CLIENT_DEVICE_COMMAND_EVENT_START,
 	NET_CLIENT_DEVICE_COMMAND_EVENT_UPLOAD_RECORD,
 } net_client_device_command_t;
 
 typedef enum {
-	NET_CLIENT_CHANNEL_COMMAND_REPORT = 0,
+	NET_CLIENT_CHANNEL_COMMAND_EVENT_START = 0,
 } net_client_channel_command_t;
 
 typedef int (*net_client_request_callback_t)(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *send_buffer, uint16_t send_buffer_size);
@@ -883,8 +883,8 @@ static uint8_t get_channel_device_state(channel_info_t *channel_info)
 	u_sse_channel_device_state.v = 0;
 
 	u_sse_channel_device_state.s.connect = ((charger_info_t *)(channel_info->charger_info))->charger_connect_state;
-	u_sse_channel_device_state.s.auxiliary_power_12 = (channel_info->channel_settings.auxiliary_power_type == AUXILIARY_POWER_TYPE_12) ? 1 : 0;
-	u_sse_channel_device_state.s.auxiliary_power_24 = (channel_info->channel_settings.auxiliary_power_type == AUXILIARY_POWER_TYPE_24) ? 1 : 0;
+	u_sse_channel_device_state.s.auxiliary_power_12 = (channel_info->auxiliary_power_type == AUXILIARY_POWER_TYPE_12) ? 1 : 0;
+	u_sse_channel_device_state.s.auxiliary_power_24 = (channel_info->auxiliary_power_type == AUXILIARY_POWER_TYPE_24) ? 1 : 0;
 	u_sse_channel_device_state.s.vehicle_relay_state = ((charger_info_t *)(channel_info->charger_info))->vehicle_relay_state;
 	u_sse_channel_device_state.s.charger_lock_state = channel_info->charger_lock_state;
 
@@ -1168,7 +1168,7 @@ static int request_callback_report(net_client_info_t *net_client_info, void *_co
 static int response_callback_report(net_client_info_t *net_client_info, void *_command_item, uint8_t type, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
 	int ret = -1;
-	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)send_buffer;
+	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)request;
 	//net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
 	sse_0x00_response_report_t *sse_0x00_response_report = (sse_0x00_response_report_t *)(sse_frame_header + 1);
 
@@ -1208,9 +1208,11 @@ static int request_callback_event_start(net_client_info_t *net_client_info, void
 	channel_info_t *channel_info = channels_info->channel_info + channel_id;
 	charger_info_t *charger_info = (charger_info_t *)channel_info->charger_info;
 	net_client_channel_data_ctx_t *channel_data_ctx = net_client_data_ctx->channel_data_ctx + channel_id;
-	command_status_t *channel_cmd_ctx = channel_data_ctx->channel_cmd_ctx;
 	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
 	sse_request_event_start_charge_t *sse_request_event_start_charge = (sse_request_event_start_charge_t *)sse_0x01_request_event->event_info;
+	char dt[20];
+	struct tm *tm;
+	size_t size = (uint8_t *)(sse_request_event_start_charge + 1) - (uint8_t *)sse_0x01_request_event;
 
 	snprintf((char *)sse_0x01_request_event->device_id, 32, "%s", channels_settings->device_id);
 	sse_0x01_request_event->device_type = channels_settings->device_type;
@@ -1226,12 +1228,69 @@ static int request_callback_event_start(net_client_info_t *net_client_info, void
 	sse_request_event_start_charge->bcp_max_charge_voltage_single_battery = charger_info->bms_data.bcp_data.max_charge_voltage_single_battery;
 	sse_request_event_start_charge->bcp_max_temperature = charger_info->bms_data.bcp_data.max_temperature;
 	sse_request_event_start_charge->bcp_max_charge_voltage = charger_info->bms_data.bcp_data.max_charge_voltage;
+	snprintf((char *)sse_request_event_start_charge->card_id, 32, "%lu", (uint32_t)channel_info->channel_record_item.card_id);
+	sse_request_event_start_charge->start_type = channel_info->channel_record_item.start_reason;
+	memset(sse_request_event_start_charge->start_dt, 0xff, sizeof(sse_request_event_start_charge->start_dt));
+	tm = localtime(&channel_info->channel_record_item.start_time);
+	strftime(dt, sizeof(dt), "%Y%m%d%H%M%S", tm);
+	ascii_to_bcd(dt, strlen(dt), sse_request_event_start_charge->start_dt, sizeof(sse_request_event_start_charge->start_dt));
+	sse_request_event_start_charge->telemeter_total = channel_info->total_energy;
+	sse_request_event_start_charge->withholding = channel_info->channel_settings.withholding;
+	sse_request_event_start_charge->soc = charger_info->bms_data.bcp_data.soc / 10;
+	channel_data_ctx->serial_event_start = net_client_data_ctx->serial++;
+
+	send_frame(net_client_info, channel_data_ctx->serial_event_start, item->frame, 0, (uint8_t *)sse_0x01_request_event, size);
+
+	channel_data_ctx->channel_cmd_ctx[NET_CLIENT_CHANNEL_COMMAND_EVENT_START].state = COMMAND_STATE_RESPONSE;
 
 	return ret;
 }
 
 static int response_callback_event_start(net_client_info_t *net_client_info, void *_command_item, uint8_t type, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
+	int ret = -1;
+	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)request;
+	//net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
+	sse_0x01_response_event_t *sse_0x01_response_event = (sse_0x01_response_event_t *)(sse_frame_header + 1);
+	channels_info_t *channels_info = net_client_data_ctx->channels_info;
+	channels_settings_t *channels_settings = &channels_info->channels_settings;
+	int i;
+	uint8_t match = 0;
+	net_client_channel_data_ctx_t *channel_data_ctx;
+
+	if(type == 0) {//非回复,忽略
+		ret = 1;
+		return ret;
+	}
+
+	if(sse_0x01_response_event->event_type != 0x00) {//非启动事件回复,忽略
+		ret = 1;
+		return ret;
+	}
+
+	for(i = 0; i < channels_info->channel_number; i++) {
+		channel_data_ctx = net_client_data_ctx->channel_data_ctx + i;
+		if(channel_data_ctx->serial_event_start == sse_frame_header->serial) {
+			match = 1;
+			break;
+		}
+	}
+	
+	if(match == 0) {//序列号不对,找不到对应通道,忽略
+		ret = 1;
+		return ret;
+	}
+
+	if(strncmp((const char *)sse_0x01_response_event->device_id, (const char *)channels_settings->device_id, 32) == 0) {//设备号不对,返回出错
+		return ret;
+	}
+
+	if(sse_0x01_response_event->status != 0) {
+	}
+
+	channel_data_ctx->channel_cmd_ctx[NET_CLIENT_DEVICE_COMMAND_REPORT].state = COMMAND_STATE_IDLE;
+	ret = 0;
+	return ret;
 }
 
 static int timeout_callback_event_start(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id)
@@ -1244,13 +1303,15 @@ static int timeout_callback_event_start(net_client_info_t *net_client_info, void
 	if(channel_data_ctx->retry < 3) {
 		channel_data_ctx->retry++;
 		channel_cmd_ctx[item->cmd].state = COMMAND_STATE_IDLE;
+	} else {
+		debug("channel %d start event failed!!!", channel_id);
 	}
 
 	return ret;
 }
 
 static net_client_command_item_t net_client_command_item_event_start = {
-	.cmd = NET_CLIENT_DEVICE_COMMAND_EVENT_START,
+	.cmd = NET_CLIENT_CHANNEL_COMMAND_EVENT_START,
 	.frame = 0x01,
 	.request_callback = request_callback_event_start,
 	.response_callback = response_callback_event_start,
@@ -1281,6 +1342,8 @@ static char *get_net_client_cmd_channel_des(net_client_channel_command_t cmd)
 	char *des = "unknow";
 
 	switch(cmd) {
+
+			add_des_case(NET_CLIENT_CHANNEL_COMMAND_EVENT_START);
 
 		default: {
 		}

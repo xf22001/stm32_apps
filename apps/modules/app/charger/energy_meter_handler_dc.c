@@ -6,7 +6,7 @@
  *   文件名称：energy_meter_handler_dc.c
  *   创 建 者：肖飞
  *   创建日期：2021年06月05日 星期六 12时59分07秒
- *   修改日期：2021年06月23日 星期三 10时57分28秒
+ *   修改日期：2021年06月24日 星期四 11时33分00秒
  *   描    述：
  *
  *================================================================*/
@@ -25,7 +25,6 @@ static void uart_data_request(void *fn_ctx, void *chain_ctx)
 	energy_meter_handler_ctx_t *energy_meter_handler_ctx = (energy_meter_handler_ctx_t *)energy_meter_info->ctx;
 	channel_info_t *channel_info = energy_meter_info->channel_info;
 	int ret;
-	uint32_t ticks = osKernelSysTick();
 
 	switch(energy_meter_handler_ctx->state) {
 		case 0: {

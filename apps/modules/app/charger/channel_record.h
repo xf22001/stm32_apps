@@ -6,7 +6,7 @@
  *   文件名称：channel_record.h
  *   创 建 者：肖飞
  *   创建日期：2021年05月23日 星期日 13时40分28秒
- *   修改日期：2021年06月23日 星期三 17时24分35秒
+ *   修改日期：2021年06月24日 星期四 10时40分05秒
  *   描    述：
  *
  *================================================================*/
@@ -124,7 +124,7 @@ typedef struct {
 
 	uint32_t account_balance;
 	uint32_t amount;
-	uint32_t total_energy;
+	uint32_t total_energy;//0.0001kwh
 	uint32_t energy_seg[PRICE_SEGMENT_SIZE];
 
 	uint32_t energy;
