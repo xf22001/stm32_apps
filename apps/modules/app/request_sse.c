@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年06月24日 星期四 11时34分13秒
+ *   修改日期：2021年06月24日 星期四 17时10分05秒
  *   描    述：
  *
  *================================================================*/
@@ -509,6 +509,7 @@ typedef struct {
 
 typedef enum {
 	NET_CLIENT_DEVICE_COMMAND_REPORT = 0,
+	NET_CLIENT_DEVICE_COMMAND_EVENT_FAULT,
 	NET_CLIENT_DEVICE_COMMAND_EVENT_UPLOAD_RECORD,
 } net_client_device_command_t;
 
@@ -1161,7 +1162,7 @@ static int request_callback_report(net_client_info_t *net_client_info, void *_co
 
 	send_frame(net_client_info, net_client_data_ctx->serial++, item->frame, 0, (uint8_t *)sse_0x00_request_report, size);
 
-	net_client_data_ctx->device_cmd_ctx[NET_CLIENT_DEVICE_COMMAND_REPORT].state = COMMAND_STATE_RESPONSE;
+	net_client_data_ctx->device_cmd_ctx[item->cmd].state = COMMAND_STATE_RESPONSE;
 	return ret;
 }
 
@@ -1169,13 +1170,13 @@ static int response_callback_report(net_client_info_t *net_client_info, void *_c
 {
 	int ret = -1;
 	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)request;
-	//net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
+	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
 	sse_0x00_response_report_t *sse_0x00_response_report = (sse_0x00_response_report_t *)(sse_frame_header + 1);
 
 	if(sse_0x00_response_report->status != 0) {
 	}
 
-	net_client_data_ctx->device_cmd_ctx[NET_CLIENT_DEVICE_COMMAND_REPORT].state = COMMAND_STATE_IDLE;
+	net_client_data_ctx->device_cmd_ctx[item->cmd].state = COMMAND_STATE_IDLE;
 	ret = 0;
 	return ret;
 }
@@ -1194,8 +1195,209 @@ static net_client_command_item_t net_client_command_item_report = {
 	.timeout_callback = timeout_callback_report,
 };
 
+static uint32_t get_device_fault_type(channels_info_t *channels_info)
+{
+	u_sse_event_fault_type_t u_sse_event_fault_type;
+	int i;
+
+	if(get_fault(channels_info->faults, CHANNELS_FAULT_DISPLAY) == 1) {
+		u_sse_event_fault_type.s.display = 1;
+	}
+
+	for(i = 0; i < channels_info->channel_number; i++) {
+		channel_info_t *channel_info = channels_info->channel_info + i;
+
+		if(get_fault(channel_info->faults, CHANNEL_FAULT_CONNECT) == 1) {
+			switch(i) {
+				case 0: {
+					u_sse_event_fault_type.s.control_board_1 = 1;
+				}
+				break;
+
+				case 1: {
+					u_sse_event_fault_type.s.control_board_2 = 1;
+				}
+				break;
+
+				case 2: {
+					u_sse_event_fault_type.s.control_board_3 = 1;
+				}
+				break;
+
+				case 3: {
+					u_sse_event_fault_type.s.control_board_4 = 1;
+				}
+				break;
+
+				case 4: {
+					u_sse_event_fault_type.s.control_board_5 = 1;
+				}
+				break;
+
+				case 5: {
+					u_sse_event_fault_type.s.control_board_6 = 1;
+				}
+				break;
+
+				case 6: {
+					u_sse_event_fault_type.s.control_board_7 = 1;
+				}
+				break;
+
+				case 7: {
+					u_sse_event_fault_type.s.control_board_8 = 1;
+				}
+				break;
+
+				default: {
+				}
+				break;
+			}
+		}
+
+		if(get_fault(channel_info->faults, CHANNEL_FAULT_FUNCTION_BOARD_CONNECT) == 1) {
+			switch(i) {
+				case 0: {
+					u_sse_event_fault_type.s.function_board_1 = 1;
+				}
+				break;
+
+				case 1: {
+					u_sse_event_fault_type.s.function_board_2 = 1;
+				}
+				break;
+
+				case 2: {
+					u_sse_event_fault_type.s.function_board_3 = 1;
+				}
+				break;
+
+				case 3: {
+					u_sse_event_fault_type.s.function_board_4 = 1;
+				}
+				break;
+
+				case 4: {
+					u_sse_event_fault_type.s.function_board_5 = 1;
+				}
+				break;
+
+				case 5: {
+					u_sse_event_fault_type.s.function_board_6 = 1;
+				}
+				break;
+
+				case 6: {
+					u_sse_event_fault_type.s.function_board_7 = 1;
+				}
+				break;
+
+				case 7: {
+					u_sse_event_fault_type.s.function_board_8 = 1;
+				}
+				break;
+
+				default: {
+				}
+				break;
+			}
+
+			if(get_fault(channel_info->faults, CHANNEL_FAULT_TELEMETER) == 1) {
+				switch(i) {
+					case 0: {
+						u_sse_event_fault_type.s.telemeter_1 = 1;
+					}
+					break;
+
+					case 1: {
+						u_sse_event_fault_type.s.telemeter_2 = 1;
+					}
+					break;
+
+					case 2: {
+						u_sse_event_fault_type.s.telemeter_3 = 1;
+					}
+					break;
+
+					case 3: {
+						u_sse_event_fault_type.s.telemeter_4 = 1;
+					}
+					break;
+
+					default: {
+					}
+					break;
+				}
+			}
+		}
+	}
+
+	if(get_fault(channels_info->faults, CHANNELS_FAULT_CARD_READER) == 1) {
+		u_sse_event_fault_type.s.card_reader = 1;
+	}
+
+	if(get_fault(channels_info->faults, CHANNELS_FAULT_DISPLAY) == 1) {
+		u_sse_event_fault_type.s.display1 = 1;
+	}
+
+	u_sse_event_fault_type.v = 0;
+
+	return u_sse_event_fault_type.v;
+}
+
+static int request_callback_event_fault(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *send_buffer, uint16_t send_buffer_size)
+{
+	int ret = 0;
+	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)send_buffer;
+	sse_request_event_fault_t *sse_request_event_fault = (sse_request_event_fault_t *)(sse_frame_header + 1);
+	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
+	channels_info_t *channels_info = net_client_data_ctx->channels_info;
+	channels_settings_t *channels_settings = &net_client_data_ctx->channels_info->channels_settings;
+	size_t size = 0;
+
+	sse_request_event_fault->type.v = get_device_fault_type(channels_info);;
+	sse_request_event_fault->status.v = get_device_state(channels_info);
+
+	size = sizeof(sse_request_event_fault_t);
+
+	send_frame(net_client_info, net_client_data_ctx->serial++, item->frame, 0, (uint8_t *)sse_request_event_fault, size);
+
+	net_client_data_ctx->device_cmd_ctx[item->cmd].state = COMMAND_STATE_RESPONSE;
+	return ret;
+}
+
+static int response_callback_event_fault(net_client_info_t *net_client_info, void *_command_item, uint8_t type, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
+{
+	int ret = -1;
+	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)request;
+	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
+	sse_0x00_response_report_t *sse_0x00_response_report = (sse_0x00_response_report_t *)(sse_frame_header + 1);
+
+	if(sse_0x00_response_report->status != 0) {
+	}
+
+	net_client_data_ctx->device_cmd_ctx[item->cmd].state = COMMAND_STATE_IDLE;
+	ret = 0;
+	return ret;
+}
+
+static int timeout_callback_event_fault(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id)
+{
+	int ret = 0;
+	return ret;
+}
+
+static net_client_command_item_t net_client_command_item_event_fault = {
+	.cmd = NET_CLIENT_DEVICE_COMMAND_EVENT_FAULT,
+	.frame = 0x01,
+	.request_callback = request_callback_event_fault,
+	.response_callback = response_callback_event_fault,
+	.timeout_callback = timeout_callback_event_fault,
+};
+
 static net_client_command_item_t *net_client_command_item_device_table[] = {
 	&net_client_command_item_report,
+	&net_client_command_item_event_fault,
 };
 
 static int request_callback_event_start(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *send_buffer, uint16_t send_buffer_size)
@@ -1241,7 +1443,7 @@ static int request_callback_event_start(net_client_info_t *net_client_info, void
 
 	send_frame(net_client_info, channel_data_ctx->serial_event_start, item->frame, 0, (uint8_t *)sse_0x01_request_event, size);
 
-	channel_data_ctx->channel_cmd_ctx[NET_CLIENT_CHANNEL_COMMAND_EVENT_START].state = COMMAND_STATE_RESPONSE;
+	channel_data_ctx->channel_cmd_ctx[item->cmd].state = COMMAND_STATE_RESPONSE;
 
 	return ret;
 }
@@ -1250,7 +1452,7 @@ static int response_callback_event_start(net_client_info_t *net_client_info, voi
 {
 	int ret = -1;
 	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)request;
-	//net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
+	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
 	sse_0x01_response_event_t *sse_0x01_response_event = (sse_0x01_response_event_t *)(sse_frame_header + 1);
 	channels_info_t *channels_info = net_client_data_ctx->channels_info;
 	channels_settings_t *channels_settings = &channels_info->channels_settings;
@@ -1270,12 +1472,13 @@ static int response_callback_event_start(net_client_info_t *net_client_info, voi
 
 	for(i = 0; i < channels_info->channel_number; i++) {
 		channel_data_ctx = net_client_data_ctx->channel_data_ctx + i;
+
 		if(channel_data_ctx->serial_event_start == sse_frame_header->serial) {
 			match = 1;
 			break;
 		}
 	}
-	
+
 	if(match == 0) {//序列号不对,找不到对应通道,忽略
 		ret = 1;
 		return ret;
@@ -1288,7 +1491,7 @@ static int response_callback_event_start(net_client_info_t *net_client_info, voi
 	if(sse_0x01_response_event->status != 0) {
 	}
 
-	channel_data_ctx->channel_cmd_ctx[NET_CLIENT_DEVICE_COMMAND_REPORT].state = COMMAND_STATE_IDLE;
+	channel_data_ctx->channel_cmd_ctx[item->cmd].state = COMMAND_STATE_IDLE;
 	ret = 0;
 	return ret;
 }
@@ -1328,6 +1531,7 @@ static char *get_net_client_cmd_device_des(net_client_device_command_t cmd)
 
 	switch(cmd) {
 			add_des_case(NET_CLIENT_DEVICE_COMMAND_REPORT);
+			add_des_case(NET_CLIENT_DEVICE_COMMAND_EVENT_FAULT);
 
 		default: {
 		}
