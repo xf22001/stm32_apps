@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年06月26日 星期六 22时41分46秒
+ *   修改日期：2021年06月27日 星期日 00时16分46秒
  *   描    述：
  *
  *================================================================*/
@@ -501,6 +501,9 @@ typedef struct {
 	uint8_t start_failed_reason;
 	uint8_t retry;
 	uint16_t serial_event_start;
+	uint64_t card_id;
+	uint8_t card_password[32];
+	uint16_t serial_card_account;
 
 	command_status_t *channel_cmd_ctx;
 } net_client_channel_data_ctx_t;
@@ -526,6 +529,7 @@ typedef enum {
 	NET_CLIENT_DEVICE_COMMAND_EVENT_UPLOAD_RECORD,
 	NET_CLIENT_DEVICE_COMMAND_QUERY_DEVICE_INFO,
 	NET_CLIENT_DEVICE_COMMAND_QUERY_DEVICE_MESSAGE,
+	NET_CLIENT_DEVICE_COMMAND_QUERY_CARD_ACCOUNT,
 } net_client_device_command_t;
 
 typedef enum {
@@ -1768,7 +1772,7 @@ static int timeout_callback_query_device_info(net_client_info_t *net_client_info
 
 static net_client_command_item_t net_client_command_item_query_device_info = {
 	.cmd = NET_CLIENT_DEVICE_COMMAND_QUERY_DEVICE_INFO,
-	.frame = 0x01,
+	.frame = 0x02,
 	.request_callback = request_callback_query_device_info,
 	.response_callback = response_callback_query_device_info,
 	.timeout_callback = timeout_callback_query_device_info,
@@ -1867,7 +1871,7 @@ static int timeout_callback_query_device_message(net_client_info_t *net_client_i
 
 static net_client_command_item_t net_client_command_item_query_device_message = {
 	.cmd = NET_CLIENT_DEVICE_COMMAND_QUERY_DEVICE_MESSAGE,
-	.frame = 0x01,
+	.frame = 0x02,
 	.request_callback = request_callback_query_device_message,
 	.response_callback = response_callback_query_device_message,
 	.timeout_callback = timeout_callback_query_device_message,
@@ -2002,8 +2006,82 @@ static net_client_command_item_t net_client_command_item_event_start = {
 	.timeout_callback = timeout_callback_event_start,
 };
 
+static int request_callback_query_card_account(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *send_buffer, uint16_t send_buffer_size)
+{
+	int ret = -1;
+	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)send_buffer;
+	sse_0x02_request_query_t *sse_0x02_request_query = (sse_0x02_request_query_t *)(sse_frame_header + 1);
+	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
+	channels_info_t *channels_info = net_client_data_ctx->channels_info;
+	channel_info_t *channel_info = channels_info->channel_info + channel_id;
+	charger_info_t *charger_info = (charger_info_t *)channel_info->charger_info;
+	channels_settings_t *channels_settings = &channels_info->channels_settings;
+	channel_settings_t *channel_settings = &channel_info->channel_settings;
+	net_client_channel_data_ctx_t *channel_data_ctx = net_client_data_ctx->channel_data_ctx + channel_id;
+	sse_query_card_account_info_t *sse_query_card_account_info = (sse_query_card_account_info_t *)sse_0x02_request_query->query;
+	size_t size;
+
+	sse_0x02_request_query->type = 2;
+	sse_0x02_request_query->id = 0;
+
+	snprintf((char *)sse_query_card_account_info->device_id, 32, "%s", (char *)channels_settings->device_id);
+	snprintf((char *)sse_query_card_account_info->card_id, 32, "%lu", (uint32_t)channel_data_ctx->card_id);
+	snprintf((char *)sse_query_card_account_info->card_password, 32, "%s", (char *)channel_data_ctx->card_password);
+	sse_query_card_account_info->withholding = channel_settings->withholding;
+
+	size = (uint8_t *)(sse_query_card_account_info + 1) - (uint8_t *)sse_0x02_request_query;
+
+	channel_data_ctx->serial_card_account = net_client_data_ctx->serial++;
+	send_frame(net_client_info, channel_data_ctx->serial_card_account, item->frame, 0, (uint8_t *)sse_0x02_request_query, size);
+
+	channel_data_ctx->channel_cmd_ctx[item->cmd].state = COMMAND_STATE_IDLE;
+	ret = 0;
+	return ret;
+}
+
+static int response_callback_query_card_account(net_client_info_t *net_client_info, void *_command_item, uint8_t type, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
+{
+	int ret = -1;
+	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)request;
+	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
+	sse_0x02_response_query_t *sse_0x02_response_query = (sse_0x02_response_query_t *)(sse_frame_header + 1);
+	//channels_settings_t *channels_settings = &net_client_data_ctx->channels_info->channels_settings;
+
+	if(type == 0) {//非回复,忽略
+		ret = 1;
+		return ret;
+	}
+
+	if(sse_0x02_response_query->type != 1) {
+		ret = 1;
+		return ret;
+	}
+
+	net_client_data_ctx->query_device_info_id = sse_0x02_response_query->id;
+	net_client_data_ctx->serial_query_device_message = sse_frame_header->serial;
+
+	channel_data_ctx->channel_cmd_ctx[item->cmd].state = COMMAND_STATE_REQUEST;
+	ret = 0;
+	return ret;
+}
+
+static int timeout_callback_query_card_account(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id)
+{
+	int ret = 0;
+	return ret;
+}
+
+static net_client_command_item_t net_client_command_item_query_card_account = {
+	.cmd = NET_CLIENT_DEVICE_COMMAND_QUERY_CARD_ACCOUNT,
+	.frame = 0x02,
+	.request_callback = request_callback_query_card_account,
+	.response_callback = response_callback_query_card_account,
+	.timeout_callback = timeout_callback_query_card_account,
+};
+
 static net_client_command_item_t *net_client_command_item_channel_table[] = {
 	&net_client_command_item_event_start,
+	&net_client_command_item_query_card_account,
 };
 
 static char *get_net_client_cmd_device_des(net_client_device_command_t cmd)
@@ -2016,6 +2094,7 @@ static char *get_net_client_cmd_device_des(net_client_device_command_t cmd)
 			add_des_case(NET_CLIENT_DEVICE_COMMAND_EVENT_UPLOAD_RECORD);
 			add_des_case(NET_CLIENT_DEVICE_COMMAND_QUERY_DEVICE_INFO);
 			add_des_case(NET_CLIENT_DEVICE_COMMAND_QUERY_DEVICE_MESSAGE);
+			add_des_case(NET_CLIENT_DEVICE_COMMAND_QUERY_CARD_ACCOUNT);
 
 		default: {
 		}
