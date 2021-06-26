@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年06月26日 星期六 15时53分32秒
+ *   修改日期：2021年06月26日 星期六 22时41分46秒
  *   描    述：
  *
  *================================================================*/
@@ -514,6 +514,7 @@ typedef struct {
 	uint16_t channel_record_sync_stamps;
 	uint8_t query_device_info_id;
 	uint16_t serial_query_device_info;
+	uint16_t serial_query_device_message;
 
 	command_status_t *device_cmd_ctx;
 	net_client_channel_data_ctx_t *channel_data_ctx;
@@ -524,6 +525,7 @@ typedef enum {
 	NET_CLIENT_DEVICE_COMMAND_EVENT_FAULT,
 	NET_CLIENT_DEVICE_COMMAND_EVENT_UPLOAD_RECORD,
 	NET_CLIENT_DEVICE_COMMAND_QUERY_DEVICE_INFO,
+	NET_CLIENT_DEVICE_COMMAND_QUERY_DEVICE_MESSAGE,
 } net_client_device_command_t;
 
 typedef enum {
@@ -1772,11 +1774,111 @@ static net_client_command_item_t net_client_command_item_query_device_info = {
 	.timeout_callback = timeout_callback_query_device_info,
 };
 
+static int request_callback_query_device_message(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *send_buffer, uint16_t send_buffer_size)
+{
+	int ret = -1;
+	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)send_buffer;
+	sse_0x02_request_query_t *sse_0x02_request_query = (sse_0x02_request_query_t *)(sse_frame_header + 1);
+	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
+	//channels_info_t *channels_info = net_client_data_ctx->channels_info;
+	channels_settings_t *channels_settings = &net_client_data_ctx->channels_info->channels_settings;
+	uint8_t *data = sse_0x02_request_query->query;
+	size_t size;
+
+	sse_0x02_request_query->type = 1;
+	sse_0x02_request_query->id = net_client_data_ctx->query_device_info_id;
+
+	if((sse_0x02_request_query->id == 0) || (sse_0x02_request_query->id == 0xff)) {
+		uint8_t *device_id = (uint8_t *)data;
+		snprintf((char *)device_id, 32, "%s", channels_settings->device_id);
+
+		data += 32;
+	}
+
+	if((sse_0x02_request_query->id == 1) || (sse_0x02_request_query->id == 0xff)) {
+		time_t ts = get_time();
+		struct tm *tm = localtime(&ts);
+		uint8_t *date_time = (uint8_t *)data;
+		char dt[20];
+
+		memset(date_time, 0xff, 8);
+		strftime(dt, sizeof(dt), "%Y%m%d%H%M%S", tm);
+		ascii_to_bcd(dt, strlen(dt), date_time, 8);
+
+		data += 8;
+	}
+
+	if((sse_0x02_request_query->id == 2) || (sse_0x02_request_query->id == 0xff)) {
+		data += 16;
+	}
+
+	if((sse_0x02_request_query->id == 3) || (sse_0x02_request_query->id == 0xff)) {
+		data += 16;
+	}
+
+	if((sse_0x02_request_query->id == 4) || (sse_0x02_request_query->id == 0xff)) {
+		data += 256;
+	}
+
+	if((sse_0x02_request_query->id == 5) || (sse_0x02_request_query->id == 0xff)) {
+		data += 256;
+	}
+
+	size = data - (uint8_t *)sse_0x02_request_query;
+
+	send_frame(net_client_info, net_client_data_ctx->serial_query_device_message, item->frame, 1, (uint8_t *)sse_0x02_request_query, size);
+
+	net_client_data_ctx->device_cmd_ctx[item->cmd].state = COMMAND_STATE_IDLE;
+	ret = 0;
+	return ret;
+}
+
+static int response_callback_query_device_message(net_client_info_t *net_client_info, void *_command_item, uint8_t type, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
+{
+	int ret = -1;
+	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)request;
+	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
+	sse_0x02_response_query_t *sse_0x02_response_query = (sse_0x02_response_query_t *)(sse_frame_header + 1);
+	//channels_settings_t *channels_settings = &net_client_data_ctx->channels_info->channels_settings;
+
+	if(type == 0) {//非回复,忽略
+		ret = 1;
+		return ret;
+	}
+
+	if(sse_0x02_response_query->type != 1) {
+		ret = 1;
+		return ret;
+	}
+
+	net_client_data_ctx->query_device_info_id = sse_0x02_response_query->id;
+	net_client_data_ctx->serial_query_device_message = sse_frame_header->serial;
+
+	net_client_data_ctx->device_cmd_ctx[item->cmd].state = COMMAND_STATE_REQUEST;
+	ret = 0;
+	return ret;
+}
+
+static int timeout_callback_query_device_message(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id)
+{
+	int ret = 0;
+	return ret;
+}
+
+static net_client_command_item_t net_client_command_item_query_device_message = {
+	.cmd = NET_CLIENT_DEVICE_COMMAND_QUERY_DEVICE_MESSAGE,
+	.frame = 0x01,
+	.request_callback = request_callback_query_device_message,
+	.response_callback = response_callback_query_device_message,
+	.timeout_callback = timeout_callback_query_device_message,
+};
+
 static net_client_command_item_t *net_client_command_item_device_table[] = {
 	&net_client_command_item_report,
 	&net_client_command_item_event_fault,
 	&net_client_command_item_event_upload_record,
 	&net_client_command_item_query_device_info,
+	&net_client_command_item_query_device_message,
 };
 
 static int request_callback_event_start(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *send_buffer, uint16_t send_buffer_size)
@@ -1913,6 +2015,7 @@ static char *get_net_client_cmd_device_des(net_client_device_command_t cmd)
 			add_des_case(NET_CLIENT_DEVICE_COMMAND_EVENT_FAULT);
 			add_des_case(NET_CLIENT_DEVICE_COMMAND_EVENT_UPLOAD_RECORD);
 			add_des_case(NET_CLIENT_DEVICE_COMMAND_QUERY_DEVICE_INFO);
+			add_des_case(NET_CLIENT_DEVICE_COMMAND_QUERY_DEVICE_MESSAGE);
 
 		default: {
 		}
