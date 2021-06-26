@@ -6,7 +6,7 @@
  *   文件名称：channel_record.h
  *   创 建 者：肖飞
  *   创建日期：2021年05月23日 星期日 13时40分28秒
- *   修改日期：2021年06月24日 星期四 10时40分05秒
+ *   修改日期：2021年06月26日 星期六 12时33分54秒
  *   描    述：
  *
  *================================================================*/
@@ -117,17 +117,30 @@ typedef struct {
 	uint64_t card_id;
 
 	time_t start_time;
-	time_t end_time;
+	time_t stop_time;
 
+	uint8_t vin[17];
+	uint8_t chm_version_1;//0x01
+	uint16_t chm_version_0;//0x01
+	uint8_t brm_battery_type;//0x01 : '铅酸电池', 0x02 : '镍氢电池', 0x03 : '磷酸电池', 0x04 : '锰酸锂电池', 0x05 : '钴酸锂电池', 0x06 : '三元材料电池', 0x07 : '聚合物电池', 0x08 : '钛酸锂电池', 0xff : '其他电池'
+	uint16_t bcp_rate_total_power;//0.1kwh
+	uint16_t bcp_total_voltage;//0.1v
+	uint16_t bcp_max_charge_voltage_single_battery;//0.01v
+	uint8_t bcp_max_temperature;// -50
+	uint16_t bcp_max_charge_voltage;//0.1v 最高允许充电总电压
 	uint8_t start_soc;
-	uint8_t end_soc;
+	uint8_t stop_soc;
 
+	uint32_t withholding;//告诉后台此卡的预扣款是多少 0.01 元
 	uint32_t account_balance;
 	uint32_t amount;
-	uint32_t total_energy;//0.0001kwh
+	uint32_t start_total_energy;//0.0001kwh
+	uint32_t stop_total_energy;//0.0001kwh
 	uint32_t energy_seg[PRICE_SEGMENT_SIZE];
 
 	uint32_t energy;
+
+	uint8_t magic;//0x73
 } channel_record_item_t;
 
 #pragma pack(pop)
@@ -141,8 +154,12 @@ typedef struct {
 	eeprom_info_t *eeprom_info;
 } channel_record_task_info_t; 
 
+typedef int (*channel_record_state_filter_t)(channel_record_item_state_t state);
+
 int alloc_channel_record_item_id(channel_record_task_info_t *channel_record_task_info, channel_record_item_t *channel_record_item);
+int get_channel_record_info(channel_record_task_info_t *channel_record_task_info, channel_record_info_t *channel_record_info);
 int get_channel_record_item_by_id(channel_record_task_info_t *channel_record_task_info, uint16_t id, channel_record_item_t *channel_record_item);
+int get_channel_record_item_by_state(channel_record_task_info_t *channel_record_task_info, channel_record_state_filter_t filter, uint16_t start, uint16_t end, uint16_t *id);
 int channel_record_update(channel_record_task_info_t *channel_record_task_info, channel_record_item_t *channel_record_item);
 int channel_record_sync(channel_record_task_info_t *channel_record_task_info);
 channel_record_task_info_t *get_or_alloc_channel_record_task_info(uint8_t id);

@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分12秒
- *   修改日期：2021年06月21日 星期一 10时45分11秒
+ *   修改日期：2021年06月25日 星期五 10时28分11秒
  *   描    述：
  *
  *================================================================*/
@@ -162,15 +162,15 @@ static void handle_channel_state(channel_info_t *channel_info)
 	handle_channel_request_state(channel_info);
 }
 
-static uint8_t get_price_seg_index(time_t ts)
+uint8_t get_seg_index(time_t ts)
 {
-	uint8_t price_seg_index;
+	uint8_t seg_index;
 
 	OS_ASSERT((86400 % PRICE_SEGMENT_SIZE) == 0);
-	price_seg_index = (ts % 86400) / (86400 / PRICE_SEGMENT_SIZE);
-	OS_ASSERT(price_seg_index < PRICE_SEGMENT_SIZE);
+	seg_index = (ts % 86400) / (86400 / PRICE_SEGMENT_SIZE);
+	OS_ASSERT(seg_index < PRICE_SEGMENT_SIZE);
 
-	return price_seg_index;
+	return seg_index;
 }
 
 static uint32_t get_current_price(channels_info_t *channels_info, time_t ts)
@@ -178,7 +178,7 @@ static uint32_t get_current_price(channels_info_t *channels_info, time_t ts)
 	price_info_t *price_info = &channels_info->channels_settings.price_info;
 	uint8_t price_index;
 
-	price_index = price_info->seg[get_price_seg_index(ts)];
+	price_index = price_info->seg[get_seg_index(ts)];
 	OS_ASSERT(price_index < PRICE_ARRAY_SIZE);
 
 	return price_info->price[price_index];
@@ -196,14 +196,14 @@ void handle_channel_amount(channel_info_t *channel_info)
 	}
 
 	price = get_current_price(channels_info, ts);
-	delta_energy = channel_info->total_energy - channel_info->channel_record_item.total_energy;
+	delta_energy = channel_info->total_energy - channel_info->channel_record_item.start_total_energy;
 
 	//todo clear
-	channel_info->channel_record_item.energy_seg[get_price_seg_index(ts)] += delta_energy;
+	channel_info->channel_record_item.energy_seg[get_seg_index(ts)] += delta_energy;
 	channel_info->channel_record_item.energy += delta_energy;
 	channel_info->channel_record_item.amount += delta_energy * price;
 
-	channel_info->channel_record_item.total_energy = channel_info->total_energy;
+	channel_info->channel_record_item.start_total_energy = channel_info->total_energy;
 }
 
 static void handle_channel_stop_amount(channel_info_t *channel_info)

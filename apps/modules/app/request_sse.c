@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年06月24日 星期四 17时10分05秒
+ *   修改日期：2021年06月26日 星期六 12时34分20秒
  *   描    述：
  *
  *================================================================*/
@@ -17,6 +17,7 @@
 #include "modbus_spec.h"
 #include "command_status.h"
 #include "channels.h"
+#include "channel.h"
 #include "charger.h"
 #include "channels_power_module.h"
 #include "iap.h"
@@ -338,7 +339,7 @@ typedef struct {
 	uint32_t withholding;//告诉后台此卡的预扣款是多少 0.01 元
 	uint8_t stop_reason;//sse_record_stop_reason_t;
 	uint8_t stop_dt[8];//bcd 20161223135922ff
-	uint32_t end_telemeter_total;//0.01kWh <=V23 0.0001kWh V24
+	uint32_t stop_telemeter_total;//0.01kWh <=V23 0.0001kWh V24
 	uint32_t charge_amount;//0.01元
 	uint32_t charge_energy;//0.01kWh <=V23 0.0001kWh V24
 	uint8_t start_soc;
@@ -365,7 +366,7 @@ typedef struct {
 
 typedef struct {
 	uint16_t start_hour_min;//BCD 码
-	uint16_t end_hour_min;//BCD 码
+	uint16_t stop_hour_min;//BCD 码
 	uint32_t price;
 } sse_query_price_item_info_t;
 
@@ -376,7 +377,7 @@ typedef struct {
 
 typedef struct {
 	uint16_t start_hour_min;//BCD 码
-	uint16_t end_hour_min;//BCD 码
+	uint16_t stop_hour_min;//BCD 码
 } sse_query_ad_item_info_t;
 
 typedef struct {
@@ -502,6 +503,8 @@ typedef struct {
 	uint8_t request_timeout;
 	uint16_t serial;
 	uint16_t transaction_record_id;
+	channel_record_item_t channel_record_item;
+	uint16_t channel_record_sync_stamps;
 
 	command_status_t *device_cmd_ctx;
 	net_client_channel_data_ctx_t *channel_data_ctx;
@@ -565,18 +568,47 @@ static void report_transaction_record(uint16_t record_id)
 	net_client_data_ctx->device_cmd_ctx[NET_CLIENT_DEVICE_COMMAND_EVENT_UPLOAD_RECORD].state = COMMAND_STATE_REQUEST;
 }
 
+static int filter_channel_record_state(channel_record_item_state_t state)
+{
+	int ret = -1;
+
+	if(state == CHANNEL_RECORD_ITEM_STATE_FINISH) {
+		ret = 0;
+	}
+
+	return ret;
+}
+
 static void sync_transaction_record(void)
 {
-	//uint8_t AA = 0;
-	//int i;
-	//int channel_id;
+	channel_record_task_info_t *channel_record_task_info = get_or_alloc_channel_record_task_info(0);
+	channel_record_info_t channel_record_info;
+	uint16_t record_id;
+	uint32_t ticks = osKernelSysTick();
+
+	if(ticks_duration(ticks, net_client_data_ctx->channel_record_sync_stamps) < 200) {
+		return;
+	}
+
+	net_client_data_ctx->channel_record_sync_stamps = ticks;
 
 	if(net_client_data_ctx->device_cmd_ctx[NET_CLIENT_DEVICE_COMMAND_EVENT_UPLOAD_RECORD].state != COMMAND_STATE_IDLE) {
+		debug("");
 		return;
 	}
 
 	//find record to upload
-	//report_transaction_record(record_id);
+	if(get_channel_record_info(channel_record_task_info, &channel_record_info) != 0) {
+		debug("");
+		return;
+	}
+
+	if(get_channel_record_item_by_state(channel_record_task_info, filter_channel_record_state, channel_record_info.start, channel_record_info.end, &record_id) != 0) {
+		debug("");
+		return;
+	}
+
+	report_transaction_record(record_id);
 }
 
 static uint8_t get_telemeter_faults(channels_info_t *channels_info)
@@ -1349,18 +1381,22 @@ static int request_callback_event_fault(net_client_info_t *net_client_info, void
 {
 	int ret = 0;
 	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)send_buffer;
-	sse_request_event_fault_t *sse_request_event_fault = (sse_request_event_fault_t *)(sse_frame_header + 1);
+	sse_0x01_request_event_t *sse_0x01_request_event = (sse_0x01_request_event_t *)(sse_frame_header + 1);
 	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
 	channels_info_t *channels_info = net_client_data_ctx->channels_info;
 	channels_settings_t *channels_settings = &net_client_data_ctx->channels_info->channels_settings;
-	size_t size = 0;
+	sse_request_event_fault_t *sse_request_event_fault = (sse_request_event_fault_t *)sse_0x01_request_event->event_info;
+	size_t size = (uint8_t *)(sse_request_event_fault + 1) - (uint8_t *)sse_0x01_request_event;
+
+	snprintf((char *)sse_0x01_request_event->device_id, 32, "%s", channels_settings->device_id);
+	sse_0x01_request_event->device_type = channels_settings->device_type;
+	sse_0x01_request_event->float_percision = (channels_info->channels_settings.magnification == 0) ? 2 : 3;
+	sse_0x01_request_event->event_type = 0x02;
 
 	sse_request_event_fault->type.v = get_device_fault_type(channels_info);;
 	sse_request_event_fault->status.v = get_device_state(channels_info);
 
-	size = sizeof(sse_request_event_fault_t);
-
-	send_frame(net_client_info, net_client_data_ctx->serial++, item->frame, 0, (uint8_t *)sse_request_event_fault, size);
+	send_frame(net_client_info, net_client_data_ctx->serial++, item->frame, 0, (uint8_t *)sse_0x01_request_event, size);
 
 	net_client_data_ctx->device_cmd_ctx[item->cmd].state = COMMAND_STATE_RESPONSE;
 	return ret;
@@ -1371,9 +1407,20 @@ static int response_callback_event_fault(net_client_info_t *net_client_info, voi
 	int ret = -1;
 	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)request;
 	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
-	sse_0x00_response_report_t *sse_0x00_response_report = (sse_0x00_response_report_t *)(sse_frame_header + 1);
+	sse_0x01_response_event_t *sse_0x01_response_event = (sse_0x01_response_event_t *)(sse_frame_header + 1);
+	channels_info_t *channels_info = net_client_data_ctx->channels_info;
+	channels_settings_t *channels_settings = &channels_info->channels_settings;
 
-	if(sse_0x00_response_report->status != 0) {
+	if(sse_0x01_response_event->event_type != 0x02) {
+		ret = 1;
+		return ret;
+	}
+
+	if(strncmp((const char *)sse_0x01_response_event->device_id, (const char *)channels_settings->device_id, 32) == 0) {//设备号不对,返回出错
+		return ret;
+	}
+
+	if(sse_0x01_response_event->status == 0) {
 	}
 
 	net_client_data_ctx->device_cmd_ctx[item->cmd].state = COMMAND_STATE_IDLE;
@@ -1395,9 +1442,142 @@ static net_client_command_item_t net_client_command_item_event_fault = {
 	.timeout_callback = timeout_callback_event_fault,
 };
 
+static int request_callback_event_upload_record(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *send_buffer, uint16_t send_buffer_size)
+{
+	int ret = -1;
+	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)send_buffer;
+	sse_0x01_request_event_t *sse_0x01_request_event = (sse_0x01_request_event_t *)(sse_frame_header + 1);
+	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
+	channels_info_t *channels_info = net_client_data_ctx->channels_info;
+	channels_settings_t *channels_settings = &net_client_data_ctx->channels_info->channels_settings;
+	sse_request_event_record_t *sse_request_event_record = (sse_request_event_record_t *)sse_0x01_request_event->event_info;
+	channel_record_task_info_t *channel_record_task_info = get_or_alloc_channel_record_task_info(0);
+	char dt[20];
+	struct tm *tm;
+	size_t size;
+	uint8_t start_seg_index;
+	uint8_t stop_seg_index;
+	int i;
+	sse_record_section_t *sse_record_section = sse_request_event_record->sse_record_section;
+
+	snprintf((char *)sse_0x01_request_event->device_id, 32, "%s", channels_settings->device_id);
+	sse_0x01_request_event->device_type = channels_settings->device_type;
+	sse_0x01_request_event->float_percision = (channels_info->channels_settings.magnification == 0) ? 2 : 3;
+	sse_0x01_request_event->event_type = 0x03;
+
+	if(get_channel_record_item_by_id(channel_record_task_info, net_client_data_ctx->transaction_record_id, &net_client_data_ctx->channel_record_item) != 0) {
+		net_client_data_ctx->device_cmd_ctx[item->cmd].state = COMMAND_STATE_IDLE;
+		return ret;
+	}
+
+	sse_request_event_record->record_id = net_client_data_ctx->channel_record_item.id;
+	sse_request_event_record->channel_id = net_client_data_ctx->channel_record_item.channel_id;
+	memcpy(sse_request_event_record->vin, net_client_data_ctx->channel_record_item.vin, 17);
+	sse_request_event_record->chm_bms_version = get_u16_from_u8_lh(net_client_data_ctx->channel_record_item.chm_version_1, net_client_data_ctx->channel_record_item.chm_version_0);;
+	sse_request_event_record->brm_battery_type = net_client_data_ctx->channel_record_item.brm_battery_type;
+	sse_request_event_record->bcp_rate_total_power = net_client_data_ctx->channel_record_item.bcp_rate_total_power;
+	sse_request_event_record->bcp_total_voltage = net_client_data_ctx->channel_record_item.bcp_total_voltage;
+	sse_request_event_record->bcp_max_charge_voltage_single_battery = net_client_data_ctx->channel_record_item.bcp_max_charge_voltage_single_battery;
+	sse_request_event_record->bcp_max_temperature = net_client_data_ctx->channel_record_item.bcp_max_temperature;
+	sse_request_event_record->bcp_max_charge_voltage = net_client_data_ctx->channel_record_item.bcp_max_charge_voltage;
+	snprintf((char *)sse_request_event_record->card_id, 32, "%lu", (uint32_t)net_client_data_ctx->channel_record_item.card_id);
+	sse_request_event_record->start_type = net_client_data_ctx->channel_record_item.start_reason;
+	memset(sse_request_event_record->start_dt, 0xff, sizeof(sse_request_event_record->start_dt));
+	tm = localtime(&net_client_data_ctx->channel_record_item.start_time);
+	strftime(dt, sizeof(dt), "%Y%m%d%H%M%S", tm);
+	ascii_to_bcd(dt, strlen(dt), sse_request_event_record->start_dt, sizeof(sse_request_event_record->start_dt));
+	sse_request_event_record->start_telemeter_total = net_client_data_ctx->channel_record_item.start_total_energy;
+	sse_request_event_record->withholding = net_client_data_ctx->channel_record_item.withholding;
+	sse_request_event_record->stop_reason = net_client_data_ctx->channel_record_item.stop_reason;
+	tm = localtime(&net_client_data_ctx->channel_record_item.stop_time);
+	strftime(dt, sizeof(dt), "%Y%m%d%H%M%S", tm);
+	ascii_to_bcd(dt, strlen(dt), sse_request_event_record->stop_dt, sizeof(sse_request_event_record->stop_dt));
+	sse_request_event_record->stop_telemeter_total = net_client_data_ctx->channel_record_item.stop_total_energy;
+	sse_request_event_record->charge_amount = net_client_data_ctx->channel_record_item.amount;
+	sse_request_event_record->charge_energy = net_client_data_ctx->channel_record_item.energy;
+	sse_request_event_record->start_soc = net_client_data_ctx->channel_record_item.start_soc;
+	sse_request_event_record->stop_soc = net_client_data_ctx->channel_record_item.stop_soc;
+
+	start_seg_index = get_seg_index(net_client_data_ctx->channel_record_item.start_time);
+	stop_seg_index = get_seg_index(net_client_data_ctx->channel_record_item.stop_time);
+
+	if(start_seg_index > stop_seg_index) {
+		stop_seg_index += PRICE_SEGMENT_SIZE;
+	}
+
+	sse_request_event_record->section_number = (stop_seg_index + 1) - start_seg_index;
+
+	for(i = start_seg_index; i <= stop_seg_index; i++) {
+		sse_record_section->section_id = i % PRICE_SEGMENT_SIZE;
+		sse_record_section->energy = net_client_data_ctx->channel_record_item.energy_seg[sse_record_section->section_id];
+		sse_record_section += 1;
+	}
+
+	size = (uint8_t *)sse_record_section - (uint8_t *)sse_0x01_request_event;
+
+	send_frame(net_client_info, net_client_data_ctx->serial++, item->frame, 0, (uint8_t *)sse_0x01_request_event, size);
+
+	net_client_data_ctx->device_cmd_ctx[item->cmd].state = COMMAND_STATE_RESPONSE;
+	ret = 0;
+	return ret;
+}
+
+static int response_callback_event_upload_record(net_client_info_t *net_client_info, void *_command_item, uint8_t type, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
+{
+	int ret = -1;
+	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)request;
+	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
+	sse_0x01_response_event_t *sse_0x01_response_event = (sse_0x01_response_event_t *)(sse_frame_header + 1);
+	channels_settings_t *channels_settings = &net_client_data_ctx->channels_info->channels_settings;
+	uint8_t upload = 1;
+
+	if(sse_0x01_response_event->event_type != 0x03) {
+		ret = 1;
+		return ret;
+	}
+
+	if(strncmp((const char *)sse_0x01_response_event->device_id, (const char *)channels_settings->device_id, 32) == 0) {//设备号不对,返回出错
+		return ret;
+	}
+
+	if(sse_0x01_response_event->status == 0) {
+		upload = 0;
+	}
+
+	if(sse_0x01_response_event->record_id != net_client_data_ctx->transaction_record_id) {
+		upload = 0;
+	}
+
+	if(upload == 1) {
+		channel_record_task_info_t *channel_record_task_info = get_or_alloc_channel_record_task_info(0);
+
+		net_client_data_ctx->channel_record_item.state = CHANNEL_RECORD_ITEM_STATE_UPLOAD;
+		channel_record_update(channel_record_task_info, &net_client_data_ctx->channel_record_item);
+	}
+
+	net_client_data_ctx->device_cmd_ctx[item->cmd].state = COMMAND_STATE_IDLE;
+	ret = 0;
+	return ret;
+}
+
+static int timeout_callback_event_upload_record(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id)
+{
+	int ret = 0;
+	return ret;
+}
+
+static net_client_command_item_t net_client_command_item_event_upload_record = {
+	.cmd = NET_CLIENT_DEVICE_COMMAND_EVENT_UPLOAD_RECORD,
+	.frame = 0x01,
+	.request_callback = request_callback_event_upload_record,
+	.response_callback = response_callback_event_upload_record,
+	.timeout_callback = timeout_callback_event_upload_record,
+};
+
 static net_client_command_item_t *net_client_command_item_device_table[] = {
 	&net_client_command_item_report,
 	&net_client_command_item_event_fault,
+	&net_client_command_item_event_upload_record,
 };
 
 static int request_callback_event_start(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *send_buffer, uint16_t send_buffer_size)
@@ -1436,8 +1616,8 @@ static int request_callback_event_start(net_client_info_t *net_client_info, void
 	tm = localtime(&channel_info->channel_record_item.start_time);
 	strftime(dt, sizeof(dt), "%Y%m%d%H%M%S", tm);
 	ascii_to_bcd(dt, strlen(dt), sse_request_event_start_charge->start_dt, sizeof(sse_request_event_start_charge->start_dt));
-	sse_request_event_start_charge->telemeter_total = channel_info->total_energy;
-	sse_request_event_start_charge->withholding = channel_info->channel_settings.withholding;
+	sse_request_event_start_charge->telemeter_total = channel_info->channel_record_item.start_total_energy;
+	sse_request_event_start_charge->withholding = channel_info->channel_record_item.withholding;
 	sse_request_event_start_charge->soc = charger_info->bms_data.bcp_data.soc / 10;
 	channel_data_ctx->serial_event_start = net_client_data_ctx->serial++;
 
@@ -1484,11 +1664,11 @@ static int response_callback_event_start(net_client_info_t *net_client_info, voi
 		return ret;
 	}
 
-	if(strncmp((const char *)sse_0x01_response_event->device_id, (const char *)channels_settings->device_id, 32) == 0) {//设备号不对,返回出错
-		return ret;
+	if(sse_0x01_response_event->status == 0) {
 	}
 
-	if(sse_0x01_response_event->status != 0) {
+	if(strncmp((const char *)sse_0x01_response_event->device_id, (const char *)channels_settings->device_id, 32) == 0) {//设备号不对,返回出错
+		return ret;
 	}
 
 	channel_data_ctx->channel_cmd_ctx[item->cmd].state = COMMAND_STATE_IDLE;
@@ -1910,6 +2090,7 @@ static void request_periodic(void *ctx, uint8_t *send_buffer, uint16_t send_buff
 		return;
 	}
 
+	sync_transaction_record();
 	sse_periodic(net_client_info);
 	request_process_request(net_client_info, send_buffer, send_buffer_size);
 }

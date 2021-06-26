@@ -6,7 +6,7 @@
  *   文件名称：channel_record.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月23日 星期日 13时40分21秒
- *   修改日期：2021年06月19日 星期六 22时10分51秒
+ *   修改日期：2021年06月26日 星期六 12时30分45秒
  *   描    述：
  *
  *================================================================*/
@@ -92,6 +92,20 @@ int alloc_channel_record_item_id(channel_record_task_info_t *channel_record_task
 	return 0;
 }
 
+int get_channel_record_info(channel_record_task_info_t *channel_record_task_info, channel_record_info_t *channel_record_info)
+{
+	int ret = -1;
+
+	if(channel_record_info == NULL) {
+		return ret;
+	}
+
+	mutex_lock(channel_record_task_info->mutex);
+	ret = channel_record_info_load(channel_record_task_info, channel_record_info);
+	mutex_unlock(channel_record_task_info->mutex);
+	return ret;
+}
+
 int get_channel_record_item_by_id(channel_record_task_info_t *channel_record_task_info, uint16_t id, channel_record_item_t *channel_record_item)
 {
 	int ret = -1;
@@ -108,6 +122,75 @@ int get_channel_record_item_by_id(channel_record_task_info_t *channel_record_tas
 	}
 
 	mutex_unlock(channel_record_task_info->mutex);
+
+	return ret;
+}
+
+int get_channel_record_item_by_state(channel_record_task_info_t *channel_record_task_info, channel_record_state_filter_t filter, uint16_t start, uint16_t end, uint16_t *id)
+{
+	int ret = -1;
+
+	if(start == end) {//没有记录
+		return ret;
+	}
+
+	//最后一个有效记录
+	if(end == 0) {
+		end = CHANNEL_RECORD_NUMBER;
+	}
+
+	//第一个有效记录之前的一个
+	if(start == 0) {
+		start = CHANNEL_RECORD_NUMBER;
+	}
+
+	end--;
+	start--;
+
+	while(end != start) {
+		eeprom_layout_t *eeprom_layout = get_eeprom_layout();
+		size_t offset = (size_t)&eeprom_layout->channel_record_seg.channel_record.eeprom_channel_record_item[end].channel_record_item;
+		channel_record_item_t *channel_record_item = (channel_record_item_t *)0;
+		size_t offset_id = (uint8_t *)&channel_record_item->id - (uint8_t *)channel_record_item;
+		size_t offset_state = (uint8_t *)&channel_record_item->state - (uint8_t *)channel_record_item;
+		size_t offset_magic = (uint8_t *)&channel_record_item->magic - (uint8_t *)channel_record_item;
+		uint16_t _id;
+		uint8_t _state;
+		uint8_t _magic;//0x73
+
+		while(detect_eeprom(channel_record_task_info->eeprom_info) != 0) {
+		}
+
+		eeprom_read(channel_record_task_info->eeprom_info, offset + offset_id, (uint8_t *)&_id, sizeof(_id));
+
+		if(_id != end) {
+			goto next_match;
+		}
+
+		eeprom_read(channel_record_task_info->eeprom_info, offset + offset_state, (uint8_t *)&_state, sizeof(_state));
+
+		if(filter(_state) == 0) {
+			goto next_match;
+		}
+
+		eeprom_read(channel_record_task_info->eeprom_info, offset + offset_magic, (uint8_t *)&_magic, sizeof(_magic));
+
+		if(_magic != 0x73) {
+			goto next_match;
+		}
+
+		*id = _id;
+		ret = 0;
+		break;
+
+	next_match:
+
+		if(end == 0) {
+			end = CHANNEL_RECORD_NUMBER;
+		}
+
+		end--;
+	}
 
 	return ret;
 }
