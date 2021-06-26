@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年06月26日 星期六 12时34分20秒
+ *   修改日期：2021年06月26日 星期六 15时53分32秒
  *   描    述：
  *
  *================================================================*/
@@ -21,6 +21,7 @@
 #include "charger.h"
 #include "channels_power_module.h"
 #include "iap.h"
+#include "app.h"
 
 #include "log.h"
 
@@ -488,6 +489,12 @@ typedef struct {
 
 #pragma pack(pop)
 
+typedef enum {
+	DEVIE_TYPE_UNKNOW = 0,
+	DEVIE_TYPE_DC,
+	DEVIE_TYPE_AC,
+} devie_type_t;
+
 typedef struct {
 	uint8_t start_finish;
 	uint8_t start_code;
@@ -505,6 +512,8 @@ typedef struct {
 	uint16_t transaction_record_id;
 	channel_record_item_t channel_record_item;
 	uint16_t channel_record_sync_stamps;
+	uint8_t query_device_info_id;
+	uint16_t serial_query_device_info;
 
 	command_status_t *device_cmd_ctx;
 	net_client_channel_data_ctx_t *channel_data_ctx;
@@ -514,6 +523,7 @@ typedef enum {
 	NET_CLIENT_DEVICE_COMMAND_REPORT = 0,
 	NET_CLIENT_DEVICE_COMMAND_EVENT_FAULT,
 	NET_CLIENT_DEVICE_COMMAND_EVENT_UPLOAD_RECORD,
+	NET_CLIENT_DEVICE_COMMAND_QUERY_DEVICE_INFO,
 } net_client_device_command_t;
 
 typedef enum {
@@ -1498,8 +1508,8 @@ static int request_callback_event_upload_record(net_client_info_t *net_client_in
 	sse_request_event_record->start_soc = net_client_data_ctx->channel_record_item.start_soc;
 	sse_request_event_record->stop_soc = net_client_data_ctx->channel_record_item.stop_soc;
 
-	start_seg_index = get_seg_index(net_client_data_ctx->channel_record_item.start_time);
-	stop_seg_index = get_seg_index(net_client_data_ctx->channel_record_item.stop_time);
+	start_seg_index = get_seg_index_by_ts(net_client_data_ctx->channel_record_item.start_time);
+	stop_seg_index = get_seg_index_by_ts(net_client_data_ctx->channel_record_item.stop_time);
 
 	if(start_seg_index > stop_seg_index) {
 		stop_seg_index += PRICE_SEGMENT_SIZE;
@@ -1574,10 +1584,199 @@ static net_client_command_item_t net_client_command_item_event_upload_record = {
 	.timeout_callback = timeout_callback_event_upload_record,
 };
 
+static void update_sse_query_price_item_info(sse_query_price_item_info_t *sse_query_price_item_info, time_t start, time_t end, uint32_t price)
+{
+	struct tm *tm;
+
+	tm = localtime(&start);
+	sse_query_price_item_info->start_hour_min = get_u16_from_u8_lh(
+	            get_bcd_from_u8(tm->tm_hour),
+	            get_bcd_from_u8(tm->tm_min));
+	tm = localtime(&end);
+	sse_query_price_item_info->stop_hour_min = get_u16_from_u8_lh(
+	            get_bcd_from_u8((end == 0) ? 24 : tm->tm_hour),
+	            get_bcd_from_u8(tm->tm_min));
+
+	sse_query_price_item_info->price = price;
+}
+
+static uint8_t price_info_to_price_seg(price_info_t *price_info, sse_query_price_item_info_t *sse_query_price_item_info, uint8_t max_price_seg)
+{
+	uint8_t price_segment = 0;
+	int i;
+	uint8_t price_index = price_info->seg[0];
+	time_t start = get_ts_by_seg_index(0);
+
+	for(i = 0; i <= PRICE_SEGMENT_SIZE; i++) {
+		if((i < PRICE_SEGMENT_SIZE) && (price_info->seg[i] == price_index)) {
+			continue;
+		}
+
+		if(price_segment >= max_price_seg) {
+			break;
+		}
+
+		update_sse_query_price_item_info(&sse_query_price_item_info[price_segment],
+		                                 start,
+		                                 get_ts_by_seg_index(i),
+		                                 price_info->price[price_index]);
+		price_segment++;
+
+		if(i < PRICE_SEGMENT_SIZE) {
+			price_index = price_info->seg[i];
+			start = get_ts_by_seg_index(i);
+		}
+	}
+
+	return price_segment;
+}
+
+static int request_callback_query_device_info(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *send_buffer, uint16_t send_buffer_size)
+{
+	int ret = -1;
+	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)send_buffer;
+	sse_0x02_request_query_t *sse_0x02_request_query = (sse_0x02_request_query_t *)(sse_frame_header + 1);
+	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
+	channels_info_t *channels_info = net_client_data_ctx->channels_info;
+	channels_settings_t *channels_settings = &net_client_data_ctx->channels_info->channels_settings;
+	uint8_t *data = sse_0x02_request_query->query;
+	size_t size;
+
+	sse_0x02_request_query->type = 0;
+	sse_0x02_request_query->id = net_client_data_ctx->query_device_info_id;
+
+	if((sse_0x02_request_query->id == 0) || (sse_0x02_request_query->id == 0xff)) {
+		struct in_addr sin_addr = {0};
+		struct sockaddr_in *sockaddr_in = (struct sockaddr_in *)&net_client_info->net_client_addr_info.socket_addr_info->addr;
+		uint32_t *ip = (uint32_t *)data;
+
+		if(sockaddr_in != NULL) {
+			sin_addr = sockaddr_in->sin_addr;
+		}
+
+		*ip = sin_addr.s_addr;
+		data += sizeof(uint32_t);
+	}
+
+	if((sse_0x02_request_query->id == 1) || (sse_0x02_request_query->id == 0xff)) {
+		in_port_t sin_port = 0;
+		struct sockaddr_in *sockaddr_in = (struct sockaddr_in *)&net_client_info->net_client_addr_info.socket_addr_info->addr;
+		uint32_t *port = (uint32_t *)data;
+
+		if(sockaddr_in != NULL) {
+			sin_port = sockaddr_in->sin_port;
+		}
+
+		*port = ntohs(sin_port);
+		data += sizeof(uint32_t);
+	}
+
+	if((sse_0x02_request_query->id == 2) || (sse_0x02_request_query->id == 0xff)) {
+		uint32_t *report_duration = (uint32_t *)data;
+		*report_duration = channels_settings->sse_report_duration;//todo
+		data += sizeof(uint32_t);
+	}
+
+	if((sse_0x02_request_query->id == 3) || (sse_0x02_request_query->id == 0xff)) {
+		uint32_t *service_price = (uint32_t *)data;
+		*service_price = channels_settings->price_info.service_price;
+		data += sizeof(uint32_t);
+	}
+
+	if((sse_0x02_request_query->id == 4) || (sse_0x02_request_query->id == 0xff)) {
+		sse_query_price_info_t *sse_query_price_info = (sse_query_price_info_t *)data;
+		sse_query_price_item_info_t *sse_query_price_item_info = (sse_query_price_item_info_t *)sse_query_price_info->item;
+
+		sse_query_price_info->count = price_info_to_price_seg(&channels_settings->price_info, sse_query_price_item_info, 12);
+
+		data += sizeof(sse_query_price_info_t) + sse_query_price_info->count * sizeof(sse_query_price_item_info_t);
+	}
+
+	if((sse_0x02_request_query->id == 5) || (sse_0x02_request_query->id == 0xff)) {
+		sse_query_ad_info_t *sse_query_ad_info = (sse_query_ad_info_t *)data;
+		sse_query_ad_info->count = 0;
+
+		data += sizeof(sse_query_price_info_t);
+	}
+
+	if((sse_0x02_request_query->id == 6) || (sse_0x02_request_query->id == 0xff)) {
+		uint32_t *devie_type = (uint32_t *)data;
+
+		*devie_type = DEVIE_TYPE_DC;
+
+		data += sizeof(sse_query_price_info_t);
+	}
+
+	if((sse_0x02_request_query->id == 7) || (sse_0x02_request_query->id == 0xff)) {
+		uint32_t *channel_number = (uint32_t *)data;
+
+		*channel_number = channels_info->channel_number;
+
+		data += sizeof(uint32_t);
+	}
+
+	if((sse_0x02_request_query->id == 8) || (sse_0x02_request_query->id == 0xff)) {
+		uint32_t *fw_version = (uint32_t *)data;
+
+		*fw_version = get_u32_from_bcd_b0123(VER_MAJOR, VER_MINOR, VER_REV, VER_BUILD);
+
+		data += sizeof(uint32_t);
+	}
+
+	size = data - (uint8_t *)sse_0x02_request_query;
+
+	send_frame(net_client_info, net_client_data_ctx->serial_query_device_info, item->frame, 1, (uint8_t *)sse_0x02_request_query, size);
+
+	net_client_data_ctx->device_cmd_ctx[item->cmd].state = COMMAND_STATE_IDLE;
+	ret = 0;
+	return ret;
+}
+
+static int response_callback_query_device_info(net_client_info_t *net_client_info, void *_command_item, uint8_t type, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
+{
+	int ret = -1;
+	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)request;
+	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
+	sse_0x02_response_query_t *sse_0x02_response_query = (sse_0x02_response_query_t *)(sse_frame_header + 1);
+	//channels_settings_t *channels_settings = &net_client_data_ctx->channels_info->channels_settings;
+
+	if(type == 0) {//非回复,忽略
+		ret = 1;
+		return ret;
+	}
+
+	if(sse_0x02_response_query->type != 0) {
+		ret = 1;
+		return ret;
+	}
+
+	net_client_data_ctx->query_device_info_id = sse_0x02_response_query->id;
+	net_client_data_ctx->serial_query_device_info = sse_frame_header->serial;
+
+	net_client_data_ctx->device_cmd_ctx[item->cmd].state = COMMAND_STATE_REQUEST;
+	ret = 0;
+	return ret;
+}
+
+static int timeout_callback_query_device_info(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id)
+{
+	int ret = 0;
+	return ret;
+}
+
+static net_client_command_item_t net_client_command_item_query_device_info = {
+	.cmd = NET_CLIENT_DEVICE_COMMAND_QUERY_DEVICE_INFO,
+	.frame = 0x01,
+	.request_callback = request_callback_query_device_info,
+	.response_callback = response_callback_query_device_info,
+	.timeout_callback = timeout_callback_query_device_info,
+};
+
 static net_client_command_item_t *net_client_command_item_device_table[] = {
 	&net_client_command_item_report,
 	&net_client_command_item_event_fault,
 	&net_client_command_item_event_upload_record,
+	&net_client_command_item_query_device_info,
 };
 
 static int request_callback_event_start(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *send_buffer, uint16_t send_buffer_size)
@@ -1712,6 +1911,8 @@ static char *get_net_client_cmd_device_des(net_client_device_command_t cmd)
 	switch(cmd) {
 			add_des_case(NET_CLIENT_DEVICE_COMMAND_REPORT);
 			add_des_case(NET_CLIENT_DEVICE_COMMAND_EVENT_FAULT);
+			add_des_case(NET_CLIENT_DEVICE_COMMAND_EVENT_UPLOAD_RECORD);
+			add_des_case(NET_CLIENT_DEVICE_COMMAND_QUERY_DEVICE_INFO);
 
 		default: {
 		}

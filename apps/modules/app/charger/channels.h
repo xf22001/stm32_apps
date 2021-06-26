@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2021年06月24日 星期四 11时28分25秒
+ *   修改日期：2021年06月26日 星期六 14时30分03秒
  *   描    述：
  *
  *================================================================*/
@@ -175,6 +175,7 @@ typedef struct {
 #pragma pack(push, 1)
 
 typedef struct {
+	uint32_t service_price;
 	uint32_t price[PRICE_ARRAY_SIZE];
 	uint8_t seg[PRICE_SEGMENT_SIZE];
 } price_info_t;
@@ -186,6 +187,7 @@ typedef struct {
 	uint16_t power_threshold;//单位 0.1kW
 	uint8_t magnification;//电表放大倍率.0:2位小数, 1:3位小数
 	price_info_t price_info;
+	uint32_t sse_report_duration;
 } channels_settings_t;
 
 #pragma pack(pop)

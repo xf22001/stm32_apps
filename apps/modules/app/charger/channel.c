@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分12秒
- *   修改日期：2021年06月25日 星期五 10时28分11秒
+ *   修改日期：2021年06月26日 星期六 15时51分11秒
  *   描    述：
  *
  *================================================================*/
@@ -162,7 +162,17 @@ static void handle_channel_state(channel_info_t *channel_info)
 	handle_channel_request_state(channel_info);
 }
 
-uint8_t get_seg_index(time_t ts)
+time_t get_ts_by_seg_index(uint8_t seg_index)
+{
+	time_t ts = 0;
+	OS_ASSERT((86400 % PRICE_SEGMENT_SIZE) == 0);
+	ts = seg_index * 86400 / PRICE_SEGMENT_SIZE;
+	ts = ts % 86400;
+
+	return ts;
+}
+
+uint8_t get_seg_index_by_ts(time_t ts)
 {
 	uint8_t seg_index;
 
@@ -178,7 +188,7 @@ static uint32_t get_current_price(channels_info_t *channels_info, time_t ts)
 	price_info_t *price_info = &channels_info->channels_settings.price_info;
 	uint8_t price_index;
 
-	price_index = price_info->seg[get_seg_index(ts)];
+	price_index = price_info->seg[get_seg_index_by_ts(ts)];
 	OS_ASSERT(price_index < PRICE_ARRAY_SIZE);
 
 	return price_info->price[price_index];
@@ -199,7 +209,7 @@ void handle_channel_amount(channel_info_t *channel_info)
 	delta_energy = channel_info->total_energy - channel_info->channel_record_item.start_total_energy;
 
 	//todo clear
-	channel_info->channel_record_item.energy_seg[get_seg_index(ts)] += delta_energy;
+	channel_info->channel_record_item.energy_seg[get_seg_index_by_ts(ts)] += delta_energy;
 	channel_info->channel_record_item.energy += delta_energy;
 	channel_info->channel_record_item.amount += delta_energy * price;
 
