@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2021年06月26日 星期六 14时30分03秒
+ *   修改日期：2021年06月27日 星期日 09时51分53秒
  *   描    述：
  *
  *================================================================*/
@@ -111,7 +111,6 @@ typedef enum {
 
 typedef struct {
 	uint8_t ac_current_limit;//ac_current_limit_t
-	uint32_t withholding;//告诉后台此卡的预扣款是多少 0.01 元
 } channel_settings_t;
 
 #pragma pack(pop)
@@ -188,6 +187,7 @@ typedef struct {
 	uint8_t magnification;//电表放大倍率.0:2位小数, 1:3位小数
 	price_info_t price_info;
 	uint32_t sse_report_duration;
+	uint32_t withholding;//告诉后台此卡的预扣款是多少 0.01 元
 } channels_settings_t;
 
 #pragma pack(pop)
