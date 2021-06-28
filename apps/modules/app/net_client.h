@@ -6,7 +6,7 @@
  *   文件名称：net_client.h
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时38分02秒
- *   修改日期：2021年06月28日 星期一 16时41分09秒
+ *   修改日期：2021年06月28日 星期一 16时51分46秒
  *   描    述：
  *
  *================================================================*/
@@ -160,9 +160,11 @@ void set_net_client_protocol_type(net_client_info_t *net_client_info, protocol_t
 void set_net_client_request_type(net_client_info_t *net_client_info, request_type_t request_type);
 void set_client_state(net_client_info_t *net_client_info, client_state_t state);
 client_state_t get_client_state(net_client_info_t *net_client_info);
+void set_lan_led(GPIO_PinState PinState);
 uint32_t get_net_client_connect_id(net_client_info_t *net_client_info);
 int send_to_server(net_client_info_t *net_client_info, uint8_t *buffer, size_t len);
 net_client_info_t *get_net_client_info(void);
 void net_client_add_poll_loop(poll_loop_t *poll_loop);
+int net_client_query_account_info(account_request_info_t *account_request_info);
 
 #endif //_NET_CLIENT_H

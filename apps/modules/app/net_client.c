@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2021年06月28日 星期一 16时01分02秒
+ *   修改日期：2021年06月28日 星期一 16时51分22秒
  *   描    述：
  *
  *================================================================*/
@@ -784,17 +784,6 @@ net_client_info_t *get_net_client_info(void)
 	return net_client_info;
 }
 
-int net_client_query_account_info(account_request_info_t *account_request_info)
-{
-	int ret = -1;
-
-	do_callback_chain(net_client_info->query_account_chain, account_request_info);
-
-	ret = 0;
-
-	return ret;
-}
-
 void net_client_add_poll_loop(poll_loop_t *poll_loop)
 {
 	poll_ctx_t *poll_ctx;
@@ -826,4 +815,15 @@ void net_client_add_poll_loop(poll_loop_t *poll_loop)
 	poll_ctx->poll_periodic = net_client_periodic;
 
 	add_poll_loop_ctx_item(poll_loop, poll_ctx);
+}
+
+int net_client_query_account_info(account_request_info_t *account_request_info)
+{
+	int ret = -1;
+
+	do_callback_chain(net_client_info->query_account_chain, account_request_info);
+
+	ret = 0;
+
+	return ret;
 }
