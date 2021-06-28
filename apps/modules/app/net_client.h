@@ -6,7 +6,7 @@
  *   文件名称：net_client.h
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时38分02秒
- *   修改日期：2021年06月04日 星期五 10时42分30秒
+ *   修改日期：2021年06月28日 星期一 16时41分09秒
  *   描    述：
  *
  *================================================================*/
@@ -25,6 +25,7 @@ extern "C"
 #include "poll_loop.h"
 #include "list_utils.h"
 #include "net_utils.h"
+#include "callback_chain.h"
 
 #ifdef __cplusplus
 }
@@ -103,6 +104,37 @@ typedef struct {
 	periodic_t periodic;
 } request_callback_t;
 
+typedef enum {
+	ACCOUNT_TYPE_CARD = 0,
+	ACCOUNT_TYPE_ACCOUNT,
+	ACCOUNT_TYPE_VIN,
+} account_type_t;
+
+typedef struct {
+	uint8_t account_type;//account_type_t
+	uint8_t id[32];//字符串
+	uint8_t password[32];//字符串
+
+	callback_fn_t fn;
+	void *fn_ctx;
+} account_request_info_t;
+
+typedef enum {
+	ACCOUNT_STATE_CODE_OK = 0,
+	ACCOUNT_STATE_CODE_AUTH,
+	ACCOUNT_STATE_CODE_AMOUNT,
+	ACCOUNT_STATE_CODE_STOP,
+	ACCOUNT_STATE_CODE_UNUSED,
+	ACCOUNT_STATE_CODE_UNKNOW,
+	ACCOUNT_STATE_CODE_BUSY,
+	ACCOUNT_STATE_CODE_OFFLINE,
+} account_state_code_t;
+
+typedef struct {
+	uint8_t code;//account_state_code_t
+	uint32_t balance;
+} account_response_info_t;
+
 typedef struct {
 	int sock_fd;
 	uint32_t connect_id;
@@ -119,6 +151,9 @@ typedef struct {
 	request_type_t request_type;
 	protocol_if_t *protocol_if;
 	request_callback_t *request_callback;
+
+	callback_chain_t *query_account_chain;
+	callback_item_t query_account_callback_item;
 } net_client_info_t;
 
 void set_net_client_protocol_type(net_client_info_t *net_client_info, protocol_type_t protocol_type);

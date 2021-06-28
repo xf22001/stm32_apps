@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年06月27日 星期日 10时37分30秒
+ *   修改日期：2021年06月28日 星期一 16时44分47秒
  *   描    述：
  *
  *================================================================*/
@@ -505,11 +505,6 @@ typedef struct {
 	command_status_t *channel_cmd_ctx;
 } net_client_channel_data_ctx_t;
 
-typedef enum {
-	QUERY_CARD_ACCOUNT_STATE_IDLE = 0,
-	QUERY_CARD_ACCOUNT_STATE_BUSY,
-} query_card_account_state_t;
-
 typedef struct {
 	channels_info_t *channels_info;
 	uint8_t request_timeout;
@@ -521,9 +516,13 @@ typedef struct {
 	uint16_t serial_query_device_info;
 	uint16_t serial_query_device_message;
 
-	uint8_t query_card_account_state;//query_card_account_state_t
-	uint64_t card_id;
+	callback_chain_t *card_account_chain;
+	callback_item_t card_account_callback_item;
+	uint8_t card_id[32];
 	uint8_t card_password[32];
+
+	callback_chain_t *card_account_info_chain;
+	callback_item_t card_account_info_callback_item;
 
 	command_status_t *device_cmd_ctx;
 	net_client_channel_data_ctx_t *channel_data_ctx;
@@ -1883,6 +1882,49 @@ static net_client_command_item_t net_client_command_item_query_device_message = 
 	.timeout_callback = timeout_callback_query_device_message,
 };
 
+static void sse_query_account(void *fn_ctx, void *chain_ctx)
+{
+	net_client_info_t *net_client_info = (net_client_info_t *)fn_ctx;
+	account_request_info_t *account_request_info = (account_request_info_t *)chain_ctx;
+	account_response_info_t account_response_info;
+
+	if(get_client_state(net_client_info) != CLIENT_CONNECTED) {
+		if(account_request_info->fn != NULL) {
+			account_response_info.code = ACCOUNT_STATE_CODE_OFFLINE;
+			account_request_info->fn(account_request_info->fn_ctx, &account_response_info);
+		}
+
+		return;
+	}
+
+	switch(account_request_info->account_type) {
+		case ACCOUNT_TYPE_CARD: {
+			if(net_client_data_ctx->device_cmd_ctx[NET_CLIENT_DEVICE_COMMAND_QUERY_CARD_ACCOUNT].state != COMMAND_STATE_IDLE) {
+				if(account_request_info->fn != NULL) {
+					account_response_info.code = ACCOUNT_STATE_CODE_BUSY;
+					account_request_info->fn(account_request_info->fn_ctx, &account_response_info);
+				}
+
+				return;
+			}
+
+			snprintf((char *)net_client_data_ctx->card_id, 32, "%s", (char *)account_request_info->id);
+			snprintf((char *)net_client_data_ctx->card_password, 32, "%s", (char *)account_request_info->password);
+
+			remove_callback(net_client_data_ctx->card_account_info_chain, &net_client_data_ctx->card_account_info_callback_item);
+			net_client_data_ctx->card_account_info_callback_item.fn = account_request_info->fn;
+			net_client_data_ctx->card_account_info_callback_item.fn_ctx = account_request_info->fn_ctx;
+			OS_ASSERT(register_callback(net_client_data_ctx->card_account_info_chain, &net_client_data_ctx->card_account_info_callback_item) == 0);
+			net_client_data_ctx->device_cmd_ctx[NET_CLIENT_DEVICE_COMMAND_QUERY_CARD_ACCOUNT].state = COMMAND_STATE_REQUEST;
+		}
+		break;
+
+		default: {
+		}
+		break;
+	}
+}
+
 static int request_callback_query_card_account(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
 	int ret = -1;
@@ -1898,7 +1940,7 @@ static int request_callback_query_card_account(net_client_info_t *net_client_inf
 	sse_0x02_request_query->id = 0;
 
 	snprintf((char *)sse_query_card_account_info->device_id, 32, "%s", (char *)channels_settings->device_id);
-	snprintf((char *)sse_query_card_account_info->card_id, 32, "%lu", (uint32_t)net_client_data_ctx->card_id);
+	snprintf((char *)sse_query_card_account_info->card_id, 32, "%s", (char *)net_client_data_ctx->card_id);
 	snprintf((char *)sse_query_card_account_info->card_password, 32, "%s", (char *)net_client_data_ctx->card_password);
 	sse_query_card_account_info->withholding = channels_settings->withholding;
 
@@ -1906,7 +1948,7 @@ static int request_callback_query_card_account(net_client_info_t *net_client_inf
 
 	send_frame(net_client_info, net_client_data_ctx->serial++, item->frame, 0, (uint8_t *)sse_0x02_request_query, size);
 
-	channel_data_ctx->channel_cmd_ctx[item->cmd].state = COMMAND_STATE_RESPONSE;
+	net_client_data_ctx->device_cmd_ctx[item->cmd].state = COMMAND_STATE_RESPONSE;
 	ret = 0;
 	return ret;
 }
@@ -1919,6 +1961,9 @@ static int response_callback_query_card_account(net_client_info_t *net_client_in
 	sse_0x02_response_query_t *sse_0x02_response_query = (sse_0x02_response_query_t *)(sse_frame_header + 1);
 	sse_query_card_account_confirm_t *sse_query_card_account_confirm = (sse_query_card_account_confirm_t *)sse_0x02_response_query->query;
 	//channels_settings_t *channels_settings = &net_client_data_ctx->channels_info->channels_settings;
+	account_response_info_t account_response_info;
+
+	account_response_info.code = ACCOUNT_STATE_CODE_UNKNOW;
 
 	if(type == 0) {//非回复,忽略
 		ret = 1;
@@ -1935,7 +1980,41 @@ static int response_callback_query_card_account(net_client_info_t *net_client_in
 		return ret;
 	}
 
-	channel_data_ctx->channel_cmd_ctx[item->cmd].state = COMMAND_STATE_IDLE;
+	if(sse_query_card_account_confirm->valid == 1) {
+		account_response_info.code = ACCOUNT_STATE_CODE_OK;
+		account_response_info.balance = sse_query_card_account_confirm->card_balance;
+	} else {
+		switch(sse_query_card_account_confirm->reason) {
+			case SSE_QUERY_CARD_ERROR_REASON_PASSWORD: {
+				account_response_info.code = ACCOUNT_STATE_CODE_AUTH;
+			}
+			break;
+			case SSE_QUERY_CARD_ERROR_REASON_AMOUNT: {
+				account_response_info.code = ACCOUNT_STATE_CODE_AMOUNT;
+			}
+			break;
+			case SSE_QUERY_CARD_ERROR_REASON_STOP: {
+				account_response_info.code = ACCOUNT_STATE_CODE_STOP;
+			}
+			break;
+			case SSE_QUERY_CARD_ERROR_REASON_UNUSED: {
+				account_response_info.code = ACCOUNT_STATE_CODE_UNUSED;
+			}
+			break;
+			case SSE_QUERY_CARD_ERROR_REASON_NOT_RECOGNIZE: {
+				account_response_info.code = ACCOUNT_STATE_CODE_UNKNOW;
+			}
+			break;
+
+			default: {
+			}
+			break;
+		}
+	}
+
+	do_callback_chain(net_client_data_ctx->card_account_info_chain, &account_response_info);
+
+	net_client_data_ctx->device_cmd_ctx[item->cmd].state = COMMAND_STATE_IDLE;
 	ret = 0;
 	return ret;
 }
@@ -2127,10 +2206,14 @@ static char *get_net_client_cmd_channel_des(net_client_channel_command_t cmd)
 static void request_init(void *ctx)
 {
 	int i;
+	net_client_info_t *net_client_info = (net_client_info_t *)ctx;
 
 	if(net_client_data_ctx == NULL) {
 		net_client_data_ctx = (net_client_data_ctx_t *)os_calloc(1, sizeof(net_client_data_ctx_t));
 		OS_ASSERT(net_client_data_ctx != NULL);
+
+		net_client_data_ctx->card_account_info_chain = alloc_callback_chain();
+		OS_ASSERT(net_client_data_ctx->card_account_info_chain != NULL);
 
 		net_client_data_ctx->channels_info = start_channels();
 		OS_ASSERT(net_client_data_ctx->channels_info != NULL);
@@ -2148,6 +2231,11 @@ static void request_init(void *ctx)
 			OS_ASSERT(net_client_channel_data_ctx->channel_cmd_ctx != NULL);
 		}
 	}
+
+	remove_callback(net_client_info->query_account_chain, &net_client_info->query_account_callback_item);
+	net_client_info->query_account_callback_item.fn = sse_query_account;
+	net_client_info->query_account_callback_item.fn_ctx = net_client_info;
+	OS_ASSERT(register_callback(net_client_info->query_account_chain, &net_client_info->query_account_callback_item) == 0);
 }
 
 
