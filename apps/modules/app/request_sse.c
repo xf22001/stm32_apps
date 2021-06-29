@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年06月29日 星期二 11时45分50秒
+ *   修改日期：2021年06月29日 星期二 14时52分14秒
  *   描    述：
  *
  *================================================================*/
@@ -1619,33 +1619,33 @@ static void update_sse_query_price_item_info(sse_query_price_item_info_t *sse_qu
 
 static uint8_t price_info_to_price_seg(price_info_t *price_info, sse_query_price_item_info_t *sse_query_price_item_info, uint8_t max_price_seg)
 {
-	uint8_t price_segment = 0;
 	int i;
-	uint8_t price_index = price_info->seg[0];
+	uint8_t j = 0;
+	uint32_t price = price_info->price[0];
 	time_t start = get_ts_by_seg_index(0);
 
 	for(i = 0; i <= PRICE_SEGMENT_SIZE; i++) {
-		if((i < PRICE_SEGMENT_SIZE) && (price_info->seg[i] == price_index)) {
+		if((i < PRICE_SEGMENT_SIZE) && (price_info->price[i] == price)) {
 			continue;
 		}
 
-		if(price_segment >= max_price_seg) {
+		if(j >= max_price_seg) {
 			break;
 		}
 
-		update_sse_query_price_item_info(&sse_query_price_item_info[price_segment],
+		update_sse_query_price_item_info(&sse_query_price_item_info[j],
 		                                 start,
 		                                 get_ts_by_seg_index(i),
-		                                 price_info->price[price_index]);
-		price_segment++;
+		                                 price);
+		j++;
 
 		if(i < PRICE_SEGMENT_SIZE) {
-			price_index = price_info->seg[i];
+			price = price_info->price[i];
 			start = get_ts_by_seg_index(i);
 		}
 	}
 
-	return price_segment;
+	return j;
 }
 
 static int request_callback_query_device_info(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *send_buffer, uint16_t send_buffer_size)
@@ -2065,6 +2065,24 @@ static int request_callback_settings(net_client_info_t *net_client_info, void *_
 
 static void price_seg_to_price_info(price_info_t *price_info, sse_query_price_item_info_t *sse_query_price_item_info, uint8_t max_price_seg)
 {
+	int i;
+	int j;
+
+	for(i = 0; i < max_price_seg; i++) {
+		sse_query_price_item_info_t *item = sse_query_price_item_info + i;
+		time_t start = get_u8_from_bcd(get_u8_h_from_u16(item->start_hour_min)) * 3600 + get_u8_from_bcd(get_u8_l_from_u16(item->start_hour_min)) * 60;
+		time_t stop = get_u8_from_bcd(get_u8_h_from_u16(item->stop_hour_min)) * 3600 + get_u8_from_bcd(get_u8_l_from_u16(item->stop_hour_min)) * 60;
+		start = get_seg_index_by_ts(start);
+		stop = get_seg_index_by_ts(stop);
+
+		if(stop == 0) {
+			stop = PRICE_SEGMENT_SIZE;
+		}
+
+		for(j = start; j < stop ; j++) {
+			price_info->price[j] = item->price;
+		}
+	}
 }
 
 static int response_callback_settings(net_client_info_t *net_client_info, void *_command_item, uint8_t type, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)

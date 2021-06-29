@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2021年06月29日 星期二 10时38分30秒
+ *   修改日期：2021年06月29日 星期二 14时11分49秒
  *   描    述：
  *
  *================================================================*/
@@ -175,8 +175,7 @@ typedef struct {
 
 typedef struct {
 	uint32_t service_price;
-	uint32_t price[PRICE_ARRAY_SIZE];
-	uint8_t seg[PRICE_SEGMENT_SIZE];
+	uint32_t price[PRICE_SEGMENT_SIZE];
 } price_info_t;
 
 typedef struct {

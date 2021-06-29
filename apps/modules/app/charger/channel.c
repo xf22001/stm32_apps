@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分12秒
- *   修改日期：2021年06月29日 星期二 11时28分54秒
+ *   修改日期：2021年06月29日 星期二 14时51分16秒
  *   描    述：
  *
  *================================================================*/
@@ -165,9 +165,12 @@ static void handle_channel_state(channel_info_t *channel_info)
 time_t get_ts_by_seg_index(uint8_t seg_index)
 {
 	time_t ts = 0;
-	OS_ASSERT((86400 % PRICE_SEGMENT_SIZE) == 0);
+
+	if(seg_index > PRICE_SEGMENT_SIZE) {
+		seg_index %= PRICE_SEGMENT_SIZE;
+	}
+
 	ts = seg_index * 86400 / PRICE_SEGMENT_SIZE;
-	ts = ts % 86400;
 
 	return ts;
 }
@@ -176,9 +179,11 @@ uint8_t get_seg_index_by_ts(time_t ts)
 {
 	uint8_t seg_index;
 
-	OS_ASSERT((86400 % PRICE_SEGMENT_SIZE) == 0);
-	seg_index = (ts % 86400) / (86400 / PRICE_SEGMENT_SIZE);
-	OS_ASSERT(seg_index < PRICE_SEGMENT_SIZE);
+	if(ts > 86400) {
+		ts %= 86400;
+	}
+
+	seg_index = ts / (86400 / PRICE_SEGMENT_SIZE);
 
 	return seg_index;
 }
@@ -186,12 +191,8 @@ uint8_t get_seg_index_by_ts(time_t ts)
 static uint32_t get_current_price(channels_info_t *channels_info, time_t ts)
 {
 	price_info_t *price_info = &channels_info->channels_settings.price_info;
-	uint8_t price_index;
 
-	price_index = price_info->seg[get_seg_index_by_ts(ts)];
-	OS_ASSERT(price_index < PRICE_ARRAY_SIZE);
-
-	return price_info->price[price_index];
+	return price_info->price[get_seg_index_by_ts(ts)];
 }
 
 void handle_channel_amount(channel_info_t *channel_info)
