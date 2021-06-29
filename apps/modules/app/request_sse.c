@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年06月29日 星期二 14时52分14秒
+ *   修改日期：2021年06月29日 星期二 16时54分52秒
  *   描    述：
  *
  *================================================================*/
@@ -459,9 +459,9 @@ typedef struct {
 
 typedef struct {
 	uint8_t device_id[32];//1 桩编码
-	uint8_t device_type;//2 桩类型 1 直流 2 交流
-	uint8_t cmd;//0 结束充电 1 锁定 2 解锁 3 开始充电当预约成功时需要由后台发 送锁定命令。
-	uint8_t mode;//解锁/开始充电时有效,一般是按金额充电模式 0 充满位置 1 按金额充 2 按时间充 3 按电量充 4 VIN 充电
+	uint8_t channel_id;//从1开始
+	uint8_t cmd;//0 结束充电 1 锁定 2 解锁 3 开始充电 当预约成功时需要由后台发 送锁定命令。遥控开始充电功能由后台发送，充电机根据自己的条件进行开始充电操作。
+	uint8_t mode;//解锁/开始充电时有效,一般是按金额充电模式 0 充满为止 1 按金额充 2 按时间充 3 按电量充 4 VIN 充电
 	uint32_t data;//解锁/开始充电时有效,充满为止时为0, 按金额充时为金额(0.01元), 按时间充时高16位BCD码开始时分,低16位BCD码结束时分,按电量充时为电 量(0.01kWh)
 } sse_remote_start_stop_t;
 
@@ -472,7 +472,6 @@ typedef struct {
 
 typedef struct {
 	uint8_t type;//0:start/stop 1:ad on/off
-	uint8_t id;
 	uint8_t remote[0];
 } sse_0x04_response_remote_t;
 
@@ -524,6 +523,7 @@ typedef struct {
 	uint8_t card_password[32];
 
 	uint16_t serial_settings;
+	uint16_t serial_remote_device;
 
 	callback_chain_t *card_account_info_chain;
 	callback_item_t card_account_info_callback_item;
@@ -540,11 +540,13 @@ typedef enum {
 	NET_CLIENT_DEVICE_COMMAND_QUERY_DEVICE_MESSAGE,
 	NET_CLIENT_DEVICE_COMMAND_QUERY_CARD_ACCOUNT,
 	NET_CLIENT_DEVICE_COMMAND_SETTINGS,
+	NET_CLIENT_DEVICE_COMMAND_REMOTE_DEVICE,
 } net_client_device_command_t;
 
 typedef enum {
 	NET_CLIENT_CHANNEL_COMMAND_EVENT_START = 0,
 	NET_CLIENT_CHANNEL_COMMAND_QUERY_QR_CODE,
+	NET_CLIENT_CHANNEL_COMMAND_REMOTE_START_STOP,
 } net_client_channel_command_t;
 
 typedef int (*net_client_request_callback_t)(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *send_buffer, uint16_t send_buffer_size);
@@ -2142,7 +2144,9 @@ static int response_callback_settings(net_client_info_t *net_client_info, void *
 			}
 
 			if((settings_id == 5) || (settings_id == 0xff)) {
-				data += 256;
+				sse_query_ad_info_t *sse_query_ad_info = (sse_query_ad_info_t *)data;
+
+				data += sizeof(sse_query_ad_info_t) + sse_query_ad_info->count * sizeof(sse_query_ad_item_info_t);
 			}
 		}
 		break;
@@ -2173,6 +2177,26 @@ static int response_callback_settings(net_client_info_t *net_client_info, void *
 
 				data += 8;
 			}
+
+			if((settings_id == 1) || (settings_id == 0xff)) {
+				data += 16;
+			}
+
+			if((settings_id == 2) || (settings_id == 0xff)) {
+				data += 16;
+			}
+
+			if((settings_id == 3) || (settings_id == 0xff)) {
+				data += 256;
+			}
+
+			if((settings_id == 4) || (settings_id == 0xff)) {
+				data += 256;
+			}
+
+			if((settings_id == 5) || (settings_id == 0xff)) {
+				data += 256;
+			}
 		}
 		break;
 
@@ -2181,6 +2205,11 @@ static int response_callback_settings(net_client_info_t *net_client_info, void *
 		break;
 
 		case 3: {
+			if(settings_id == 0) {
+				uint16_t *power_threshold = (uint16_t *)data;
+				channels_settings->power_threshold = *power_threshold;
+				data += sizeof(uint16_t);
+			}
 		}
 		break;
 
@@ -2192,7 +2221,7 @@ static int response_callback_settings(net_client_info_t *net_client_info, void *
 
 	net_client_data_ctx->serial_settings = sse_frame_header->serial;
 
-	net_client_data_ctx->device_cmd_ctx[item->cmd].state = COMMAND_STATE_IDLE;
+	net_client_data_ctx->device_cmd_ctx[item->cmd].state = COMMAND_STATE_REQUEST;
 	return ret;
 }
 
@@ -2201,12 +2230,82 @@ static int timeout_callback_settings(net_client_info_t *net_client_info, void *_
 	int ret = 0;
 	return ret;
 }
+
 static net_client_command_item_t net_client_command_item_settings = {
 	.cmd = NET_CLIENT_DEVICE_COMMAND_SETTINGS,
 	.frame = 0x03,
 	.request_callback = request_callback_settings,
 	.response_callback = response_callback_settings,
 	.timeout_callback = timeout_callback_settings,
+};
+
+static int request_callback_remote_device(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *send_buffer, uint16_t send_buffer_size)
+{
+	int ret = -1;
+	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)send_buffer;
+	sse_0x04_request_remote_t *sse_0x04_request_remote = (sse_0x04_request_remote_t *)(sse_frame_header + 1);
+	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
+	//channels_info_t *channels_info = net_client_data_ctx->channels_info;
+	//channels_settings_t *channels_settings = &channels_info->channels_settings;
+	size_t size;
+
+	sse_0x04_request_remote->status = 1;
+	sse_0x04_request_remote->type = 1;
+	sse_0x04_request_remote->result = 1;
+	size = sizeof(sse_0x04_request_remote_t);
+
+	send_frame(net_client_info, net_client_data_ctx->serial_remote_device, item->frame, 1, (uint8_t *)sse_0x04_request_remote, size);
+
+	net_client_data_ctx->device_cmd_ctx[item->cmd].state = COMMAND_STATE_RESPONSE;
+	ret = 0;
+	return ret;
+}
+
+static int response_callback_remote_device(net_client_info_t *net_client_info, void *_command_item, uint8_t type, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
+{
+	int ret = -1;
+	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)request;
+	sse_0x04_response_remote_t *sse_0x04_response_remote = (sse_0x04_response_remote_t *)(sse_frame_header + 1);
+	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
+	channels_settings_t *channels_settings = &net_client_data_ctx->channels_info->channels_settings;
+	sse_remote_ad_on_off_t *sse_remote_ad_on_off = (sse_remote_ad_on_off_t *)sse_0x04_response_remote->remote;
+
+	if(type == 1) {
+		ret = 1;
+		return ret;
+	}
+
+	if(sse_0x04_response_remote->type != 1) {
+		ret = 1;
+		return ret;
+	}
+
+	if(strncmp((const char *)sse_remote_ad_on_off->device_id, (const char *)channels_settings->device_id, 32) == 0) {//设备号不对,返回出错
+		return ret;
+	}
+
+	//sse_remote_ad_on_off->on_off;
+
+	ret = 0;
+
+	net_client_data_ctx->serial_remote_device = sse_frame_header->serial;
+
+	net_client_data_ctx->device_cmd_ctx[item->cmd].state = COMMAND_STATE_REQUEST;
+	return ret;
+}
+
+static int timeout_callback_remote_device(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id)
+{
+	int ret = 0;
+	return ret;
+}
+
+static net_client_command_item_t net_client_command_item_remote_device = {
+	.cmd = NET_CLIENT_DEVICE_COMMAND_REMOTE_DEVICE,
+	.frame = 0x04,
+	.request_callback = request_callback_remote_device,
+	.response_callback = response_callback_remote_device,
+	.timeout_callback = timeout_callback_remote_device,
 };
 
 static net_client_command_item_t *net_client_command_item_device_table[] = {
@@ -2217,6 +2316,7 @@ static net_client_command_item_t *net_client_command_item_device_table[] = {
 	&net_client_command_item_query_device_message,
 	&net_client_command_item_query_card_account,
 	&net_client_command_item_settings,
+	&net_client_command_item_remote_device,
 };
 
 static int request_callback_event_start(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *send_buffer, uint16_t send_buffer_size)
@@ -2377,7 +2477,7 @@ static int response_callback_query_qr_code(net_client_info_t *net_client_info, v
 	channels_info_t *channels_info = net_client_data_ctx->channels_info;
 	//channels_settings_t *channels_settings = &channels_info->channels_settings;
 	sse_query_qr_code_confirm_t *sse_query_qr_code_confirm = (sse_query_qr_code_confirm_t *)sse_0x02_request_query->query;
-	uint8_t channel_id = sse_query_qr_code_confirm->channel_id;
+	uint8_t channel_id = sse_query_qr_code_confirm->channel_id - 1;
 	net_client_channel_data_ctx_t *channel_data_ctx = net_client_data_ctx->channel_data_ctx + channel_id;
 
 	if(type == 0) {//非回复,忽略
@@ -2413,6 +2513,7 @@ static int timeout_callback_query_qr_code(net_client_info_t *net_client_info, vo
 
 	return ret;
 }
+
 static net_client_command_item_t net_client_command_item_query_qr_code = {
 	.cmd = NET_CLIENT_CHANNEL_COMMAND_QUERY_QR_CODE,
 	.frame = 0x02,
@@ -2421,9 +2522,134 @@ static net_client_command_item_t net_client_command_item_query_qr_code = {
 	.timeout_callback = timeout_callback_query_qr_code,
 };
 
+static int request_callback_remote_start_stop(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *send_buffer, uint16_t send_buffer_size)
+{
+	int ret = -1;
+	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)send_buffer;
+	sse_0x02_request_query_t *sse_0x02_request_query = (sse_0x02_request_query_t *)(sse_frame_header + 1);
+	channels_info_t *channels_info = net_client_data_ctx->channels_info;
+	channels_settings_t *channels_settings = &channels_info->channels_settings;
+	//channel_info_t *channel_info = channels_info->channel_info + channel_id;
+	//charger_info_t *charger_info = (charger_info_t *)channel_info->charger_info;
+	net_client_channel_data_ctx_t *channel_data_ctx = net_client_data_ctx->channel_data_ctx + channel_id;
+	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
+	sse_query_qr_code_info_t *sse_query_qr_code_info = (sse_query_qr_code_info_t *)sse_0x02_request_query->query;
+	size_t size = (uint8_t *)(sse_query_qr_code_info + 1) - (uint8_t *)sse_0x02_request_query;
+
+	sse_0x02_request_query->type = 3;
+	sse_0x02_request_query->id = 0;
+
+	snprintf((char *)sse_query_qr_code_info->device_id, 32, "%s", channels_settings->device_id);
+	sse_query_qr_code_info->channel_id = channel_id + 1;
+	sse_query_qr_code_info->withholding = channels_settings->withholding;
+
+	send_frame(net_client_info, net_client_data_ctx->serial++, item->frame, 0, (uint8_t *)sse_0x02_request_query, size);
+
+	channel_data_ctx->channel_cmd_ctx[item->cmd].state = COMMAND_STATE_RESPONSE;
+
+	return ret;
+}
+
+static int response_callback_remote_start_stop(net_client_info_t *net_client_info, void *_command_item, uint8_t type, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
+{
+	int ret = -1;
+	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)request;
+	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
+	sse_0x04_response_remote_t *sse_0x04_response_remote = (sse_0x04_response_remote_t *)(sse_frame_header + 1);
+	channels_info_t *channels_info = net_client_data_ctx->channels_info;
+	//channels_settings_t *channels_settings = &channels_info->channels_settings;
+	sse_remote_start_stop_t *sse_remote_start_stop = (sse_remote_start_stop_t *)sse_0x04_response_remote->remote;
+	uint8_t channel_id = sse_remote_start_stop->channel_id - 1;
+	net_client_channel_data_ctx_t *channel_data_ctx = net_client_data_ctx->channel_data_ctx + channel_id;
+
+	if(type == 1) {
+		ret = 1;
+		return ret;
+	}
+
+	if(sse_0x04_response_remote->type != 0) {
+		ret = 1;
+		return ret;
+	}
+
+	if(channel_id > channels_info->channel_number) {
+		return ret;
+	}
+
+	switch(sse_remote_start_stop->cmd) {
+		case 0: {//stop
+		}
+		break;
+
+		case 1: {//lock
+		}
+		break;
+
+		case 2: {//unlock
+		}
+		break;
+
+		case 3: {//start
+			switch(sse_remote_start_stop->mode) {
+				case 0: {//充满为止
+				}
+				break;
+
+				case 1: {//按金额充
+				}
+				break;
+
+				case 2: {//按时间充
+				}
+				break;
+
+				case 3: {//按电量充
+				}
+				break;
+
+				case 4: {//vin
+				}
+				break;
+
+				default: {
+				}
+				break;
+			}
+		}
+		break;
+
+		default: {
+		}
+		break;
+	}
+
+	channel_data_ctx->channel_cmd_ctx[item->cmd].state = COMMAND_STATE_IDLE;
+	ret = 0;
+	return ret;
+}
+
+static int timeout_callback_remote_start_stop(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id)
+{
+	int ret = 0;
+	//net_client_channel_data_ctx_t *channel_data_ctx = net_client_data_ctx->channel_data_ctx + channel_id;
+	//command_status_t *channel_cmd_ctx = channel_data_ctx->channel_cmd_ctx;
+	//net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
+
+	return ret;
+}
+
+static net_client_command_item_t net_client_command_item_remote_start_stop = {
+	.cmd = NET_CLIENT_CHANNEL_COMMAND_REMOTE_START_STOP,
+	.frame = 0x04,
+	.request_callback = request_callback_remote_start_stop,
+	.response_callback = response_callback_remote_start_stop,
+	.timeout_callback = timeout_callback_remote_start_stop,
+};
+
 static net_client_command_item_t *net_client_command_item_channel_table[] = {
 	&net_client_command_item_event_start,
 	&net_client_command_item_query_qr_code,
+	&net_client_command_item_remote_start_stop,
 };
 
 static char *get_net_client_cmd_device_des(net_client_device_command_t cmd)
@@ -2438,6 +2664,7 @@ static char *get_net_client_cmd_device_des(net_client_device_command_t cmd)
 			add_des_case(NET_CLIENT_DEVICE_COMMAND_QUERY_DEVICE_MESSAGE);
 			add_des_case(NET_CLIENT_DEVICE_COMMAND_QUERY_CARD_ACCOUNT);
 			add_des_case(NET_CLIENT_DEVICE_COMMAND_SETTINGS);
+			add_des_case(NET_CLIENT_DEVICE_COMMAND_REMOTE_DEVICE);
 
 		default: {
 		}
@@ -2455,6 +2682,7 @@ static char *get_net_client_cmd_channel_des(net_client_channel_command_t cmd)
 
 			add_des_case(NET_CLIENT_CHANNEL_COMMAND_EVENT_START);
 			add_des_case(NET_CLIENT_CHANNEL_COMMAND_QUERY_QR_CODE);
+			add_des_case(NET_CLIENT_CHANNEL_COMMAND_REMOTE_START_STOP);
 
 		default: {
 		}
