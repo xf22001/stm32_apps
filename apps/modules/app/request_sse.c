@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年06月28日 星期一 17时40分39秒
+ *   修改日期：2021年06月29日 星期二 11时45分50秒
  *   描    述：
  *
  *================================================================*/
@@ -441,7 +441,7 @@ typedef struct {
 } sse_0x02_response_query_t;
 
 typedef struct {
-	uint8_t status;
+	uint8_t status;//数据库执行状态 1 0 异常 1 正常
 } sse_0x03_request_settings_t;
 
 typedef struct {
@@ -516,10 +516,14 @@ typedef struct {
 	uint16_t serial_query_device_info;
 	uint16_t serial_query_device_message;
 
+	uint32_t sse_report_duration;
+
 	callback_chain_t *card_account_chain;
 	callback_item_t card_account_callback_item;
 	uint8_t card_id[32];
 	uint8_t card_password[32];
+
+	uint16_t serial_settings;
 
 	callback_chain_t *card_account_info_chain;
 	callback_item_t card_account_info_callback_item;
@@ -535,6 +539,7 @@ typedef enum {
 	NET_CLIENT_DEVICE_COMMAND_QUERY_DEVICE_INFO,
 	NET_CLIENT_DEVICE_COMMAND_QUERY_DEVICE_MESSAGE,
 	NET_CLIENT_DEVICE_COMMAND_QUERY_CARD_ACCOUNT,
+	NET_CLIENT_DEVICE_COMMAND_SETTINGS,
 } net_client_device_command_t;
 
 typedef enum {
@@ -1685,7 +1690,7 @@ static int request_callback_query_device_info(net_client_info_t *net_client_info
 
 	if((sse_0x02_request_query->id == 2) || (sse_0x02_request_query->id == 0xff)) {
 		uint32_t *report_duration = (uint32_t *)data;
-		*report_duration = channels_settings->sse_report_duration;//todo
+		*report_duration = net_client_data_ctx->sse_report_duration;//todo
 		data += sizeof(uint32_t);
 	}
 
@@ -1708,7 +1713,7 @@ static int request_callback_query_device_info(net_client_info_t *net_client_info
 		sse_query_ad_info_t *sse_query_ad_info = (sse_query_ad_info_t *)data;
 		sse_query_ad_info->count = 0;
 
-		data += sizeof(sse_query_price_info_t);
+		data += sizeof(sse_query_ad_info_t) + sse_query_ad_info->count * sizeof(sse_query_ad_item_info_t);
 	}
 
 	if((sse_0x02_request_query->id == 6) || (sse_0x02_request_query->id == 0xff)) {
@@ -1716,7 +1721,7 @@ static int request_callback_query_device_info(net_client_info_t *net_client_info
 
 		*devie_type = DEVIE_TYPE_DC;
 
-		data += sizeof(sse_query_price_info_t);
+		data += sizeof(uint32_t);
 	}
 
 	if((sse_0x02_request_query->id == 7) || (sse_0x02_request_query->id == 0xff)) {
@@ -1990,18 +1995,22 @@ static int response_callback_query_card_account(net_client_info_t *net_client_in
 				account_response_info.code = ACCOUNT_STATE_CODE_AUTH;
 			}
 			break;
+
 			case SSE_QUERY_CARD_ERROR_REASON_AMOUNT: {
 				account_response_info.code = ACCOUNT_STATE_CODE_AMOUNT;
 			}
 			break;
+
 			case SSE_QUERY_CARD_ERROR_REASON_STOP: {
 				account_response_info.code = ACCOUNT_STATE_CODE_STOP;
 			}
 			break;
+
 			case SSE_QUERY_CARD_ERROR_REASON_UNUSED: {
 				account_response_info.code = ACCOUNT_STATE_CODE_UNUSED;
 			}
 			break;
+
 			case SSE_QUERY_CARD_ERROR_REASON_NOT_RECOGNIZE: {
 				account_response_info.code = ACCOUNT_STATE_CODE_UNKNOW;
 			}
@@ -2034,6 +2043,154 @@ static net_client_command_item_t net_client_command_item_query_card_account = {
 	.timeout_callback = timeout_callback_query_card_account,
 };
 
+static int request_callback_settings(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *send_buffer, uint16_t send_buffer_size)
+{
+	int ret = -1;
+	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)send_buffer;
+	sse_0x03_request_settings_t *sse_0x03_request_settings = (sse_0x03_request_settings_t *)(sse_frame_header + 1);
+	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
+	//channels_info_t *channels_info = net_client_data_ctx->channels_info;
+	//channels_settings_t *channels_settings = &channels_info->channels_settings;
+	size_t size;
+
+	sse_0x03_request_settings->status = 1;
+	size = sizeof(sse_0x03_request_settings_t);
+
+	send_frame(net_client_info, net_client_data_ctx->serial_settings, item->frame, 1, (uint8_t *)sse_0x03_request_settings, size);
+
+	net_client_data_ctx->device_cmd_ctx[item->cmd].state = COMMAND_STATE_RESPONSE;
+	ret = 0;
+	return ret;
+}
+
+static void price_seg_to_price_info(price_info_t *price_info, sse_query_price_item_info_t *sse_query_price_item_info, uint8_t max_price_seg)
+{
+}
+
+static int response_callback_settings(net_client_info_t *net_client_info, void *_command_item, uint8_t type, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
+{
+	int ret = -1;
+	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)request;
+	sse_0x03_response_settings_t *sse_0x03_response_settings = (sse_0x03_response_settings_t *)(sse_frame_header + 1);
+	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
+	channels_settings_t *channels_settings = &net_client_data_ctx->channels_info->channels_settings;
+	uint8_t settings_type = sse_0x03_response_settings->type;
+	uint8_t settings_id = sse_0x03_response_settings->id;
+	uint8_t *data = sse_0x03_response_settings->query;
+
+	if(net_client_data_ctx->device_cmd_ctx[item->cmd].state != COMMAND_STATE_IDLE) {
+		ret = 1;
+		return ret;
+	}
+
+	if(type == 1) {
+		ret = 1;
+		return ret;
+	}
+
+	ret = 0;
+
+	switch(settings_type) {
+		case 0: {
+			if((settings_id == 0) && (settings_id == 0xff)) {
+				//uint32_t *ip = (uint32_t *)data;
+				data += sizeof(uint32_t);
+			}
+
+			if((settings_id == 1) || (settings_id == 0xff)) {
+				//uint32_t *port = (uint32_t *)data;
+				data += sizeof(uint32_t);
+			}
+
+			if((settings_id == 2) || (settings_id == 0xff)) {
+				uint32_t *report_duration = (uint32_t *)data;
+				*report_duration = net_client_data_ctx->sse_report_duration;//todo
+				data += sizeof(uint32_t);
+			}
+
+			if((settings_id == 3) || (settings_id == 0xff)) {
+				uint32_t *service_price = (uint32_t *)data;
+				channels_settings->price_info.service_price = *service_price;
+				data += sizeof(uint32_t);
+			}
+
+			if((settings_id == 4) || (settings_id == 0xff)) {
+				sse_query_price_info_t *sse_query_price_info = (sse_query_price_info_t *)data;
+				sse_query_price_item_info_t *sse_query_price_item_info = (sse_query_price_item_info_t *)sse_query_price_info->item;
+
+				price_seg_to_price_info(&channels_settings->price_info, sse_query_price_item_info, sse_query_price_info->count);
+
+				data += sizeof(sse_query_price_info_t) + sse_query_price_info->count * sizeof(sse_query_price_item_info_t);
+			}
+
+			if((settings_id == 5) || (settings_id == 0xff)) {
+				data += 256;
+			}
+		}
+		break;
+
+		case 1: {
+			if((settings_id == 0) || (settings_id == 0xff)) {
+				uint8_t *date_time = (uint8_t *)data;
+				char dt[20];
+				struct tm tm;
+				int catched;
+
+				bcd_to_ascii(dt, sizeof(dt), date_time, 8);
+
+				if(sscanf(dt, "%04d%02d%02d%02d%02d%02d%n",
+				          &tm.tm_year,
+				          &tm.tm_mon,
+				          &tm.tm_mday,
+				          &tm.tm_hour,
+				          &tm.tm_min,
+				          &tm.tm_sec,
+				          &catched) == 6) {
+
+					tm.tm_year -= 1900;
+					tm.tm_mon -= 1;
+
+					set_time(mktime(&tm));
+				}
+
+				data += 8;
+			}
+		}
+		break;
+
+		case 2: {
+		}
+		break;
+
+		case 3: {
+		}
+		break;
+
+		default: {
+			ret = -1;
+		}
+		break;
+	}
+
+	net_client_data_ctx->serial_settings = sse_frame_header->serial;
+
+	net_client_data_ctx->device_cmd_ctx[item->cmd].state = COMMAND_STATE_IDLE;
+	return ret;
+}
+
+static int timeout_callback_settings(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id)
+{
+	int ret = 0;
+	return ret;
+}
+static net_client_command_item_t net_client_command_item_settings = {
+	.cmd = NET_CLIENT_DEVICE_COMMAND_SETTINGS,
+	.frame = 0x03,
+	.request_callback = request_callback_settings,
+	.response_callback = response_callback_settings,
+	.timeout_callback = timeout_callback_settings,
+};
+
 static net_client_command_item_t *net_client_command_item_device_table[] = {
 	&net_client_command_item_report,
 	&net_client_command_item_event_fault,
@@ -2041,6 +2198,7 @@ static net_client_command_item_t *net_client_command_item_device_table[] = {
 	&net_client_command_item_query_device_info,
 	&net_client_command_item_query_device_message,
 	&net_client_command_item_query_card_account,
+	&net_client_command_item_settings,
 };
 
 static int request_callback_event_start(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *send_buffer, uint16_t send_buffer_size)
@@ -2261,6 +2419,7 @@ static char *get_net_client_cmd_device_des(net_client_device_command_t cmd)
 			add_des_case(NET_CLIENT_DEVICE_COMMAND_QUERY_DEVICE_INFO);
 			add_des_case(NET_CLIENT_DEVICE_COMMAND_QUERY_DEVICE_MESSAGE);
 			add_des_case(NET_CLIENT_DEVICE_COMMAND_QUERY_CARD_ACCOUNT);
+			add_des_case(NET_CLIENT_DEVICE_COMMAND_SETTINGS);
 
 		default: {
 		}

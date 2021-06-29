@@ -6,7 +6,7 @@
  *   文件名称：os_utils.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分36秒
- *   修改日期：2021年06月23日 星期三 11时06分33秒
+ *   修改日期：2021年06月29日 星期二 09时55分56秒
  *   描    述：
  *
  *================================================================*/
@@ -485,6 +485,7 @@ uint16_t sum_crc16(const void *data, size_t size);
 uint32_t sum_crc32(const void *data, size_t size);
 uint32_t ticks_duration(uint32_t a, uint32_t b);
 time_t get_time(void);
+void set_time(time_t ts);
 
 #if !defined(ALLOC_TRACE_DISABLE)
 #define os_alloc(size) __os_alloc(size, __FILE__, __func__, __LINE__)
