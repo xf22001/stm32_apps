@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年06月30日 星期三 09时39分11秒
+ *   修改日期：2021年06月30日 星期三 14时17分45秒
  *   描    述：
  *
  *================================================================*/
@@ -524,6 +524,9 @@ typedef struct {
 
 	uint16_t serial_settings;
 	uint16_t serial_remote_device;
+	uint16_t serial_upgrade;
+	uint32_t upgrade_offset;
+	uint8_t upgrade_status;
 
 	callback_chain_t *card_account_info_chain;
 	callback_item_t card_account_info_callback_item;
@@ -541,6 +544,7 @@ typedef enum {
 	NET_CLIENT_DEVICE_COMMAND_QUERY_CARD_ACCOUNT,
 	NET_CLIENT_DEVICE_COMMAND_SETTINGS,
 	NET_CLIENT_DEVICE_COMMAND_REMOTE_DEVICE,
+	NET_CLIENT_DEVICE_COMMAND_UPGRADE,
 } net_client_device_command_t;
 
 typedef enum {
@@ -2289,6 +2293,74 @@ static net_client_command_item_t net_client_command_item_remote_device = {
 	.timeout_callback = timeout_callback_remote_device,
 };
 
+static int request_callback_upgrade(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *send_buffer, uint16_t send_buffer_size)
+{
+	int ret = -1;
+	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)send_buffer;
+	sse_0x05_request_upgrade_t *sse_0x05_request_upgrade = (sse_0x05_request_upgrade_t *)(sse_frame_header + 1);
+	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
+	//channels_info_t *channels_info = net_client_data_ctx->channels_info;
+	//channels_settings_t *channels_settings = &channels_info->channels_settings;
+	size_t size;
+
+	sse_0x05_request_upgrade->status = net_client_data_ctx->upgrade_status;
+	sse_0x05_request_upgrade->offset = net_client_data_ctx->upgrade_offset;
+	size = sizeof(sse_0x05_request_upgrade_t);
+
+	send_frame(net_client_info, net_client_data_ctx->serial_upgrade, item->frame, 1, (uint8_t *)sse_0x05_request_upgrade, size);
+
+	net_client_data_ctx->device_cmd_ctx[item->cmd].state = COMMAND_STATE_RESPONSE;
+	ret = 0;
+	return ret;
+}
+
+static int do_upgrade(size_t total, size_t offset, uint8_t *data, size_t len)
+{
+	return 0;
+}
+
+static int response_callback_upgrade(net_client_info_t *net_client_info, void *_command_item, uint8_t type, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
+{
+	int ret = -1;
+	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)request;
+	sse_0x05_response_upgrade_t *sse_0x05_response_upgrade = (sse_0x05_response_upgrade_t *)(sse_frame_header + 1);
+	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
+	//channels_settings_t *channels_settings = &net_client_data_ctx->channels_info->channels_settings;
+
+	if(type == 1) {
+		ret = 1;
+		return ret;
+	}
+
+	ret = do_upgrade(sse_0x05_response_upgrade->file_len, sse_0x05_response_upgrade->offset, sse_0x05_response_upgrade->data, 256);
+
+	if(ret != 0) {
+		net_client_data_ctx->upgrade_status = 0;
+	} else {
+		net_client_data_ctx->upgrade_status = 1;
+	}
+
+	net_client_data_ctx->serial_upgrade = sse_frame_header->serial;
+	net_client_data_ctx->upgrade_offset = sse_0x05_response_upgrade->offset;
+
+	net_client_data_ctx->device_cmd_ctx[item->cmd].state = COMMAND_STATE_REQUEST;
+	return ret;
+}
+
+static int timeout_callback_upgrade(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id)
+{
+	int ret = 0;
+	return ret;
+}
+
+static net_client_command_item_t net_client_command_item_upgrade = {
+	.cmd = NET_CLIENT_DEVICE_COMMAND_UPGRADE,
+	.frame = 0x05,
+	.request_callback = request_callback_upgrade,
+	.response_callback = response_callback_upgrade,
+	.timeout_callback = timeout_callback_upgrade,
+};
+
 static net_client_command_item_t *net_client_command_item_device_table[] = {
 	&net_client_command_item_report,
 	&net_client_command_item_event_fault,
@@ -2298,6 +2370,7 @@ static net_client_command_item_t *net_client_command_item_device_table[] = {
 	&net_client_command_item_query_card_account,
 	&net_client_command_item_settings,
 	&net_client_command_item_remote_device,
+	&net_client_command_item_upgrade,
 };
 
 static int request_callback_event_start(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *send_buffer, uint16_t send_buffer_size)
@@ -2646,6 +2719,7 @@ static char *get_net_client_cmd_device_des(net_client_device_command_t cmd)
 			add_des_case(NET_CLIENT_DEVICE_COMMAND_QUERY_CARD_ACCOUNT);
 			add_des_case(NET_CLIENT_DEVICE_COMMAND_SETTINGS);
 			add_des_case(NET_CLIENT_DEVICE_COMMAND_REMOTE_DEVICE);
+			add_des_case(NET_CLIENT_DEVICE_COMMAND_UPGRADE);
 
 		default: {
 		}
