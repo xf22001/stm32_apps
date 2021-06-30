@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分12秒
- *   修改日期：2021年06月29日 星期二 14时51分16秒
+ *   修改日期：2021年06月30日 星期三 09时22分36秒
  *   描    述：
  *
  *================================================================*/
@@ -186,6 +186,31 @@ uint8_t get_seg_index_by_ts(time_t ts)
 	seg_index = ts / (86400 / PRICE_SEGMENT_SIZE);
 
 	return seg_index;
+}
+
+uint8_t parse_price_info(price_info_t *price_info, price_item_cb_t price_item_cb, void *ctx)
+{
+	int i;
+	uint8_t j = 0;
+	uint32_t price = price_info->price[0];
+	uint8_t start_seg = 0;
+
+	for(i = 0; i <= PRICE_SEGMENT_SIZE; i++) {
+		if((i < PRICE_SEGMENT_SIZE) && (price_info->price[i] == price)) {
+			continue;
+		}
+
+		if(price_item_cb != NULL) {
+			price_item_cb(j++, start_seg, i, price, ctx);
+		}
+
+		if(i < PRICE_SEGMENT_SIZE) {
+			price = price_info->price[i];
+			start_seg = i;
+		}
+	}
+
+	return j;
 }
 
 static uint32_t get_current_price(channels_info_t *channels_info, time_t ts)

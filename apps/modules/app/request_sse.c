@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年06月29日 星期二 16时54分52秒
+ *   修改日期：2021年06月30日 星期三 09时39分11秒
  *   描    述：
  *
  *================================================================*/
@@ -1603,51 +1603,32 @@ static net_client_command_item_t net_client_command_item_event_upload_record = {
 	.timeout_callback = timeout_callback_event_upload_record,
 };
 
-static void update_sse_query_price_item_info(sse_query_price_item_info_t *sse_query_price_item_info, time_t start, time_t end, uint32_t price)
+static void update_sse_query_price_item_info(uint8_t i, uint8_t start_seg, uint8_t stop_seg, uint32_t price, void *_sse_query_price_item_info)
 {
+	sse_query_price_item_info_t *sse_query_price_item_info = (sse_query_price_item_info_t *)_sse_query_price_item_info;
+	time_t start;
+	time_t stop;
 	struct tm *tm;
+
+	if(i >= 12) {
+		return;
+	}
+
+	start = get_ts_by_seg_index(start_seg);
+	stop = get_ts_by_seg_index(stop_seg);
+
+	sse_query_price_item_info += i;
 
 	tm = localtime(&start);
 	sse_query_price_item_info->start_hour_min = get_u16_from_u8_lh(
-	            get_bcd_from_u8(tm->tm_hour),
-	            get_bcd_from_u8(tm->tm_min));
-	tm = localtime(&end);
+	            get_bcd_from_u8(tm->tm_min),
+	            get_bcd_from_u8(tm->tm_hour));
+	tm = localtime(&stop);
 	sse_query_price_item_info->stop_hour_min = get_u16_from_u8_lh(
-	            get_bcd_from_u8((end == 0) ? 24 : tm->tm_hour),
-	            get_bcd_from_u8(tm->tm_min));
+	            get_bcd_from_u8(tm->tm_min),
+	            get_bcd_from_u8((stop == 0) ? 24 : tm->tm_hour));
 
 	sse_query_price_item_info->price = price;
-}
-
-static uint8_t price_info_to_price_seg(price_info_t *price_info, sse_query_price_item_info_t *sse_query_price_item_info, uint8_t max_price_seg)
-{
-	int i;
-	uint8_t j = 0;
-	uint32_t price = price_info->price[0];
-	time_t start = get_ts_by_seg_index(0);
-
-	for(i = 0; i <= PRICE_SEGMENT_SIZE; i++) {
-		if((i < PRICE_SEGMENT_SIZE) && (price_info->price[i] == price)) {
-			continue;
-		}
-
-		if(j >= max_price_seg) {
-			break;
-		}
-
-		update_sse_query_price_item_info(&sse_query_price_item_info[j],
-		                                 start,
-		                                 get_ts_by_seg_index(i),
-		                                 price);
-		j++;
-
-		if(i < PRICE_SEGMENT_SIZE) {
-			price = price_info->price[i];
-			start = get_ts_by_seg_index(i);
-		}
-	}
-
-	return j;
 }
 
 static int request_callback_query_device_info(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *send_buffer, uint16_t send_buffer_size)
@@ -1706,7 +1687,7 @@ static int request_callback_query_device_info(net_client_info_t *net_client_info
 		sse_query_price_info_t *sse_query_price_info = (sse_query_price_info_t *)data;
 		sse_query_price_item_info_t *sse_query_price_item_info = (sse_query_price_item_info_t *)sse_query_price_info->item;
 
-		sse_query_price_info->count = price_info_to_price_seg(&channels_settings->price_info, sse_query_price_item_info, 12);
+		sse_query_price_info->count = parse_price_info(&channels_settings->price_info, update_sse_query_price_item_info, sse_query_price_item_info);
 
 		data += sizeof(sse_query_price_info_t) + sse_query_price_info->count * sizeof(sse_query_price_item_info_t);
 	}
