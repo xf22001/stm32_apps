@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_stategrid.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月16日 星期五 16时31分34秒
- *   修改日期：2021年06月15日 星期二 11时25分25秒
+ *   修改日期：2021年06月30日 星期三 17时38分53秒
  *   描    述：
  *
  *================================================================*/
@@ -146,7 +146,7 @@ static void _set_poweroff(power_modules_info_t *power_modules_info, int module_i
 {
 	power_module_info_t *power_module_info = power_modules_info->power_module_info + module_id;
 
-	power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_COMMAND_REMOTE_CONTROL].state = COMMAND_STATE_REQUEST;
+	power_module_info->cmd_ctx[MODULE_COMMAND_REMOTE_CONTROL].state = COMMAND_STATE_REQUEST;
 }
 
 static int request_remote_control(power_modules_info_t *power_modules_info, int module_id)
@@ -158,32 +158,21 @@ static int request_remote_control(power_modules_info_t *power_modules_info, int 
 	uint32_t voltage = power_module_info->setting_voltage / 100;
 	uint32_t current = power_module_info->setting_current / 10;
 	remote_control_data_t *remote_control_data = (remote_control_data_t *)data;
-	uint8_t do_poweroff = 0;
 
-	OS_ASSERT(sizeof(remote_control_data_t) == 8);
-
-	if(power_module_info->poweroff != power_module_info->power_module_status.setting_poweroff) {
-		do_poweroff = 1;
-	}
-
-	if(power_module_info->poweroff != power_module_info->power_module_status.poweroff) {
-		do_poweroff = 1;
-	}
-
-	if(do_poweroff == 1) {
-		if(power_module_info->poweroff == 1) {
-			remote_control_data->op_code = 0x06;
-			remote_control_data->power_assign_relay_state = 0x00;
-			remote_control_data->main_relay_state = 0x00;
+	if(power_module_info->poweroff == 1) {
+		remote_control_data->op_code = 0x06;
+		remote_control_data->power_assign_relay_state = 0x00;
+		remote_control_data->main_relay_state = 0x00;
+	} else {
+		if(power_module_info->power_module_status.poweroff == 0) {
+			remote_control_data->op_code = 0x05;
+			remote_control_data->power_assign_relay_state = 0x01;
+			remote_control_data->main_relay_state = 0x01;
 		} else {
 			remote_control_data->op_code = 0x03;
 			remote_control_data->power_assign_relay_state = 0x01;
 			remote_control_data->main_relay_state = 0x01;
 		}
-	} else {
-		remote_control_data->op_code = 0x05;
-		remote_control_data->power_assign_relay_state = 0x01;
-		remote_control_data->main_relay_state = 0x01;
 	}
 
 	remote_control_data->output_mode = (voltage >= 5000) ? 0x01 : 0x00;
