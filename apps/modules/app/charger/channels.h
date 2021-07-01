@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2021年06月29日 星期二 14时11分49秒
+ *   修改日期：2021年07月01日 星期四 13时45分59秒
  *   描    述：
  *
  *================================================================*/
@@ -110,6 +110,18 @@ typedef enum {
 #pragma pack(push, 1)
 
 typedef struct {
+	uint8_t type;//channel_charger_type_t
+} channel_charger_settings_t;
+
+typedef struct {
+	uint8_t type;//channel_energy_meter_type_t
+} channel_energy_meter_settings_t;
+
+typedef struct {
+	uint8_t channel_type;//channel_type_t
+	channel_charger_settings_t charger_settings;
+	channel_energy_meter_settings_t energy_meter_settings;
+
 	uint8_t ac_current_limit;//ac_current_limit_t
 } channel_settings_t;
 
@@ -179,6 +191,19 @@ typedef struct {
 } price_info_t;
 
 typedef struct {
+	uint8_t channels_power_module_number;
+	uint8_t channels_power_module_type;//channels_power_module_type_t
+} channels_power_module_settings_t;
+
+typedef struct {
+	uint8_t type;//card_reader_type_t
+} card_reader_settings_t;
+
+typedef struct {
+	uint8_t channel_number;
+	channels_power_module_settings_t channels_power_module_settings;
+	card_reader_settings_t card_reader_settings;
+
 	char device_id[32];
 	uint8_t device_type;
 	uint16_t power_module_type;
@@ -227,6 +252,8 @@ typedef enum {
 
 typedef struct {
 	channels_config_t *channels_config;
+
+	eeprom_info_t *eeprom_info;
 
 	event_pool_t *event_pool;
 	callback_chain_t *common_periodic_chain;

@@ -6,7 +6,7 @@
  *   文件名称：energy_meter.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月07日 星期三 15时56分19秒
- *   修改日期：2021年06月23日 星期三 10时58分08秒
+ *   修改日期：2021年07月01日 星期四 13时57分04秒
  *   描    述：
  *
  *================================================================*/
@@ -41,14 +41,13 @@ static energy_meter_handler_t *get_energy_meter_handler(channel_energy_meter_typ
 
 energy_meter_info_t *alloc_energy_meter_info(channel_info_t *channel_info)
 {
-	channel_config_t *channel_config = channel_info->channel_config;
-	channel_energy_meter_config_t *channel_energy_meter_config = &channel_config->energy_meter_config;
+	channel_settings_t *channel_settings = &channel_info->channel_settings;
 	energy_meter_info_t *energy_meter_info = (energy_meter_info_t *)os_calloc(1, sizeof(energy_meter_info_t));
 
 	OS_ASSERT(energy_meter_info != NULL);
 	energy_meter_info->channel_info = channel_info;
 
-	energy_meter_info->energy_meter_handler = get_energy_meter_handler(channel_energy_meter_config->energy_meter_type);
+	energy_meter_info->energy_meter_handler = get_energy_meter_handler(channel_settings->energy_meter_settings.type);
 
 	if((energy_meter_info->energy_meter_handler != NULL) && (energy_meter_info->energy_meter_handler->init != NULL)) {
 		energy_meter_info->energy_meter_handler->init(energy_meter_info);

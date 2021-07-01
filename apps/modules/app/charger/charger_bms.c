@@ -6,7 +6,7 @@
  *   文件名称：charger_bms.c
  *   创 建 者：肖飞
  *   创建日期：2021年06月04日 星期五 16时51分31秒
- *   修改日期：2021年06月19日 星期六 23时09分39秒
+ *   修改日期：2021年07月01日 星期四 13时57分26秒
  *   描    述：
  *
  *================================================================*/
@@ -107,7 +107,7 @@ int charger_bms_init(charger_info_t *charger_info)
 {
 	int ret = 0;
 	channel_info_t *channel_info = (channel_info_t *)charger_info->channel_info;
-	channel_config_t *channel_config = channel_info->channel_config;
+	channel_settings_t *channel_settings = &channel_info->channel_settings;
 
 	charger_info->handle_mutex = mutex_create();
 	OS_ASSERT(charger_info->handle_mutex);
@@ -115,7 +115,7 @@ int charger_bms_init(charger_info_t *charger_info)
 	charger_info->charger_bms_status_changed = alloc_callback_chain();
 	OS_ASSERT(charger_info->charger_bms_status_changed != NULL);
 
-	charger_info->charger_bms_handler = get_charger_bms_handler(channel_config->charger_config.channel_charger_type);
+	charger_info->charger_bms_handler = get_charger_bms_handler(channel_settings->charger_settings.type);
 
 	if((charger_info->charger_bms_handler != NULL) && (charger_info->charger_bms_handler->handle_init != NULL)) {
 		OS_ASSERT(charger_info->charger_bms_handler->handle_init(charger_info) == 0);

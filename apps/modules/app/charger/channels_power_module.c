@@ -6,7 +6,7 @@
  *   文件名称：channels_power_module.c
  *   创 建 者：肖飞
  *   创建日期：2021年03月26日 星期五 17时18分33秒
- *   修改日期：2021年05月11日 星期二 11时37分30秒
+ *   修改日期：2021年07月01日 星期四 14时14分23秒
  *   描    述：
  *
  *================================================================*/
@@ -45,8 +45,8 @@ static int channels_power_module_init(channels_power_module_t *channels_power_mo
 {
 	int ret = 0;
 	channels_info_t *channels_info = (channels_info_t *)channels_power_module->channels_info;
-	channels_config_t *channels_config = channels_info->channels_config;
-	channels_power_module_type_t type = channels_config->power_module_config.channels_power_module_type;
+	channels_settings_t *channels_settings = &channels_info->channels_settings;
+	channels_power_module_type_t type = channels_settings->channels_power_module_settings.channels_power_module_type;
 
 	channels_power_module->periodic_callback_item.fn = periodic;
 	channels_power_module->periodic_callback_item.fn_ctx = channels_power_module;

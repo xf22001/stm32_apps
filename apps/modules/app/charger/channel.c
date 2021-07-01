@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分12秒
- *   修改日期：2021年06月30日 星期三 09时22分36秒
+ *   修改日期：2021年07月01日 星期四 13时51分23秒
  *   描    述：
  *
  *================================================================*/
@@ -20,6 +20,7 @@
 #include "energy_meter.h"
 #include "hw_adc.h"
 #include "ntc_temperature.h"
+#include "eeprom_layout.h"
 
 #include "log.h"
 
@@ -356,7 +357,7 @@ static void handle_channel_event(void *_channel_info, void *_channels_event)
 static int channel_init(channel_info_t *channel_info)
 {
 	int ret = 0;
-	channel_config_t *channel_config = channel_info->channel_config;
+	channel_settings_t *channel_settings = &channel_info->channel_settings;
 	channels_info_t *channels_info = (channels_info_t *)channel_info->channels_info;
 
 	channel_info->faults = alloc_bitmap(CHANNEL_FAULT_SIZE);
@@ -385,11 +386,11 @@ static int channel_init(channel_info_t *channel_info)
 	OS_ASSERT(channel_info->charger_connect_changed_chain != NULL);
 
 
-	debug("channel %d init channel record %s", channel_info->channel_id, get_channel_config_charger_type(channel_config->charger_config.channel_charger_type));
+	debug("channel %d init channel record", channel_info->channel_id);
 	channel_record_handler_init(channel_info);
 
-	debug("channel %d init charger %s", channel_info->channel_id, get_channel_config_channel_type(channel_config->channel_type));
-	channel_info->channel_handler = get_channel_handler(channel_config->channel_type);
+	debug("channel %d init charger %s", channel_info->channel_id, get_channel_config_channel_type(channel_settings->channel_type));
+	channel_info->channel_handler = get_channel_handler(channel_settings->channel_type);
 
 	if((channel_info->channel_handler != NULL) && (channel_info->channel_handler->init != NULL)) {
 		OS_ASSERT(channel_info->channel_handler->init(channel_info) == 0);
@@ -403,10 +404,55 @@ static int channel_init(channel_info_t *channel_info)
 	channel_info->event_callback_item.fn_ctx = channel_info;
 	OS_ASSERT(register_callback(channels_info->common_event_chain, &channel_info->event_callback_item) == 0);
 
-	debug("channel %d alloc charger %s", channel_info->channel_id, get_channel_config_charger_type(channel_config->charger_config.channel_charger_type));
+	debug("channel %d alloc charger %s", channel_info->channel_id, get_channel_config_charger_type(channel_settings->charger_settings.type));
 	channel_info->charger_info = alloc_charger_info(channel_info);
-	debug("channel %d alloc energy_meter %s", channel_info->channel_id, get_channel_config_energy_meter_type(channel_config->energy_meter_config.energy_meter_type));
+	debug("channel %d alloc energy_meter %s", channel_info->channel_id, get_channel_config_energy_meter_type(channel_settings->energy_meter_settings.type));
 	channel_info->energy_meter_info = alloc_energy_meter_info(channel_info);
+
+	return ret;
+}
+
+static int channel_info_load_config(channel_info_t *channel_info)
+{
+	channels_info_t *channels_info = (channels_info_t *)channel_info->channels_info;
+	eeprom_layout_t *eeprom_layout = get_eeprom_layout();
+	size_t offset = (size_t)&eeprom_layout->channels_settings_seg.eeprom_channel_settings[channel_info->channel_id].channel_settings;
+	debug("offset:%d", offset);
+	return eeprom_load_config_item(channels_info->eeprom_info, "channel_info->channel_settings", &channel_info->channel_settings, sizeof(channel_settings_t), offset);
+}
+
+static int channel_info_save_config(channel_info_t *channel_info)
+{
+	channels_info_t *channels_info = (channels_info_t *)channel_info->channels_info;
+	eeprom_layout_t *eeprom_layout = get_eeprom_layout();
+	size_t offset = (size_t)&eeprom_layout->channels_settings_seg.eeprom_channel_settings[channel_info->channel_id].channel_settings;
+	debug("offset:%d", offset);
+	return eeprom_save_config_item(channels_info->eeprom_info, "channel_info->channel_settings", &channel_info->channel_settings, sizeof(channel_settings_t), offset);
+}
+
+static void channel_info_reset_default_config(channel_info_t *channel_info)
+{
+	channel_config_t *channel_config = channel_info->channel_config;
+	channel_settings_t *channel_settings = &channel_info->channel_settings;
+
+	memset(channel_settings, 0, sizeof(channel_settings_t));
+
+	channel_settings->channel_type = channel_config->channel_type;
+	channel_settings->charger_settings.type = channel_config->charger_config.channel_charger_type;
+	channel_settings->energy_meter_settings.type = channel_config->energy_meter_config.energy_meter_type;
+}
+
+static int channel_info_init_config(channel_info_t *channel_info)
+{
+	int ret = 0;
+
+	if(channel_info_load_config(channel_info) == 0) {
+		debug("channel %d load config successfully!", channel_info->channel_id);
+	} else {
+		debug("channel %d load config failed!", channel_info->channel_id);
+		channel_info_reset_default_config(channel_info);
+		ret = channel_info_save_config(channel_info);
+	}
 
 	return ret;
 }
@@ -629,6 +675,8 @@ channel_info_t *alloc_channels_channel_info(channels_info_t *channels_info)
 		channel_info_item->channels_info = channels_info;
 		channel_info_item->channel_config = channels_config->channel_config[i];
 		channel_info_item->channel_id = i;
+
+		OS_ASSERT(channel_info_init_config(channel_info_item) == 0);
 
 		channel_init(channel_info_item);
 	}

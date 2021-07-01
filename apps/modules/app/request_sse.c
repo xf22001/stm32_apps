@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年06月30日 星期三 14时17分45秒
+ *   修改日期：2021年07月01日 星期四 15时08分44秒
  *   描    述：
  *
  *================================================================*/
@@ -854,11 +854,11 @@ static uint32_t get_sse_module_state_mask(channels_info_t *channels_info)
 {
 	uint32_t mask = 0;
 	uint8_t *cells = (uint8_t *)&mask;
-	channels_config_t *channels_config = channels_info->channels_config;
+	channels_settings_t *channels_settings = &channels_info->channels_settings;
 	channels_power_module_t *channels_power_module = (channels_power_module_t *)channels_info->channels_power_module;
 	channels_power_module_callback_t *channels_power_module_callback = channels_power_module->channels_power_module_callback;
 	int i = 0;
-	int channels_power_module_number = channels_config->power_module_config.channels_power_module_number;
+	int channels_power_module_number = channels_settings->channels_power_module_settings.channels_power_module_number;
 
 	if(channels_power_module_callback == NULL) {
 		return mask;
@@ -882,11 +882,11 @@ static uint32_t get_sse_module_state_value(channels_info_t *channels_info)
 {
 	uint32_t state = 0;
 	uint8_t *cells = (uint8_t *)&state;
-	channels_config_t *channels_config = channels_info->channels_config;
+	channels_settings_t *channels_settings = &channels_info->channels_settings;
 	channels_power_module_t *channels_power_module = (channels_power_module_t *)channels_info->channels_power_module;
 	channels_power_module_callback_t *channels_power_module_callback = channels_power_module->channels_power_module_callback;
 	int i = 0;
-	int channels_power_module_number = channels_config->power_module_config.channels_power_module_number;
+	int channels_power_module_number = channels_settings->channels_power_module_settings.channels_power_module_number;
 
 	if(channels_power_module_callback == NULL) {
 		return state;
@@ -961,7 +961,7 @@ static uint8_t get_sse_report_channel_charger_bms_state(channel_info_t *channel_
 {
 	uint8_t state = SSE_REPORT_CHANNEL_CHARGER_BMS_STATE_NONE;
 
-	if(channel_info->channel_config->channel_type == CHANNEL_TYPE_DC) {
+	if(channel_info->channel_settings.channel_type == CHANNEL_TYPE_DC) {
 		switch(channel_info->state) {
 			case CHANNEL_STATE_NONE:
 			case CHANNEL_STATE_IDLE: {
@@ -997,7 +997,7 @@ static uint8_t get_sse_report_channel_charger_bms_stop_reason(channel_info_t *ch
 {
 	uint8_t stop_reason = SSE_REPORT_CHANNEL_CHARGER_BMS_STOP_REASON_NONE;
 
-	if(channel_info->channel_config->channel_type == CHANNEL_TYPE_DC) {
+	if(channel_info->channel_settings.channel_type == CHANNEL_TYPE_DC) {
 		switch(channel_info->state) {
 			case CHANNEL_STATE_STOPPING: {
 				switch(channel_info->channel_record_item.stop_reason) {
@@ -1134,7 +1134,7 @@ static uint8_t get_sse_report_channel_charger_bms_stop_reason(channel_info_t *ch
 
 static void udpate_sse_chennel_charger_report(sse_channel_report_t *sse_channel_report, channel_info_t *channel_info)
 {
-	if(channel_info->channel_config->channel_type == CHANNEL_TYPE_DC) {
+	if(channel_info->channel_settings.channel_type == CHANNEL_TYPE_DC) {
 		sse_report_channel_charge_info_dc_t *sse_report_channel_charge_info_dc = sse_channel_report->sse_report_channel_charge_info_dc;
 		charger_info_t *charger_info = (charger_info_t *)channel_info->charger_info;
 		sse_report_channel_charge_info_dc->soc = charger_info->bms_data.bcs_data.soc;
@@ -1152,7 +1152,7 @@ static void udpate_sse_chennel_charger_report(sse_channel_report_t *sse_channel_
 		sse_report_channel_charge_info_dc->bcs_remain_min = charger_info->bms_data.bcs_data.remain_min;
 		sse_report_channel_charge_info_dc->dc_p_temperature = charger_info->dc_p_temperature;
 		sse_report_channel_charge_info_dc->dc_n_temperature = charger_info->dc_n_temperature;
-	} else if(channel_info->channel_config->channel_type == CHANNEL_TYPE_AC) {
+	} else if(channel_info->channel_settings.channel_type == CHANNEL_TYPE_AC) {
 		sse_report_channel_charge_info_ac_t *sse_report_channel_charge_info_ac = sse_channel_report->sse_report_channel_charge_info_ac;
 		sse_report_channel_charge_info_ac->output_voltage = channel_info->voltage;
 		sse_report_channel_charge_info_ac->output_current = channel_info->current;
@@ -1178,6 +1178,34 @@ static void udpate_sse_chennel_report(sse_channel_report_t *sse_channel_report, 
 	udpate_sse_chennel_charger_report(sse_channel_report, channel_info);
 }
 
+static uint8_t get_device_type(channels_info_t *channels_info)
+{
+	uint8_t device_type = 0;
+	channel_info_t *channel_info = channels_info->channel_info + 0;
+
+	if(channels_info->channels_settings.channel_number == 0) {
+		return device_type;
+	}
+
+	switch(channel_info->channel_settings.channel_type) {
+		case CHANNEL_TYPE_DC: {
+			device_type = 1;
+		}
+		break;
+
+		case CHANNEL_TYPE_AC: {
+			device_type = 2;
+		}
+		break;
+
+		default: {
+		}
+		break;
+	}
+
+	return device_type;
+}
+
 static int request_callback_report(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
 	int ret = 0;
@@ -1194,7 +1222,7 @@ static int request_callback_report(net_client_info_t *net_client_info, void *_co
 	size_t size = 0;
 
 	snprintf((char *)sse_0x00_request_report->device_id, 32, "%s", channels_settings->device_id);
-	sse_0x00_request_report->device_type = channels_settings->device_type;
+	sse_0x00_request_report->device_type = get_device_type(channels_info);
 	memset(sse_0x00_request_report->date_time, 0xff, sizeof(sse_0x00_request_report->date_time));
 	strftime(dt, sizeof(dt), "%Y%m%d%H%M%S", tm);
 	ascii_to_bcd(dt, strlen(dt), sse_0x00_request_report->date_time, sizeof(sse_0x00_request_report->date_time));
@@ -1214,9 +1242,9 @@ static int request_callback_report(net_client_info_t *net_client_info, void *_co
 		channel_info_t *channel_info = channels_info->channel_info + channel_id;
 		udpate_sse_chennel_report(sse_channel_report, i);
 
-		if(channel_info->channel_config->channel_type == CHANNEL_TYPE_DC) {
+		if(channel_info->channel_settings.channel_type == CHANNEL_TYPE_DC) {
 			channel_report_start += (sizeof(sse_channel_report_t) + sizeof(sse_report_channel_charge_info_dc_t));
-		} else if(channel_info->channel_config->channel_type == CHANNEL_TYPE_AC) {
+		} else if(channel_info->channel_settings.channel_type == CHANNEL_TYPE_AC) {
 			channel_report_start += (sizeof(sse_channel_report_t) + sizeof(sse_report_channel_charge_info_ac_t));
 		} else {
 			app_panic();
@@ -1422,7 +1450,7 @@ static int request_callback_event_fault(net_client_info_t *net_client_info, void
 	size_t size = (uint8_t *)(sse_request_event_fault + 1) - (uint8_t *)sse_0x01_request_event;
 
 	snprintf((char *)sse_0x01_request_event->device_id, 32, "%s", channels_settings->device_id);
-	sse_0x01_request_event->device_type = channels_settings->device_type;
+	sse_0x01_request_event->device_type = get_device_type(channels_info);
 	sse_0x01_request_event->float_percision = (channels_info->channels_settings.magnification == 0) ? 2 : 3;
 	sse_0x01_request_event->event_type = 0x02;
 
@@ -1494,7 +1522,7 @@ static int request_callback_event_upload_record(net_client_info_t *net_client_in
 	sse_record_section_t *sse_record_section = sse_request_event_record->sse_record_section;
 
 	snprintf((char *)sse_0x01_request_event->device_id, 32, "%s", channels_settings->device_id);
-	sse_0x01_request_event->device_type = channels_settings->device_type;
+	sse_0x01_request_event->device_type = get_device_type(channels_info);
 	sse_0x01_request_event->float_percision = (channels_info->channels_settings.magnification == 0) ? 2 : 3;
 	sse_0x01_request_event->event_type = 0x03;
 
@@ -2390,7 +2418,7 @@ static int request_callback_event_start(net_client_info_t *net_client_info, void
 	size_t size = (uint8_t *)(sse_request_event_start_charge + 1) - (uint8_t *)sse_0x01_request_event;
 
 	snprintf((char *)sse_0x01_request_event->device_id, 32, "%s", channels_settings->device_id);
-	sse_0x01_request_event->device_type = channels_settings->device_type;
+	sse_0x01_request_event->device_type = get_device_type(channels_info);
 	sse_0x01_request_event->float_percision = (channels_info->channels_settings.magnification == 0) ? 2 : 3;
 	sse_0x01_request_event->event_type = 0x00;
 

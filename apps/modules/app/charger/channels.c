@@ -6,7 +6,7 @@
  *   文件名称：channels.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 09时26分31秒
- *   修改日期：2021年06月10日 星期四 12时56分57秒
+ *   修改日期：2021年07月01日 星期四 15时25分03秒
  *   描    述：
  *
  *================================================================*/
@@ -21,6 +21,7 @@
 #include "channel.h"
 #include "channels_power_module.h"
 #include "card_reader.h"
+#include "eeprom_layout.h"
 
 #include "log.h"
 
@@ -154,6 +155,51 @@ static int channels_info_set_channels_config(channels_info_t *channels_info, cha
 	return ret;
 }
 
+static int channels_info_load_config(channels_info_t *channels_info)
+{
+	eeprom_layout_t *eeprom_layout = get_eeprom_layout();
+	size_t offset = (size_t)&eeprom_layout->channels_settings_seg.eeprom_channels_settings.channels_settings;
+	debug("offset:%d", offset);
+	return eeprom_load_config_item(channels_info->eeprom_info, "channels_info->channels_settings", &channels_info->channels_settings, sizeof(channels_settings_t), offset);
+}
+
+static int channels_info_save_config(channels_info_t *channels_info)
+{
+	eeprom_layout_t *eeprom_layout = get_eeprom_layout();
+	size_t offset = (size_t)&eeprom_layout->channels_settings_seg.eeprom_channels_settings.channels_settings;
+	debug("offset:%d", offset);
+	return eeprom_save_config_item(channels_info->eeprom_info, "channels_info->channels_settings", &channels_info->channels_settings, sizeof(channels_settings_t), offset);
+}
+
+static void channels_info_reset_default_config(channels_info_t *channels_info)
+{
+	channels_config_t *channels_config = channels_info->channels_config;
+	channels_settings_t *channels_settings = &channels_info->channels_settings;
+
+	memset(channels_settings, 0, sizeof(channels_settings_t));
+
+	channels_settings->channel_number = channels_config->channel_number;
+
+	channels_settings->channels_power_module_settings.channels_power_module_number = channels_config->power_module_config.channels_power_module_number;
+	channels_settings->channels_power_module_settings.channels_power_module_type = channels_config->power_module_config.channels_power_module_type;
+	channels_settings->card_reader_settings.type = channels_config->card_reader_config.card_reader_type;
+}
+
+static int channels_info_init_config(channels_info_t *channels_info)
+{
+	int ret = 0;
+
+	if(channels_info_load_config(channels_info) == 0) {
+		debug("channels load config successfully!");
+	} else {
+		debug("channels load config failed!");
+		channels_info_reset_default_config(channels_info);
+		ret = channels_info_save_config(channels_info);
+	}
+
+	return ret;
+}
+
 static channels_info_t *alloc_channels_info(channels_config_t *channels_config)
 {
 	channels_info_t *channels_info = NULL;
@@ -165,6 +211,14 @@ static channels_info_t *alloc_channels_info(channels_config_t *channels_config)
 	OS_ASSERT(channels_info != NULL);
 
 	channels_info->channels_config = channels_config;
+	channels_info->eeprom_info = get_or_alloc_eeprom_info(get_or_alloc_spi_info(channels_config->channels_eeprom_config.hspi_eeprom),
+	                             channels_config->channels_eeprom_config.eeprom_cs_port,
+	                             channels_config->channels_eeprom_config.eeprom_cs_pin,
+	                             NULL,
+	                             0);
+	OS_ASSERT(channels_info->eeprom_info != NULL);
+
+	OS_ASSERT(channels_info_init_config(channels_info) == 0);
 
 	channels_info->common_periodic_chain = alloc_callback_chain();
 	OS_ASSERT(channels_info->common_periodic_chain != NULL);
