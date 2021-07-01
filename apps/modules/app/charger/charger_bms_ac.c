@@ -6,7 +6,7 @@
  *   文件名称：charger_bms_ac.c
  *   创 建 者：肖飞
  *   创建日期：2021年06月19日 星期六 19时12分21秒
- *   修改日期：2021年06月21日 星期一 10时47分29秒
+ *   修改日期：2021年07月01日 星期四 17时06分45秒
  *   描    述：
  *
  *================================================================*/
@@ -66,7 +66,7 @@ static void start_cp_pwm(charger_info_t *charger_info)
 		break;
 	}
 
-	__HAL_TIM_SET_COMPARE(channel_config->charger_config.cp_pwm_timer, channel_config->charger_config.cp_pwm_channel, duty);
+	__HAL_TIM_SET_COMPARE((TIM_HandleTypeDef *)channel_config->charger_config.cp_pwm_timer, channel_config->charger_config.cp_pwm_channel, duty);
 }
 
 static void stop_cp_pwm(charger_info_t *charger_info)
@@ -74,7 +74,7 @@ static void stop_cp_pwm(charger_info_t *charger_info)
 	channel_info_t *channel_info = charger_info->channel_info;
 	channel_config_t *channel_config = channel_info->channel_config;
 
-	__HAL_TIM_SET_COMPARE(channel_config->charger_config.cp_pwm_timer, channel_config->charger_config.cp_pwm_channel, CP_PWM_DUTY_STOP);
+	__HAL_TIM_SET_COMPARE((TIM_HandleTypeDef *)channel_config->charger_config.cp_pwm_timer, channel_config->charger_config.cp_pwm_channel, CP_PWM_DUTY_STOP);
 }
 
 static void output_relay_on(charger_info_t *charger_info)

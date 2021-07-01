@@ -6,7 +6,7 @@
  *   文件名称：channels_power_module_native.c
  *   创 建 者：肖飞
  *   创建日期：2021年03月26日 星期五 15时31分18秒
- *   修改日期：2021年07月01日 星期四 14时12分28秒
+ *   修改日期：2021年07月01日 星期四 16时31分40秒
  *   描    述：
  *
  *================================================================*/
@@ -34,7 +34,6 @@ typedef struct {
 	power_modules_info_t *power_modules_info;
 	power_module_item_info_ctx_t *power_module_item_info_ctx;
 
-	callback_item_t periodic_callback_item;
 	uint32_t periodic_stamp;
 } channels_power_module_ctx_t;
 
@@ -81,6 +80,21 @@ static void periodic(void *_channels_power_module_ctx, void *_channels_info)
 	power_modules_periodic(channels_power_module_ctx);
 }
 
+static void power_module_item_info_cb(void *_channels_power_module_ctx, void *_power_module_item_info_args)
+{
+	channels_power_module_ctx_t *channels_power_module_ctx = (channels_power_module_ctx_t *)_channels_power_module_ctx;
+	power_modules_info_t *power_modules_info = channels_power_module_ctx->power_modules_info;
+	power_module_item_info_args_t *power_module_item_info_args = (power_module_item_info_args_t *)_power_module_item_info_args;
+	uint8_t module_id = power_module_item_info_args->module_id;
+
+	if(module_id >= power_modules_info->power_module_number) {
+		power_module_item_info_args->power_module_item_info = NULL;
+		return;
+	}
+
+	power_module_item_info_args->power_module_item_info = &channels_power_module_ctx->power_module_item_info_ctx[module_id].power_module_item_info;
+}
+
 static int init(void *_channels_power_module)
 {
 	int ret = 0;
@@ -117,34 +131,20 @@ static int init(void *_channels_power_module)
 
 	channels_power_module_ctx->power_module_item_info_ctx = power_module_item_info_ctx;
 
-	channels_power_module_ctx->periodic_callback_item.fn = periodic;
-	channels_power_module_ctx->periodic_callback_item.fn_ctx = channels_power_module_ctx;
-	OS_ASSERT(register_callback(channels_info->common_periodic_chain, &channels_power_module_ctx->periodic_callback_item) == 0);
+	remove_callback(channels_info->common_periodic_chain, &channels_power_module->periodic_callback_item);
+	channels_power_module->periodic_callback_item.fn = periodic;
+	channels_power_module->periodic_callback_item.fn_ctx = channels_power_module_ctx;
+	OS_ASSERT(register_callback(channels_info->common_periodic_chain, &channels_power_module->periodic_callback_item) == 0);
+
+	remove_callback(channels_power_module->power_module_item_info_callback_chain, &channels_power_module->power_module_item_info_callback_item);
+	channels_power_module->power_module_item_info_callback_item.fn = power_module_item_info_cb;
+	channels_power_module->power_module_item_info_callback_item.fn_ctx = channels_power_module_ctx;
+	OS_ASSERT(register_callback(channels_power_module->power_module_item_info_callback_chain, &channels_power_module->power_module_item_info_callback_item) == 0);
 
 	return ret;
-}
-
-static int set_output(channel_info_t *channel_info, uint32_t voltage, uint32_t current)
-{
-	return 0;
-}
-
-static power_module_item_info_t *get_power_module_item_info(channels_info_t *channels_info, uint8_t module_id)
-{
-	channels_power_module_t *channels_power_module = (channels_power_module_t *)channels_info->channels_power_module;
-	channels_power_module_ctx_t *channels_power_module_ctx = (channels_power_module_ctx_t *)channels_power_module->ctx;
-	power_modules_info_t *power_modules_info = channels_power_module_ctx->power_modules_info;
-
-	if(module_id >= power_modules_info->power_module_number) {
-		return NULL;
-	}
-
-	return &channels_power_module_ctx->power_module_item_info_ctx[module_id].power_module_item_info;
 }
 
 channels_power_module_callback_t channels_power_module_callback_native = {
 	.type = CHANNELS_POWER_MODULE_TYPE_NATIVE,
 	.init = init,
-	.set_output = set_output,
-	.get_power_module_item_info = get_power_module_item_info,
 };

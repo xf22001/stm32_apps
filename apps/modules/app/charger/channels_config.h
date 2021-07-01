@@ -6,7 +6,7 @@
  *   文件名称：channels_config.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 11时00分11秒
- *   修改日期：2021年07月01日 星期四 13时48分58秒
+ *   修改日期：2021年07月01日 星期四 17时04分48秒
  *   描    述：
  *
  *================================================================*/
@@ -44,20 +44,20 @@ typedef struct {
 	channel_charger_type_t channel_charger_type;
 
 	//ac
-	TIM_HandleTypeDef *cp_pwm_timer;
+	void *cp_pwm_timer;
 	uint32_t cp_pwm_channel;
 
-	GPIO_TypeDef *kl_gpio;
+	void *kl_gpio;
 	uint16_t kl_pin;
-	GPIO_TypeDef *kn_gpio;
+	void *kn_gpio;
 	uint16_t kn_pin;
-	GPIO_TypeDef *rey3_gpio;
+	void *rey3_gpio;
 	uint16_t rey3_pin;
-	GPIO_TypeDef *rey4_gpio;
+	void *rey4_gpio;
 	uint16_t rey4_pin;
 
 	//dc
-	CAN_HandleTypeDef *hcan_bms;
+	void *hcan_bms;
 } channel_charger_config_t;
 
 typedef enum {
@@ -70,18 +70,18 @@ typedef enum {
 
 typedef struct {
 	channel_energy_meter_type_t energy_meter_type;
-	UART_HandleTypeDef *huart_energy_meter;
+	void *huart_energy_meter;
 } channel_energy_meter_config_t;
 
 typedef struct {
 	channel_type_t channel_type;
 	channel_charger_config_t charger_config;
 	channel_energy_meter_config_t energy_meter_config;
-	CAN_HandleTypeDef *hcan_channel_comm;
+	void *hcan_channel_comm;
 	//ac
-	ADC_HandleTypeDef *adhe_ad_adc;
+	void *adhe_ad_adc;
 	uint8_t adhe_ad_adc_rank;
-	ADC_HandleTypeDef *cp_ad_adc;
+	void *cp_ad_adc;
 	uint8_t cp_ad_adc_rank;
 } channel_config_t;
 
@@ -93,16 +93,16 @@ typedef enum {
 
 typedef struct {
 	uint8_t channels_power_module_number;
-	CAN_HandleTypeDef *hcan_power;
+	void *hcan_power;
 	channels_power_module_type_t channels_power_module_type;
 } channels_power_module_config_t;
 
 typedef struct {
-	GPIO_TypeDef *data_port;
+	void *data_port;
 	uint16_t data_pin;
-	GPIO_TypeDef *cs_port;
+	void *cs_port;
 	uint16_t cs_pin;
-	GPIO_TypeDef *clk_port;
+	void *clk_port;
 	uint16_t clk_pin;
 } voice_config_t;
 
@@ -112,12 +112,12 @@ typedef enum {
 
 typedef struct {
 	card_reader_type_t card_reader_type;
-	UART_HandleTypeDef *huart_card_reader;
+	void *huart_card_reader;
 } card_reader_config_t;
 
 typedef struct {
-	SPI_HandleTypeDef *hspi_eeprom;
-	GPIO_TypeDef *eeprom_cs_port;
+	void *hspi_eeprom;
+	void *eeprom_cs_port;
 	uint16_t eeprom_cs_pin;
 } channels_eeprom_config_t;
 
@@ -129,20 +129,20 @@ typedef struct {
 	channels_power_module_config_t power_module_config;
 	voice_config_t voice_config;
 	card_reader_config_t card_reader_config;
-	CAN_HandleTypeDef *hcan_channel_comm;
-	ADC_HandleTypeDef *board_temperature_adc;
+	void *hcan_channel_comm;
+	void *board_temperature_adc;
 	uint8_t board_temperature_adc_rank;
-	GPIO_TypeDef *force_stop_port;
+	void *force_stop_port;
 	uint16_t force_stop_pin;
 
-	GPIO_TypeDef *pe_detect_port;
+	void *pe_detect_port;
 	uint16_t pe_detect_pin;
 
-	GPIO_TypeDef *electric_leakage_detect_cal_port;
+	void *electric_leakage_detect_cal_port;
 	uint16_t electric_leakage_detect_cal_pin;
-	GPIO_TypeDef *electric_leakage_detect_test_port;
+	void *electric_leakage_detect_test_port;
 	uint16_t electric_leakage_detect_test_pin;
-	GPIO_TypeDef *electric_leakage_detect_trip_port;
+	void *electric_leakage_detect_trip_port;
 	uint16_t electric_leakage_detect_trip_pin;
 } channels_config_t;
 

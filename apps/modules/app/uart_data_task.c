@@ -6,7 +6,7 @@
  *   文件名称：uart_data_task.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月25日 星期一 12时51分31秒
- *   修改日期：2021年06月23日 星期三 10时06分29秒
+ *   修改日期：2021年07月01日 星期四 16时35分19秒
  *   描    述：
  *
  *================================================================*/
@@ -33,7 +33,7 @@ int remove_uart_data_task_info_cb(uart_data_task_info_t *uart_data_task_info, ca
 	return ret;
 }
 
-int set_uart_data_task_request_delay(uart_data_task_info_t *uart_data_task_info, uint32_t delay)
+void set_uart_data_task_request_delay(uart_data_task_info_t *uart_data_task_info, uint32_t delay)
 {
 	uart_data_task_info->request_delay = delay;
 }

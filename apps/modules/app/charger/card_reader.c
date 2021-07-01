@@ -1,12 +1,12 @@
 
 
 /*================================================================
- *   
- *   
+ *
+ *
  *   文件名称：card_reader.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月24日 星期一 16时08分40秒
- *   修改日期：2021年07月01日 星期四 10时50分37秒
+ *   修改日期：2021年07月01日 星期四 15时55分22秒
  *   描    述：
  *
  *================================================================*/
@@ -35,16 +35,20 @@ static card_reader_handler_t *get_card_reader_handler(card_reader_type_t card_re
 	return card_reader_handler;
 }
 
-int start_card_reader_cb(card_reader_info_t *card_reader_info, callback_fn_t fn, void *fn_ctx)
+void start_card_reader_cb(card_reader_info_t *card_reader_info, callback_fn_t fn, void *fn_ctx)
 {
-	int ret;
+	card_reader_action_t card_reader_action = CARD_READER_ACTION_START;
 
-	ret = remove_callback(card_reader_info->card_reader_callback_chain, &card_reader_info->card_reader_callback_item);
+	if(remove_callback(card_reader_info->card_reader_callback_chain, &card_reader_info->card_reader_callback_item) != 0) {
+	}
+
 	card_reader_info->card_reader_callback_item.fn = fn;
 	card_reader_info->card_reader_callback_item.fn_ctx = fn_ctx;
-	ret = register_callback(card_reader_info->card_reader_callback_chain, &card_reader_info->card_reader_callback_item);
 
-	return ret;
+	if(register_callback(card_reader_info->card_reader_callback_chain, &card_reader_info->card_reader_callback_item) != 0) {
+	}
+
+	do_callback_chain(card_reader_info->card_reader_action_callback_chain, &card_reader_action);
 }
 
 card_reader_info_t *alloc_card_reader_info(channels_info_t *channels_info)
@@ -58,6 +62,9 @@ card_reader_info_t *alloc_card_reader_info(channels_info_t *channels_info)
 
 	card_reader_info->card_reader_callback_chain = alloc_callback_chain();
 	OS_ASSERT(card_reader_info->card_reader_callback_chain != NULL);
+
+	card_reader_info->card_reader_action_callback_chain = alloc_callback_chain();
+	OS_ASSERT(card_reader_info->card_reader_action_callback_chain != NULL);
 
 	card_reader_info->card_reader_handler = get_card_reader_handler(card_reader_settings->type);
 

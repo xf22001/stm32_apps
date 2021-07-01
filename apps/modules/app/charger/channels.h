@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2021年07月01日 星期四 13时45分59秒
+ *   修改日期：2021年07月01日 星期四 16时54分37秒
  *   描    述：
  *
  *================================================================*/
@@ -205,8 +205,7 @@ typedef struct {
 	card_reader_settings_t card_reader_settings;
 
 	char device_id[32];
-	uint8_t device_type;
-	uint16_t power_module_type;
+	uint8_t power_module_type;//power_module_type_t
 	uint16_t power_threshold;//单位 0.1kW
 	uint8_t magnification;//电表放大倍率.0:2位小数, 1:3位小数
 	price_info_t price_info;

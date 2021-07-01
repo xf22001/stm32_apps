@@ -6,7 +6,7 @@
  *   文件名称：card_reader.h
  *   创 建 者：肖飞
  *   创建日期：2021年05月24日 星期一 16时08分43秒
- *   修改日期：2021年06月23日 星期三 15时49分27秒
+ *   修改日期：2021年07月01日 星期四 16时33分07秒
  *   描    述：
  *
  *================================================================*/
@@ -30,6 +30,11 @@ extern "C"
 #endif
 
 #define CARD_READ_BUFFER_LENGTH 64
+
+typedef enum {
+	CARD_READER_ACTION_NONE = 0,
+	CARD_READER_ACTION_START,
+} card_reader_action_t;
 
 typedef int (*card_reader_handler_init_t)(void *_card_reader_info);
 typedef int (*card_reader_handler_deinit_t)(void *_card_reader_info);
@@ -58,10 +63,14 @@ typedef struct {
 	callback_chain_t *card_reader_callback_chain;
 	callback_item_t card_reader_callback_item;
 
+	//card action
+	callback_chain_t *card_reader_action_callback_chain;
+	callback_item_t card_reader_action_callback_item;
+
 	uint32_t periodic_stamps;
 } card_reader_info_t;
 
-int start_card_reader_cb(card_reader_info_t *card_reader_info, callback_fn_t fn, void *fn_ctx);
+void start_card_reader_cb(card_reader_info_t *card_reader_info, callback_fn_t fn, void *fn_ctx);
 card_reader_info_t *alloc_card_reader_info(channels_info_t *channels_info);
 
 #endif //_CARD_READER_H

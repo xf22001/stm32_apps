@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年07月01日 星期四 15时08分44秒
+ *   修改日期：2021年07月01日 星期四 16时26分35秒
  *   描    述：
  *
  *================================================================*/
@@ -856,20 +856,11 @@ static uint32_t get_sse_module_state_mask(channels_info_t *channels_info)
 	uint8_t *cells = (uint8_t *)&mask;
 	channels_settings_t *channels_settings = &channels_info->channels_settings;
 	channels_power_module_t *channels_power_module = (channels_power_module_t *)channels_info->channels_power_module;
-	channels_power_module_callback_t *channels_power_module_callback = channels_power_module->channels_power_module_callback;
 	int i = 0;
 	int channels_power_module_number = channels_settings->channels_power_module_settings.channels_power_module_number;
 
-	if(channels_power_module_callback == NULL) {
-		return mask;
-	}
-
-	if(channels_power_module_callback->get_power_module_item_info == NULL) {
-		return mask;
-	}
-
 	for(i = 0; i < channels_power_module_number; i++) {
-		power_module_item_info_t *power_module_item_info = channels_power_module_callback->get_power_module_item_info(channels_info, i);
+		power_module_item_info_t *power_module_item_info = get_power_module_item_info(channels_power_module, i);
 		int j = i / 8;
 		int k = i % 8;
 		cells[j] = set_u8_bits(cells[j], k, power_module_item_info->error.fault);
@@ -889,10 +880,6 @@ static uint32_t get_sse_module_state_value(channels_info_t *channels_info)
 	int channels_power_module_number = channels_settings->channels_power_module_settings.channels_power_module_number;
 
 	if(channels_power_module_callback == NULL) {
-		return state;
-	}
-
-	if(channels_power_module_callback->get_power_module_item_info == NULL) {
 		return state;
 	}
 

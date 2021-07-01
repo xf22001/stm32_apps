@@ -6,7 +6,7 @@
  *   文件名称：channels_power_module.c
  *   创 建 者：肖飞
  *   创建日期：2021年03月26日 星期五 17时18分33秒
- *   修改日期：2021年07月01日 星期四 14时14分23秒
+ *   修改日期：2021年07月01日 星期四 16时30分47秒
  *   描    述：
  *
  *================================================================*/
@@ -36,9 +36,15 @@ static channels_power_module_callback_t *get_channels_power_module_callback(chan
 	return channels_power_module_callback;
 }
 
-static void periodic(void *_channels_power_module, void *_channels_info)
+power_module_item_info_t *get_power_module_item_info(channels_power_module_t *channels_power_module, uint8_t module_id)
 {
-	//debug("");
+	power_module_item_info_t *power_module_item_info = NULL;
+	power_module_item_info_args_t power_module_item_info_args;
+	power_module_item_info_args.module_id = module_id;
+	power_module_item_info_args.power_module_item_info = NULL;
+	do_callback_chain(channels_power_module->power_module_item_info_callback_chain, &power_module_item_info_args);
+	power_module_item_info = power_module_item_info_args.power_module_item_info;
+	return power_module_item_info;
 }
 
 static int channels_power_module_init(channels_power_module_t *channels_power_module)
@@ -48,10 +54,8 @@ static int channels_power_module_init(channels_power_module_t *channels_power_mo
 	channels_settings_t *channels_settings = &channels_info->channels_settings;
 	channels_power_module_type_t type = channels_settings->channels_power_module_settings.channels_power_module_type;
 
-	channels_power_module->periodic_callback_item.fn = periodic;
-	channels_power_module->periodic_callback_item.fn_ctx = channels_power_module;
-
-	OS_ASSERT(register_callback(channels_info->common_periodic_chain, &channels_power_module->periodic_callback_item) == 0);
+	channels_power_module->power_module_item_info_callback_chain = alloc_callback_chain();
+	OS_ASSERT(channels_power_module->power_module_item_info_callback_chain != NULL);
 
 	channels_power_module->channels_power_module_callback = get_channels_power_module_callback(type);
 

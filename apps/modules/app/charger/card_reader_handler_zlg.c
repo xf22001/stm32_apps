@@ -6,7 +6,7 @@
  *   文件名称：card_reader_handler_zlg.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月24日 星期一 16时49分13秒
- *   修改日期：2021年06月23日 星期三 15时51分09秒
+ *   修改日期：2021年07月01日 星期四 15时52分28秒
  *   描    述：
  *
  *================================================================*/
@@ -88,6 +88,7 @@ typedef enum {
 } card_reader_handler_state_t;
 
 typedef struct {
+	card_reader_action_t action;
 	card_reader_handler_state_t state;
 	card_data_t card_data;
 } card_reader_handler_ctx_t;
@@ -401,7 +402,10 @@ static void uart_data_request(void *fn_ctx, void *chain_ctx)
 		break;
 
 		case CARD_READER_HANDLER_STATE_IDLE: {
-			card_reader_handler_ctx->state = CARD_READER_HANDLER_STATE_AUTO_DETECT;
+			if(card_reader_handler_ctx->action == CARD_READER_ACTION_START) {
+				card_reader_handler_ctx->action = CARD_READER_ACTION_NONE;
+				card_reader_handler_ctx->state = CARD_READER_HANDLER_STATE_AUTO_DETECT;
+			}
 		}
 		break;
 
@@ -442,6 +446,12 @@ static void uart_data_request(void *fn_ctx, void *chain_ctx)
 	}
 }
 
+static void card_reader_action_cb(void *fn_ctx, void *chain_ctx)
+{
+	card_reader_action_t *action = (card_reader_action_t *)chain_ctx;
+	card_reader_handler_ctx->action = *action;
+}
+
 static int init(void *_card_reader_info)
 {
 	int ret = 0;
@@ -466,6 +476,11 @@ static int init(void *_card_reader_info)
 	card_reader_info->uart_data_request_cb.fn = uart_data_request;
 	card_reader_info->uart_data_request_cb.fn_ctx = card_reader_info;
 	add_uart_data_task_info_cb(uart_data_task_info, &card_reader_info->uart_data_request_cb);
+
+	ret = remove_callback(card_reader_info->card_reader_callback_chain, &card_reader_info->card_reader_action_callback_item);
+	card_reader_info->card_reader_action_callback_item.fn = card_reader_action_cb;
+	card_reader_info->card_reader_action_callback_item.fn_ctx = card_reader_info;
+	ret = register_callback(card_reader_info->card_reader_callback_chain, &card_reader_info->card_reader_action_callback_item);
 
 	return ret;
 }
