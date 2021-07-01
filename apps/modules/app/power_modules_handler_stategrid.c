@@ -6,7 +6,7 @@
  *   文件名称：power_modules_handler_stategrid.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月16日 星期五 16时31分34秒
- *   修改日期：2021年06月30日 星期三 17时38分53秒
+ *   修改日期：2021年07月01日 星期四 09时37分58秒
  *   描    述：
  *
  *================================================================*/
@@ -138,7 +138,7 @@ static void _set_out_voltage_current(power_modules_info_t *power_modules_info, i
 	power_module_info_t *power_module_info = power_modules_info->power_module_info + module_id;
 
 	if(power_module_info->power_module_status.poweroff == 0) {
-		power_modules_info->power_module_info[module_id].cmd_ctx[MODULE_COMMAND_REMOTE_CONTROL].state = COMMAND_STATE_REQUEST;
+		power_module_info->cmd_ctx[MODULE_COMMAND_REMOTE_CONTROL].state = COMMAND_STATE_REQUEST;
 	}
 }
 
@@ -166,13 +166,12 @@ static int request_remote_control(power_modules_info_t *power_modules_info, int 
 	} else {
 		if(power_module_info->power_module_status.poweroff == 0) {
 			remote_control_data->op_code = 0x05;
-			remote_control_data->power_assign_relay_state = 0x01;
-			remote_control_data->main_relay_state = 0x01;
 		} else {
 			remote_control_data->op_code = 0x03;
-			remote_control_data->power_assign_relay_state = 0x01;
-			remote_control_data->main_relay_state = 0x01;
 		}
+
+		remote_control_data->power_assign_relay_state = 0x01;
+		remote_control_data->main_relay_state = 0x01;
 	}
 
 	remote_control_data->output_mode = (voltage >= 5000) ? 0x01 : 0x00;
