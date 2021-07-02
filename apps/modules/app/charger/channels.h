@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2021年07月02日 星期五 17时21分26秒
+ *   修改日期：2021年07月02日 星期五 23时27分02秒
  *   描    述：
  *
  *================================================================*/
@@ -42,31 +42,17 @@ typedef enum {
 
 typedef struct {
 	uint8_t channel_id;
-	channel_event_type_t type;
-	uint8_t reason;//channel_record_item_start_reason_t|channel_record_item_stop_reason_t
-
-	uint8_t serial_no[32];
-
-	uint8_t account[32];
-	uint8_t password[32];
-	uint32_t account_balance;
-
-	uint8_t charge_mode;//channel_record_charge_mode_t
-	uint32_t amount;
-	uint32_t stop_soc;
-	time_t start_time;
-	time_t stop_time;
-	uint8_t vin[17];
+	uint8_t type;//channel_event_type_t
 } channel_event_t;
 
 //all channels event type
 typedef enum {
-	CHANNELS_EVENT_CHANNEL_UNKNOW = 0,
-	CHANNELS_EVENT_CHANNEL_INSULATION,
-	CHANNELS_EVENT_CHANNEL_TELEMETER,
-	CHANNELS_EVENT_CHANNEL_CARD_READER,
-	CHANNELS_EVENT_CHANNEL_DISPLAY,
-	CHANNELS_EVENT_CHANNEL_EVENT,
+	CHANNELS_EVENT_UNKNOW = 0,
+	CHANNELS_EVENT_INSULATION,
+	CHANNELS_EVENT_TELEMETER,
+	CHANNELS_EVENT_CARD_READER,
+	CHANNELS_EVENT_DISPLAY,
+	CHANNELS_EVENT_CHANNEL,
 } channels_event_type_t;
 
 //all channels event typedef
@@ -90,6 +76,7 @@ typedef enum {
 	CHANNEL_STATE_NONE = 0,
 	CHANNEL_STATE_IDLE,
 	CHANNEL_STATE_START,
+	CHANNEL_STATE_WAITING,
 	CHANNEL_STATE_STARTING,
 	CHANNEL_STATE_CHARGING,
 	CHANNEL_STATE_STOP,
@@ -141,6 +128,27 @@ typedef struct {
 #pragma pack(pop)
 
 typedef struct {
+	uint8_t start_reason;//channel_record_item_start_reason_t
+	uint8_t charge_mode;//channel_record_charge_mode_t
+
+	uint64_t card_id;
+
+	uint8_t serial_no[32];
+
+	uint8_t account[32];
+	uint8_t password[32];
+	uint32_t account_balance;
+
+	uint32_t stop_soc;
+	time_t start_time;
+	time_t stop_time;
+} channel_event_start_t;
+
+typedef struct {
+	uint8_t stop_reason;//channel_record_item_stop_reason_t
+} channel_event_stop_t;
+
+typedef struct {
 	channel_config_t *channel_config;
 	uint8_t channel_id;
 	void *channels_info;
@@ -181,6 +189,7 @@ typedef struct {
 	uint16_t adhe_ad;
 
 	uint32_t total_energy;//0.0001kwh
+	uint32_t total_energy_base;//0.0001kwh
 	uint32_t voltage;
 	uint32_t current;
 
@@ -192,6 +201,8 @@ typedef struct {
 	uint16_t cc;
 
 	channel_record_item_t channel_record_item;
+	channel_event_start_t channel_event_start;
+	channel_event_stop_t channel_event_stop;
 
 	uint8_t auxiliary_power_type;//auxiliary_power_type_t
 } channel_info_t;

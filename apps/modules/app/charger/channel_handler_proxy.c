@@ -6,7 +6,7 @@
  *   文件名称：channel_handler_proxy.c
  *   创 建 者：肖飞
  *   创建日期：2021年06月05日 星期六 22时43分22秒
- *   修改日期：2021年06月20日 星期日 00时06分05秒
+ *   修改日期：2021年07月02日 星期五 19时59分50秒
  *   描    述：
  *
  *================================================================*/
@@ -103,7 +103,7 @@ static void handle_channel_handler_event(void *_channel_info, void *_channels_ev
 	channel_event_t *channel_event;
 	uint8_t match = 0;
 
-	if(channels_event->type != CHANNELS_EVENT_CHANNEL_EVENT) {
+	if(channels_event->type != CHANNELS_EVENT_CHANNEL) {
 		return;
 	}
 

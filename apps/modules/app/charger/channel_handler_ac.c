@@ -6,7 +6,7 @@
  *   文件名称：channel_handler_ac.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月11日 星期二 09时20分53秒
- *   修改日期：2021年06月20日 星期日 00时09分33秒
+ *   修改日期：2021年07月02日 星期五 19时59分10秒
  *   描    述：
  *
  *================================================================*/
@@ -102,7 +102,7 @@ static void handle_channel_handler_event(void *_channel_info, void *_channels_ev
 	channel_event_t *channel_event;
 	uint8_t match = 0;
 
-	if(channels_event->type != CHANNELS_EVENT_CHANNEL_EVENT) {
+	if(channels_event->type != CHANNELS_EVENT_CHANNEL) {
 		return;
 	}
 

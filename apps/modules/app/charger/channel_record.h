@@ -6,7 +6,7 @@
  *   文件名称：channel_record.h
  *   创 建 者：肖飞
  *   创建日期：2021年05月23日 星期日 13时40分28秒
- *   修改日期：2021年07月02日 星期五 17时21分07秒
+ *   修改日期：2021年07月02日 星期五 23时25分58秒
  *   描    述：
  *
  *================================================================*/
@@ -111,7 +111,7 @@ typedef enum {
 
 typedef enum {
 	CHANNEL_RECORD_CHARGE_MODE_UNKNOW = 0,
-	CHANNEL_RECORD_CHARGE_MODE_AMOUNT,
+	CHANNEL_RECORD_CHARGE_MODE_ACCOUNT_BALANCE,
 	CHANNEL_RECORD_CHARGE_MODE_SOC,
 	CHANNEL_RECORD_CHARGE_MODE_TIME,
 	CHANNEL_RECORD_CHARGE_MODE_VIN,
@@ -119,15 +119,14 @@ typedef enum {
 
 typedef struct {
 	uint16_t id;
-	uint8_t channel_id;
 	uint8_t state;//channel_record_item_state_t
-	uint8_t charge_mode;//channel_record_charge_mode_t
-	uint8_t start_reason;//channel_record_item_start_reason_t
-	uint8_t stop_reason;//channel_record_item_stop_reason_t
-	uint64_t card_id;
-
 	time_t start_time;
 	time_t stop_time;
+
+	uint8_t channel_id;
+	uint8_t start_reason;//channel_record_item_start_reason_t
+	uint8_t stop_reason;//channel_record_item_stop_reason_t
+	uint8_t charge_mode;//channel_record_charge_mode_t
 
 	uint8_t vin[17];
 	uint8_t chm_version_1;//0x01
@@ -143,10 +142,12 @@ typedef struct {
 
 	uint8_t serial_no[32];
 
-	uint32_t withholding;//告诉后台此卡的预扣款是多少 0.01 元
+	uint64_t card_id;
 	uint8_t account[32];
 	uint8_t password[32];
 	uint32_t account_balance;
+	uint32_t withholding;//告诉后台此卡的预扣款是多少 0.01 元
+
 	uint32_t amount;
 	uint32_t start_total_energy;//0.0001kwh
 	uint32_t stop_total_energy;//0.0001kwh

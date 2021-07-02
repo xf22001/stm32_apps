@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分12秒
- *   修改日期：2021年07月01日 星期四 13时51分23秒
+ *   修改日期：2021年07月02日 星期五 23时26分03秒
  *   描    述：
  *
  *================================================================*/
@@ -54,6 +54,7 @@ char *get_channel_state_des(channel_state_t state)
 			add_des_case(CHANNEL_STATE_NONE);
 			add_des_case(CHANNEL_STATE_IDLE);
 			add_des_case(CHANNEL_STATE_START);
+			add_des_case(CHANNEL_STATE_WAITING);
 			add_des_case(CHANNEL_STATE_STARTING);
 			add_des_case(CHANNEL_STATE_CHARGING);
 			add_des_case(CHANNEL_STATE_STOP);
@@ -114,6 +115,75 @@ static void handle_channel_request_state(channel_info_t *channel_info)
 	channel_info->request_state = CHANNEL_STATE_NONE;
 }
 
+static void update_channel_start_event(channel_info_t *channel_info)
+{
+	channel_info->channel_record_item.channel_id = channel_info->channel_id;
+	channel_info->channel_record_item.start_reason = channel_info->channel_event_start.start_reason;
+	channel_info->channel_record_item.charge_mode = channel_info->channel_event_start.charge_mode;
+	memcpy(channel_info->channel_record_item.serial_no, channel_info->channel_event_start.serial_no, sizeof(channel_info->channel_record_item.serial_no));
+	channel_info->channel_record_item.card_id = channel_info->channel_event_start.card_id;
+	memcpy(channel_info->channel_record_item.account, channel_info->channel_event_start.account, sizeof(channel_info->channel_record_item.account));
+	memcpy(channel_info->channel_record_item.password, channel_info->channel_event_start.password, sizeof(channel_info->channel_record_item.password));
+	channel_info->channel_record_item.account_balance = channel_info->channel_event_start.account_balance;
+	channel_info->channel_record_item.start_total_energy = channel_info->total_energy;
+
+	switch(channel_info->channel_event_start.charge_mode) {
+		case CHANNEL_RECORD_CHARGE_MODE_ACCOUNT_BALANCE: {
+			set_channel_request_state(channel_info, CHANNEL_STATE_STARTING);
+		}
+		break;
+
+		case CHANNEL_RECORD_CHARGE_MODE_SOC: {
+			channel_info->channel_record_item.stop_soc = channel_info->channel_event_start.stop_soc;
+			set_channel_request_state(channel_info, CHANNEL_STATE_STARTING);
+		}
+		break;
+
+		case CHANNEL_RECORD_CHARGE_MODE_TIME: {
+			channel_info->channel_record_item.start_time = channel_info->channel_event_start.start_time;
+			channel_info->channel_record_item.stop_time = channel_info->channel_event_start.stop_time;
+			set_channel_request_state(channel_info, CHANNEL_STATE_WAITING);
+		}
+		break;
+
+		case CHANNEL_RECORD_CHARGE_MODE_VIN: {
+			set_channel_request_state(channel_info, CHANNEL_STATE_STARTING);
+		}
+		break;
+
+		default: {
+			app_panic();
+		}
+		break;
+	}
+
+	memset(&channel_info->channel_event_start, 0, sizeof(channel_info->channel_event_start));
+
+	channel_info->total_energy_base = channel_info->channel_record_item.start_total_energy;
+}
+
+static void channel_start_waiting(channel_info_t *channel_info)
+{
+	switch(channel_info->channel_event_start.charge_mode) {
+		case CHANNEL_RECORD_CHARGE_MODE_TIME: {
+			if(get_time() >= channel_info->channel_record_item.start_time) {
+				set_channel_request_state(channel_info, CHANNEL_STATE_STARTING);
+			}
+		}
+		break;
+
+		default: {
+		}
+		break;
+	}
+}
+
+static void update_channel_stop_event(channel_info_t *channel_info)
+{
+	channel_set_stop_reason(channel_info, channel_info->channel_event_stop.stop_reason);
+	memset(&channel_info->channel_event_stop, 0, sizeof(channel_info->channel_event_stop));
+}
+
 static void handle_channel_state(channel_info_t *channel_info)
 {
 	switch(channel_info->state) {
@@ -124,7 +194,12 @@ static void handle_channel_state(channel_info_t *channel_info)
 
 		case CHANNEL_STATE_START: {
 			do_callback_chain(channel_info->start_chain, channel_info);
-			set_channel_request_state(channel_info, CHANNEL_STATE_STARTING);
+			update_channel_start_event(channel_info);
+		}
+		break;
+
+		case CHANNEL_STATE_WAITING: {
+			channel_start_waiting(channel_info);
 		}
 		break;
 
@@ -139,6 +214,7 @@ static void handle_channel_state(channel_info_t *channel_info)
 		break;
 
 		case CHANNEL_STATE_STOP: {
+			update_channel_stop_event(channel_info);
 			do_callback_chain(channel_info->stop_chain, channel_info);
 			set_channel_request_state(channel_info, CHANNEL_STATE_STOPPING);
 		}
@@ -233,14 +309,14 @@ void handle_channel_amount(channel_info_t *channel_info)
 	}
 
 	price = get_current_price(channels_info, ts);
-	delta_energy = channel_info->total_energy - channel_info->channel_record_item.start_total_energy;
+	delta_energy = channel_info->total_energy - channel_info->total_energy_base;
 
 	//todo clear
 	channel_info->channel_record_item.energy_seg[get_seg_index_by_ts(ts)] += delta_energy;
 	channel_info->channel_record_item.energy += delta_energy;
 	channel_info->channel_record_item.amount += delta_energy * price;
 
-	channel_info->channel_record_item.start_total_energy = channel_info->total_energy;
+	channel_info->total_energy_base = channel_info->total_energy;
 }
 
 static void handle_channel_stop_amount(channel_info_t *channel_info)
@@ -305,7 +381,6 @@ static int _handle_channel_event(channel_info_t *channel_info, channel_event_t *
 				case CHANNEL_STATE_START:
 				case CHANNEL_STATE_STARTING:
 				case CHANNEL_STATE_CHARGING: {
-					channel_set_stop_reason(channel_info, channel_event->reason);
 					set_channel_request_state(channel_info, CHANNEL_STATE_STOP);
 					ret = 0;
 				}
@@ -333,7 +408,7 @@ static void handle_channel_event(void *_channel_info, void *_channels_event)
 	channel_event_t *channel_event;
 	uint8_t match = 0;
 
-	if(channels_event->type != CHANNELS_EVENT_CHANNEL_EVENT) {
+	if(channels_event->type != CHANNELS_EVENT_CHANNEL) {
 		return;
 	}
 
