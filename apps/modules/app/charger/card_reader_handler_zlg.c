@@ -6,7 +6,7 @@
  *   文件名称：card_reader_handler_zlg.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月24日 星期一 16时49分13秒
- *   修改日期：2021年07月01日 星期四 15时52分28秒
+ *   修改日期：2021年07月02日 星期五 11时32分47秒
  *   描    述：
  *
  *================================================================*/
@@ -92,8 +92,6 @@ typedef struct {
 	card_reader_handler_state_t state;
 	card_data_t card_data;
 } card_reader_handler_ctx_t;
-
-static card_reader_handler_ctx_t *card_reader_handler_ctx = NULL;
 
 static uint8_t zlg_bcc(uint8_t *data, uint8_t len)
 {
@@ -292,6 +290,7 @@ static int card_reader_card_data_read(card_reader_info_t *card_reader_info)
 	int ret = 0;
 	int received;
 
+	card_reader_handler_ctx_t *card_reader_handler_ctx = (card_reader_handler_ctx_t *)card_reader_info->ctx;
 	zlg_frame_rx_header_t *zlg_frame_rx_header = (zlg_frame_rx_header_t *)card_reader_info->rx_buffer;
 	uint8_t *zlg_frame_data = (uint8_t *)(zlg_frame_rx_header + 1);
 	uint8_t type;
@@ -333,6 +332,7 @@ static int card_reader_card_data_write(card_reader_info_t *card_reader_info)
 	int ret = 0;
 	int received;
 
+	card_reader_handler_ctx_t *card_reader_handler_ctx = (card_reader_handler_ctx_t *)card_reader_info->ctx;
 	zlg_frame_tx_header_t *zlg_frame_tx_header = (zlg_frame_tx_header_t *)card_reader_info->tx_buffer;
 	zlg_frame_rx_header_t *zlg_frame_rx_header = (zlg_frame_rx_header_t *)card_reader_info->rx_buffer;
 	uint8_t type;
@@ -380,6 +380,7 @@ static int card_reader_card_data_write(card_reader_info_t *card_reader_info)
 static void uart_data_request(void *fn_ctx, void *chain_ctx)
 {
 	card_reader_info_t *card_reader_info = (card_reader_info_t *)fn_ctx;
+	card_reader_handler_ctx_t *card_reader_handler_ctx = (card_reader_handler_ctx_t *)card_reader_info->ctx;
 	int ret = -1;
 
 	switch(card_reader_handler_ctx->state) {
@@ -448,6 +449,8 @@ static void uart_data_request(void *fn_ctx, void *chain_ctx)
 
 static void card_reader_action_cb(void *fn_ctx, void *chain_ctx)
 {
+	card_reader_info_t *card_reader_info = (card_reader_info_t *)fn_ctx;
+	card_reader_handler_ctx_t *card_reader_handler_ctx = (card_reader_handler_ctx_t *)card_reader_info->ctx;
 	card_reader_action_t *action = (card_reader_action_t *)chain_ctx;
 	card_reader_handler_ctx->action = *action;
 }
@@ -459,28 +462,33 @@ static int init(void *_card_reader_info)
 	channels_info_t *channels_info = card_reader_info->channels_info;
 	channels_config_t *channels_config = channels_info->channels_config;
 	uart_data_task_info_t *uart_data_task_info;
+	card_reader_handler_ctx_t *card_reader_handler_ctx;
 
-	if(card_reader_handler_ctx == NULL) {
-		card_reader_handler_ctx = (card_reader_handler_ctx_t *)os_calloc(1, sizeof(card_reader_handler_ctx_t));
-		OS_ASSERT(card_reader_handler_ctx != NULL);
-	}
-
+	card_reader_handler_ctx = os_calloc(1, sizeof(card_reader_handler_ctx_t));
+	OS_ASSERT(card_reader_handler_ctx != NULL);
 	card_reader_handler_ctx->state = CARD_READER_HANDLER_STATE_SET_BAUDRATE;
-
-	card_reader_info->uart_info = get_or_alloc_uart_info(channels_config->card_reader_config.huart_card_reader);
-	OS_ASSERT(card_reader_info->uart_info != NULL);
 
 	uart_data_task_info = get_or_alloc_uart_data_task_info(channels_config->card_reader_config.huart_card_reader);
 	OS_ASSERT(uart_data_task_info != NULL);
 
-	card_reader_info->uart_data_request_cb.fn = uart_data_request;
-	card_reader_info->uart_data_request_cb.fn_ctx = card_reader_info;
-	add_uart_data_task_info_cb(uart_data_task_info, &card_reader_info->uart_data_request_cb);
+	remove_uart_data_task_info_cb(uart_data_task_info, &card_reader_info->uart_data_request_cb);
+	remove_callback(card_reader_info->card_reader_callback_chain, &card_reader_info->card_reader_action_callback_item);
 
-	ret = remove_callback(card_reader_info->card_reader_callback_chain, &card_reader_info->card_reader_action_callback_item);
+	if(card_reader_info->ctx != NULL) {
+		os_free(card_reader_info->ctx);
+	}
+
+	card_reader_info->ctx = card_reader_handler_ctx;
+
 	card_reader_info->card_reader_action_callback_item.fn = card_reader_action_cb;
 	card_reader_info->card_reader_action_callback_item.fn_ctx = card_reader_info;
-	ret = register_callback(card_reader_info->card_reader_callback_chain, &card_reader_info->card_reader_action_callback_item);
+	OS_ASSERT(register_callback(card_reader_info->card_reader_callback_chain, &card_reader_info->card_reader_action_callback_item) == 0);
+
+	card_reader_info->uart_info = get_or_alloc_uart_info(channels_config->card_reader_config.huart_card_reader);
+	OS_ASSERT(card_reader_info->uart_info != NULL);
+	card_reader_info->uart_data_request_cb.fn = uart_data_request;
+	card_reader_info->uart_data_request_cb.fn_ctx = card_reader_info;
+	OS_ASSERT(add_uart_data_task_info_cb(uart_data_task_info, &card_reader_info->uart_data_request_cb) == 0);
 
 	return ret;
 }

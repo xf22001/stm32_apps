@@ -1,12 +1,12 @@
 
 
 /*================================================================
- *   
- *   
+ *
+ *
  *   文件名称：energy_meter_handler_dc.c
  *   创 建 者：肖飞
  *   创建日期：2021年06月05日 星期六 12时59分07秒
- *   修改日期：2021年06月24日 星期四 11时33分00秒
+ *   修改日期：2021年07月02日 星期五 11时25分55秒
  *   描    述：
  *
  *================================================================*/
@@ -65,14 +65,20 @@ static int init_dc(void *_energy_meter_info)
 	energy_meter_handler_ctx_t *energy_meter_handler_ctx = (energy_meter_handler_ctx_t *)os_calloc(1, sizeof(energy_meter_handler_ctx_t));
 	OS_ASSERT(energy_meter_handler_ctx != NULL);
 
+	uart_data_task_info = get_or_alloc_uart_data_task_info(channel_config->energy_meter_config.huart_energy_meter);
+	OS_ASSERT(uart_data_task_info != NULL);
+
+	remove_uart_data_task_info_cb(uart_data_task_info, &energy_meter_info->uart_data_request_cb);
+
+	if(energy_meter_info->ctx != NULL) {
+		os_free(energy_meter_info->ctx);
+	}
+
 	energy_meter_info->ctx = energy_meter_handler_ctx;
 
 	energy_meter_info->uart_info = get_or_alloc_uart_info(channel_config->energy_meter_config.huart_energy_meter);
 	energy_meter_info->dlt_645_master_info = get_or_alloc_dlt_645_master_info(energy_meter_info->uart_info);
 	OS_ASSERT(energy_meter_info->dlt_645_master_info != NULL);
-
-	uart_data_task_info = get_or_alloc_uart_data_task_info(channel_config->energy_meter_config.huart_energy_meter);
-	OS_ASSERT(uart_data_task_info != NULL);
 
 	set_uart_data_task_request_delay(uart_data_task_info, 1000);
 	energy_meter_info->uart_data_request_cb.fn = uart_data_request;

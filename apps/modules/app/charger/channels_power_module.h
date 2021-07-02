@@ -6,7 +6,7 @@
  *   文件名称：channels_power_module.h
  *   创 建 者：肖飞
  *   创建日期：2021年03月26日 星期五 15时31分23秒
- *   修改日期：2021年07月01日 星期四 16时27分22秒
+ *   修改日期：2021年07月02日 星期五 10时37分10秒
  *   描    述：
  *
  *================================================================*/
@@ -73,10 +73,19 @@ typedef struct {
 	power_module_item_error_t error;
 } power_module_item_info_t;
 
+typedef enum {
+	CHANNELS_POWER_MODULE_CMD_GET_POWER_MODULE_ITEM_INFO = 0,
+} channels_power_module_cmd_t;
+
+typedef struct {
+	uint8_t cmd;//channels_power_module_cmd_t
+	void *args;
+} channels_power_module_cmd_ctx_t;
+
 typedef struct {
 	uint8_t module_id;
 	power_module_item_info_t *power_module_item_info;
-} power_module_item_info_args_t;
+} get_power_module_item_info_args_t;
 
 typedef int (*channels_power_module_init_t)(void *channels_power_module);
 
@@ -88,8 +97,8 @@ typedef struct {
 typedef struct {
 	channels_info_t *channels_info;
 	//power_module_item_info;
-	callback_chain_t *power_module_item_info_callback_chain;
-	callback_item_t power_module_item_info_callback_item;
+	callback_chain_t *power_module_cmd_callback_chain;
+	callback_item_t power_module_cmd_callback_item;
 	channels_power_module_callback_t *channels_power_module_callback;
 	void *ctx;
 	callback_item_t periodic_callback_item;
