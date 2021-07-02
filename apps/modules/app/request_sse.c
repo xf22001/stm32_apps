@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年07月01日 星期四 16时26分35秒
+ *   修改日期：2021年07月02日 星期五 14时56分22秒
  *   描    述：
  *
  *================================================================*/
@@ -2892,7 +2892,6 @@ static void sse_response(void *ctx, uint8_t *request, uint16_t request_size, uin
 		} else {
 			debug("device cmd:%d(%s) response", item->cmd, get_net_client_cmd_device_des(item->cmd));
 			handled = 1;
-
 		}
 	}
 
@@ -2930,8 +2929,13 @@ static void sse_response(void *ctx, uint8_t *request, uint16_t request_size, uin
 				}
 			} else {
 				debug("channel %d cmd:%d(%s) response", j, item->cmd, get_net_client_cmd_channel_des(item->cmd));
+				handled = 1;
 				break;
 			}
+		}
+
+		if(handled == 1) {
+			break;
 		}
 	}
 
