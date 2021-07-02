@@ -6,7 +6,7 @@
  *   文件名称：channel_record.h
  *   创 建 者：肖飞
  *   创建日期：2021年05月23日 星期日 13时40分28秒
- *   修改日期：2021年06月26日 星期六 12时33分54秒
+ *   修改日期：2021年07月02日 星期五 17时21分07秒
  *   描    述：
  *
  *================================================================*/
@@ -46,7 +46,8 @@ typedef enum {
 } channel_record_item_state_t;
 
 typedef enum {
-	CHANNEL_RECORD_ITEM_START_REASON_MANUAL = 0,
+	CHANNEL_RECORD_ITEM_START_REASON_NONE = 0,
+	CHANNEL_RECORD_ITEM_START_REASON_MANUAL,
 	CHANNEL_RECORD_ITEM_START_REASON_CARD,
 	CHANNEL_RECORD_ITEM_START_REASON_REMOTE,
 	CHANNEL_RECORD_ITEM_START_REASON_VIN,
@@ -108,10 +109,19 @@ typedef enum {
 	CHANNEL_RECORD_ITEM_STOP_REASON_AC_CHARGER_CC1_READY_1_TIMEOUT,
 } channel_record_item_stop_reason_t;
 
+typedef enum {
+	CHANNEL_RECORD_CHARGE_MODE_UNKNOW = 0,
+	CHANNEL_RECORD_CHARGE_MODE_AMOUNT,
+	CHANNEL_RECORD_CHARGE_MODE_SOC,
+	CHANNEL_RECORD_CHARGE_MODE_TIME,
+	CHANNEL_RECORD_CHARGE_MODE_VIN,
+} channel_record_charge_mode_t;
+
 typedef struct {
 	uint16_t id;
 	uint8_t channel_id;
 	uint8_t state;//channel_record_item_state_t
+	uint8_t charge_mode;//channel_record_charge_mode_t
 	uint8_t start_reason;//channel_record_item_start_reason_t
 	uint8_t stop_reason;//channel_record_item_stop_reason_t
 	uint64_t card_id;
@@ -131,7 +141,11 @@ typedef struct {
 	uint8_t start_soc;
 	uint8_t stop_soc;
 
+	uint8_t serial_no[32];
+
 	uint32_t withholding;//告诉后台此卡的预扣款是多少 0.01 元
+	uint8_t account[32];
+	uint8_t password[32];
 	uint32_t account_balance;
 	uint32_t amount;
 	uint32_t start_total_energy;//0.0001kwh

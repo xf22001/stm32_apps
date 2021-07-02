@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2021年07月01日 星期四 16时54分37秒
+ *   修改日期：2021年07月02日 星期五 17时21分26秒
  *   描    述：
  *
  *================================================================*/
@@ -43,7 +43,20 @@ typedef enum {
 typedef struct {
 	uint8_t channel_id;
 	channel_event_type_t type;
-	uint8_t reason;
+	uint8_t reason;//channel_record_item_start_reason_t|channel_record_item_stop_reason_t
+
+	uint8_t serial_no[32];
+
+	uint8_t account[32];
+	uint8_t password[32];
+	uint32_t account_balance;
+
+	uint8_t charge_mode;//channel_record_charge_mode_t
+	uint32_t amount;
+	uint32_t stop_soc;
+	time_t start_time;
+	time_t stop_time;
+	uint8_t vin[17];
 } channel_event_t;
 
 //all channels event type
