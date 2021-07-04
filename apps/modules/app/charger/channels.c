@@ -6,7 +6,7 @@
  *   文件名称：channels.c
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 09时26分31秒
- *   修改日期：2021年07月01日 星期四 15时25分03秒
+ *   修改日期：2021年07月04日 星期日 22时10分04秒
  *   描    述：
  *
  *================================================================*/
@@ -158,7 +158,7 @@ static int channels_info_set_channels_config(channels_info_t *channels_info, cha
 static int channels_info_load_config(channels_info_t *channels_info)
 {
 	eeprom_layout_t *eeprom_layout = get_eeprom_layout();
-	size_t offset = (size_t)&eeprom_layout->channels_settings_seg.eeprom_channels_settings.channels_settings;
+	size_t offset = (size_t)&eeprom_layout->channels_settings_seg.settings.eeprom_channels_settings.channels_settings;
 	debug("offset:%d", offset);
 	return eeprom_load_config_item(channels_info->eeprom_info, "channels_info->channels_settings", &channels_info->channels_settings, sizeof(channels_settings_t), offset);
 }
@@ -166,7 +166,7 @@ static int channels_info_load_config(channels_info_t *channels_info)
 static int channels_info_save_config(channels_info_t *channels_info)
 {
 	eeprom_layout_t *eeprom_layout = get_eeprom_layout();
-	size_t offset = (size_t)&eeprom_layout->channels_settings_seg.eeprom_channels_settings.channels_settings;
+	size_t offset = (size_t)&eeprom_layout->channels_settings_seg.settings.eeprom_channels_settings.channels_settings;
 	debug("offset:%d", offset);
 	return eeprom_save_config_item(channels_info->eeprom_info, "channels_info->channels_settings", &channels_info->channels_settings, sizeof(channels_settings_t), offset);
 }
@@ -263,15 +263,21 @@ static channels_info_t *get_or_alloc_channels_info(channels_config_t *channels_c
 	return channels_info;
 }
 
+static channels_info_t *_channels_info = NULL;
+
 channels_info_t *start_channels(void)
 {
 	channels_config_t *channels_config = get_channels_config(0);
-	channels_info_t *channels_info;
 
 	OS_ASSERT(channels_config != NULL);
 
-	channels_info = get_or_alloc_channels_info(channels_config);
-	OS_ASSERT(channels_info != NULL);
+	_channels_info = get_or_alloc_channels_info(channels_config);
+	OS_ASSERT(_channels_info != NULL);
 
-	return channels_info;
+	return _channels_info;
+}
+
+channels_info_t *get_channels(void)
+{
+	return _channels_info;
 }

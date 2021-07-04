@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分12秒
- *   修改日期：2021年07月04日 星期日 14时04分56秒
+ *   修改日期：2021年07月04日 星期日 22时09分39秒
  *   描    述：
  *
  *================================================================*/
@@ -492,7 +492,7 @@ static int channel_info_load_config(channel_info_t *channel_info)
 {
 	channels_info_t *channels_info = (channels_info_t *)channel_info->channels_info;
 	eeprom_layout_t *eeprom_layout = get_eeprom_layout();
-	size_t offset = (size_t)&eeprom_layout->channels_settings_seg.eeprom_channel_settings[channel_info->channel_id].channel_settings;
+	size_t offset = (size_t)&eeprom_layout->channels_settings_seg.settings.eeprom_channel_settings[channel_info->channel_id].channel_settings;
 	debug("offset:%d", offset);
 	return eeprom_load_config_item(channels_info->eeprom_info, "channel_info->channel_settings", &channel_info->channel_settings, sizeof(channel_settings_t), offset);
 }
@@ -501,7 +501,7 @@ static int channel_info_save_config(channel_info_t *channel_info)
 {
 	channels_info_t *channels_info = (channels_info_t *)channel_info->channels_info;
 	eeprom_layout_t *eeprom_layout = get_eeprom_layout();
-	size_t offset = (size_t)&eeprom_layout->channels_settings_seg.eeprom_channel_settings[channel_info->channel_id].channel_settings;
+	size_t offset = (size_t)&eeprom_layout->channels_settings_seg.settings.eeprom_channel_settings[channel_info->channel_id].channel_settings;
 	debug("offset:%d", offset);
 	return eeprom_save_config_item(channels_info->eeprom_info, "channel_info->channel_settings", &channel_info->channel_settings, sizeof(channel_settings_t), offset);
 }

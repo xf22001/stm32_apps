@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年07月04日 星期日 21时33分19秒
+ *   修改日期：2021年07月04日 星期日 21时52分27秒
  *   描    述：
  *
  *================================================================*/
@@ -2797,7 +2797,7 @@ static void request_init(void *ctx)
 		net_client_data_ctx->card_account_info_chain = alloc_callback_chain();
 		OS_ASSERT(net_client_data_ctx->card_account_info_chain != NULL);
 
-		net_client_data_ctx->channels_info = start_channels();
+		net_client_data_ctx->channels_info = get_channels();
 		OS_ASSERT(net_client_data_ctx->channels_info != NULL);
 
 		net_client_data_ctx->device_cmd_ctx = (command_status_t *)os_calloc(ARRAY_SIZE(net_client_command_item_device_table), sizeof(command_status_t));
