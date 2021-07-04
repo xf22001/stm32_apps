@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分12秒
- *   修改日期：2021年07月02日 星期五 23时26分03秒
+ *   修改日期：2021年07月04日 星期日 14时04分56秒
  *   描    述：
  *
  *================================================================*/
@@ -157,8 +157,7 @@ static void update_channel_start_event(channel_info_t *channel_info)
 		break;
 	}
 
-	memset(&channel_info->channel_event_start, 0, sizeof(channel_info->channel_event_start));
-
+	channel_info->channel_event_start.start_state = CHANNEL_EVENT_START_STATE_IDLE;
 	channel_info->total_energy_base = channel_info->channel_record_item.start_total_energy;
 }
 
@@ -181,7 +180,7 @@ static void channel_start_waiting(channel_info_t *channel_info)
 static void update_channel_stop_event(channel_info_t *channel_info)
 {
 	channel_set_stop_reason(channel_info, channel_info->channel_event_stop.stop_reason);
-	memset(&channel_info->channel_event_stop, 0, sizeof(channel_info->channel_event_stop));
+	channel_info->channel_event_stop.stop_reason = CHANNEL_RECORD_ITEM_STOP_REASON_NONE;
 }
 
 static void handle_channel_state(channel_info_t *channel_info)
@@ -364,8 +363,10 @@ static int _handle_channel_event(channel_info_t *channel_info, channel_event_t *
 		case CHANNEL_EVENT_TYPE_START_CHANNEL: {
 			switch(channel_info->state) {
 				case CHANNEL_STATE_IDLE: {
-					set_channel_request_state(channel_info, CHANNEL_STATE_START);
-					ret = 0;
+					if(channel_info->channel_event_start.start_state == CHANNEL_EVENT_START_STATE_DONE) {
+						set_channel_request_state(channel_info, CHANNEL_STATE_START);
+						ret = 0;
+					}
 				}
 				break;
 

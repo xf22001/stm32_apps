@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2021年07月02日 星期五 23时27分02秒
+ *   修改日期：2021年07月04日 星期日 14时03分25秒
  *   描    述：
  *
  *================================================================*/
@@ -127,7 +127,14 @@ typedef struct {
 
 #pragma pack(pop)
 
+typedef enum {
+	CHANNEL_EVENT_START_STATE_IDLE = 0,
+	CHANNEL_EVENT_START_STATE_RUNNING,
+	CHANNEL_EVENT_START_STATE_DONE,
+} channel_event_start_state_t;
+
 typedef struct {
+	uint8_t start_state;//channel_event_start_state_t
 	uint8_t start_reason;//channel_record_item_start_reason_t
 	uint8_t charge_mode;//channel_record_charge_mode_t
 

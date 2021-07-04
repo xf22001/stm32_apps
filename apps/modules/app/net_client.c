@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2021年06月28日 星期一 16时51分22秒
+ *   修改日期：2021年07月04日 星期日 12时48分36秒
  *   描    述：
  *
  *================================================================*/
@@ -796,8 +796,8 @@ void net_client_add_poll_loop(poll_loop_t *poll_loop)
 	net_client_info = (net_client_info_t *)os_calloc(1, sizeof(net_client_info_t));
 	OS_ASSERT(net_client_info != NULL);
 
-	net_client_info->query_account_chain = alloc_callback_chain();
-	OS_ASSERT(net_client_info->query_account_chain != NULL);
+	net_client_info->net_client_ctrl_cmd_chain = alloc_callback_chain();
+	OS_ASSERT(net_client_info->net_client_ctrl_cmd_chain != NULL);
 
 	net_client_info->sock_fd = -1;
 	INIT_LIST_HEAD(&net_client_info->net_client_addr_info.socket_addr_info_list);
@@ -817,11 +817,22 @@ void net_client_add_poll_loop(poll_loop_t *poll_loop)
 	add_poll_loop_ctx_item(poll_loop, poll_ctx);
 }
 
-int net_client_query_account_info(account_request_info_t *account_request_info)
+int net_client_net_client_ctrl_cmd(net_client_info_t *net_client_info, net_client_ctrl_cmd_t cmd, void *args)
 {
 	int ret = -1;
+	net_client_ctrl_cmd_info_t ctrl_cmd_info = {0};
 
-	do_callback_chain(net_client_info->query_account_chain, account_request_info);
+	if(net_client_info == NULL) {
+		return ret;
+	}
+
+	if(net_client_info->net_client_ctrl_cmd_chain == NULL) {
+		return ret;
+	}
+
+	ctrl_cmd_info.cmd = cmd;
+	ctrl_cmd_info.args = args;
+	do_callback_chain(net_client_info->net_client_ctrl_cmd_chain, &ctrl_cmd_info);
 
 	ret = 0;
 

@@ -6,7 +6,7 @@
  *   文件名称：net_client.h
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时38分02秒
- *   修改日期：2021年06月28日 星期一 16时51分46秒
+ *   修改日期：2021年07月04日 星期日 13时49分08秒
  *   描    述：
  *
  *================================================================*/
@@ -26,6 +26,7 @@ extern "C"
 #include "list_utils.h"
 #include "net_utils.h"
 #include "callback_chain.h"
+#include "channels.h"
 
 #ifdef __cplusplus
 }
@@ -112,8 +113,7 @@ typedef enum {
 
 typedef struct {
 	uint8_t account_type;//account_type_t
-	uint8_t id[32];//字符串
-	uint8_t password[32];//字符串
+	channel_event_start_t *channel_event_start;
 
 	callback_fn_t fn;
 	void *fn_ctx;
@@ -135,6 +135,16 @@ typedef struct {
 	uint32_t balance;
 } account_response_info_t;
 
+typedef enum {
+	NET_CLIENT_CTRL_CMD_NONE = 0,
+	NET_CLIENT_CTRL_CMD_QUERY_ACCOUNT,
+} net_client_ctrl_cmd_t;
+
+typedef struct {
+	net_client_ctrl_cmd_t cmd;
+	void *args;
+} net_client_ctrl_cmd_info_t;
+
 typedef struct {
 	int sock_fd;
 	uint32_t connect_id;
@@ -152,8 +162,8 @@ typedef struct {
 	protocol_if_t *protocol_if;
 	request_callback_t *request_callback;
 
-	callback_chain_t *query_account_chain;
-	callback_item_t query_account_callback_item;
+	callback_chain_t *net_client_ctrl_cmd_chain;
+	callback_item_t net_client_ctrl_cmd_callback_item;
 } net_client_info_t;
 
 void set_net_client_protocol_type(net_client_info_t *net_client_info, protocol_type_t protocol_type);
@@ -165,6 +175,6 @@ uint32_t get_net_client_connect_id(net_client_info_t *net_client_info);
 int send_to_server(net_client_info_t *net_client_info, uint8_t *buffer, size_t len);
 net_client_info_t *get_net_client_info(void);
 void net_client_add_poll_loop(poll_loop_t *poll_loop);
-int net_client_query_account_info(account_request_info_t *account_request_info);
+int net_client_net_client_ctrl_cmd(net_client_info_t *net_client_info, net_client_ctrl_cmd_t cmd, void *args);
 
 #endif //_NET_CLIENT_H

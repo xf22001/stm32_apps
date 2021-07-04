@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年07月02日 星期五 14时56分22秒
+ *   修改日期：2021年07月04日 星期日 13时50分23秒
  *   描    述：
  *
  *================================================================*/
@@ -1890,10 +1890,8 @@ static net_client_command_item_t net_client_command_item_query_device_message = 
 	.timeout_callback = timeout_callback_query_device_message,
 };
 
-static void sse_query_account(void *fn_ctx, void *chain_ctx)
+static void sse_query_account(net_client_info_t *net_client_info, account_request_info_t *account_request_info)
 {
-	net_client_info_t *net_client_info = (net_client_info_t *)fn_ctx;
-	account_request_info_t *account_request_info = (account_request_info_t *)chain_ctx;
 	account_response_info_t account_response_info;
 
 	if(get_client_state(net_client_info) != CLIENT_CONNECTED) {
@@ -1907,6 +1905,8 @@ static void sse_query_account(void *fn_ctx, void *chain_ctx)
 
 	switch(account_request_info->account_type) {
 		case ACCOUNT_TYPE_CARD: {
+			channel_event_start_t *channel_event_start = account_request_info->channel_event_start;
+
 			if(net_client_data_ctx->device_cmd_ctx[NET_CLIENT_DEVICE_COMMAND_QUERY_CARD_ACCOUNT].state != COMMAND_STATE_IDLE) {
 				if(account_request_info->fn != NULL) {
 					account_response_info.code = ACCOUNT_STATE_CODE_BUSY;
@@ -1916,8 +1916,8 @@ static void sse_query_account(void *fn_ctx, void *chain_ctx)
 				return;
 			}
 
-			snprintf((char *)net_client_data_ctx->card_id, 32, "%s", (char *)account_request_info->id);
-			snprintf((char *)net_client_data_ctx->card_password, 32, "%s", (char *)account_request_info->password);
+			snprintf((char *)net_client_data_ctx->card_id, 32, "%d", (int)channel_event_start->card_id);
+			snprintf((char *)net_client_data_ctx->card_password, 32, "%s", (char *)channel_event_start->password);
 
 			remove_callback(net_client_data_ctx->card_account_info_chain, &net_client_data_ctx->card_account_info_callback_item);
 			net_client_data_ctx->card_account_info_callback_item.fn = account_request_info->fn;
@@ -2762,6 +2762,25 @@ static char *get_net_client_cmd_channel_des(net_client_channel_command_t cmd)
 	return des;
 }
 
+static void sse_ctrl_cmd(void *_net_client_info, void *_ctrl_cmd_info)
+{
+	net_client_info_t *net_client_info = (net_client_info_t *)_net_client_info;
+	net_client_ctrl_cmd_info_t *ctrl_cmd_info = (net_client_ctrl_cmd_info_t *)_ctrl_cmd_info;
+
+	switch(ctrl_cmd_info->cmd) {
+		case NET_CLIENT_CTRL_CMD_QUERY_ACCOUNT: {
+			account_request_info_t *account_request_info = (account_request_info_t *)ctrl_cmd_info->args;
+			OS_ASSERT(account_request_info != NULL);
+			sse_query_account(net_client_info, account_request_info);
+		}
+		break;
+
+		default: {
+		}
+		break;
+	}
+}
+
 static void request_init(void *ctx)
 {
 	int i;
@@ -2791,12 +2810,11 @@ static void request_init(void *ctx)
 		}
 	}
 
-	remove_callback(net_client_info->query_account_chain, &net_client_info->query_account_callback_item);
-	net_client_info->query_account_callback_item.fn = sse_query_account;
-	net_client_info->query_account_callback_item.fn_ctx = net_client_info;
-	OS_ASSERT(register_callback(net_client_info->query_account_chain, &net_client_info->query_account_callback_item) == 0);
+	remove_callback(net_client_info->net_client_ctrl_cmd_chain, &net_client_info->net_client_ctrl_cmd_callback_item);
+	net_client_info->net_client_ctrl_cmd_callback_item.fn = sse_ctrl_cmd;
+	net_client_info->net_client_ctrl_cmd_callback_item.fn_ctx = net_client_info;
+	OS_ASSERT(register_callback(net_client_info->net_client_ctrl_cmd_chain, &net_client_info->net_client_ctrl_cmd_callback_item) == 0);
 }
-
 
 static void request_before_create_server_connect(void *ctx)
 {

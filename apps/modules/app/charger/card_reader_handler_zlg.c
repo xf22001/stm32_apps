@@ -6,7 +6,7 @@
  *   文件名称：card_reader_handler_zlg.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月24日 星期一 16时49分13秒
- *   修改日期：2021年07月02日 星期五 11时32分47秒
+ *   修改日期：2021年07月04日 星期日 15时10分57秒
  *   描    述：
  *
  *================================================================*/
@@ -377,11 +377,48 @@ static int card_reader_card_data_write(card_reader_info_t *card_reader_info)
 	return ret;
 }
 
-static void uart_data_request(void *fn_ctx, void *chain_ctx)
+static void handle_card_reader_action(card_reader_info_t *card_reader_info, card_reader_handler_ctx_t *card_reader_handler_ctx)
 {
-	card_reader_info_t *card_reader_info = (card_reader_info_t *)fn_ctx;
-	card_reader_handler_ctx_t *card_reader_handler_ctx = (card_reader_handler_ctx_t *)card_reader_info->ctx;
-	int ret = -1;
+	switch(card_reader_handler_ctx->state) {
+		case CARD_READER_HANDLER_STATE_IDLE: {
+			if(card_reader_handler_ctx->action == CARD_READER_ACTION_START) {
+				card_reader_handler_ctx->action = CARD_READER_ACTION_NONE;
+
+				card_reader_handler_ctx->state = CARD_READER_HANDLER_STATE_AUTO_DETECT;
+
+				set_card_reader_state(card_reader_info, CARD_READER_STATE_RUNNING);
+			} else if(card_reader_handler_ctx->action == CARD_READER_ACTION_INIT) {
+				card_reader_handler_ctx->action = CARD_READER_ACTION_NONE;
+
+				card_reader_handler_ctx->state = CARD_READER_HANDLER_STATE_SET_BAUDRATE;
+
+				set_card_reader_state(card_reader_info, CARD_READER_STATE_INIT);
+			}
+		}
+		break;
+
+		case CARD_READER_HANDLER_STATE_AUTO_DETECT:
+		case CARD_READER_HANDLER_STATE_CARD_DATA_READ:
+		case CARD_READER_HANDLER_STATE_CARD_DATA_WRITE: {
+			if(card_reader_handler_ctx->action == CARD_READER_ACTION_STOP) {
+				card_reader_handler_ctx->action = CARD_READER_ACTION_NONE;
+
+				card_reader_handler_ctx->state = CARD_READER_HANDLER_STATE_IDLE;
+
+				set_card_reader_state(card_reader_info, CARD_READER_STATE_IDLE);
+			}
+		}
+		break;
+
+		default: {
+		}
+		break;
+	}
+}
+
+static void handle_card_reader_state(card_reader_info_t *card_reader_info, card_reader_handler_ctx_t *card_reader_handler_ctx)
+{
+	int ret;
 
 	switch(card_reader_handler_ctx->state) {
 		case CARD_READER_HANDLER_STATE_SET_BAUDRATE: {
@@ -398,15 +435,13 @@ static void uart_data_request(void *fn_ctx, void *chain_ctx)
 
 			if(ret != 0) {
 				card_reader_handler_ctx->state = CARD_READER_HANDLER_STATE_IDLE;
+
+				set_card_reader_state(card_reader_info, CARD_READER_STATE_IDLE);
 			}
 		}
 		break;
 
 		case CARD_READER_HANDLER_STATE_IDLE: {
-			if(card_reader_handler_ctx->action == CARD_READER_ACTION_START) {
-				card_reader_handler_ctx->action = CARD_READER_ACTION_NONE;
-				card_reader_handler_ctx->state = CARD_READER_HANDLER_STATE_AUTO_DETECT;
-			}
 		}
 		break;
 
@@ -420,12 +455,12 @@ static void uart_data_request(void *fn_ctx, void *chain_ctx)
 		break;
 
 		case CARD_READER_HANDLER_STATE_CARD_DATA_READ: {
-			card_reader_data_t card_reader_data = {0};
+			memset(&card_reader_info->card_reader_data, 0, sizeof(card_reader_data_t));
 			ret = card_reader_card_data_read(card_reader_info);
 
 			if(ret == 0) {
-				card_reader_data.id = card_reader_handler_ctx->card_data.sn;
-				do_callback_chain(card_reader_info->card_reader_callback_chain, &card_reader_data);
+				card_reader_info->card_reader_data.id = card_reader_handler_ctx->card_data.sn;
+				do_callback_chain(card_reader_info->card_reader_callback_chain, &card_reader_info->card_reader_data);
 				card_reader_handler_ctx->state = CARD_READER_HANDLER_STATE_CARD_DATA_WRITE;
 			}
 		}
@@ -438,6 +473,8 @@ static void uart_data_request(void *fn_ctx, void *chain_ctx)
 			}
 
 			card_reader_handler_ctx->state = CARD_READER_HANDLER_STATE_IDLE;
+
+			set_card_reader_state(card_reader_info, CARD_READER_STATE_IDLE);
 		}
 		break;
 
@@ -447,12 +484,13 @@ static void uart_data_request(void *fn_ctx, void *chain_ctx)
 	}
 }
 
-static void card_reader_action_cb(void *fn_ctx, void *chain_ctx)
+static void uart_data_request(void *fn_ctx, void *chain_ctx)
 {
 	card_reader_info_t *card_reader_info = (card_reader_info_t *)fn_ctx;
 	card_reader_handler_ctx_t *card_reader_handler_ctx = (card_reader_handler_ctx_t *)card_reader_info->ctx;
-	card_reader_action_t *action = (card_reader_action_t *)chain_ctx;
-	card_reader_handler_ctx->action = *action;
+
+	handle_card_reader_action(card_reader_info, card_reader_handler_ctx);
+	handle_card_reader_state(card_reader_info, card_reader_handler_ctx);
 }
 
 static int init(void *_card_reader_info)
@@ -472,17 +510,12 @@ static int init(void *_card_reader_info)
 	OS_ASSERT(uart_data_task_info != NULL);
 
 	remove_uart_data_task_info_cb(uart_data_task_info, &card_reader_info->uart_data_request_cb);
-	remove_callback(card_reader_info->card_reader_callback_chain, &card_reader_info->card_reader_action_callback_item);
 
 	if(card_reader_info->ctx != NULL) {
 		os_free(card_reader_info->ctx);
 	}
 
 	card_reader_info->ctx = card_reader_handler_ctx;
-
-	card_reader_info->card_reader_action_callback_item.fn = card_reader_action_cb;
-	card_reader_info->card_reader_action_callback_item.fn_ctx = card_reader_info;
-	OS_ASSERT(register_callback(card_reader_info->card_reader_callback_chain, &card_reader_info->card_reader_action_callback_item) == 0);
 
 	card_reader_info->uart_info = get_or_alloc_uart_info(channels_config->card_reader_config.huart_card_reader);
 	OS_ASSERT(card_reader_info->uart_info != NULL);
