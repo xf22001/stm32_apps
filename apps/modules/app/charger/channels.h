@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2021年07月04日 星期日 14时03分25秒
+ *   修改日期：2021年07月04日 星期日 21时18分32秒
  *   描    述：
  *
  *================================================================*/
@@ -134,6 +134,7 @@ typedef enum {
 } channel_event_start_state_t;
 
 typedef struct {
+	uint32_t start_stamps;
 	uint8_t start_state;//channel_event_start_state_t
 	uint8_t start_reason;//channel_record_item_start_reason_t
 	uint8_t charge_mode;//channel_record_charge_mode_t

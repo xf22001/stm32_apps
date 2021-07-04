@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年07月04日 星期日 13时50分23秒
+ *   修改日期：2021年07月04日 星期日 21时33分19秒
  *   描    述：
  *
  *================================================================*/
@@ -2034,6 +2034,10 @@ static int response_callback_query_card_account(net_client_info_t *net_client_in
 static int timeout_callback_query_card_account(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id)
 {
 	int ret = 0;
+	account_response_info_t account_response_info;
+	account_response_info.code = ACCOUNT_STATE_CODE_TIMEOUT;
+
+	do_callback_chain(net_client_data_ctx->card_account_info_chain, &account_response_info);
 	return ret;
 }
 

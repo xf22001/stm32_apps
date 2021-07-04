@@ -6,7 +6,7 @@
  *   文件名称：card_reader_handler_zlg.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月24日 星期一 16时49分13秒
- *   修改日期：2021年07月04日 星期日 15时10分57秒
+ *   修改日期：2021年07月04日 星期日 21时36分35秒
  *   描    述：
  *
  *================================================================*/
@@ -377,6 +377,27 @@ static int card_reader_card_data_write(card_reader_info_t *card_reader_info)
 	return ret;
 }
 
+static void handle_card_reader_start_timeout(card_reader_info_t *card_reader_info, card_reader_handler_ctx_t *card_reader_handler_ctx)
+{
+	switch(card_reader_handler_ctx->state) {
+		case CARD_READER_HANDLER_STATE_AUTO_DETECT:
+		case CARD_READER_HANDLER_STATE_CARD_DATA_READ:
+		case CARD_READER_HANDLER_STATE_CARD_DATA_WRITE: {
+			if(ticks_duration(osKernelSysTick(), card_reader_info->start_stamps) >= card_reader_info->timeout) {
+				card_reader_handler_ctx->state = CARD_READER_HANDLER_STATE_IDLE;
+
+				set_card_reader_state(card_reader_info, CARD_READER_STATE_IDLE);
+				do_callback_chain(card_reader_info->card_reader_callback_chain, NULL);
+			}
+		}
+		break;
+
+		default: {
+		}
+		break;
+	}
+}
+
 static void handle_card_reader_action(card_reader_info_t *card_reader_info, card_reader_handler_ctx_t *card_reader_handler_ctx)
 {
 	switch(card_reader_handler_ctx->state) {
@@ -489,6 +510,7 @@ static void uart_data_request(void *fn_ctx, void *chain_ctx)
 	card_reader_info_t *card_reader_info = (card_reader_info_t *)fn_ctx;
 	card_reader_handler_ctx_t *card_reader_handler_ctx = (card_reader_handler_ctx_t *)card_reader_info->ctx;
 
+	handle_card_reader_start_timeout(card_reader_info, card_reader_handler_ctx);
 	handle_card_reader_action(card_reader_info, card_reader_handler_ctx);
 	handle_card_reader_state(card_reader_info, card_reader_handler_ctx);
 }

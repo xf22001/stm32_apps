@@ -6,7 +6,7 @@
  *   文件名称：net_client.h
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时38分02秒
- *   修改日期：2021年07月04日 星期日 13时49分08秒
+ *   修改日期：2021年07月04日 星期日 21时32分19秒
  *   描    述：
  *
  *================================================================*/
@@ -128,6 +128,7 @@ typedef enum {
 	ACCOUNT_STATE_CODE_UNKNOW,
 	ACCOUNT_STATE_CODE_BUSY,
 	ACCOUNT_STATE_CODE_OFFLINE,
+	ACCOUNT_STATE_CODE_TIMEOUT,
 } account_state_code_t;
 
 typedef struct {

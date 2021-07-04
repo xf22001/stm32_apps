@@ -6,7 +6,7 @@
  *   文件名称：card_reader.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月24日 星期一 16时08分40秒
- *   修改日期：2021年07月04日 星期日 15时14分54秒
+ *   修改日期：2021年07月04日 星期日 21时25分01秒
  *   描    述：
  *
  *================================================================*/
@@ -37,9 +37,13 @@ static card_reader_handler_t *get_card_reader_handler(card_reader_type_t card_re
 	return card_reader_handler;
 }
 
-int start_card_reader_cb(card_reader_info_t *card_reader_info, callback_fn_t fn, void *fn_ctx)
+int start_card_reader_cb(card_reader_info_t *card_reader_info, callback_fn_t fn, void *fn_ctx, uint32_t timeout)
 {
 	int ret = -1;
+
+	if(card_reader_info->action != CARD_READER_ACTION_NONE) {
+		return ret;
+	}
 
 	if(card_reader_info->state != CARD_READER_STATE_IDLE) {
 		return ret;
@@ -54,6 +58,9 @@ int start_card_reader_cb(card_reader_info_t *card_reader_info, callback_fn_t fn,
 	if(register_callback(card_reader_info->card_reader_callback_chain, &card_reader_info->card_reader_callback_item) != 0) {
 	}
 
+	card_reader_info->timeout = timeout;
+	card_reader_info->start_stamps = osKernelSysTick();
+
 	card_reader_info->action = CARD_READER_ACTION_START;
 	ret = 0;
 	return ret;
@@ -62,6 +69,10 @@ int start_card_reader_cb(card_reader_info_t *card_reader_info, callback_fn_t fn,
 int stop_card_reader(card_reader_info_t *card_reader_info)
 {
 	int ret = -1;
+
+	if(card_reader_info->action != CARD_READER_ACTION_NONE) {
+		return ret;
+	}
 
 	if(card_reader_info->state != CARD_READER_STATE_RUNNING) {
 		return ret;
@@ -75,6 +86,10 @@ int stop_card_reader(card_reader_info_t *card_reader_info)
 int init_card_reader(card_reader_info_t *card_reader_info)
 {
 	int ret = -1;
+
+	if(card_reader_info->action != CARD_READER_ACTION_NONE) {
+		return ret;
+	}
 
 	if(card_reader_info->state != CARD_READER_STATE_IDLE) {
 		return ret;
