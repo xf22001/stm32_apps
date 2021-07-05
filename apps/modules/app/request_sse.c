@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年07月04日 星期日 21时52分27秒
+ *   修改日期：2021年07月05日 星期一 10时13分19秒
  *   描    述：
  *
  *================================================================*/
@@ -1905,8 +1905,6 @@ static void sse_query_account(net_client_info_t *net_client_info, account_reques
 
 	switch(account_request_info->account_type) {
 		case ACCOUNT_TYPE_CARD: {
-			channel_event_start_t *channel_event_start = account_request_info->channel_event_start;
-
 			if(net_client_data_ctx->device_cmd_ctx[NET_CLIENT_DEVICE_COMMAND_QUERY_CARD_ACCOUNT].state != COMMAND_STATE_IDLE) {
 				if(account_request_info->fn != NULL) {
 					account_response_info.code = ACCOUNT_STATE_CODE_BUSY;
@@ -1916,8 +1914,8 @@ static void sse_query_account(net_client_info_t *net_client_info, account_reques
 				return;
 			}
 
-			snprintf((char *)net_client_data_ctx->card_id, 32, "%d", (int)channel_event_start->card_id);
-			snprintf((char *)net_client_data_ctx->card_password, 32, "%s", (char *)channel_event_start->password);
+			snprintf((char *)net_client_data_ctx->card_id, 32, "%lu", (uint32_t)account_request_info->card_id);
+			snprintf((char *)net_client_data_ctx->card_password, 32, "%s", (char *)account_request_info->password);
 
 			remove_callback(net_client_data_ctx->card_account_info_chain, &net_client_data_ctx->card_account_info_callback_item);
 			net_client_data_ctx->card_account_info_callback_item.fn = account_request_info->fn;

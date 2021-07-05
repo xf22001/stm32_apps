@@ -6,7 +6,7 @@
  *   文件名称：os_utils.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月13日 星期三 11时13分36秒
- *   修改日期：2021年06月29日 星期二 09时55分56秒
+ *   修改日期：2021年07月05日 星期一 11时47分04秒
  *   描    述：
  *
  *================================================================*/
@@ -212,6 +212,52 @@ static inline void ascii_to_bcd(char *ascii, size_t ascii_size, uint8_t *bcd, si
 
 		bcd[i / 2] = u_uint8_bcd.v;
 	}
+}
+
+static inline const char *get_ascii_from_u64(char *ascii, size_t ascii_size, uint64_t u64)
+{
+	char *desc;
+	uint8_t bcd[10];
+	int i = 0;
+	int j = 9;
+	uint8_t bcd_i;
+	uint8_t bcd_j;
+
+	memset(bcd, 0, 10);
+	get_bcd_b0123456789_from_u64(&bcd[0],
+	                             &bcd[1],
+	                             &bcd[2],
+	                             &bcd[3],
+	                             &bcd[4],
+	                             &bcd[5],
+	                             &bcd[6],
+	                             &bcd[7],
+	                             &bcd[8],
+	                             &bcd[9],
+	                             u64);
+
+	while(i < j) {
+		bcd_i = bcd[i];
+		bcd_j = bcd[j];
+		bcd[i] = bcd_j;
+		bcd[j] = bcd_i;
+		i++;
+		j--;
+	}
+
+	bcd_to_ascii(ascii, ascii_size, bcd, sizeof(bcd));
+	j = strlen(ascii);
+	desc = ascii;
+
+	for(i = 0; i < j; i++) {
+		if(ascii[i] != '0') {
+			break;
+		}
+
+		desc++;
+	}
+
+	return desc;
 }
 
 static inline uint16_t get_u16_from_u8_lh(uint8_t l, uint8_t h)

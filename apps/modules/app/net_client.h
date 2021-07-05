@@ -6,7 +6,7 @@
  *   文件名称：net_client.h
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时38分02秒
- *   修改日期：2021年07月04日 星期日 21时32分19秒
+ *   修改日期：2021年07月05日 星期一 10时12分27秒
  *   描    述：
  *
  *================================================================*/
@@ -26,7 +26,6 @@ extern "C"
 #include "list_utils.h"
 #include "net_utils.h"
 #include "callback_chain.h"
-#include "channels.h"
 
 #ifdef __cplusplus
 }
@@ -113,7 +112,8 @@ typedef enum {
 
 typedef struct {
 	uint8_t account_type;//account_type_t
-	channel_event_start_t *channel_event_start;
+	uint64_t card_id;
+	char *password;
 
 	callback_fn_t fn;
 	void *fn_ctx;
