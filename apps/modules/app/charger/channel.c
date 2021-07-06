@@ -6,7 +6,7 @@
  *   文件名称：channel.c
  *   创 建 者：肖飞
  *   创建日期：2021年04月08日 星期四 09时51分12秒
- *   修改日期：2021年07月04日 星期日 22时09分39秒
+ *   修改日期：2021年07月06日 星期二 11时34分34秒
  *   描    述：
  *
  *================================================================*/
@@ -143,11 +143,6 @@ static void update_channel_start_event(channel_info_t *channel_info)
 			channel_info->channel_record_item.start_time = channel_info->channel_event_start.start_time;
 			channel_info->channel_record_item.stop_time = channel_info->channel_event_start.stop_time;
 			set_channel_request_state(channel_info, CHANNEL_STATE_WAITING);
-		}
-		break;
-
-		case CHANNEL_RECORD_CHARGE_MODE_VIN: {
-			set_channel_request_state(channel_info, CHANNEL_STATE_STARTING);
 		}
 		break;
 
@@ -318,11 +313,70 @@ void handle_channel_amount(channel_info_t *channel_info)
 	channel_info->total_energy_base = channel_info->total_energy;
 }
 
-static void handle_channel_stop_amount(channel_info_t *channel_info)
+static void handle_channel_faults_stop(channel_info_t *channel_info)
 {
-	if(channel_info->channel_record_item.amount >= channel_info->channel_record_item.account_balance) {
-		channel_set_stop_reason(channel_info, CHANNEL_RECORD_ITEM_STOP_REASON_AMOUNT);
+	channels_info_t *channels_info = (channels_info_t *)channel_info->channels_info;
+
+	if(channel_info->request_state == CHANNEL_STATE_STOP) {
+		return;
+	}
+
+	//channels faults
+	if(get_first_fault(channels_info->faults) != -1) {
+		channel_set_stop_reason(channel_info, CHANNEL_RECORD_ITEM_STOP_REASON_CHANNELS_FAULT);
 		set_channel_request_state(channel_info, CHANNEL_STATE_STOP);
+		return;
+	}
+
+	//channel faults
+	if(get_first_fault(channel_info->faults) != -1) {
+		channel_set_stop_reason(channel_info, CHANNEL_RECORD_ITEM_STOP_REASON_CHANNEL_FAULT);
+		set_channel_request_state(channel_info, CHANNEL_STATE_STOP);
+		return;
+	}
+}
+
+static void handle_channel_condition_stop(channel_info_t *channel_info)
+{
+	if(channel_info->request_state == CHANNEL_STATE_STOP) {
+		return;
+	}
+
+	switch(channel_info->channel_record_item.charge_mode) {
+		case CHANNEL_RECORD_CHARGE_MODE_ACCOUNT_BALANCE: {
+			if(channel_info->channel_record_item.amount >= channel_info->channel_record_item.account_balance) {
+				channel_set_stop_reason(channel_info, CHANNEL_RECORD_ITEM_STOP_REASON_AMOUNT);
+				set_channel_request_state(channel_info, CHANNEL_STATE_STOP);
+			}
+		}
+		break;
+
+		case CHANNEL_RECORD_CHARGE_MODE_SOC: {
+			charger_info_t *charger_info = (charger_info_t *)channel_info->charger_info;
+
+			if(charger_info->bms_data.bcs_data.soc >= channel_info->channel_record_item.stop_soc) {
+				channel_set_stop_reason(channel_info, CHANNEL_RECORD_ITEM_STOP_REASON_BMS_SOC_ARCHIEVED);
+				set_channel_request_state(channel_info, CHANNEL_STATE_STOP);
+			}
+		}
+		break;
+
+		case CHANNEL_RECORD_CHARGE_MODE_TIME: {
+			if(get_time() >= channel_info->channel_record_item.stop_time) {
+				channel_set_stop_reason(channel_info, CHANNEL_RECORD_ITEM_STOP_REASON_DURATION);
+				set_channel_request_state(channel_info, CHANNEL_STATE_STOP);
+			}
+		}
+		break;
+
+		case CHANNEL_RECORD_CHARGE_MODE_UNLIMIT: {
+		}
+		break;
+
+		default: {
+			app_panic();
+		}
+		break;
 	}
 }
 
@@ -332,7 +386,8 @@ static void handle_channel_stop(channel_info_t *channel_info)
 		case CHANNEL_STATE_START:
 		case CHANNEL_STATE_STARTING:
 		case CHANNEL_STATE_CHARGING: {
-			handle_channel_stop_amount(channel_info);
+			handle_channel_faults_stop(channel_info);
+			handle_channel_condition_stop(channel_info);
 		}
 		break;
 

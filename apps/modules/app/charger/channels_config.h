@@ -6,7 +6,7 @@
  *   文件名称：channels_config.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 11时00分11秒
- *   修改日期：2021年07月01日 星期四 17时04分48秒
+ *   修改日期：2021年07月06日 星期二 10时40分57秒
  *   描    述：
  *
  *================================================================*/
@@ -119,6 +119,8 @@ typedef struct {
 	void *hspi_eeprom;
 	void *eeprom_cs_port;
 	uint16_t eeprom_cs_pin;
+	void *eeprom_wp_port;
+	uint16_t eeprom_wp_pin;
 } channels_eeprom_config_t;
 
 typedef struct {
