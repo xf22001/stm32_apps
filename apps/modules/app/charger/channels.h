@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2021年07月04日 星期日 21时52分55秒
+ *   修改日期：2021年07月06日 星期二 15时46分19秒
  *   描    述：
  *
  *================================================================*/
@@ -146,6 +146,7 @@ typedef struct {
 	uint8_t account[32];
 	uint8_t password[32];
 	uint32_t account_balance;
+	uint32_t account_energy;
 
 	uint32_t stop_soc;
 	time_t start_time;
