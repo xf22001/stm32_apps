@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年07月05日 星期一 10时13分19秒
+ *   修改日期：2021年07月06日 星期二 10时12分59秒
  *   描    述：
  *
  *================================================================*/
@@ -863,7 +863,7 @@ static uint32_t get_sse_module_state_mask(channels_info_t *channels_info)
 		power_module_item_info_t *power_module_item_info = get_power_module_item_info(channels_power_module, i);
 		int j = i / 8;
 		int k = i % 8;
-		cells[j] = set_u8_bits(cells[j], k, power_module_item_info->error.fault);
+		cells[j] = set_u8_bits(cells[j], k, (get_first_fault(power_module_item_info->faults) != -1) ? 1 : 0);
 	}
 
 	return mask;

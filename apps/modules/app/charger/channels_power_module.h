@@ -6,7 +6,7 @@
  *   文件名称：channels_power_module.h
  *   创 建 者：肖飞
  *   创建日期：2021年03月26日 星期五 15时31分23秒
- *   修改日期：2021年07月02日 星期五 10时37分10秒
+ *   修改日期：2021年07月06日 星期二 10时07分59秒
  *   描    述：
  *
  *================================================================*/
@@ -67,10 +67,18 @@ typedef struct {
 	uint16_t connect_state;
 } power_module_item_status_t;
 
+typedef enum {
+	POWER_MODULE_ITEM_FAULT_CONNECT_TIMEOUT = 0,
+	POWER_MODULE_ITEM_FAULT_FAULT,
+	POWER_MODULE_ITEM_FAULT_INPUT_LOW_VOLTAGE,
+	POWER_MODULE_ITEM_FAULT_INPUT_OVER_VOLTAGE,
+	POWER_MODULE_ITEM_FAULT_SIZE,
+} power_module_item_fault_t;
+
 typedef struct {
 	int module_id;
 	power_module_item_status_t status;
-	power_module_item_error_t error;
+	bitmap_t *faults;//power_module_item_fault_t
 } power_module_item_info_t;
 
 typedef enum {

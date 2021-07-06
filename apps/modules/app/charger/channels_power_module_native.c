@@ -6,7 +6,7 @@
  *   文件名称：channels_power_module_native.c
  *   创 建 者：肖飞
  *   创建日期：2021年03月26日 星期五 15时31分18秒
- *   修改日期：2021年07月02日 星期五 11时35分53秒
+ *   修改日期：2021年07月06日 星期二 10时13分23秒
  *   描    述：
  *
  *================================================================*/
@@ -145,6 +145,8 @@ static int init(void *_channels_power_module)
 		power_module_item_info_ctx_t *info = power_module_item_info_ctx + i;
 
 		info->power_module_item_info.module_id = i;
+		info->power_module_item_info.faults = alloc_bitmap(POWER_MODULE_ITEM_FAULT_SIZE);
+		OS_ASSERT(info->power_module_item_info.faults != NULL);
 		info->power_modules_info = power_modules_info;
 		list_add(&info->list, &channels_power_module_ctx->power_module_idle_list);
 	}
