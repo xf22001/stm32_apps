@@ -6,7 +6,7 @@
  *   文件名称：eeprom_config.c
  *   创 建 者：肖飞
  *   创建日期：2020年12月17日 星期四 14时02分18秒
- *   修改日期：2021年07月06日 星期二 11时50分18秒
+ *   修改日期：2021年07月06日 星期二 14时07分58秒
  *   描    述：
  *
  *================================================================*/
@@ -14,20 +14,6 @@
 #include <string.h>
 #include "os_utils.h"
 #include "log.h"
-
-static uint8_t eeprom_crc8(const void *data, size_t size)
-{
-	uint8_t crc = 0;
-	uint8_t *p = (unsigned char *)data;
-	int i;
-
-	for(i = 0; i < size; i++) {
-		uint8_t salt = i;
-		crc += (p[i] ^ salt);
-	}
-
-	return crc;
-}
 
 int eeprom_load_config_item(eeprom_info_t *eeprom_info, const char *label, void *config, size_t size, size_t offset)
 {
@@ -54,12 +40,12 @@ int eeprom_load_config_item(eeprom_info_t *eeprom_info, const char *label, void 
 	crc = size;
 
 	if(label != NULL) {
-		crc += eeprom_crc8(label, strlen(label));
+		crc += sum_crc8(label, strlen(label));
 	}
 
 	eeprom_read(eeprom_info, offset, (uint8_t *)config, size);
 
-	crc += eeprom_crc8(config, size);
+	crc += sum_crc8(config, size);
 
 	if(crc != eeprom_config_item_head.crc) {
 		debug("");
@@ -91,10 +77,10 @@ int eeprom_save_config_item(eeprom_info_t *eeprom_info, const char *label, void 
 	crc = size;
 
 	if(label != NULL) {
-		crc += eeprom_crc8(label, strlen(label));
+		crc += sum_crc8(label, strlen(label));
 	}
 
-	crc += eeprom_crc8(config, size);
+	crc += sum_crc8(config, size);
 
 	eeprom_config_item_head.crc = crc;
 
