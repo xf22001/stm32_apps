@@ -6,12 +6,13 @@
  *   文件名称：card_reader_handler_zlg.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月24日 星期一 16时49分13秒
- *   修改日期：2021年07月04日 星期日 21时36分35秒
+ *   修改日期：2021年07月07日 星期三 17时27分27秒
  *   描    述：
  *
  *================================================================*/
 #include "card_reader_handler_zlg.h"
 #include "uart_data_task.h"
+#include "log.h"
 
 #pragma pack(push, 1)
 
@@ -79,7 +80,8 @@ typedef struct {
 #pragma pack(pop)
 
 typedef enum {
-	CARD_READER_HANDLER_STATE_SET_BAUDRATE = 0,
+	CARD_READER_HANDLER_STATE_NONE = 0,
+	CARD_READER_HANDLER_STATE_SET_BAUDRATE,
 	CARD_READER_HANDLER_STATE_RESET,
 	CARD_READER_HANDLER_STATE_IDLE,
 	CARD_READER_HANDLER_STATE_AUTO_DETECT,
@@ -88,10 +90,32 @@ typedef enum {
 } card_reader_handler_state_t;
 
 typedef struct {
-	card_reader_action_t action;
 	card_reader_handler_state_t state;
+	card_reader_handler_state_t request_state;
 	card_data_t card_data;
+	uint8_t init_retry;
 } card_reader_handler_ctx_t;
+
+static char *get_card_reader_handler_state_des(card_reader_handler_state_t state)
+{
+	char *des = "unknow";
+
+	switch(state) {
+			add_des_case(CARD_READER_HANDLER_STATE_NONE);
+			add_des_case(CARD_READER_HANDLER_STATE_SET_BAUDRATE);
+			add_des_case(CARD_READER_HANDLER_STATE_RESET);
+			add_des_case(CARD_READER_HANDLER_STATE_IDLE);
+			add_des_case(CARD_READER_HANDLER_STATE_AUTO_DETECT);
+			add_des_case(CARD_READER_HANDLER_STATE_CARD_DATA_READ);
+			add_des_case(CARD_READER_HANDLER_STATE_CARD_DATA_WRITE);
+
+		default: {
+		}
+		break;
+	}
+
+	return des;
+}
 
 static uint8_t zlg_bcc(uint8_t *data, uint8_t len)
 {
@@ -112,7 +136,7 @@ static int encode_zlg_cmd(uint8_t *tx_buffer, uint8_t tx_buffer_size, uint8_t ty
 	int ret = -1;
 	zlg_frame_tx_header_t *zlg_frame_tx_header = (zlg_frame_tx_header_t *)tx_buffer;
 	uint8_t *zlg_frame_data = (uint8_t *)(zlg_frame_tx_header + 1);
-	zlg_frame_tail_t *tail = (zlg_frame_tail_t *)(data + len);
+	zlg_frame_tail_t *tail = (zlg_frame_tail_t *)(zlg_frame_data + len);
 
 	zlg_frame_tx_header->frame_len = sizeof(zlg_frame_tx_header_t) + len + sizeof(zlg_frame_tail_t);
 
@@ -187,7 +211,7 @@ static int card_reader_set_baudrate(card_reader_info_t *card_reader_info)
 
 static int card_reader_reset(card_reader_info_t *card_reader_info)
 {
-	int ret = 0;
+	int ret = -1;
 	int received;
 
 	zlg_frame_tx_header_t *zlg_frame_tx_header = (zlg_frame_tx_header_t *)card_reader_info->tx_buffer;
@@ -199,6 +223,7 @@ static int card_reader_reset(card_reader_info_t *card_reader_info)
 	uint8_t ms = 1;
 
 	if(encode_zlg_cmd(card_reader_info->tx_buffer, CARD_READ_BUFFER_LENGTH, 0x02, 'L', &ms, sizeof(ms)) != 0) {
+		debug("");
 		return ret;
 	}
 
@@ -210,6 +235,7 @@ static int card_reader_reset(card_reader_info_t *card_reader_info)
 	                           100);
 
 	if(received <= 0) {
+		debug("");
 		return ret;
 	}
 
@@ -219,10 +245,12 @@ static int card_reader_reset(card_reader_info_t *card_reader_info)
 	                  &status,
 	                  &data,
 	                  &len) != 0) {
+		debug("");
 		return ret;
 	}
 
 	if(zlg_frame_rx_header->status != 0x00) {
+		debug("");
 		return ret;
 	}
 
@@ -233,7 +261,7 @@ static int card_reader_reset(card_reader_info_t *card_reader_info)
 
 static int card_reader_auto_detect(card_reader_info_t *card_reader_info)
 {
-	int ret = 0;
+	int ret = -1;
 	int received;
 
 	zlg_frame_tx_header_t *zlg_frame_tx_header = (zlg_frame_tx_header_t *)card_reader_info->tx_buffer;
@@ -253,6 +281,7 @@ static int card_reader_auto_detect(card_reader_info_t *card_reader_info)
 	audo_detect_config.block = 0x08;
 
 	if(encode_zlg_cmd(card_reader_info->tx_buffer, CARD_READ_BUFFER_LENGTH, 0x02, 'N', (uint8_t *)&audo_detect_config, sizeof(audo_detect_config)) != 0) {
+		debug("");
 		return ret;
 	}
 
@@ -264,6 +293,7 @@ static int card_reader_auto_detect(card_reader_info_t *card_reader_info)
 	                           100);
 
 	if(received <= 0) {
+		debug("");
 		return ret;
 	}
 
@@ -273,10 +303,12 @@ static int card_reader_auto_detect(card_reader_info_t *card_reader_info)
 	                  &status,
 	                  &data,
 	                  &len) != 0) {
+		debug("");
 		return ret;
 	}
 
 	if(zlg_frame_rx_header->status != 0x00) {
+		debug("");
 		return ret;
 	}
 
@@ -287,7 +319,7 @@ static int card_reader_auto_detect(card_reader_info_t *card_reader_info)
 
 static int card_reader_card_data_read(card_reader_info_t *card_reader_info)
 {
-	int ret = 0;
+	int ret = -1;
 	int received;
 
 	card_reader_handler_ctx_t *card_reader_handler_ctx = (card_reader_handler_ctx_t *)card_reader_info->ctx;
@@ -304,6 +336,7 @@ static int card_reader_card_data_read(card_reader_info_t *card_reader_info)
 	                        card_reader_info->card_data_timeout);
 
 	if(received <= 0) {
+		debug("");
 		return ret;
 	}
 
@@ -313,10 +346,12 @@ static int card_reader_card_data_read(card_reader_info_t *card_reader_info)
 	                  &status,
 	                  &data,
 	                  &len) != 0) {
+		debug("");
 		return ret;
 	}
 
 	if(zlg_frame_rx_header->status != 0x00) {
+		debug("");
 		return ret;
 	}
 
@@ -329,7 +364,7 @@ static int card_reader_card_data_read(card_reader_info_t *card_reader_info)
 
 static int card_reader_card_data_write(card_reader_info_t *card_reader_info)
 {
-	int ret = 0;
+	int ret = -1;
 	int received;
 
 	card_reader_handler_ctx_t *card_reader_handler_ctx = (card_reader_handler_ctx_t *)card_reader_info->ctx;
@@ -345,6 +380,7 @@ static int card_reader_card_data_write(card_reader_info_t *card_reader_info)
 	memcpy(block_card_data.data, card_reader_handler_ctx->card_data.data, sizeof(block_card_data.data));
 
 	if(encode_zlg_cmd(card_reader_info->tx_buffer, CARD_READ_BUFFER_LENGTH, 0x02, 'H', (uint8_t *)&block_card_data, sizeof(block_card_data)) != 0) {
+		debug("");
 		return ret;
 	}
 
@@ -356,6 +392,7 @@ static int card_reader_card_data_write(card_reader_info_t *card_reader_info)
 	                           100);
 
 	if(received <= 0) {
+		debug("");
 		return ret;
 	}
 
@@ -365,10 +402,12 @@ static int card_reader_card_data_write(card_reader_info_t *card_reader_info)
 	                  &status,
 	                  &data,
 	                  &len) != 0) {
+		debug("");
 		return ret;
 	}
 
 	if(zlg_frame_rx_header->status != 0x00) {
+		debug("");
 		return ret;
 	}
 
@@ -377,69 +416,11 @@ static int card_reader_card_data_write(card_reader_info_t *card_reader_info)
 	return ret;
 }
 
-static void handle_card_reader_start_timeout(card_reader_info_t *card_reader_info, card_reader_handler_ctx_t *card_reader_handler_ctx)
-{
-	switch(card_reader_handler_ctx->state) {
-		case CARD_READER_HANDLER_STATE_AUTO_DETECT:
-		case CARD_READER_HANDLER_STATE_CARD_DATA_READ:
-		case CARD_READER_HANDLER_STATE_CARD_DATA_WRITE: {
-			if(ticks_duration(osKernelSysTick(), card_reader_info->start_stamps) >= card_reader_info->timeout) {
-				card_reader_handler_ctx->state = CARD_READER_HANDLER_STATE_IDLE;
-
-				set_card_reader_state(card_reader_info, CARD_READER_STATE_IDLE);
-				do_callback_chain(card_reader_info->card_reader_callback_chain, NULL);
-			}
-		}
-		break;
-
-		default: {
-		}
-		break;
-	}
-}
-
-static void handle_card_reader_action(card_reader_info_t *card_reader_info, card_reader_handler_ctx_t *card_reader_handler_ctx)
-{
-	switch(card_reader_handler_ctx->state) {
-		case CARD_READER_HANDLER_STATE_IDLE: {
-			if(card_reader_handler_ctx->action == CARD_READER_ACTION_START) {
-				card_reader_handler_ctx->action = CARD_READER_ACTION_NONE;
-
-				card_reader_handler_ctx->state = CARD_READER_HANDLER_STATE_AUTO_DETECT;
-
-				set_card_reader_state(card_reader_info, CARD_READER_STATE_RUNNING);
-			} else if(card_reader_handler_ctx->action == CARD_READER_ACTION_INIT) {
-				card_reader_handler_ctx->action = CARD_READER_ACTION_NONE;
-
-				card_reader_handler_ctx->state = CARD_READER_HANDLER_STATE_SET_BAUDRATE;
-
-				set_card_reader_state(card_reader_info, CARD_READER_STATE_INIT);
-			}
-		}
-		break;
-
-		case CARD_READER_HANDLER_STATE_AUTO_DETECT:
-		case CARD_READER_HANDLER_STATE_CARD_DATA_READ:
-		case CARD_READER_HANDLER_STATE_CARD_DATA_WRITE: {
-			if(card_reader_handler_ctx->action == CARD_READER_ACTION_STOP) {
-				card_reader_handler_ctx->action = CARD_READER_ACTION_NONE;
-
-				card_reader_handler_ctx->state = CARD_READER_HANDLER_STATE_IDLE;
-
-				set_card_reader_state(card_reader_info, CARD_READER_STATE_IDLE);
-			}
-		}
-		break;
-
-		default: {
-		}
-		break;
-	}
-}
-
 static void handle_card_reader_state(card_reader_info_t *card_reader_info, card_reader_handler_ctx_t *card_reader_handler_ctx)
 {
 	int ret;
+
+	debug("state:%s", get_card_reader_handler_state_des(card_reader_handler_ctx->state));
 
 	switch(card_reader_handler_ctx->state) {
 		case CARD_READER_HANDLER_STATE_SET_BAUDRATE: {
@@ -447,6 +428,14 @@ static void handle_card_reader_state(card_reader_info_t *card_reader_info, card_
 
 			if(ret == 0) {
 				card_reader_handler_ctx->state = CARD_READER_HANDLER_STATE_RESET;
+			} else {
+				card_reader_handler_ctx->init_retry++;
+
+				if(card_reader_handler_ctx->init_retry >= 10) {
+					card_reader_handler_ctx->init_retry = 0;
+					card_reader_handler_ctx->state = CARD_READER_HANDLER_STATE_RESET;
+					debug("");
+				}
 			}
 		}
 		break;
@@ -454,24 +443,36 @@ static void handle_card_reader_state(card_reader_info_t *card_reader_info, card_
 		case CARD_READER_HANDLER_STATE_RESET: {
 			ret = card_reader_reset(card_reader_info);
 
-			if(ret != 0) {
+			if(ret == 0) {
 				card_reader_handler_ctx->state = CARD_READER_HANDLER_STATE_IDLE;
-
 				set_card_reader_state(card_reader_info, CARD_READER_STATE_IDLE);
+			} else {
+				card_reader_handler_ctx->state = CARD_READER_HANDLER_STATE_SET_BAUDRATE;
 			}
 		}
 		break;
 
 		case CARD_READER_HANDLER_STATE_IDLE: {
+			if(card_reader_handler_ctx->request_state == CARD_READER_HANDLER_STATE_AUTO_DETECT) {
+				card_reader_handler_ctx->request_state = CARD_READER_HANDLER_STATE_NONE;
+
+				card_reader_handler_ctx->state = CARD_READER_HANDLER_STATE_AUTO_DETECT;
+				set_card_reader_state(card_reader_info, CARD_READER_STATE_RUNNING);
+			} else {
+				card_reader_handler_ctx->state = CARD_READER_HANDLER_STATE_AUTO_DETECT;
+				set_card_reader_state(card_reader_info, CARD_READER_STATE_RUNNING);
+			}
 		}
 		break;
 
 		case CARD_READER_HANDLER_STATE_AUTO_DETECT: {
 			ret = card_reader_auto_detect(card_reader_info);
 
-			if(ret == 0) {
-				card_reader_handler_ctx->state = CARD_READER_HANDLER_STATE_CARD_DATA_READ;
+			if(ret != 0) {
+				debug("");
 			}
+
+			card_reader_handler_ctx->state = CARD_READER_HANDLER_STATE_CARD_DATA_READ;
 		}
 		break;
 
@@ -480,21 +481,34 @@ static void handle_card_reader_state(card_reader_info_t *card_reader_info, card_
 			ret = card_reader_card_data_read(card_reader_info);
 
 			if(ret == 0) {
+				debug("tx_dre:%02x", card_reader_handler_ctx->card_data.tx_dre);
+				debug("req:%04x", card_reader_handler_ctx->card_data.req);
+				debug("select:%02x", card_reader_handler_ctx->card_data.select);
+				debug("sn_length:%02x", card_reader_handler_ctx->card_data.sn_length);
+				debug("sn:%08x", card_reader_handler_ctx->card_data.sn);
+				debug("data[0]:%08x", card_reader_handler_ctx->card_data.data[0]);
+				debug("data[1]:%08x", card_reader_handler_ctx->card_data.data[1]);
+				debug("data[2]:%08x", card_reader_handler_ctx->card_data.data[2]);
+				debug("data[3]:%08x", card_reader_handler_ctx->card_data.data[3]);
 				card_reader_info->card_reader_data.id = card_reader_handler_ctx->card_data.sn;
 				do_callback_chain(card_reader_info->card_reader_callback_chain, &card_reader_info->card_reader_data);
-				card_reader_handler_ctx->state = CARD_READER_HANDLER_STATE_CARD_DATA_WRITE;
+			} else {
+				do_callback_chain(card_reader_info->card_reader_callback_chain, NULL);
 			}
+
+			card_reader_handler_ctx->state = CARD_READER_HANDLER_STATE_IDLE;
+			set_card_reader_state(card_reader_info, CARD_READER_STATE_IDLE);
 		}
 		break;
 
 		case CARD_READER_HANDLER_STATE_CARD_DATA_WRITE: {
 			ret = card_reader_card_data_write(card_reader_info);
 
-			if(ret == 0) {
+			if(ret != 0) {
+				debug("");
 			}
 
 			card_reader_handler_ctx->state = CARD_READER_HANDLER_STATE_IDLE;
-
 			set_card_reader_state(card_reader_info, CARD_READER_STATE_IDLE);
 		}
 		break;
@@ -510,9 +524,48 @@ static void uart_data_request(void *fn_ctx, void *chain_ctx)
 	card_reader_info_t *card_reader_info = (card_reader_info_t *)fn_ctx;
 	card_reader_handler_ctx_t *card_reader_handler_ctx = (card_reader_handler_ctx_t *)card_reader_info->ctx;
 
-	handle_card_reader_start_timeout(card_reader_info, card_reader_handler_ctx);
-	handle_card_reader_action(card_reader_info, card_reader_handler_ctx);
 	handle_card_reader_state(card_reader_info, card_reader_handler_ctx);
+}
+
+static void card_reader_ctrl_cmd(void *fn_ctx, void *chain_ctx)
+{
+	card_reader_info_t *card_reader_info = (card_reader_info_t *)fn_ctx;
+	card_reader_handler_ctx_t *card_reader_handler_ctx = (card_reader_handler_ctx_t *)card_reader_info->ctx;
+	card_reader_ctrl_cmd_info_t *card_reader_ctrl_cmd_info = (card_reader_ctrl_cmd_info_t *)chain_ctx;
+
+	card_reader_ctrl_cmd_info->code = -1;
+
+	if(card_reader_handler_ctx->request_state != CARD_READER_HANDLER_STATE_NONE) {
+		debug("");
+		return;
+	}
+
+	switch(card_reader_ctrl_cmd_info->cmd) {
+		case CARD_READER_CTRL_CMD_START: {
+			if(card_reader_handler_ctx->state == CARD_READER_HANDLER_STATE_IDLE) {
+				card_reader_start_t *card_reader_start = (card_reader_start_t *)card_reader_ctrl_cmd_info->args;
+
+				if(remove_callback(card_reader_info->card_reader_callback_chain, &card_reader_info->card_reader_callback_item) != 0) {
+				}
+
+				card_reader_info->card_reader_callback_item.fn = card_reader_start->fn;
+				card_reader_info->card_reader_callback_item.fn_ctx = card_reader_start->fn_ctx;
+
+				if(register_callback(card_reader_info->card_reader_callback_chain, &card_reader_info->card_reader_callback_item) != 0) {
+				}
+
+				card_reader_info->card_data_timeout = card_reader_start->timeout;
+
+				card_reader_handler_ctx->request_state = CARD_READER_HANDLER_STATE_AUTO_DETECT;
+				card_reader_ctrl_cmd_info->code = 0;
+			}
+		}
+		break;
+
+		default: {
+		}
+		break;
+	}
 }
 
 static int init(void *_card_reader_info)
@@ -527,10 +580,12 @@ static int init(void *_card_reader_info)
 	card_reader_handler_ctx = os_calloc(1, sizeof(card_reader_handler_ctx_t));
 	OS_ASSERT(card_reader_handler_ctx != NULL);
 	card_reader_handler_ctx->state = CARD_READER_HANDLER_STATE_SET_BAUDRATE;
+	set_card_reader_state(card_reader_info, CARD_READER_STATE_INIT);
 
 	uart_data_task_info = get_or_alloc_uart_data_task_info(channels_config->card_reader_config.huart_card_reader);
 	OS_ASSERT(uart_data_task_info != NULL);
 
+	remove_callback(card_reader_info->card_reader_ctrl_cmd_callback_chain, &card_reader_info->card_reader_ctrl_cmd_callback_item);
 	remove_uart_data_task_info_cb(uart_data_task_info, &card_reader_info->uart_data_request_cb);
 
 	if(card_reader_info->ctx != NULL) {
@@ -538,12 +593,14 @@ static int init(void *_card_reader_info)
 	}
 
 	card_reader_info->ctx = card_reader_handler_ctx;
-
 	card_reader_info->uart_info = get_or_alloc_uart_info(channels_config->card_reader_config.huart_card_reader);
 	OS_ASSERT(card_reader_info->uart_info != NULL);
 	card_reader_info->uart_data_request_cb.fn = uart_data_request;
 	card_reader_info->uart_data_request_cb.fn_ctx = card_reader_info;
 	OS_ASSERT(add_uart_data_task_info_cb(uart_data_task_info, &card_reader_info->uart_data_request_cb) == 0);
+	card_reader_info->card_reader_ctrl_cmd_callback_item.fn = card_reader_ctrl_cmd;
+	card_reader_info->card_reader_ctrl_cmd_callback_item.fn_ctx = card_reader_info;
+	OS_ASSERT(register_callback(card_reader_info->card_reader_ctrl_cmd_callback_chain, &card_reader_info->card_reader_ctrl_cmd_callback_item) == 0);
 
 	return ret;
 }
