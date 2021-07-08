@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2021年07月04日 星期日 12时48分36秒
+ *   修改日期：2021年07月08日 星期四 16时32分01秒
  *   描    述：
  *
  *================================================================*/
@@ -30,6 +30,7 @@ extern protocol_if_t protocol_if_ws;
 extern request_callback_t request_callback_default;
 extern request_callback_t request_callback_ws;
 extern request_callback_t request_callback_sse;
+extern request_callback_t request_callback_ocpp_1_6;
 
 static protocol_if_t *protocol_if_sz[] = {
 	&protocol_if_tcp,
@@ -41,6 +42,7 @@ static request_callback_t *request_callback_sz[] = {
 	&request_callback_default,
 	&request_callback_ws,
 	&request_callback_sse,
+	&request_callback_ocpp_1_6,
 };
 
 static char *get_net_client_state_des(client_state_t state)
@@ -55,23 +57,6 @@ static char *get_net_client_state_des(client_state_t state)
 			add_des_case(CLIENT_RESET);
 			add_des_case(CLIENT_REINIT);
 			add_des_case(CLIENT_SUSPEND);
-
-		default: {
-		}
-		break;
-	}
-
-	return des;
-}
-
-static char *get_protocol_type_des(protocol_type_t protocol_type)
-{
-	char *des = "unknow";
-
-	switch(protocol_type) {
-			add_des_case(PROTOCOL_TCP);
-			add_des_case(PROTOCOL_UDP);
-			add_des_case(PROTOCOL_WS);
 
 		default: {
 		}
@@ -98,18 +83,6 @@ static char *get_request_type_des(request_type_t request_type)
 	return des;
 }
 
-void set_net_client_protocol_type(net_client_info_t *net_client_info, protocol_type_t protocol_type)
-{
-	if(net_client_info == NULL) {
-		debug("");
-		return;
-	}
-
-	debug("set protocol_type %s", get_protocol_type_des(protocol_type));
-
-	net_client_info->protocol_type = protocol_type;
-}
-
 void set_net_client_request_type(net_client_info_t *net_client_info, request_type_t request_type)
 {
 	if(net_client_info == NULL) {
@@ -122,15 +95,66 @@ void set_net_client_request_type(net_client_info_t *net_client_info, request_typ
 	net_client_info->request_type = request_type;
 }
 
+static protocol_if_t *get_protocol_if(protocol_type_t protocol_type)
+{
+	protocol_if_t *protocol_if = NULL;
+	int i;
+
+	for(i = 0; i < ARRAY_SIZE(protocol_if_sz); i++) {
+		protocol_if_t *protocol_if_item = protocol_if_sz[i];
+
+		if(protocol_if_item->type == protocol_type) {
+			protocol_if = protocol_if_item;
+			break;
+		}
+	}
+
+	return protocol_if;
+}
+
 static int get_addr_host_port_service(net_client_info_t *net_client_info, char **host, char **port, char **path)
 {
 	int ret = 0;
 
 	app_info_t *app_info = get_app_info();
 
-	*host = app_info->mechine_info.host;
-	*port = app_info->mechine_info.port;
-	*path = "/";
+	//backstage_ip.s.byte0 = 192;
+	//backstage_ip.s.byte1 = 168;
+	//backstage_ip.s.byte2 = 1;
+	//backstage_ip.s.byte3 = 128;
+
+	//snprintf(net_client_info->net_client_addr_info.uri, sizeof(net_client_info->net_client_addr_info.uri), "tcp://%d.%d.%d.%d:%d", 192, 168, 1, 128, 6003);
+
+	memset(net_client_info->net_client_addr_info.scheme, 0, sizeof(net_client_info->net_client_addr_info.scheme));
+	memset(net_client_info->net_client_addr_info.host, 0, sizeof(net_client_info->net_client_addr_info.host));
+	memset(net_client_info->net_client_addr_info.port, 0, sizeof(net_client_info->net_client_addr_info.port));
+	memset(net_client_info->net_client_addr_info.path, 0, sizeof(net_client_info->net_client_addr_info.path));
+
+	sscanf(app_info->mechine_info.uri, "%7[^:]://%63[^:]:%7[0-9]/%255s",
+	       net_client_info->net_client_addr_info.scheme,
+	       net_client_info->net_client_addr_info.host,
+	       net_client_info->net_client_addr_info.port,
+	       net_client_info->net_client_addr_info.path);
+
+	debug("scheme:\'%s\'", net_client_info->net_client_addr_info.scheme);
+	debug("host:\'%s\'", net_client_info->net_client_addr_info.host);
+	debug("port:\'%s\'", net_client_info->net_client_addr_info.port);
+	debug("path:\'%s\'", net_client_info->net_client_addr_info.path);
+
+	if(memcmp(net_client_info->net_client_addr_info.scheme, "tcp", 3) == 0) {
+		net_client_info->net_client_addr_info.protocol_type = PROTOCOL_TCP;
+	} else if(memcmp(net_client_info->net_client_addr_info.scheme, "udp", 3) == 0) {
+		net_client_info->net_client_addr_info.protocol_type = PROTOCOL_UDP;
+	} else if(memcmp(net_client_info->net_client_addr_info.scheme, "ws", 2) == 0) {
+		net_client_info->net_client_addr_info.protocol_type = PROTOCOL_WS;
+	} else if(memcmp(net_client_info->net_client_addr_info.scheme, "wss", 3) == 0) {
+		net_client_info->net_client_addr_info.protocol_type = PROTOCOL_WS;
+	} else {
+		net_client_info->net_client_addr_info.protocol_type = PROTOCOL_TCP;
+	}
+
+	net_client_info->protocol_if = get_protocol_if(net_client_info->net_client_addr_info.protocol_type);
+	OS_ASSERT(net_client_info->protocol_if);
 
 	return ret;
 }
@@ -167,21 +191,10 @@ static void get_addr_info(net_client_info_t *net_client_info)
 		return;
 	}
 
-	//backstage_ip.s.byte0 = 192;
-	//backstage_ip.s.byte1 = 168;
-	//backstage_ip.s.byte2 = 1;
-	//backstage_ip.s.byte3 = 128;
-
-	//snprintf(net_client_info->net_client_addr_info.host, sizeof(net_client_info->net_client_addr_info.host), "%d.%d.%d.%d", 192, 168, 1, 128);
-
-	snprintf(net_client_info->net_client_addr_info.host, sizeof(net_client_info->net_client_addr_info.host), "%s", host);
-	snprintf(net_client_info->net_client_addr_info.port, sizeof(net_client_info->net_client_addr_info.port), "%s", port);
-	snprintf(net_client_info->net_client_addr_info.path, sizeof(net_client_info->net_client_addr_info.path), "%s", path);
 	net_client_info->net_client_addr_info.socket_addr_info = NULL;
 
-
-	socktype = (net_client_info->protocol_type == PROTOCOL_UDP) ? SOCK_DGRAM : SOCK_STREAM;
-	protocol = (net_client_info->protocol_type == PROTOCOL_UDP) ? IPPROTO_UDP : IPPROTO_TCP;
+	socktype = (net_client_info->net_client_addr_info.protocol_type == PROTOCOL_UDP) ? SOCK_DGRAM : SOCK_STREAM;
+	protocol = (net_client_info->net_client_addr_info.protocol_type == PROTOCOL_UDP) ? IPPROTO_UDP : IPPROTO_TCP;
 
 	ret = update_addr_info_list(list_head, net_client_info->net_client_addr_info.host, net_client_info->net_client_addr_info.port, socktype, protocol);
 
@@ -220,23 +233,6 @@ client_state_t get_client_state(net_client_info_t *net_client_info)
 	return net_client_info->state;
 }
 
-static protocol_if_t *get_protocol_if(protocol_type_t protocol_type)
-{
-	protocol_if_t *protocol_if = NULL;
-	int i;
-
-	for(i = 0; i < ARRAY_SIZE(protocol_if_sz); i++) {
-		protocol_if_t *protocol_if_item = protocol_if_sz[i];
-
-		if(protocol_if_item->type == protocol_type) {
-			protocol_if = protocol_if_item;
-			break;
-		}
-	}
-
-	return protocol_if;
-}
-
 static request_callback_t *get_request_callback(request_type_t request_type)
 {
 	request_callback_t *request_callback = NULL;
@@ -258,8 +254,6 @@ static void default_init(net_client_info_t *net_client_info)
 {
 	srand(osKernelSysTick());
 
-	net_client_info->protocol_if = get_protocol_if(net_client_info->protocol_type);
-	OS_ASSERT(net_client_info->protocol_if);
 	net_client_info->request_callback = get_request_callback(net_client_info->request_type);
 	OS_ASSERT(net_client_info->request_callback);
 
@@ -802,7 +796,6 @@ void net_client_add_poll_loop(poll_loop_t *poll_loop)
 	net_client_info->sock_fd = -1;
 	INIT_LIST_HEAD(&net_client_info->net_client_addr_info.socket_addr_info_list);
 
-	set_net_client_protocol_type(net_client_info, PROTOCOL_TCP);
 	set_net_client_request_type(net_client_info, REQUEST_TYPE_DEFAULT);
 
 	default_init(net_client_info);

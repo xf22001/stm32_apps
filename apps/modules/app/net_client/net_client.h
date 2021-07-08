@@ -6,7 +6,7 @@
  *   文件名称：net_client.h
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时38分02秒
- *   修改日期：2021年07月05日 星期一 10时12分27秒
+ *   修改日期：2021年07月08日 星期四 16时13分26秒
  *   描    述：
  *
  *================================================================*/
@@ -26,12 +26,11 @@ extern "C"
 #include "list_utils.h"
 #include "net_utils.h"
 #include "callback_chain.h"
+#include "https.h"
 
 #ifdef __cplusplus
 }
 #endif
-
-
 
 #define TASK_NET_CLIENT_PERIODIC (100) //ms
 #define TASK_NET_CLIENT_CONNECT_PERIODIC (1000 * 1) //ms
@@ -47,10 +46,19 @@ typedef enum {
 	CLIENT_SUSPEND,
 } client_state_t;
 
+typedef enum {
+	PROTOCOL_TCP = 0,
+	PROTOCOL_UDP,
+	PROTOCOL_WS,
+} protocol_type_t;
+
 typedef struct {
-	char host[256];
+	char scheme[8];
+	char host[64];
 	char port[8];
 	char path[256];
+	protocol_type_t protocol_type;
+
 	struct list_head socket_addr_info_list;
 	socket_addr_info_t *socket_addr_info;
 } net_client_addr_info_t;
@@ -59,12 +67,6 @@ typedef struct {
 	uint16_t used;
 	uint8_t buffer[NET_MESSAGE_BUFFER_SIZE];
 } net_message_buffer_t;
-
-typedef enum {
-	PROTOCOL_TCP = 0,
-	PROTOCOL_UDP,
-	PROTOCOL_WS,
-} protocol_type_t;
 
 typedef int (*connect_t)(void *ctx);
 typedef int (*recv_t)(void *ctx, void *buf, size_t len);
@@ -82,6 +84,7 @@ typedef enum {
 	REQUEST_TYPE_DEFAULT = 0,
 	REQUEST_TYPE_WEBSOCKET,
 	REQUEST_TYPE_SSE,
+	REQUEST_TYPE_OCPP_1_6,
 } request_type_t;
 
 typedef void (*init_t)(void *ctx);
@@ -158,16 +161,16 @@ typedef struct {
 	net_client_addr_info_t net_client_addr_info;
 	net_message_buffer_t recv_message_buffer;
 	net_message_buffer_t send_message_buffer;
-	protocol_type_t protocol_type;
 	request_type_t request_type;
 	protocol_if_t *protocol_if;
 	request_callback_t *request_callback;
 
 	callback_chain_t *net_client_ctrl_cmd_chain;
 	callback_item_t net_client_ctrl_cmd_callback_item;
+
+	HTTP_INFO *hi;
 } net_client_info_t;
 
-void set_net_client_protocol_type(net_client_info_t *net_client_info, protocol_type_t protocol_type);
 void set_net_client_request_type(net_client_info_t *net_client_info, request_type_t request_type);
 void set_client_state(net_client_info_t *net_client_info, client_state_t state);
 client_state_t get_client_state(net_client_info_t *net_client_info);
