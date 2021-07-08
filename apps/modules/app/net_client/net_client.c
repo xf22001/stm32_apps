@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2021年07月08日 星期四 17时04分17秒
+ *   修改日期：2021年07月08日 星期四 17时14分51秒
  *   描    述：
  *
  *================================================================*/
@@ -138,7 +138,7 @@ static int get_addr_host_port_service(net_client_info_t *net_client_info, char *
 	                 net_client_info->net_client_addr_info.path);
 
 	if((matched != 4) && (matched != 3)) {
-		matched = sscanf(app_info->mechine_info.uri, "%7[^:]://%63[^:]/%255s",
+		matched = sscanf(app_info->mechine_info.uri, "%7[^:]://%63[^/]/%255s",
 		                 net_client_info->net_client_addr_info.scheme,
 		                 net_client_info->net_client_addr_info.host,
 		                 net_client_info->net_client_addr_info.path);
@@ -157,9 +157,13 @@ static int get_addr_host_port_service(net_client_info_t *net_client_info, char *
 		net_client_info->net_client_addr_info.protocol_type = PROTOCOL_TCP;
 	} else if(memcmp(net_client_info->net_client_addr_info.scheme, "udp", 3) == 0) {
 		net_client_info->net_client_addr_info.protocol_type = PROTOCOL_UDP;
+	} else if(memcmp(net_client_info->net_client_addr_info.scheme, "wss", 3) == 0) {
+		net_client_info->net_client_addr_info.protocol_type = PROTOCOL_WS;
 	} else if(memcmp(net_client_info->net_client_addr_info.scheme, "ws", 2) == 0) {
 		net_client_info->net_client_addr_info.protocol_type = PROTOCOL_WS;
-	} else if(memcmp(net_client_info->net_client_addr_info.scheme, "wss", 3) == 0) {
+	} else if(memcmp(net_client_info->net_client_addr_info.scheme, "https", 5) == 0) {
+		net_client_info->net_client_addr_info.protocol_type = PROTOCOL_WS;
+	} else if(memcmp(net_client_info->net_client_addr_info.scheme, "http", 4) == 0) {
 		net_client_info->net_client_addr_info.protocol_type = PROTOCOL_WS;
 	} else {
 		net_client_info->net_client_addr_info.protocol_type = PROTOCOL_TCP;

@@ -6,7 +6,7 @@
  *   文件名称：net_protocol_ws.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月23日 星期日 12时23分31秒
- *   修改日期：2021年07月08日 星期四 15时09分33秒
+ *   修改日期：2021年07月08日 星期四 17时25分08秒
  *   描    述：
  *
  *================================================================*/
@@ -21,6 +21,7 @@
 #include "os_utils.h"
 #include "net_client.h"
 #include "mbedtls/platform.h"
+#include "app.h"
 
 #include "log.h"
 
@@ -53,7 +54,8 @@ static int ws_client_connect(void *ctx)
 {
 	int ret = -1;
 	net_client_info_t *net_client_info = (net_client_info_t *)ctx;
-	char *url = "https://httpbin.org/get";
+	app_info_t *app_info = get_app_info();
+	//char *url = "https://httpbin.org/get";
 	//char *url = "ws://192.168.41.2:8080/ocpp/";
 	//char *url = "ws://47.244.218.210:8080/OCPP/echoSocket/13623";
 	//char *url = "wss://35.201.125.176:433/SSECHINAEVSE";
@@ -66,6 +68,7 @@ static int ws_client_connect(void *ctx)
 		return ret;
 	}
 
+	debug("open uri:%s", app_info->mechine_info.uri);
 	//test_https();
 
 	if(net_client_info->hi == NULL) {
@@ -77,7 +80,7 @@ static int ws_client_connect(void *ctx)
 
 	mbedtls_platform_set_calloc_free(_os_calloc, os_free);
 
-	ret = http_open(net_client_info->hi, url);
+	ret = http_open(net_client_info->hi, app_info->mechine_info.uri);
 
 	if(ret != 0) {
 		debug("");
