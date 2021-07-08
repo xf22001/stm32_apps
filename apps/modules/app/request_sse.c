@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年07月06日 星期二 15时28分02秒
+ *   修改日期：2021年07月08日 星期四 11时14分37秒
  *   描    述：
  *
  *================================================================*/
@@ -652,7 +652,7 @@ static uint8_t get_telemeter_faults(channels_info_t *channels_info)
 	for(i = 0; i < channels_info->channel_number; i++) {
 		channel_info_t *channel_info = channels_info->channel_info + i;
 
-		if(get_fault(channel_info->faults, CHANNEL_FAULT_TELEMETER) == 1) {
+		if(get_fault(channel_info->faults, CHANNEL_FAULT_ENERGYMETER) == 1) {
 			fault = 1;
 			break;
 		}
@@ -781,7 +781,7 @@ static uint16_t get_sse_device_fault_type(channels_info_t *channels_info)
 			}
 		}
 
-		if(get_fault(channel_info->faults, CHANNEL_FAULT_TELEMETER) == 1) {
+		if(get_fault(channel_info->faults, CHANNEL_FAULT_ENERGYMETER) == 1) {
 			switch(i) {
 				case 0: {
 					fault = SSE_DEVICE_FAULT_TYPE_TELEMETER_A;
@@ -1382,7 +1382,7 @@ static uint32_t get_device_fault_type(channels_info_t *channels_info)
 				break;
 			}
 
-			if(get_fault(channel_info->faults, CHANNEL_FAULT_TELEMETER) == 1) {
+			if(get_fault(channel_info->faults, CHANNEL_FAULT_ENERGYMETER) == 1) {
 				switch(i) {
 					case 0: {
 						u_sse_event_fault_type.s.telemeter_1 = 1;

@@ -6,7 +6,7 @@
  *   文件名称：channels.h
  *   创 建 者：肖飞
  *   创建日期：2021年01月18日 星期一 10时08分44秒
- *   修改日期：2021年07月06日 星期二 15时46分19秒
+ *   修改日期：2021年07月08日 星期四 11时21分42秒
  *   描    述：
  *
  *================================================================*/
@@ -98,7 +98,7 @@ typedef enum {
 typedef enum {
 	CHANNEL_FAULT_UNKNOW = 0,
 
-	CHANNEL_FAULT_TELEMETER,
+	CHANNEL_FAULT_ENERGYMETER,
 	CHANNEL_FAULT_CONNECT,
 	CHANNEL_FAULT_FUNCTION_BOARD_CONNECT,
 	CHANNEL_FAULT_OVER_TEMPERATURE,
@@ -175,6 +175,8 @@ typedef struct {
 	uint8_t charger_lock_state;
 
 	uint8_t bms_state;
+
+	callback_chain_t *channel_periodic_chain;
 
 	callback_item_t periodic_callback_item;
 	callback_item_t event_callback_item;

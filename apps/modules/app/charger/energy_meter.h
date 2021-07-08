@@ -6,7 +6,7 @@
  *   文件名称：energy_meter.h
  *   创 建 者：肖飞
  *   创建日期：2021年04月07日 星期三 15时56分25秒
- *   修改日期：2021年06月23日 星期三 10时55分52秒
+ *   修改日期：2021年07月08日 星期四 11时10分30秒
  *   描    述：
  *
  *================================================================*/
@@ -42,11 +42,14 @@ typedef struct {
 typedef struct {
 	channel_info_t *channel_info;
 	energy_meter_handler_t *energy_meter_handler;
+	uint32_t alive_stamps;
 
 	uart_info_t *uart_info;
 	dlt_645_master_info_t *dlt_645_master_info;
 	dlt_645_addr_t dlt_645_addr;
 	callback_item_t uart_data_request_cb;
+
+	callback_item_t energy_meter_periodic_cb;
 
 	void *ctx;
 } energy_meter_info_t;

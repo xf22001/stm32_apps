@@ -6,7 +6,7 @@
  *   文件名称：dlt_645_spec.h
  *   创 建 者：肖飞
  *   创建日期：2020年05月21日 星期四 10时20分10秒
- *   修改日期：2021年05月29日 星期六 14时39分38秒
+ *   修改日期：2021年07月08日 星期四 10时59分03秒
  *   描    述：
  *
  *================================================================*/
@@ -28,14 +28,6 @@ extern "C"
 #define DLT_645_FRAME_START_FLAG 0x68
 #define DLT_645_FRAME_STOP_FLAG 0x16
 
-typedef struct {
-	uint8_t data[4];//0xfe 0xfe 0xfe 0xfe
-} dlt_645_wakeup_t;
-
-typedef struct {
-	uint8_t data[6];
-} dlt_645_addr_t;
-
 typedef enum {
 	DLT_645_CONTROL_FN_RESERVED = 0X00,
 	DLT_645_CONTROL_FN_BROADCASE_DATE_TIME = 0X08,
@@ -51,6 +43,16 @@ typedef enum {
 	DLT_645_CONTROL_FN_CLEAR_ELECTRIC_METER = 0x1a,
 	DLT_645_CONTROL_FN_CLEAR_EVENT = 0x1b,
 } dlt_645_control_fn_t;
+
+#pragma pack(push, 1)
+
+typedef struct {
+	uint8_t data[4];//0xfe 0xfe 0xfe 0xfe
+} dlt_645_wakeup_t;
+
+typedef struct {
+	uint8_t data[6];
+} dlt_645_addr_t;
 
 typedef struct {
 	uint8_t fn : 5;//功能码
@@ -80,5 +82,7 @@ typedef struct {
 	uint8_t crc;
 	uint8_t end_flag;//0x16
 } dlt_645_frame_tail_t;
+
+#pragma pack(pop)
 
 #endif //_DLT_645_SPEC_H

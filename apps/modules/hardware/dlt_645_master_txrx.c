@@ -6,7 +6,7 @@
  *   文件名称：dlt_645_master_txrx.c
  *   创 建 者：肖飞
  *   创建日期：2020年05月21日 星期四 10时19分55秒
- *   修改日期：2021年05月29日 星期六 14时39分59秒
+ *   修改日期：2021年07月08日 星期四 11时26分45秒
  *   描    述：
  *
  *================================================================*/
@@ -85,7 +85,6 @@ dlt_645_master_info_t *get_or_alloc_dlt_645_master_info(uart_info_t *uart_info)
 	return dlt_645_master_info;
 }
 
-
 static int dlt_645_master_request(dlt_645_master_info_t *dlt_645_master_info, dlt_645_addr_t *addr, uint8_t fn, uint8_t *in, size_t in_len, uint8_t **out, size_t out_len)
 {
 	int ret = -1;
@@ -100,7 +99,7 @@ static int dlt_645_master_request(dlt_645_master_info_t *dlt_645_master_info, dl
 
 	dlt_645_frame_head_t *dlt_645_frame_head = (dlt_645_frame_head_t *)dlt_645_master_info->tx_buffer;
 	dlt_645_frame_data_t *dlt_645_frame_data = (dlt_645_frame_data_t *)(dlt_645_frame_head + 1);
-	dlt_645_frame_tail_t *dlt_645_frame_tail = (dlt_645_frame_tail_t *)dlt_645_frame_data->data + in_len;
+	dlt_645_frame_tail_t *dlt_645_frame_tail = (dlt_645_frame_tail_t *)(dlt_645_frame_data->data + in_len);
 
 	dlt_645_frame_head->addr_start_flag = 0x68;
 	memcpy(&dlt_645_frame_head->addr, addr, sizeof(dlt_645_addr_t));
@@ -131,23 +130,25 @@ static int dlt_645_master_request(dlt_645_master_info_t *dlt_645_master_info, dl
 	                          dlt_645_master_info->rx_timeout);
 
 	if(rx_size != dlt_645_master_info->rx_size) {
-		debug("rx_size:%d", rx_size);
+		debug("rx_size:%d, dlt_645_master_info->rx_size:%d", rx_size, dlt_645_master_info->rx_size);
 		return ret;
 	}
 
 	dlt_645_frame_head = (dlt_645_frame_head_t *)dlt_645_master_info->rx_buffer;
 	dlt_645_frame_data = (dlt_645_frame_data_t *)(dlt_645_frame_head + 1);
-	dlt_645_frame_tail = (dlt_645_frame_tail_t *)dlt_645_frame_data->data + out_len;
+	dlt_645_frame_tail = (dlt_645_frame_tail_t *)(dlt_645_frame_data->data + out_len);
 
 	crc = sum_crc8((uint8_t *)dlt_645_frame_head, (uint8_t *)&dlt_645_frame_tail->crc - (uint8_t *)dlt_645_frame_head);
 
 	if(dlt_645_frame_tail->crc != crc) {
+		debug("dlt_645_frame_tail->crc:%02x, crc:%02x", dlt_645_frame_tail->crc, crc);
 		return ret;
 	}
 
 	u_dlt_645_control.s.frame_type = 1;
 
 	if(u_dlt_645_control.v != dlt_645_frame_head->control.v) {
+		debug("");
 		return ret;
 	}
 
@@ -171,13 +172,15 @@ int dlt_645_master_get_energy_get_addr(dlt_645_master_info_t *dlt_645_master_inf
 	dlt_645_addr_t *out_addr;
 	memset(id_addr.data, 0xaa, sizeof(id_addr.data));
 
-	if(dlt_645_master_request(dlt_645_master_info, addr, 0x13, NULL, 0, (uint8_t **)&out_addr, sizeof(dlt_645_addr_t)) == 0) {
+	if(dlt_645_master_request(dlt_645_master_info, &id_addr, 0x13, NULL, 0, (uint8_t **)&out_addr, sizeof(dlt_645_addr_t)) == 0) {
 		*addr = *out_addr;
 		ret = 0;
 	}
 
 	return ret;
 }
+
+#pragma pack(push, 1)
 
 typedef struct {
 	uint8_t flag;
@@ -195,6 +198,8 @@ typedef struct {
 	u_data_type_t data_type;
 	u_uint32_bytes_t energy;
 } energy_data_block_t;
+
+#pragma pack(pop)
 
 int dlt_645_master_get_energy(dlt_645_master_info_t *dlt_645_master_info, dlt_645_addr_t *addr, uint32_t *energy)
 {
@@ -215,12 +220,16 @@ int dlt_645_master_get_energy(dlt_645_master_info_t *dlt_645_master_info, dlt_64
 	return ret;
 }
 
+#pragma pack(push, 1)
+
 typedef struct {
 	u_data_type_t data_type;
 	u_uint16_bytes_t va;
 	u_uint16_bytes_t vb;
 	u_uint16_bytes_t vc;
 } voltage_data_block_t;
+
+#pragma pack(pop)
 
 int dlt_645_master_get_voltage(dlt_645_master_info_t *dlt_645_master_info, dlt_645_addr_t *addr, uint16_t *va, uint16_t *vb, uint16_t *vc)
 {
@@ -243,6 +252,8 @@ int dlt_645_master_get_voltage(dlt_645_master_info_t *dlt_645_master_info, dlt_6
 	return ret;
 }
 
+#pragma pack(push, 1)
+
 typedef struct {
 	u_data_type_t data_type;
 	uint8_t ca_b0;
@@ -255,6 +266,8 @@ typedef struct {
 	uint8_t cc_b1;
 	uint8_t cc_b2;
 } current_data_block_t;
+
+#pragma pack(pop)
 
 int dlt_645_master_get_current(dlt_645_master_info_t *dlt_645_master_info, dlt_645_addr_t *addr, uint16_t *ca, uint16_t *cb, uint16_t *cc)
 {

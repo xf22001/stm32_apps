@@ -6,7 +6,7 @@
  *   文件名称：modbus_spec.h
  *   创 建 者：肖飞
  *   创建日期：2019年11月25日 星期一 17时21分29秒
- *   修改日期：2020年04月23日 星期四 09时48分18秒
+ *   修改日期：2021年07月08日 星期四 10时59分52秒
  *   描    述：
  *
  *================================================================*/
@@ -22,6 +22,8 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif
+
+#pragma pack(push, 1)
 
 typedef struct {
 	uint8_t station;
@@ -48,6 +50,7 @@ typedef struct {
 	uint8_t h;
 } modbus_crc_t;
 
+#pragma pack(pop)
 
 static inline void set_modbus_addr(modbus_addr_t *modbus_addr, uint16_t addr)
 {

@@ -14,6 +14,7 @@
 
 #include "uart_data_task.h"
 #include "dlt_645_master_txrx.h"
+#include "log.h"
 
 typedef struct {
 	uint8_t state;
@@ -46,9 +47,25 @@ static void uart_data_request(void *fn_ctx, void *chain_ctx)
 		break;
 
 		default: {
-			dlt_645_master_get_energy(energy_meter_info->dlt_645_master_info, &energy_meter_info->dlt_645_addr, &channel_info->total_energy);
-			dlt_645_master_get_voltage(energy_meter_info->dlt_645_master_info, &energy_meter_info->dlt_645_addr, &channel_info->va, &channel_info->vb, &channel_info->vc);
-			dlt_645_master_get_current(energy_meter_info->dlt_645_master_info, &energy_meter_info->dlt_645_addr, &channel_info->ca, &channel_info->cb, &channel_info->cc);
+			if(dlt_645_master_get_energy(energy_meter_info->dlt_645_master_info, &energy_meter_info->dlt_645_addr, &channel_info->total_energy) == 0) {
+				energy_meter_info->alive_stamps = osKernelSysTick();
+			}
+
+			if(dlt_645_master_get_voltage(energy_meter_info->dlt_645_master_info, &energy_meter_info->dlt_645_addr, &channel_info->va, &channel_info->vb, &channel_info->vc) == 0) {
+				energy_meter_info->alive_stamps = osKernelSysTick();
+			}
+
+			if(dlt_645_master_get_current(energy_meter_info->dlt_645_master_info, &energy_meter_info->dlt_645_addr, &channel_info->ca, &channel_info->cb, &channel_info->cc) == 0) {
+				energy_meter_info->alive_stamps = osKernelSysTick();
+			}
+
+			//debug("[%d]total_energy:%u", channel_info->channel_id, channel_info->total_energy);
+			//debug("[%d]va:%u", channel_info->channel_id, channel_info->va);
+			//debug("[%d]vb:%u", channel_info->channel_id, channel_info->vb);
+			//debug("[%d]vc:%u", channel_info->channel_id, channel_info->vc);
+			//debug("[%d]ca:%u", channel_info->channel_id, channel_info->ca);
+			//debug("[%d]cb:%u", channel_info->channel_id, channel_info->cb);
+			//debug("[%d]cc:%u", channel_info->channel_id, channel_info->cc);
 		}
 		break;
 	}

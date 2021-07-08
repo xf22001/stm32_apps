@@ -6,7 +6,7 @@
  *   文件名称：card_reader_handler_zlg.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月24日 星期一 16时49分13秒
- *   修改日期：2021年07月07日 星期三 17时29分39秒
+ *   修改日期：2021年07月08日 星期四 10时23分20秒
  *   描    述：
  *
  *================================================================*/
@@ -420,7 +420,7 @@ static void handle_card_reader_state(card_reader_info_t *card_reader_info, card_
 {
 	int ret;
 
-	debug("state:%s", get_card_reader_handler_state_des(card_reader_handler_ctx->state));
+	//debug("state:%s", get_card_reader_handler_state_des(card_reader_handler_ctx->state));
 
 	switch(card_reader_handler_ctx->state) {
 		case CARD_READER_HANDLER_STATE_SET_BAUDRATE: {

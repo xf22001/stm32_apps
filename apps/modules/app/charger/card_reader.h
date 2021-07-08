@@ -6,7 +6,7 @@
  *   文件名称：card_reader.h
  *   创 建 者：肖飞
  *   创建日期：2021年05月24日 星期一 16时08分43秒
- *   修改日期：2021年07月07日 星期三 16时58分58秒
+ *   修改日期：2021年07月08日 星期四 10时13分30秒
  *   描    述：
  *
  *================================================================*/
@@ -72,6 +72,7 @@ typedef struct {
 	card_reader_state_t state;
 	channels_info_t *channels_info;
 	card_reader_handler_t *card_reader_handler;
+	uint32_t alive_stamps;
 
 	uart_info_t *uart_info;
 	callback_item_t uart_data_request_cb;
@@ -85,6 +86,8 @@ typedef struct {
 
 	callback_chain_t *card_reader_ctrl_cmd_callback_chain;
 	callback_item_t card_reader_ctrl_cmd_callback_item;
+
+	callback_item_t card_reader_periodic_callback_item;
 
 	card_reader_data_t card_reader_data;
 	void *ctx;
