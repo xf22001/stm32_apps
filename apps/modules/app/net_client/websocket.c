@@ -6,7 +6,7 @@
  *   文件名称：websocket.c
  *   创 建 者：肖飞
  *   创建日期：2021年07月09日 星期五 13时13分01秒
- *   修改日期：2021年07月09日 星期五 17时32分36秒
+ *   修改日期：2021年07月10日 星期六 00时00分19秒
  *   描    述：
  *
  *================================================================*/
@@ -117,11 +117,15 @@ int ws_build_header(char *header, size_t size, char *host, char *port, char *pat
 	                content);
 }
 
-int ws_match_response_header(char *header)
+int ws_match_response_header(char *header, char *match_str)
 {
 	int ret = -1;
 
-	char *accept_str = strstr((const char *)header, (const char *)"Sec-WebSocket-Accept:");
+	if(match_str == NULL) {
+		match_str = "Sec-WebSocket-Accept:";
+	}
+
+	char *accept_str = strstr((const char *)header, (const char *)match_str);
 
 	if(accept_str != NULL) {
 		ret = 0;

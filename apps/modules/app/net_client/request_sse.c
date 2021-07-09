@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年07月09日 星期五 23时19分20秒
+ *   修改日期：2021年07月10日 星期六 00时29分42秒
  *   描    述：
  *
  *================================================================*/
@@ -554,7 +554,7 @@ typedef enum {
 } net_client_channel_command_t;
 
 typedef int (*net_client_request_callback_t)(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *send_buffer, uint16_t send_buffer_size);
-typedef int (*net_client_response_callback_t)(net_client_info_t *net_client_info, void *_command_item, uint8_t type, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size);
+typedef int (*net_client_response_callback_t)(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size);
 typedef int (*net_client_timeout_callback_t)(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id);
 
 typedef struct {
@@ -1241,7 +1241,7 @@ static int request_callback_report(net_client_info_t *net_client_info, void *_co
 	return ret;
 }
 
-static int response_callback_report(net_client_info_t *net_client_info, void *_command_item, uint8_t type, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
+static int response_callback_report(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
 	int ret = -1;
 	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)request;
@@ -1445,7 +1445,7 @@ static int request_callback_event_fault(net_client_info_t *net_client_info, void
 	return ret;
 }
 
-static int response_callback_event_fault(net_client_info_t *net_client_info, void *_command_item, uint8_t type, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
+static int response_callback_event_fault(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
 	int ret = -1;
 	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)request;
@@ -1565,7 +1565,7 @@ static int request_callback_event_upload_record(net_client_info_t *net_client_in
 	return ret;
 }
 
-static int response_callback_event_upload_record(net_client_info_t *net_client_info, void *_command_item, uint8_t type, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
+static int response_callback_event_upload_record(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
 	int ret = -1;
 	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)request;
@@ -1746,7 +1746,7 @@ static int request_callback_query_device_info(net_client_info_t *net_client_info
 	return ret;
 }
 
-static int response_callback_query_device_info(net_client_info_t *net_client_info, void *_command_item, uint8_t type, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
+static int response_callback_query_device_info(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
 	int ret = -1;
 	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)request;
@@ -1754,7 +1754,7 @@ static int response_callback_query_device_info(net_client_info_t *net_client_inf
 	sse_0x02_response_query_t *sse_0x02_response_query = (sse_0x02_response_query_t *)(sse_frame_header + 1);
 	//channels_settings_t *channels_settings = &net_client_data_ctx->channels_info->channels_settings;
 
-	if(type == 0) {//非回复,忽略
+	if(sse_frame_header->cmd.type == 0) {//非回复,忽略
 		ret = 1;
 		return ret;
 	}
@@ -1845,7 +1845,7 @@ static int request_callback_query_device_message(net_client_info_t *net_client_i
 	return ret;
 }
 
-static int response_callback_query_device_message(net_client_info_t *net_client_info, void *_command_item, uint8_t type, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
+static int response_callback_query_device_message(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
 	int ret = -1;
 	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)request;
@@ -1853,7 +1853,7 @@ static int response_callback_query_device_message(net_client_info_t *net_client_
 	sse_0x02_response_query_t *sse_0x02_response_query = (sse_0x02_response_query_t *)(sse_frame_header + 1);
 	//channels_settings_t *channels_settings = &net_client_data_ctx->channels_info->channels_settings;
 
-	if(type == 0) {//非回复,忽略
+	if(sse_frame_header->cmd.type == 0) {//非回复,忽略
 		ret = 1;
 		return ret;
 	}
@@ -1954,7 +1954,7 @@ static int request_callback_query_card_account(net_client_info_t *net_client_inf
 	return ret;
 }
 
-static int response_callback_query_card_account(net_client_info_t *net_client_info, void *_command_item, uint8_t type, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
+static int response_callback_query_card_account(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
 	int ret = -1;
 	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)request;
@@ -1966,7 +1966,7 @@ static int response_callback_query_card_account(net_client_info_t *net_client_in
 
 	account_response_info.code = ACCOUNT_STATE_CODE_UNKNOW;
 
-	if(type == 0) {//非回复,忽略
+	if(sse_frame_header->cmd.type == 0) {//非回复,忽略
 		ret = 1;
 		return ret;
 	}
@@ -2084,7 +2084,7 @@ static void price_seg_to_price_info(price_info_t *price_info, sse_query_price_it
 	}
 }
 
-static int response_callback_settings(net_client_info_t *net_client_info, void *_command_item, uint8_t type, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
+static int response_callback_settings(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
 	int ret = -1;
 	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)request;
@@ -2100,7 +2100,7 @@ static int response_callback_settings(net_client_info_t *net_client_info, void *
 		return ret;
 	}
 
-	if(type == 1) {
+	if(sse_frame_header->cmd.type == 1) {
 		ret = 1;
 		return ret;
 	}
@@ -2258,7 +2258,7 @@ static int request_callback_remote_device(net_client_info_t *net_client_info, vo
 	return ret;
 }
 
-static int response_callback_remote_device(net_client_info_t *net_client_info, void *_command_item, uint8_t type, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
+static int response_callback_remote_device(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
 	int ret = -1;
 	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)request;
@@ -2267,7 +2267,7 @@ static int response_callback_remote_device(net_client_info_t *net_client_info, v
 	channels_settings_t *channels_settings = &net_client_data_ctx->channels_info->channels_settings;
 	sse_remote_ad_on_off_t *sse_remote_ad_on_off = (sse_remote_ad_on_off_t *)sse_0x04_response_remote->remote;
 
-	if(type == 1) {
+	if(sse_frame_header->cmd.type == 1) {
 		ret = 1;
 		return ret;
 	}
@@ -2331,7 +2331,7 @@ static int do_upgrade(size_t total, size_t offset, uint8_t *data, size_t len)
 	return 0;
 }
 
-static int response_callback_upgrade(net_client_info_t *net_client_info, void *_command_item, uint8_t type, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
+static int response_callback_upgrade(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
 	int ret = -1;
 	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)request;
@@ -2339,7 +2339,7 @@ static int response_callback_upgrade(net_client_info_t *net_client_info, void *_
 	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
 	//channels_settings_t *channels_settings = &net_client_data_ctx->channels_info->channels_settings;
 
-	if(type == 1) {
+	if(sse_frame_header->cmd.type == 1) {
 		ret = 1;
 		return ret;
 	}
@@ -2433,7 +2433,7 @@ static int request_callback_event_start(net_client_info_t *net_client_info, void
 	return ret;
 }
 
-static int response_callback_event_start(net_client_info_t *net_client_info, void *_command_item, uint8_t type, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
+static int response_callback_event_start(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
 	int ret = -1;
 	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)request;
@@ -2441,11 +2441,9 @@ static int response_callback_event_start(net_client_info_t *net_client_info, voi
 	sse_0x01_response_event_t *sse_0x01_response_event = (sse_0x01_response_event_t *)(sse_frame_header + 1);
 	channels_info_t *channels_info = net_client_data_ctx->channels_info;
 	channels_settings_t *channels_settings = &channels_info->channels_settings;
-	int i;
-	uint8_t match = 0;
-	net_client_channel_data_ctx_t *channel_data_ctx;
+	net_client_channel_data_ctx_t *channel_data_ctx = net_client_data_ctx->channel_data_ctx + channel_id;
 
-	if(type == 0) {//非回复,忽略
+	if(sse_frame_header->cmd.type == 0) {//非回复,忽略
 		ret = 1;
 		return ret;
 	}
@@ -2455,16 +2453,7 @@ static int response_callback_event_start(net_client_info_t *net_client_info, voi
 		return ret;
 	}
 
-	for(i = 0; i < channels_info->channel_number; i++) {
-		channel_data_ctx = net_client_data_ctx->channel_data_ctx + i;
-
-		if(channel_data_ctx->serial_event_start == sse_frame_header->serial) {
-			match = 1;
-			break;
-		}
-	}
-
-	if(match == 0) {//序列号不对,找不到对应通道,忽略
+	if(channel_data_ctx->serial_event_start != sse_frame_header->serial) {
 		ret = 1;
 		return ret;
 	}
@@ -2534,19 +2523,19 @@ static int request_callback_query_qr_code(net_client_info_t *net_client_info, vo
 	return ret;
 }
 
-static int response_callback_query_qr_code(net_client_info_t *net_client_info, void *_command_item, uint8_t type, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
+static int response_callback_query_qr_code(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
 	int ret = -1;
 	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)request;
 	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
 	sse_0x02_request_query_t *sse_0x02_request_query = (sse_0x02_request_query_t *)(sse_frame_header + 1);
-	channels_info_t *channels_info = net_client_data_ctx->channels_info;
+	//channels_info_t *channels_info = net_client_data_ctx->channels_info;
 	//channels_settings_t *channels_settings = &channels_info->channels_settings;
 	sse_query_qr_code_confirm_t *sse_query_qr_code_confirm = (sse_query_qr_code_confirm_t *)sse_0x02_request_query->query;
-	uint8_t channel_id = sse_query_qr_code_confirm->channel_id - 1;
+	uint8_t _channel_id = sse_query_qr_code_confirm->channel_id - 1;
 	net_client_channel_data_ctx_t *channel_data_ctx = net_client_data_ctx->channel_data_ctx + channel_id;
 
-	if(type == 0) {//非回复,忽略
+	if(sse_frame_header->cmd.type == 0) {//非回复,忽略
 		ret = 1;
 		return ret;
 	}
@@ -2561,7 +2550,8 @@ static int response_callback_query_qr_code(net_client_info_t *net_client_info, v
 		return ret;
 	}
 
-	if(channel_id > channels_info->channel_number) {
+	if(_channel_id != channel_id) {
+		ret = 1;
 		return ret;
 	}
 
@@ -2616,19 +2606,19 @@ static int request_callback_remote_start_stop(net_client_info_t *net_client_info
 	return ret;
 }
 
-static int response_callback_remote_start_stop(net_client_info_t *net_client_info, void *_command_item, uint8_t type, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
+static int response_callback_remote_start_stop(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
 	int ret = -1;
 	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)request;
 	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
 	sse_0x04_response_remote_t *sse_0x04_response_remote = (sse_0x04_response_remote_t *)(sse_frame_header + 1);
-	channels_info_t *channels_info = net_client_data_ctx->channels_info;
+	//channels_info_t *channels_info = net_client_data_ctx->channels_info;
 	//channels_settings_t *channels_settings = &channels_info->channels_settings;
 	sse_remote_start_stop_t *sse_remote_start_stop = (sse_remote_start_stop_t *)sse_0x04_response_remote->remote;
-	uint8_t channel_id = sse_remote_start_stop->channel_id - 1;
+	uint8_t _channel_id = sse_remote_start_stop->channel_id - 1;
 	net_client_channel_data_ctx_t *channel_data_ctx = net_client_data_ctx->channel_data_ctx + channel_id;
 
-	if(type == 1) {
+	if(sse_frame_header->cmd.type == 1) {
 		ret = 1;
 		return ret;
 	}
@@ -2638,7 +2628,8 @@ static int response_callback_remote_start_stop(net_client_info_t *net_client_inf
 		return ret;
 	}
 
-	if(channel_id > channels_info->channel_number) {
+	if(_channel_id != channel_id) {
+		ret = 1;
 		return ret;
 	}
 
@@ -2896,7 +2887,7 @@ static void sse_response(void *ctx, uint8_t *request, uint16_t request_size, uin
 			continue;
 		}
 
-		ret = item->response_callback(net_client_info, item, sse_frame_header->cmd.type, request, request_size, send_buffer, send_buffer_size);
+		ret = item->response_callback(net_client_info, item, 0, request, request_size, send_buffer, send_buffer_size);
 
 		if(ret != 0) {
 			if(ret == 1) {//ignore
@@ -2935,7 +2926,7 @@ static void sse_response(void *ctx, uint8_t *request, uint16_t request_size, uin
 				continue;
 			}
 
-			ret = item->response_callback(net_client_info, item, sse_frame_header->cmd.type, request, request_size, send_buffer, send_buffer_size);
+			ret = item->response_callback(net_client_info, item, j, request, request_size, send_buffer, send_buffer_size);
 
 			if(ret != 0) {
 				if(ret == 1) {
