@@ -6,7 +6,7 @@
  *   文件名称：net_client.h
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时38分02秒
- *   修改日期：2021年07月08日 星期四 16时13分26秒
+ *   修改日期：2021年07月09日 星期五 11时36分17秒
  *   描    述：
  *
  *================================================================*/
@@ -49,7 +49,7 @@ typedef enum {
 typedef enum {
 	PROTOCOL_TCP = 0,
 	PROTOCOL_UDP,
-	PROTOCOL_WS,
+	PROTOCOL_TLS,
 } protocol_type_t;
 
 typedef struct {
@@ -82,7 +82,6 @@ typedef struct {
 
 typedef enum {
 	REQUEST_TYPE_DEFAULT = 0,
-	REQUEST_TYPE_WEBSOCKET,
 	REQUEST_TYPE_SSE,
 	REQUEST_TYPE_OCPP_1_6,
 } request_type_t;
@@ -168,7 +167,7 @@ typedef struct {
 	callback_chain_t *net_client_ctrl_cmd_chain;
 	callback_item_t net_client_ctrl_cmd_callback_item;
 
-	HTTP_INFO *hi;
+	void *protocol_ctx;
 } net_client_info_t;
 
 void set_net_client_request_type(net_client_info_t *net_client_info, request_type_t request_type);

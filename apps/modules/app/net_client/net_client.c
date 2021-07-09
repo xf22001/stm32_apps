@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2021年07月08日 星期四 17时14分51秒
+ *   修改日期：2021年07月09日 星期五 13时04分05秒
  *   描    述：
  *
  *================================================================*/
@@ -26,21 +26,19 @@
 
 extern protocol_if_t protocol_if_tcp;
 extern protocol_if_t protocol_if_udp;
-extern protocol_if_t protocol_if_ws;
+extern protocol_if_t protocol_if_tls;
 extern request_callback_t request_callback_default;
-extern request_callback_t request_callback_ws;
 extern request_callback_t request_callback_sse;
 extern request_callback_t request_callback_ocpp_1_6;
 
 static protocol_if_t *protocol_if_sz[] = {
 	&protocol_if_tcp,
 	&protocol_if_udp,
-	&protocol_if_ws,
+	&protocol_if_tls,
 };
 
 static request_callback_t *request_callback_sz[] = {
 	&request_callback_default,
-	&request_callback_ws,
 	&request_callback_sse,
 	&request_callback_ocpp_1_6,
 };
@@ -72,8 +70,8 @@ static char *get_request_type_des(request_type_t request_type)
 
 	switch(request_type) {
 			add_des_case(REQUEST_TYPE_DEFAULT);
-			add_des_case(REQUEST_TYPE_WEBSOCKET);
 			add_des_case(REQUEST_TYPE_SSE);
+			add_des_case(REQUEST_TYPE_OCPP_1_6);
 
 		default: {
 		}
@@ -83,6 +81,22 @@ static char *get_request_type_des(request_type_t request_type)
 	return des;
 }
 
+static char *get_protocol_if_des(protocol_type_t protocol_type)
+{
+	char *des = "unknow";
+
+	switch(protocol_type) {
+			add_des_case(PROTOCOL_TCP);
+			add_des_case(PROTOCOL_UDP);
+			add_des_case(PROTOCOL_TLS);
+
+		default: {
+		}
+		break;
+	}
+
+	return des;
+}
 void set_net_client_request_type(net_client_info_t *net_client_info, request_type_t request_type)
 {
 	if(net_client_info == NULL) {
@@ -143,8 +157,37 @@ static int get_addr_host_port_service(net_client_info_t *net_client_info, char *
 		                 net_client_info->net_client_addr_info.host,
 		                 net_client_info->net_client_addr_info.path);
 
-		if((matched != 3) || (matched != 2)) {
-			snprintf(net_client_info->net_client_addr_info.port, 8, "80");
+		if((matched != 3) && (matched != 2)) {
+		}
+	}
+
+	if(memcmp(net_client_info->net_client_addr_info.scheme, "tcp", 3) == 0) {
+		net_client_info->net_client_addr_info.protocol_type = PROTOCOL_TCP;
+	} else if(memcmp(net_client_info->net_client_addr_info.scheme, "udp", 3) == 0) {
+		net_client_info->net_client_addr_info.protocol_type = PROTOCOL_UDP;
+	} else if(memcmp(net_client_info->net_client_addr_info.scheme, "wss", 3) == 0) {
+		net_client_info->net_client_addr_info.protocol_type = PROTOCOL_TLS;
+	} else if(memcmp(net_client_info->net_client_addr_info.scheme, "ws", 2) == 0) {
+		net_client_info->net_client_addr_info.protocol_type = PROTOCOL_TCP;
+	} else if(memcmp(net_client_info->net_client_addr_info.scheme, "https", 5) == 0) {
+		net_client_info->net_client_addr_info.protocol_type = PROTOCOL_TLS;
+	} else if(memcmp(net_client_info->net_client_addr_info.scheme, "http", 4) == 0) {
+		net_client_info->net_client_addr_info.protocol_type = PROTOCOL_TCP;
+	} else {
+		net_client_info->net_client_addr_info.protocol_type = PROTOCOL_TCP;
+	}
+
+	if(net_client_info->net_client_addr_info.port[0] == 0) {
+		switch(net_client_info->net_client_addr_info.protocol_type) {
+			case PROTOCOL_TLS: {
+				snprintf(net_client_info->net_client_addr_info.port, 8, "443");
+			}
+			break;
+
+			default: {
+				snprintf(net_client_info->net_client_addr_info.port, 8, "80");
+			}
+			break;
 		}
 	}
 
@@ -153,24 +196,10 @@ static int get_addr_host_port_service(net_client_info_t *net_client_info, char *
 	debug("port:\'%s\'", net_client_info->net_client_addr_info.port);
 	debug("path:\'%s\'", net_client_info->net_client_addr_info.path);
 
-	if(memcmp(net_client_info->net_client_addr_info.scheme, "tcp", 3) == 0) {
-		net_client_info->net_client_addr_info.protocol_type = PROTOCOL_TCP;
-	} else if(memcmp(net_client_info->net_client_addr_info.scheme, "udp", 3) == 0) {
-		net_client_info->net_client_addr_info.protocol_type = PROTOCOL_UDP;
-	} else if(memcmp(net_client_info->net_client_addr_info.scheme, "wss", 3) == 0) {
-		net_client_info->net_client_addr_info.protocol_type = PROTOCOL_WS;
-	} else if(memcmp(net_client_info->net_client_addr_info.scheme, "ws", 2) == 0) {
-		net_client_info->net_client_addr_info.protocol_type = PROTOCOL_WS;
-	} else if(memcmp(net_client_info->net_client_addr_info.scheme, "https", 5) == 0) {
-		net_client_info->net_client_addr_info.protocol_type = PROTOCOL_WS;
-	} else if(memcmp(net_client_info->net_client_addr_info.scheme, "http", 4) == 0) {
-		net_client_info->net_client_addr_info.protocol_type = PROTOCOL_WS;
-	} else {
-		net_client_info->net_client_addr_info.protocol_type = PROTOCOL_TCP;
-	}
-
 	net_client_info->protocol_if = get_protocol_if(net_client_info->net_client_addr_info.protocol_type);
 	OS_ASSERT(net_client_info->protocol_if);
+
+	debug("set protocol_if %s", get_protocol_if_des(net_client_info->net_client_addr_info.protocol_type));
 
 	return ret;
 }
