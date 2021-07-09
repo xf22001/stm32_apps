@@ -6,7 +6,7 @@
  *   文件名称：request_ocpp_1_6.c
  *   创 建 者：肖飞
  *   创建日期：2021年07月08日 星期四 14时19分21秒
- *   修改日期：2021年07月08日 星期四 15时52分11秒
+ *   修改日期：2021年07月09日 星期五 23时25分27秒
  *   描    述：
  *
  *================================================================*/
@@ -110,7 +110,7 @@ static void request_init(void *ctx)
 
 static void request_before_create_server_connect(void *ctx)
 {
-	net_client_info_t *net_client_info = (net_client_info_t *)ctx;
+	//net_client_info_t *net_client_info = (net_client_info_t *)ctx;
 
 	//debug("");
 

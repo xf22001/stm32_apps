@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年07月08日 星期四 11时14分37秒
+ *   修改日期：2021年07月09日 星期五 23时19分20秒
  *   描    述：
  *
  *================================================================*/
@@ -615,7 +615,7 @@ static int filter_channel_record_state(channel_record_item_state_t state)
 static void sync_transaction_record(void)
 {
 	channel_record_task_info_t *channel_record_task_info = get_or_alloc_channel_record_task_info(0);
-	channel_record_info_t channel_record_info;
+	channel_record_info_t *channel_record_info = &channel_record_task_info->channel_record_info;
 	uint16_t record_id;
 	uint32_t ticks = osKernelSysTick();
 
@@ -631,12 +631,7 @@ static void sync_transaction_record(void)
 	}
 
 	//find record to upload
-	if(get_channel_record_info(channel_record_task_info, &channel_record_info) != 0) {
-		debug("");
-		return;
-	}
-
-	if(get_channel_record_item_by_state(channel_record_task_info, filter_channel_record_state, channel_record_info.start, channel_record_info.end, &record_id) != 0) {
+	if(get_channel_record_item_by_filter(channel_record_task_info, filter_channel_record_state, channel_record_info->start, channel_record_info->end, &record_id) != 0) {
 		debug("");
 		return;
 	}

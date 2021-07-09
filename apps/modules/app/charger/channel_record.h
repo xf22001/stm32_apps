@@ -6,7 +6,7 @@
  *   文件名称：channel_record.h
  *   创 建 者：肖飞
  *   创建日期：2021年05月23日 星期日 13时40分28秒
- *   修改日期：2021年07月06日 星期二 16时47分41秒
+ *   修改日期：2021年07月09日 星期五 23时24分58秒
  *   描    述：
  *
  *================================================================*/
@@ -172,16 +172,21 @@ typedef struct {
 	os_signal_t sync_signal;
 	os_mutex_t mutex;
 	eeprom_info_t *eeprom_info;
+	uint16_t page_load_offset;
+	time_t page_load_time;
 } channel_record_task_info_t; 
 
-typedef int (*channel_record_state_filter_t)(channel_record_item_state_t state);
+typedef int (*channel_record_filter_t)(channel_record_item_state_t state);
 
 int alloc_channel_record_item_id(channel_record_task_info_t *channel_record_task_info, channel_record_item_t *channel_record_item);
-int get_channel_record_info(channel_record_task_info_t *channel_record_task_info, channel_record_info_t *channel_record_info);
 int get_channel_record_item_by_id(channel_record_task_info_t *channel_record_task_info, uint16_t id, channel_record_item_t *channel_record_item);
-int get_channel_record_item_by_state(channel_record_task_info_t *channel_record_task_info, channel_record_state_filter_t filter, uint16_t start, uint16_t end, uint16_t *id);
+int get_channel_record_item_by_filter(channel_record_task_info_t *channel_record_task_info, channel_record_filter_t filter, uint16_t start, uint16_t end, uint16_t *id);
 int channel_record_update(channel_record_task_info_t *channel_record_task_info, channel_record_item_t *channel_record_item);
 int channel_record_sync(channel_record_task_info_t *channel_record_task_info);
+int channel_record_item_page_load_current(channel_record_task_info_t *channel_record_task_info);
+int channel_record_item_page_load_prev(channel_record_task_info_t *channel_record_task_info);
+int channel_record_item_page_load_next(channel_record_task_info_t *channel_record_task_info);
+int channel_record_item_page_load_location(channel_record_task_info_t *channel_record_task_info);
 channel_record_task_info_t *get_or_alloc_channel_record_task_info(uint8_t id);
 
 #endif //_CHANNEL_RECORD_H
