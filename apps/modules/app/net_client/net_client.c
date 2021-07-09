@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2021年07月09日 星期五 13时04分05秒
+ *   修改日期：2021年07月10日 星期六 00时51分33秒
  *   描    述：
  *
  *================================================================*/
@@ -534,11 +534,9 @@ static int before_create_server_connect(net_client_info_t *net_client_info)
 	return ret;
 }
 
-static int after_create_server_connect(net_client_info_t *net_client_info)
+static void after_create_server_connect(net_client_info_t *net_client_info)
 {
-	int ret = 0;
 	default_after_create_server_connect(net_client_info);
-	return ret;
 }
 
 static int create_connect(net_client_info_t *net_client_info)
@@ -561,11 +559,7 @@ static int create_connect(net_client_info_t *net_client_info)
 		return ret;
 	}
 
-	ret = after_create_server_connect(net_client_info);
-
-	if(ret != 0) {
-		debug("");
-	}
+	after_create_server_connect(net_client_info);
 
 	return ret;
 }
