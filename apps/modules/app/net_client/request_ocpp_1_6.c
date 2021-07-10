@@ -6,7 +6,7 @@
  *   文件名称：request_ocpp_1_6.c
  *   创 建 者：肖飞
  *   创建日期：2021年07月08日 星期四 14时19分21秒
- *   修改日期：2021年07月10日 星期六 22时25分55秒
+ *   修改日期：2021年07月11日 星期日 00时22分15秒
  *   描    述：
  *
  *================================================================*/
@@ -156,7 +156,7 @@ static void request_after_create_server_connect(void *ctx)
 		debug("");
 	}
 
-	//content = "Origin: http://coolaf.com\r\n";
+	content = "Origin: http://coolaf.com\r\n";
 
 	net_client_info->send_message_buffer.used = ws_build_header((char *)net_client_info->send_message_buffer.buffer,
 	        sizeof(net_client_info->send_message_buffer.buffer),

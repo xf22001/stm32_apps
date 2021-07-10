@@ -6,7 +6,7 @@
  *   文件名称：websocket.c
  *   创 建 者：肖飞
  *   创建日期：2021年07月09日 星期五 13时13分01秒
- *   修改日期：2021年07月10日 星期六 22时11分54秒
+ *   修改日期：2021年07月11日 星期日 00时23分54秒
  *   描    述：
  *
  *================================================================*/
@@ -320,7 +320,7 @@ int ws_decode(uint8_t *in, size_t in_len, uint8_t **out, size_t *out_len, uint8_
 		payload = (uint8_t *)(ws_mask_data + 1);
 		*out = payload;
 
-		if((payload + payload_len) >= (in + in_len)) {
+		if((payload + payload_len) > (in + in_len)) {
 			debug("");
 			return ret;
 		}
@@ -338,7 +338,7 @@ int ws_decode(uint8_t *in, size_t in_len, uint8_t **out, size_t *out_len, uint8_
 
 		payload = (uint8_t *)ws_mask_data;
 
-		if((payload + payload_len) >= (in + in_len)) {
+		if((payload + payload_len) > (in + in_len)) {
 			debug("");
 			return ret;
 		}
