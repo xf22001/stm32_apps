@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年07月10日 星期六 00时29分42秒
+ *   修改日期：2021年07月10日 星期六 13时31分24秒
  *   描    述：
  *
  *================================================================*/
@@ -568,7 +568,7 @@ typedef struct {
 
 static net_client_data_ctx_t *net_client_data_ctx = NULL;
 
-static int send_frame(net_client_info_t *net_client_info, uint16_t serial, uint8_t frame, uint8_t type, uint8_t *message, uint8_t len)
+static int send_frame(net_client_info_t *net_client_info, uint16_t serial, uint8_t frame, uint8_t type, uint8_t *message, size_t len)
 {
 	int ret = -1;
 	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)message;

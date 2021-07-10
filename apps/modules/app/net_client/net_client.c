@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2021年07月10日 星期六 00时51分33秒
+ *   修改日期：2021年07月10日 星期六 14时34分40秒
  *   描    述：
  *
  *================================================================*/
@@ -615,16 +615,20 @@ static void process_server_message(net_client_info_t *net_client_info, net_messa
 	debug("net client %d bytes available", left);
 	//_hexdump(NULL, (const char *)buffer, left);
 
-	while(left >= sizeof(request_t)) {
+	while(left > 0) {
 		default_parse(net_client_info, (char *)buffer, left, NET_MESSAGE_BUFFER_SIZE, &request, &request_size);
 
 		if(request != NULL) {//可能有效包
 			if(request_size != 0) {//有效包
+				uint8_t skipped = request - (char *)buffer;
+
+				OS_ASSERT(skipped + request_size <= left);
+				debug("net client skipped %d bytes", skipped);
 				debug("net client process %d bytes", request_size);
 				blink_led_lan(net_client_info, 0);
 				default_process(net_client_info, (uint8_t *)request, (uint16_t)request_size, send->buffer, NET_MESSAGE_BUFFER_SIZE);
-				buffer += request_size;
-				left -= request_size;
+				buffer += skipped + request_size;
+				left -= skipped + request_size;
 			} else {//还要收,退出包处理
 				break;
 			}
@@ -835,7 +839,8 @@ void net_client_add_poll_loop(poll_loop_t *poll_loop)
 	net_client_info->sock_fd = -1;
 	INIT_LIST_HEAD(&net_client_info->net_client_addr_info.socket_addr_info_list);
 
-	set_net_client_request_type(net_client_info, REQUEST_TYPE_DEFAULT);
+	//set_net_client_request_type(net_client_info, REQUEST_TYPE_DEFAULT);
+	set_net_client_request_type(net_client_info, REQUEST_TYPE_OCPP_1_6);
 
 	default_init(net_client_info);
 

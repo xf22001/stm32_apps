@@ -1,12 +1,12 @@
 
 
 /*================================================================
- *   
- *   
+ *
+ *
  *   文件名称：request_ocpp_1_6.c
  *   创 建 者：肖飞
  *   创建日期：2021年07月08日 星期四 14时19分21秒
- *   修改日期：2021年07月09日 星期五 23时25分27秒
+ *   修改日期：2021年07月10日 星期六 14时28分39秒
  *   描    述：
  *
  *================================================================*/
@@ -14,6 +14,8 @@
 
 #include "command_status.h"
 #include "channels.h"
+
+#include "websocket.h"
 
 #include "log.h"
 
@@ -51,6 +53,29 @@ typedef struct {
 } net_client_command_item_t;
 
 static net_client_data_ctx_t *net_client_data_ctx = NULL;
+
+static int send_frame(net_client_info_t *net_client_info, uint8_t *data, size_t size, uint8_t *send_buffer, size_t send_buffer_size)
+{
+	int ret = -1;
+
+	ret = ws_encode(data, size, (uint8_t *)send_buffer, &send_buffer_size, 1, WS_OPCODE_TXT, 1);
+
+	if(ret != 0) {
+		debug("");
+		return ret;
+	}
+
+	debug("send buffer size:%d", send_buffer_size);
+	_hexdump("send buffer", (const char *)send_buffer, send_buffer_size);
+
+	if(send_to_server(net_client_info, (uint8_t *)send_buffer, send_buffer_size) == send_buffer_size) {
+		ret = 0;
+	} else {
+		debug("");
+	}
+
+	return ret;
+}
 
 static net_client_command_item_t *net_client_command_item_device_table[] = {
 };
@@ -110,28 +135,70 @@ static void request_init(void *ctx)
 
 static void request_before_create_server_connect(void *ctx)
 {
-	//net_client_info_t *net_client_info = (net_client_info_t *)ctx;
-
-	//debug("");
-
-	//snprintf((char *)net_client_info->hi->request.method, 8, "GET");
-	//snprintf((char *)net_client_info->hi->request.content_type, H_FIELD_SIZE, "application/json; charset=utf-8");
-
-	//ret = http_write_header(net_client_info->hi);
-	//ret = http_write_ws_header(net_client_info->hi);
-
-	//if(ret != 0) {
-	//	http_close(net_client_info->hi);
-	//	net_client_info->sock_fd = -1;
-	//	//set_connect_enable(0);
-	//	debug("");
-	//	return ret;
-	//}
+	debug("");
 }
 
 static void request_after_create_server_connect(void *ctx)
 {
+	net_client_info_t *net_client_info = (net_client_info_t *)ctx;
+	char key_raw[16];
+	char key[16 * 4 / 3 + 4];
+	size_t key_size = sizeof(key);
+	int ret;
+
 	debug("");
+
+	ret = ws_build_key(key_raw, sizeof(key_raw), 1, key, &key_size);
+
+	if(ret != 0) {
+		set_client_state(net_client_info, CLIENT_RESET);
+		debug("");
+	}
+
+	net_client_info->send_message_buffer.used = ws_build_header((char *)net_client_info->send_message_buffer.buffer,
+	        sizeof(net_client_info->send_message_buffer.buffer),
+	        net_client_info->net_client_addr_info.host,
+	        net_client_info->net_client_addr_info.port,
+	        net_client_info->net_client_addr_info.path,
+	        key,
+	        "Origin: http://coolaf.com\r\n");
+
+	_hexdump("build header", (const char *)net_client_info->send_message_buffer.buffer, net_client_info->send_message_buffer.used);
+	_printf("header:\'%s\'\n", net_client_info->send_message_buffer.buffer);
+
+	if(poll_wait_write_available(net_client_info->sock_fd, 5000) == 0) {
+		ret = net_client_info->protocol_if->net_send(net_client_info, net_client_info->send_message_buffer.buffer, net_client_info->send_message_buffer.used);
+
+		if(ret != net_client_info->send_message_buffer.used) {
+			set_client_state(net_client_info, CLIENT_RESET);
+			debug("send header failed(%d)!", ret);
+		} else {
+			debug("send header successful!");
+		}
+	} else {
+		set_client_state(net_client_info, CLIENT_RESET);
+	}
+
+	if(poll_wait_read_available(net_client_info->sock_fd, 5000) == 0) {
+		ret = net_client_info->protocol_if->net_recv(net_client_info, net_client_info->recv_message_buffer.buffer, sizeof(net_client_info->recv_message_buffer.buffer));
+
+		if(ret <= 0) {
+			debug("receive header response failed(%d)!", ret);
+			set_client_state(net_client_info, CLIENT_RESET);
+		} else {
+			debug("receive header response successful!");
+			_hexdump("response", (const char *)net_client_info->recv_message_buffer.buffer, ret);
+
+			if(ws_match_response_header((char *)net_client_info->recv_message_buffer.buffer, NULL) != 0) {
+				debug("match header response failed!");
+				set_client_state(net_client_info, CLIENT_RESET);
+			} else {
+				debug("match header response successful!");
+			}
+		}
+	} else {
+		set_client_state(net_client_info, CLIENT_RESET);
+	}
 }
 
 static void request_before_close_server_connect(void *ctx)
@@ -146,6 +213,23 @@ static void request_after_close_server_connect(void *ctx)
 
 static void request_parse(void *ctx, char *buffer, size_t size, size_t max_request_size, char **prequest, size_t *request_size)
 {
+	char *request = NULL;
+	uint8_t fin = 0;
+	ws_opcode_t opcode;
+	int ret;
+
+	_hexdump("buffer parse", (const char *)buffer, size);
+
+	ret = ws_decode((uint8_t *)buffer, size, (uint8_t **)&request, &size, &fin, &opcode);
+
+	if(ret == 0) {
+		debug("fin:%d", fin);
+		debug("opcode:%s", get_ws_opcode_des(opcode));
+		debug("size:%d", size);
+		*prequest = request;
+		*request_size = size;
+	}
+
 	return;
 }
 
@@ -273,7 +357,7 @@ static void ocpp_1_6_response(void *ctx, uint8_t *request, uint16_t request_size
 
 static void request_process(void *ctx, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
-	//_hexdump("request_process", (const char *)request, request_size);
+	_hexdump("request_process", (const char *)request, request_size);
 
 	ocpp_1_6_response(ctx, request, request_size, send_buffer, send_buffer_size);
 }
@@ -445,8 +529,9 @@ static void request_periodic(void *ctx, uint8_t *send_buffer, uint16_t send_buff
 	uint32_t ticks = osKernelSysTick();
 	static uint32_t send_stamp = 0;
 	net_client_info_t *net_client_info = (net_client_info_t *)ctx;
+	char *s = "xiaofei";
 
-	if(ticks_duration(ticks, send_stamp) < 100) {
+	if(ticks_duration(ticks, send_stamp) < 3000) {
 		return;
 	}
 
@@ -457,6 +542,8 @@ static void request_periodic(void *ctx, uint8_t *send_buffer, uint16_t send_buff
 		return;
 	}
 
+	memset(send_buffer, 0, send_buffer_size);
+	send_frame(net_client_info, (uint8_t *)s, strlen(s), send_buffer, send_buffer_size);
 	ocpp_1_6_periodic(net_client_info);
 	request_process_request(net_client_info, send_buffer, send_buffer_size);
 }

@@ -6,7 +6,7 @@
  *   文件名称：websocket.c
  *   创 建 者：肖飞
  *   创建日期：2021年07月09日 星期五 13时13分01秒
- *   修改日期：2021年07月10日 星期六 00时00分19秒
+ *   修改日期：2021年07月10日 星期六 14时28分18秒
  *   描    述：
  *
  *================================================================*/
@@ -61,12 +61,12 @@
 #pragma pack(push, 1)
 
 typedef struct {
-	uint8_t fin : 1;//0:中间帧 1:最后一帧
-	uint8_t rsv : 3;
 	uint8_t opcode : 4;//0x00:连续帧 0x02:文本帧 0x03:二进制值帧 0x07:为非控制帧而预留的 0x08:关闭握手帧 0x09:ping帧 0x0a:pong帧 0x0b:- 0x0f:为非控制帧而预留的
+	uint8_t rsv : 3;
+	uint8_t fin : 1;//0:中间帧 1:最后一帧
 
-	uint8_t mask : 1;//标识 Payload data 是否经过掩码处理，如果是 1，Masking-key域的数据即为掩码密钥，用于解码Payload data。协议规定客户端数据需要进行掩码处理
 	uint8_t payload_len : 7;//7 bit | 7+16 bit | 7+64 bit
+	uint8_t mask : 1;//标识 Payload data 是否经过掩码处理，如果是 1，Masking-key域的数据即为掩码密钥，用于解码Payload data。协议规定客户端数据需要进行掩码处理
 	uint8_t payload_len_ext[0];
 } ws_data_header_t;
 
@@ -75,6 +75,29 @@ typedef struct {
 } ws_mask_data_t;
 
 #pragma pack(pop)
+
+char *get_ws_opcode_des(ws_opcode_t opcode)
+{
+	char *des = "unknow";
+
+	switch(opcode) {
+			add_des_case(WS_OPCODE_CONTINUE);
+			add_des_case(WS_OPCODE_TXT);
+			add_des_case(WS_OPCODE_BIN);
+			add_des_case(WS_OPCODE_RSV1);
+			add_des_case(WS_OPCODE_DISCONN);
+			add_des_case(WS_OPCODE_PING);
+			add_des_case(WS_OPCODE_PONG);
+			add_des_case(WS_OPCODE_NONE);
+			add_des_case(WS_OPCODE_RSV2);
+
+		default: {
+		}
+		break;
+	}
+
+	return des;
+}
 
 int ws_build_key(char *in, size_t in_len, uint8_t do_random, char *key, size_t *size)
 {
@@ -94,6 +117,7 @@ int ws_build_key(char *in, size_t in_len, uint8_t do_random, char *key, size_t *
 	}
 
 	ret = mbedtls_base64_encode((unsigned char *)key, capicity, size, (unsigned char *)in, in_len);
+	_hexdump("base64 key", (const char *)key, capicity);
 
 	return ret;
 }
@@ -226,7 +250,7 @@ int ws_encode(uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, uint8_t
 	return ret;
 }
 
-int ws_decode(uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, uint8_t *fin, ws_opcode_t *opcode)
+int ws_decode(uint8_t *in, size_t in_len, uint8_t **out, size_t *out_len, uint8_t *fin, ws_opcode_t *opcode)
 {
 	int ret = -1;
 	size_t capicity = in_len;
@@ -280,11 +304,6 @@ int ws_decode(uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, uint8_t
 
 	OS_ASSERT(ws_mask_data != NULL);
 
-	if(*out_len < payload_len) {
-		debug("");
-		return ret;
-	}
-
 	if(mask != 0) {
 		int i;
 		len += sizeof(ws_mask_data_t) + payload_len;
@@ -295,9 +314,10 @@ int ws_decode(uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, uint8_t
 		}
 
 		payload = (uint8_t *)(ws_mask_data + 1);
+		*out = payload;
 
-		for(i = 0; i < in_len; i++) {
-			out[i] = payload[i] ^ ws_mask_data->mask[i % 4];
+		for(i = 0; i < payload_len; i++) {
+			payload[i] = payload[i] ^ ws_mask_data->mask[i % 4];
 		}
 	} else {
 		len += payload_len;
@@ -308,8 +328,7 @@ int ws_decode(uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, uint8_t
 		}
 
 		payload = (uint8_t *)ws_mask_data;
-
-		memcpy(out, payload, payload_len);
+		*out = payload;
 	}
 
 	*out_len = payload_len;
