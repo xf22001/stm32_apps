@@ -6,7 +6,7 @@
  *   文件名称：net_protocol_tls.c
  *   创 建 者：肖飞
  *   创建日期：2021年07月09日 星期五 08时43分10秒
- *   修改日期：2021年07月10日 星期六 10时22分32秒
+ *   修改日期：2021年07月10日 星期六 22时42分53秒
  *   描    述：
  *
  *================================================================*/
@@ -110,11 +110,11 @@ static int tls_client_connect(void *ctx)
 	tls_ctx_t *tls = (tls_ctx_t *)net_client_info->protocol_ctx;
 	char error_message[100];
 
-	if(get_connect_enable() == 0) {
-		return ret;
-	}
+	//if(get_connect_enable() == 0) {
+	//	return ret;
+	//}
 
-	set_connect_enable(0);
+	//set_connect_enable(0);
 
 	//test_https("https://httpbin.org/get");
 	//return ret;
@@ -283,7 +283,10 @@ static int tls_client_close(void *ctx)
 	net_client_info_t *net_client_info = (net_client_info_t *)ctx;
 	tls_ctx_t *tls = (tls_ctx_t *)net_client_info->protocol_ctx;
 
-	OS_ASSERT(tls != NULL);
+	if(tls == NULL) {
+		return ret;
+	}
+
 	net_client_info->sock_fd = -1;
 	debug("close socket %d", tls->ssl_fd.fd);
 	mbedtls_ssl_close_notify(&tls->ssl);

@@ -6,7 +6,7 @@
  *   文件名称：net_utils.c
  *   创 建 者：肖飞
  *   创建日期：2020年09月15日 星期二 09时42分47秒
- *   修改日期：2021年05月19日 星期三 09时42分42秒
+ *   修改日期：2021年07月10日 星期六 23时50分28秒
  *   描    述：
  *
  *================================================================*/
@@ -141,7 +141,7 @@ int socket_nonblock_connect(socket_addr_info_t *socket_addr_info, int *sock_fd)
 
 	if(ret != 0) {
 		if(errno != EINPROGRESS) {
-			debug("close socket %d(%d)", *sock_fd, errno);
+			debug("close socket %d(%d-%d)", *sock_fd, ret, errno);
 			close(*sock_fd);
 			*sock_fd = -1;
 		} else {

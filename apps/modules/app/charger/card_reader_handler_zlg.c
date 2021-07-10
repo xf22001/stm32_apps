@@ -6,12 +6,14 @@
  *   文件名称：card_reader_handler_zlg.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月24日 星期一 16时49分13秒
- *   修改日期：2021年07月08日 星期四 10时23分20秒
+ *   修改日期：2021年07月10日 星期六 17时55分55秒
  *   描    述：
  *
  *================================================================*/
 #include "card_reader_handler_zlg.h"
 #include "uart_data_task.h"
+
+#define LOG_DISABLE
 #include "log.h"
 
 #pragma pack(push, 1)

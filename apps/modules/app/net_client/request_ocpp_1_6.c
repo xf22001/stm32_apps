@@ -6,7 +6,7 @@
  *   文件名称：request_ocpp_1_6.c
  *   创 建 者：肖飞
  *   创建日期：2021年07月08日 星期四 14时19分21秒
- *   修改日期：2021年07月10日 星期六 14时28分39秒
+ *   修改日期：2021年07月10日 星期六 22时25分55秒
  *   描    述：
  *
  *================================================================*/
@@ -66,7 +66,7 @@ static int send_frame(net_client_info_t *net_client_info, uint8_t *data, size_t 
 	}
 
 	debug("send buffer size:%d", send_buffer_size);
-	_hexdump("send buffer", (const char *)send_buffer, send_buffer_size);
+	_hexdump("send_frame", (const char *)send_buffer, send_buffer_size);
 
 	if(send_to_server(net_client_info, (uint8_t *)send_buffer, send_buffer_size) == send_buffer_size) {
 		ret = 0;
@@ -145,6 +145,7 @@ static void request_after_create_server_connect(void *ctx)
 	char key[16 * 4 / 3 + 4];
 	size_t key_size = sizeof(key);
 	int ret;
+	char *content = "";
 
 	debug("");
 
@@ -155,16 +156,18 @@ static void request_after_create_server_connect(void *ctx)
 		debug("");
 	}
 
+	//content = "Origin: http://coolaf.com\r\n";
+
 	net_client_info->send_message_buffer.used = ws_build_header((char *)net_client_info->send_message_buffer.buffer,
 	        sizeof(net_client_info->send_message_buffer.buffer),
 	        net_client_info->net_client_addr_info.host,
 	        net_client_info->net_client_addr_info.port,
 	        net_client_info->net_client_addr_info.path,
 	        key,
-	        "Origin: http://coolaf.com\r\n");
+	        content);
 
-	_hexdump("build header", (const char *)net_client_info->send_message_buffer.buffer, net_client_info->send_message_buffer.used);
-	_printf("header:\'%s\'\n", net_client_info->send_message_buffer.buffer);
+	_hexdump("request header", (const char *)net_client_info->send_message_buffer.buffer, net_client_info->send_message_buffer.used);
+	debug("request header:\n\'%s\'", net_client_info->send_message_buffer.buffer);
 
 	if(poll_wait_write_available(net_client_info->sock_fd, 5000) == 0) {
 		ret = net_client_info->protocol_if->net_send(net_client_info, net_client_info->send_message_buffer.buffer, net_client_info->send_message_buffer.used);
@@ -187,7 +190,8 @@ static void request_after_create_server_connect(void *ctx)
 			set_client_state(net_client_info, CLIENT_RESET);
 		} else {
 			debug("receive header response successful!");
-			_hexdump("response", (const char *)net_client_info->recv_message_buffer.buffer, ret);
+			_hexdump("response header", (const char *)net_client_info->recv_message_buffer.buffer, ret);
+			debug("response header:\n\'%s\'", net_client_info->send_message_buffer.buffer);
 
 			if(ws_match_response_header((char *)net_client_info->recv_message_buffer.buffer, NULL) != 0) {
 				debug("match header response failed!");
@@ -218,7 +222,10 @@ static void request_parse(void *ctx, char *buffer, size_t size, size_t max_reque
 	ws_opcode_t opcode;
 	int ret;
 
-	_hexdump("buffer parse", (const char *)buffer, size);
+	*prequest = NULL;
+	*request_size = 0;
+
+	_hexdump("request_parse", (const char *)buffer, size);
 
 	ret = ws_decode((uint8_t *)buffer, size, (uint8_t **)&request, &size, &fin, &opcode);
 
@@ -228,6 +235,8 @@ static void request_parse(void *ctx, char *buffer, size_t size, size_t max_reque
 		debug("size:%d", size);
 		*prequest = request;
 		*request_size = size;
+	} else {
+		debug("");
 	}
 
 	return;

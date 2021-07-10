@@ -6,7 +6,7 @@
  *   文件名称：websocket.c
  *   创 建 者：肖飞
  *   创建日期：2021年07月09日 星期五 13时13分01秒
- *   修改日期：2021年07月10日 星期六 14时28分18秒
+ *   修改日期：2021年07月10日 星期六 22时11分54秒
  *   描    述：
  *
  *================================================================*/
@@ -223,6 +223,7 @@ int ws_encode(uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, uint8_t
 	OS_ASSERT(ws_mask_data != NULL);
 
 	if(mask != 0) {
+		int i;
 		len += sizeof(ws_mask_data_t) + in_len;
 
 		if(capicity < len) {
@@ -231,7 +232,10 @@ int ws_encode(uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, uint8_t
 		}
 
 		payload = (uint8_t *)(ws_mask_data + 1);
-		int i;
+
+		for(i = 0; i < sizeof(ws_mask_data->mask); i++) {
+			ws_mask_data->mask[i] = (rand() % (127 - 32)) + 32;
+		}
 
 		for(i = 0; i < in_len; i++) {
 			payload[i] = in[i] ^ ws_mask_data->mask[i % 4];
@@ -316,6 +320,11 @@ int ws_decode(uint8_t *in, size_t in_len, uint8_t **out, size_t *out_len, uint8_
 		payload = (uint8_t *)(ws_mask_data + 1);
 		*out = payload;
 
+		if((payload + payload_len) >= (in + in_len)) {
+			debug("");
+			return ret;
+		}
+
 		for(i = 0; i < payload_len; i++) {
 			payload[i] = payload[i] ^ ws_mask_data->mask[i % 4];
 		}
@@ -328,6 +337,12 @@ int ws_decode(uint8_t *in, size_t in_len, uint8_t **out, size_t *out_len, uint8_
 		}
 
 		payload = (uint8_t *)ws_mask_data;
+
+		if((payload + payload_len) >= (in + in_len)) {
+			debug("");
+			return ret;
+		}
+
 		*out = payload;
 	}
 
