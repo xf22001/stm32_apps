@@ -6,7 +6,7 @@
  *   文件名称：websocket.c
  *   创 建 者：肖飞
  *   创建日期：2021年07月09日 星期五 13时13分01秒
- *   修改日期：2021年07月11日 星期日 00时23分54秒
+ *   修改日期：2021年07月11日 星期日 15时50分22秒
  *   描    述：
  *
  *================================================================*/
@@ -199,7 +199,7 @@ int ws_encode(uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, uint8_t
 		ws_data_header->payload_len_ext[0] = get_u8_h_from_u16(in_len);
 		ws_data_header->payload_len_ext[1] = get_u8_l_from_u16(in_len);
 
-		ws_mask_data = (ws_mask_data_t *)ws_data_header->payload_len_ext + 2;
+		ws_mask_data = (ws_mask_data_t *)(ws_data_header->payload_len_ext + 2);
 	} else if(in_len < 0xffffffff) {
 		len += 8;
 
@@ -217,7 +217,7 @@ int ws_encode(uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, uint8_t
 		ws_data_header->payload_len_ext[5] = 0;
 		ws_data_header->payload_len_ext[6] = 0;
 		ws_data_header->payload_len_ext[7] = 0;
-		ws_mask_data = (ws_mask_data_t *)ws_data_header->payload_len_ext + 8;
+		ws_mask_data = (ws_mask_data_t *)(ws_data_header->payload_len_ext + 8);
 	}
 
 	OS_ASSERT(ws_mask_data != NULL);
@@ -265,6 +265,9 @@ int ws_decode(uint8_t *in, size_t in_len, uint8_t **out, size_t *out_len, uint8_
 	uint8_t mask;
 	size_t payload_len;
 
+	*out = NULL;
+	*out_len = 0;
+
 	if(capicity < len) {
 		debug("");
 		return ret;
@@ -289,7 +292,7 @@ int ws_decode(uint8_t *in, size_t in_len, uint8_t **out, size_t *out_len, uint8_
 		payload_len = get_u16_from_u8_lh(ws_data_header->payload_len_ext[1],
 		                                 ws_data_header->payload_len_ext[0]);
 
-		ws_mask_data = (ws_mask_data_t *)ws_data_header->payload_len_ext + 2;
+		ws_mask_data = (ws_mask_data_t *)(ws_data_header->payload_len_ext + 2);
 	} else if(payload_len == 127) {
 		len += 8;
 
@@ -303,22 +306,23 @@ int ws_decode(uint8_t *in, size_t in_len, uint8_t **out, size_t *out_len, uint8_
 		                                    ws_data_header->payload_len_ext[1],
 		                                    ws_data_header->payload_len_ext[0]);
 
-		ws_mask_data = (ws_mask_data_t *)ws_data_header->payload_len_ext + 8;
+		ws_mask_data = (ws_mask_data_t *)(ws_data_header->payload_len_ext + 8);
 	}
 
 	OS_ASSERT(ws_mask_data != NULL);
 
 	if(mask != 0) {
 		int i;
+
+		payload = (uint8_t *)(ws_mask_data + 1);
+		*out = payload;
+
 		len += sizeof(ws_mask_data_t) + payload_len;
 
 		if(capicity < len) {
 			debug("");
 			return ret;
 		}
-
-		payload = (uint8_t *)(ws_mask_data + 1);
-		*out = payload;
 
 		if((payload + payload_len) > (in + in_len)) {
 			debug("");
@@ -329,6 +333,9 @@ int ws_decode(uint8_t *in, size_t in_len, uint8_t **out, size_t *out_len, uint8_
 			payload[i] = payload[i] ^ ws_mask_data->mask[i % 4];
 		}
 	} else {
+		payload = (uint8_t *)ws_mask_data;
+		*out = payload;
+
 		len += payload_len;
 
 		if(capicity < len) {
@@ -336,14 +343,10 @@ int ws_decode(uint8_t *in, size_t in_len, uint8_t **out, size_t *out_len, uint8_
 			return ret;
 		}
 
-		payload = (uint8_t *)ws_mask_data;
-
 		if((payload + payload_len) > (in + in_len)) {
 			debug("");
 			return ret;
 		}
-
-		*out = payload;
 	}
 
 	*out_len = payload_len;

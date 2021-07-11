@@ -6,7 +6,7 @@
  *   文件名称：request_ocpp_1_6.c
  *   创 建 者：肖飞
  *   创建日期：2021年07月08日 星期四 14时19分21秒
- *   修改日期：2021年07月11日 星期日 00时22分15秒
+ *   修改日期：2021年07月11日 星期日 16时00分09秒
  *   描    述：
  *
  *================================================================*/
@@ -66,7 +66,7 @@ static int send_frame(net_client_info_t *net_client_info, uint8_t *data, size_t 
 	}
 
 	debug("send buffer size:%d", send_buffer_size);
-	_hexdump("send_frame", (const char *)send_buffer, send_buffer_size);
+	//_hexdump("send_frame", (const char *)send_buffer, send_buffer_size);
 
 	if(send_to_server(net_client_info, (uint8_t *)send_buffer, send_buffer_size) == send_buffer_size) {
 		ret = 0;
@@ -222,10 +222,7 @@ static void request_parse(void *ctx, char *buffer, size_t size, size_t max_reque
 	ws_opcode_t opcode;
 	int ret;
 
-	*prequest = NULL;
-	*request_size = 0;
-
-	_hexdump("request_parse", (const char *)buffer, size);
+	//_hexdump("request_parse", (const char *)buffer, size);
 
 	ret = ws_decode((uint8_t *)buffer, size, (uint8_t **)&request, &size, &fin, &opcode);
 
@@ -233,11 +230,15 @@ static void request_parse(void *ctx, char *buffer, size_t size, size_t max_reque
 		debug("fin:%d", fin);
 		debug("opcode:%s", get_ws_opcode_des(opcode));
 		debug("size:%d", size);
-		*prequest = request;
-		*request_size = size;
 	} else {
-		debug("");
+		debug("ws_decode failed!");
+		if(size >= max_request_size) {
+			request = NULL;
+		}
 	}
+
+	*prequest = request;
+	*request_size = size;
 
 	return;
 }
