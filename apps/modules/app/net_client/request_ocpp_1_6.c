@@ -6,7 +6,7 @@
  *   文件名称：request_ocpp_1_6.c
  *   创 建 者：肖飞
  *   创建日期：2021年07月08日 星期四 14时19分21秒
- *   修改日期：2021年07月11日 星期日 16时00分09秒
+ *   修改日期：2021年07月11日 星期日 16时47分38秒
  *   描    述：
  *
  *================================================================*/
@@ -57,6 +57,8 @@ static net_client_data_ctx_t *net_client_data_ctx = NULL;
 static int send_frame(net_client_info_t *net_client_info, uint8_t *data, size_t size, uint8_t *send_buffer, size_t send_buffer_size)
 {
 	int ret = -1;
+	int sent = 0;
+	int retry = 0;
 
 	ret = ws_encode(data, size, (uint8_t *)send_buffer, &send_buffer_size, 1, WS_OPCODE_TXT, 1);
 
@@ -65,13 +67,28 @@ static int send_frame(net_client_info_t *net_client_info, uint8_t *data, size_t 
 		return ret;
 	}
 
-	debug("send buffer size:%d", send_buffer_size);
 	//_hexdump("send_frame", (const char *)send_buffer, send_buffer_size);
 
-	if(send_to_server(net_client_info, (uint8_t *)send_buffer, send_buffer_size) == send_buffer_size) {
-		ret = 0;
-	} else {
-		debug("");
+	while(sent < send_buffer_size) {
+		ret = send_to_server(net_client_info, (uint8_t *)send_buffer + sent, send_buffer_size - sent);
+
+		if(ret > 0) {
+			retry = 0;
+			sent += ret;
+			ret = sent;
+		} else if(ret == 0) {
+			retry++;
+
+			if(retry >= 128) {
+				debug("");
+				ret = -1;
+				break;
+			}
+		} else {
+			debug("ret:%d", ret);
+			set_client_state(net_client_info, CLIENT_RESET);
+			break;
+		}
 	}
 
 	return ret;
@@ -232,6 +249,7 @@ static void request_parse(void *ctx, char *buffer, size_t size, size_t max_reque
 		debug("size:%d", size);
 	} else {
 		debug("ws_decode failed!");
+
 		if(size >= max_request_size) {
 			request = NULL;
 		}
@@ -367,7 +385,7 @@ static void ocpp_1_6_response(void *ctx, uint8_t *request, uint16_t request_size
 
 static void request_process(void *ctx, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
-	_hexdump("request_process", (const char *)request, request_size);
+	//_hexdump("request_process", (const char *)request, request_size);
 
 	ocpp_1_6_response(ctx, request, request_size, send_buffer, send_buffer_size);
 }

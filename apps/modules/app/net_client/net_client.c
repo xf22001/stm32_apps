@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2021年07月11日 星期日 14时16分58秒
+ *   修改日期：2021年07月11日 星期日 16时25分26秒
  *   描    述：
  *
  *================================================================*/
@@ -697,9 +697,8 @@ int send_to_server(net_client_info_t *net_client_info, uint8_t *buffer, size_t l
 		if(poll_wait_write_available(net_client_info->sock_fd, TASK_NET_CLIENT_PERIODIC) == 0) {
 			ret = net_client_info->protocol_if->net_send(net_client_info, buffer, len);
 
-			if(ret <= 0) {
-				debug("net_send error(%d)!", errno);
-				ret = 0;
+			if(ret < 0) {
+				debug("net_send error(%d)!", ret);
 			}
 		} else {
 		}
