@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2021年07月10日 星期六 14时34分40秒
+ *   修改日期：2021年07月11日 星期日 14时16分58秒
  *   描    述：
  *
  *================================================================*/
@@ -471,7 +471,7 @@ static int create_server_connect(net_client_info_t *net_client_info)
 
 	if(net_client_info->net_client_addr_info.socket_addr_info == NULL) {
 		get_addr_info(net_client_info);
-		debug("");
+		debug("net client get addr failed!");
 		return ret;
 	}
 
@@ -485,7 +485,7 @@ static int create_server_connect(net_client_info_t *net_client_info)
 		net_client_info->retry_count = 0;
 	} else {
 		get_addr_info(net_client_info);
-		debug("");
+		debug("net client connect failed!");
 	}
 
 	return ret;
