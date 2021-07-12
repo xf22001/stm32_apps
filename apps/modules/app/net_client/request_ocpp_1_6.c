@@ -6,7 +6,7 @@
  *   文件名称：request_ocpp_1_6.c
  *   创 建 者：肖飞
  *   创建日期：2021年07月08日 星期四 14时19分21秒
- *   修改日期：2021年07月11日 星期日 16时47分38秒
+ *   修改日期：2021年07月12日 星期一 17时47分53秒
  *   描    述：
  *
  *================================================================*/
@@ -18,6 +18,111 @@
 #include "websocket.h"
 
 #include "log.h"
+
+typedef enum {
+	OCPP_CALL_TYPE_CALL = 2,
+	OCPP_CALL_TYPE_CALL_RESPONSE,
+	OCPP_CALL_TYPE_CALL_ERROR,
+} ocpp_call_type_t;
+
+typedef struct {
+	uint8_t id;
+	char *des;
+	uint32_t hash;
+} ocpp_des_item_t;
+
+#define enum_ocpp_command(command) ENUM_OCPP_COMMAND_##command
+
+typedef enum {
+	//设备-->服务器
+	enum_ocpp_command(Authorize) = 0,//鉴权(刷卡)
+	enum_ocpp_command(BootNotification),//登录
+	enum_ocpp_command(Heartbeat),//心跳包
+	enum_ocpp_command(MeterValues),//电表参数
+	enum_ocpp_command(StartTransaction),//开始充电信息
+	enum_ocpp_command(StatusNotification),//状态推送
+	enum_ocpp_command(StopTransaction),//停止充电信息
+	enum_ocpp_command(FirmwareStatusNotification),//升级状态推送
+	enum_ocpp_command(DiagnosticsStatusNotification),//诊断信息状态推送
+
+	//服务器-->设备
+	enum_ocpp_command(ChangeAvailability),//充电桩使能开关
+	enum_ocpp_command(ChangeConfiguration),//改变充电桩本地配置
+	enum_ocpp_command(ClearCache),//清除证书缓存
+	enum_ocpp_command(GetConfiguration),//获取充电桩本地配置
+	enum_ocpp_command(RemoteStartTransaction),//远程启动充电
+	enum_ocpp_command(RemoteStopTransaction),//远程停止充电
+	enum_ocpp_command(Reset),//重启充电桩
+	enum_ocpp_command(UnlockConnector),//充电桩解除锁定
+	enum_ocpp_command(UpdateFirmware),//升级固件
+	enum_ocpp_command(GetDiagnostics),//获取诊断信息
+	enum_ocpp_command(GetLocalListVersion),//获取本地列表版本号
+	enum_ocpp_command(SendLocalList),//下发本地列表
+	enum_ocpp_command(CancelReservation),//取消预约
+	enum_ocpp_command(ReserveNow),//现在预约
+	enum_ocpp_command(ClearChargingProfile),//清除充电配置文件
+	enum_ocpp_command(GetCompositeSchedule),//获取综合时间表
+	enum_ocpp_command(SetChargingProfile),//设置充电配置文件
+	enum_ocpp_command(TriggerMessage),//远程触发上报指定消息
+
+	//远程触发上报指定消息
+	enum_ocpp_command(DataTransfer),//数据传输(OCPP中不包含的数据)
+	ENUM_OCPP_COMMAND_SIZE,//数据传输(OCPP中不包含的数据)
+} ocpp_command_t;
+
+#define add_ocpp_command_name_case(command) \
+		case enum_ocpp_command(command): { \
+			name = #command; \
+		} \
+		break
+
+char *get_ocpp_command_name(ocpp_command_t command)
+{
+	char *name = "unknow";
+
+	switch(command) {
+			//设备-->服务器
+			add_ocpp_command_name_case(Authorize);//鉴权(刷卡)
+			add_ocpp_command_name_case(BootNotification);//登录
+			add_ocpp_command_name_case(Heartbeat);//心跳包
+			add_ocpp_command_name_case(MeterValues);//电表参数
+			add_ocpp_command_name_case(StartTransaction);//开始充电信息
+			add_ocpp_command_name_case(StatusNotification);//状态推送
+			add_ocpp_command_name_case(StopTransaction);//停止充电信息
+			add_ocpp_command_name_case(FirmwareStatusNotification);//升级状态推送
+			add_ocpp_command_name_case(DiagnosticsStatusNotification);//诊断信息状态推送
+
+			//服务器-->设备
+			add_ocpp_command_name_case(ChangeAvailability);//充电桩使能开关
+			add_ocpp_command_name_case(ChangeConfiguration);//改变充电桩本地配置
+			add_ocpp_command_name_case(ClearCache);//清除证书缓存
+			add_ocpp_command_name_case(GetConfiguration);//获取充电桩本地配置
+			add_ocpp_command_name_case(RemoteStartTransaction);//远程启动充电
+			add_ocpp_command_name_case(RemoteStopTransaction);//远程停止充电
+			add_ocpp_command_name_case(Reset);//重启充电桩
+			add_ocpp_command_name_case(UnlockConnector);//充电桩解除锁定
+			add_ocpp_command_name_case(UpdateFirmware);//升级固件
+			add_ocpp_command_name_case(GetDiagnostics);//获取诊断信息
+			add_ocpp_command_name_case(GetLocalListVersion);//获取本地列表版本号
+			add_ocpp_command_name_case(SendLocalList);//下发本地列表
+			add_ocpp_command_name_case(CancelReservation);//取消预约
+			add_ocpp_command_name_case(ReserveNow);//现在预约
+			add_ocpp_command_name_case(ClearChargingProfile);//清除充电配置文件
+			add_ocpp_command_name_case(GetCompositeSchedule);//获取综合时间表
+			add_ocpp_command_name_case(SetChargingProfile);//设置充电配置文件
+			add_ocpp_command_name_case(TriggerMessage);//远程触发上报指定消息
+
+			//远程触发上报指定消息
+			add_ocpp_command_name_case(DataTransfer);//数据传输(OCPP中不包含的数据)
+
+		default: {
+		}
+		break;
+	}
+
+	return name;
+}
+
 
 typedef struct {
 	command_status_t *channel_cmd_ctx;
