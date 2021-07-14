@@ -6,7 +6,7 @@
  *   文件名称：net_client.h
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时38分02秒
- *   修改日期：2021年07月11日 星期日 16时14分28秒
+ *   修改日期：2021年07月14日 星期三 10时10分37秒
  *   描    述：
  *
  *================================================================*/
@@ -91,7 +91,7 @@ typedef void (*before_connect_t)(void *ctx);
 typedef void (*after_connect_t)(void *ctx);
 typedef void (*before_close_t)(void *ctx);
 typedef void (*after_close_t)(void *ctx);
-typedef void (*parse_t)(void *ctx, char *buffer, size_t size, size_t max_request_size, char **prequest, size_t *request_size);
+typedef void (*parse_t)(void *ctx, char *buffer, size_t size, size_t max_request_size, char **prequest, size_t *prequest_size);
 typedef void (*process_t)(void *ctx, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size);
 typedef void (*periodic_t)(void *ctx, uint8_t *send_buffer, uint16_t send_buffer_size);
 typedef struct {

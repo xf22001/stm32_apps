@@ -6,7 +6,7 @@
  *   文件名称：request.c
  *   创 建 者：肖飞
  *   创建日期：2020年02月16日 星期日 11时05分58秒
- *   修改日期：2021年04月20日 星期二 10时38分30秒
+ *   修改日期：2021年07月14日 星期三 10时12分09秒
  *   描    述：
  *
  *================================================================*/
@@ -29,7 +29,7 @@ static unsigned char request_calc_crc8(void *data, size_t size)
 	return crc;
 }
 
-void request_decode(char *buffer, size_t size, size_t max_request_size, char **prequest, size_t *request_size)
+void request_decode(char *buffer, size_t size, size_t max_request_size, char **prequest, size_t *prequest_size)
 {
 	//util_log *l = util_log::get_instance();
 	request_t *request = (request_t *)buffer;
@@ -38,7 +38,7 @@ void request_decode(char *buffer, size_t size, size_t max_request_size, char **p
 	size_t max_payload;
 
 	*prequest = NULL;
-	*request_size = 0;
+	*prequest_size = 0;
 
 	if(valid_size < sizeof(request_t)) {
 		return;
@@ -74,7 +74,7 @@ void request_decode(char *buffer, size_t size, size_t max_request_size, char **p
 	}
 
 	*prequest = (char *)request;
-	*request_size = request->header.data_size + sizeof(request_t);
+	*prequest_size = request->header.data_size + sizeof(request_t);
 }
 
 void request_encode(request_info_t *request_info)

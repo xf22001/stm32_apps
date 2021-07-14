@@ -6,7 +6,7 @@
  *   文件名称：request.h
  *   创 建 者：肖飞
  *   创建日期：2020年02月16日 星期日 11时03分12秒
- *   修改日期：2020年05月09日 星期六 16时49分16秒
+ *   修改日期：2021年07月14日 星期三 10时12分34秒
  *   描    述：
  *
  *================================================================*/
@@ -58,7 +58,7 @@ typedef struct {
 	size_t request_size;
 } request_info_t;
 
-void request_decode(char *buffer, size_t size, size_t max_request_size, char **prequest, size_t *request_size);
+void request_decode(char *buffer, size_t size, size_t max_request_size, char **prequest, size_t *prequest_size);
 void request_encode(request_info_t *request_info);
 
 #endif //_REQUEST_PACKAGE_H

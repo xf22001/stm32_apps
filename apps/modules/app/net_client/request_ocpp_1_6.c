@@ -6,16 +6,19 @@
  *   文件名称：request_ocpp_1_6.c
  *   创 建 者：肖飞
  *   创建日期：2021年07月08日 星期四 14时19分21秒
- *   修改日期：2021年07月13日 星期二 17时05分58秒
+ *   修改日期：2021年07月14日 星期三 17时12分24秒
  *   描    述：
  *
  *================================================================*/
 #include "net_client.h"
 
+#include <math.h>
+
 #include "command_status.h"
 #include "channels.h"
-
 #include "websocket.h"
+#include "app.h"
+#include "cJSON.h"
 
 #include "log.h"
 
@@ -112,7 +115,7 @@ typedef enum {
 
 	//远程触发上报指定消息
 	enum_ocpp_command(DataTransfer),//数据传输(OCPP中不包含的数据)
-	ENUM_OCPP_COMMAND_SIZE,//数据传输(OCPP中不包含的数据)
+	enum_ocpp_command(SIZE),
 } ocpp_command_t;
 
 #define add_ocpp_command_name_case(command) \
@@ -478,6 +481,7 @@ static char *get_ocpp_vendor_error_code_des(ocpp_vendor_error_code_t code)
 typedef enum {
 	enum_ocpp_response_status(Accepted) = 0,
 	enum_ocpp_response_status(Rejected),
+	enum_ocpp_response_status(Pending),
 	enum_ocpp_response_status(Failed),
 	enum_ocpp_response_status(Scheduled),
 	enum_ocpp_response_status(RebootRequired),
@@ -505,6 +509,7 @@ static char *get_ocpp_response_status_des(ocpp_response_status_t status)
 	switch(status) {
 			add_ocpp_response_status_case(Accepted);
 			add_ocpp_response_status_case(Rejected);
+			add_ocpp_response_status_case(Pending);
 			add_ocpp_response_status_case(Failed);
 			add_ocpp_response_status_case(Scheduled);
 			add_ocpp_response_status_case(RebootRequired);
@@ -732,6 +737,12 @@ typedef struct {
 } ocpp_charging_profile_t;
 
 typedef struct {
+	char id[32 + 1];
+	uint32_t id_hash;
+} ocpp_unique_id_t;
+
+typedef struct {
+	ocpp_unique_id_t *ocpp_unique_id;
 	command_status_t *channel_cmd_ctx;
 } net_client_channel_data_ctx_t;
 
@@ -740,12 +751,14 @@ typedef struct {
 	uint8_t request_timeout;
 	uint8_t ocpp_key[enum_ocpp_core_key(SIZE)];
 
+	ocpp_unique_id_t *ocpp_unique_id;
 	command_status_t *device_cmd_ctx;
+
 	net_client_channel_data_ctx_t *channel_data_ctx;
 } net_client_data_ctx_t;
 
 typedef enum {
-	NET_CLIENT_DEVICE_COMMAND_NONE = 0,
+	NET_CLIENT_DEVICE_COMMAND_LOGIN = 0,
 } net_client_device_command_t;
 
 typedef enum {
@@ -753,13 +766,14 @@ typedef enum {
 } net_client_channel_command_t;
 
 typedef int (*net_client_request_callback_t)(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *send_buffer, uint16_t send_buffer_size);
-typedef int (*net_client_response_callback_t)(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size);
+typedef int (*net_client_response_callback_t)(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, cJSON *payload, ocpp_msg_type_t ocpp_msg_type, char *unique_id, char *error_code, char *error_des, uint8_t *send_buffer, uint16_t send_buffer_size);
 typedef int (*net_client_timeout_callback_t)(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id);
 
 typedef struct {
 	uint8_t cmd;
 	uint32_t periodic;
-	uint16_t frame;
+	uint8_t ocpp_cmd;//ocpp_command_t
+	uint32_t ocpp_cmd_hash;
 	net_client_request_callback_t request_callback;
 	net_client_response_callback_t response_callback;
 	net_client_timeout_callback_t timeout_callback;
@@ -767,20 +781,22 @@ typedef struct {
 
 static net_client_data_ctx_t *net_client_data_ctx = NULL;
 
-static int send_frame(net_client_info_t *net_client_info, uint8_t *data, size_t size, uint8_t *send_buffer, size_t send_buffer_size)
+static int send_frame(net_client_info_t *net_client_info, uint8_t *data, size_t size, uint8_t *send_buffer, size_t send_buffer_size, uint8_t opcode)
 {
 	int ret = -1;
 	int sent = 0;
 	int retry = 0;
 
-	ret = ws_encode(data, size, (uint8_t *)send_buffer, &send_buffer_size, 1, WS_OPCODE_TXT, 1);
+	//_hexdump("send_frame", (const char *)data, size);
+
+	ret = ws_encode(data, size, (uint8_t *)send_buffer, &send_buffer_size, 1, opcode, 1);
 
 	if(ret != 0) {
 		debug("");
 		return ret;
 	}
 
-	//_hexdump("send_frame", (const char *)send_buffer, send_buffer_size);
+	debug("send_buffer_size:%d", send_buffer_size);
 
 	while(sent < send_buffer_size) {
 		ret = send_to_server(net_client_info, (uint8_t *)send_buffer + sent, send_buffer_size - sent);
@@ -807,7 +823,240 @@ static int send_frame(net_client_info_t *net_client_info, uint8_t *data, size_t 
 	return ret;
 }
 
+static int send_json_frame(net_client_info_t *net_client_info, cJSON *root, uint8_t *send_buffer, size_t send_buffer_size, uint8_t opcode)
+{
+	int ret = -1;
+	char *content;
+
+	//content = cJSON_Print(root);
+	content = cJSON_PrintUnformatted(root);
+
+	if(content != NULL) {
+		size_t size = strlen(content) + 1;
+
+		debug("content:%s", content);
+
+		if(send_frame(net_client_info, (uint8_t *)content, size, send_buffer, send_buffer_size, WS_OPCODE_TXT) == size) {
+			ret = 0;
+		}
+
+		os_free(content);
+	} else {
+		debug("");
+	}
+
+	return ret;
+}
+
+static cJSON *alloc_ocpp_payload(cJSON *root, ocpp_msg_type_t ocpp_msg_type, char *unique_id, uint8_t ocpp_cmd, char *error_code, char *error_des)
+{
+	cJSON *payload = NULL;
+	cJSON *o;
+
+	o = cJSON_CreateNumber(OCPP_MSG_TYPE_CALL);
+
+	if(!cJSON_AddItemToArray(root, o)) {
+		if(o != NULL) {
+			os_free(o);
+		}
+	}
+
+	o = cJSON_CreateString(unique_id);
+
+	if(!cJSON_AddItemToArray(root, o)) {
+		if(o != NULL) {
+			os_free(o);
+		}
+	}
+
+	switch(ocpp_msg_type) {
+		case OCPP_MSG_TYPE_CALL: {
+			o = cJSON_CreateString(get_ocpp_command_name(ocpp_cmd));
+
+			if(!cJSON_AddItemToArray(root, o)) {
+				if(o != NULL) {
+					os_free(o);
+				}
+			}
+
+			o = cJSON_CreateObject();
+
+			if(!cJSON_AddItemToArray(root, o)) {
+				if(o != NULL) {
+					os_free(o);
+				}
+			} else {
+				payload = o;
+			}
+		}
+		break;
+
+		case OCPP_MSG_TYPE_CALL_RESULT: {
+			o = cJSON_CreateObject();
+
+			if(!cJSON_AddItemToArray(root, o)) {
+				if(o != NULL) {
+					os_free(o);
+				}
+			} else {
+				payload = o;
+			}
+		}
+		break;
+
+		case OCPP_MSG_TYPE_CALL_ERROR: {
+			o = cJSON_CreateString(error_code);
+
+			if(!cJSON_AddItemToArray(root, o)) {
+				if(o != NULL) {
+					os_free(o);
+				}
+			}
+
+			o = cJSON_CreateString(error_des);
+
+			if(!cJSON_AddItemToArray(root, o)) {
+				if(o != NULL) {
+					os_free(o);
+				}
+			}
+
+			o = cJSON_CreateObject();
+
+			if(!cJSON_AddItemToArray(root, o)) {
+				if(o != NULL) {
+					os_free(o);
+				}
+			} else {
+				payload = o;
+			}
+		}
+		break;
+
+		default: {
+		}
+		break;
+	}
+
+	return payload;
+}
+
+static int gen_ocpp_unique_id(char *id, size_t size)
+{
+	static uint32_t count = 0;
+
+	return snprintf(id, size, "%lu", count++);
+}
+
+static int request_callback_login(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, uint8_t *send_buffer, uint16_t send_buffer_size)
+{
+	int ret = -1;
+	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
+	app_info_t *app_info = get_app_info();
+	cJSON *root = cJSON_CreateArray();
+	cJSON *payload = NULL;
+	char version[20];
+	ocpp_unique_id_t *ocpp_unique_id = net_client_data_ctx->ocpp_unique_id;
+
+	if(root == NULL) {
+		return ret;
+	}
+
+	if(gen_ocpp_unique_id(ocpp_unique_id->id, sizeof(ocpp_unique_id->id)) < 0) {
+	}
+
+	ocpp_unique_id->id_hash = str_hash(ocpp_unique_id->id);
+
+	payload = alloc_ocpp_payload(root, OCPP_MSG_TYPE_CALL, ocpp_unique_id->id, item->ocpp_cmd, NULL, NULL);
+
+	OS_ASSERT(app_info != NULL);
+	snprintf(version, 20, "v%d.%d.%d.%d", VER_MAJOR, VER_MINOR, VER_REV, VER_BUILD);
+
+	cJSON_AddStringToObject(payload, "chargePointVendor", "SSE");
+	cJSON_AddStringToObject(payload, "chargePointModel", "module");
+	cJSON_AddStringToObject(payload, "chargePointSerialNumber", app_info->mechine_info.device_id);
+	cJSON_AddStringToObject(payload, "firmwareVersion", version);
+
+	ret = send_json_frame(net_client_info, root, send_buffer, send_buffer_size, WS_OPCODE_TXT);
+
+	if(ret == 0) {
+		net_client_data_ctx->device_cmd_ctx[item->cmd].state = COMMAND_STATE_REQUEST;
+	}
+
+	cJSON_Delete(root);
+	return ret;
+}
+
+static int response_callback_login(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id, cJSON *payload, ocpp_msg_type_t ocpp_msg_type, char *unique_id, char *error_code, char *error_des, uint8_t *send_buffer, uint16_t send_buffer_size)
+{
+	int ret = -1;
+	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
+	char *currentTime;
+	double interval;
+	char *status;
+
+	if(ocpp_msg_type != OCPP_MSG_TYPE_CALL_RESULT) {
+		debug("");
+
+		if(error_code != NULL) {
+			debug("error_des:%s", error_code);
+		}
+
+		if(error_des != NULL) {
+			debug("error_des:%s", error_des);
+		}
+
+		return ret;
+	}
+
+	currentTime = cJSON_GetStringValue(cJSON_GetObjectItem(payload, "currentTime"));
+
+	if(currentTime == NULL) {
+		debug("");
+		return ret;
+	}
+
+	interval = cJSON_GetNumberValue(cJSON_GetObjectItem(payload, "interval"));
+
+	if(interval == NAN) {
+		debug("");
+		return ret;
+	}
+
+	status = cJSON_GetStringValue(cJSON_GetObjectItem(payload, "status"));
+
+	if(status == NULL) {
+		debug("");
+		return ret;
+	}
+
+	if(strcmp(status, get_ocpp_response_status_des(enum_ocpp_response_status(Accepted))) == 0) {
+		//login success!!!
+	}
+
+	net_client_data_ctx->device_cmd_ctx[item->cmd].state = COMMAND_STATE_IDLE;
+	ret = 0;
+	return ret;
+}
+
+static int timeout_callback_login(net_client_info_t *net_client_info, void *_command_item, uint8_t channel_id)
+{
+	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
+	debug("");
+	net_client_data_ctx->device_cmd_ctx[item->cmd].state = COMMAND_STATE_REQUEST;
+	return 0;
+}
+
+static net_client_command_item_t net_client_command_item_login = {
+	.cmd = NET_CLIENT_DEVICE_COMMAND_LOGIN,
+	.ocpp_cmd = enum_ocpp_command(BootNotification),
+	.request_callback = request_callback_login,
+	.response_callback = response_callback_login,
+	.timeout_callback = timeout_callback_login,
+};
+
 static net_client_command_item_t *net_client_command_item_device_table[] = {
+	&net_client_command_item_login,
 };
 
 static net_client_command_item_t *net_client_command_item_channel_table[] = {
@@ -831,18 +1080,48 @@ static void ocpp_1_6_ctrl_cmd(void *_net_client_info, void *_ctrl_cmd_info)
 	}
 }
 
+static void *CJSON_CDECL memory_malloc(size_t size)
+{
+	void *pointer = os_alloc(size);
+	return pointer;
+}
+
+static void CJSON_CDECL memory_free(void *pointer)
+{
+	os_free(pointer);
+}
+
+static cJSON_Hooks memory_hooks = {
+	memory_malloc,
+	memory_free
+};
+
 static void request_init(void *ctx)
 {
 	int i;
 	net_client_info_t *net_client_info = (net_client_info_t *)ctx;
 
+	for(i = 0; i < ARRAY_SIZE(net_client_command_item_device_table); i++) {
+		net_client_command_item_t *item = net_client_command_item_device_table[i];
+		item->ocpp_cmd_hash = str_hash(get_ocpp_command_name(item->ocpp_cmd));
+	}
+
+	for(i = 0; i < ARRAY_SIZE(net_client_command_item_channel_table); i++) {
+		net_client_command_item_t *item = net_client_command_item_channel_table[i];
+		item->ocpp_cmd_hash = str_hash(get_ocpp_command_name(item->ocpp_cmd));
+	}
+
 	if(net_client_data_ctx == NULL) {
+		cJSON_InitHooks(&memory_hooks);
+
 		net_client_data_ctx = (net_client_data_ctx_t *)os_calloc(1, sizeof(net_client_data_ctx_t));
 		OS_ASSERT(net_client_data_ctx != NULL);
 
 		net_client_data_ctx->channels_info = get_channels();
 		OS_ASSERT(net_client_data_ctx->channels_info != NULL);
 
+		net_client_data_ctx->ocpp_unique_id = (ocpp_unique_id_t *)os_calloc(ARRAY_SIZE(net_client_command_item_device_table), sizeof(ocpp_unique_id_t));
+		OS_ASSERT(net_client_data_ctx->ocpp_unique_id != NULL);
 		net_client_data_ctx->device_cmd_ctx = (command_status_t *)os_calloc(ARRAY_SIZE(net_client_command_item_device_table), sizeof(command_status_t));
 		OS_ASSERT(net_client_data_ctx->device_cmd_ctx != NULL);
 
@@ -852,6 +1131,8 @@ static void request_init(void *ctx)
 		for(i = 0; i < net_client_data_ctx->channels_info->channel_number; i++) {
 			net_client_channel_data_ctx_t *net_client_channel_data_ctx = net_client_data_ctx->channel_data_ctx + i;
 
+			net_client_channel_data_ctx->ocpp_unique_id = (ocpp_unique_id_t *)os_calloc(ARRAY_SIZE(net_client_command_item_channel_table), sizeof(ocpp_unique_id_t));
+			OS_ASSERT(net_client_channel_data_ctx->ocpp_unique_id != NULL);
 			net_client_channel_data_ctx->channel_cmd_ctx = (command_status_t *)os_calloc(ARRAY_SIZE(net_client_command_item_channel_table), sizeof(command_status_t));
 			OS_ASSERT(net_client_channel_data_ctx->channel_cmd_ctx != NULL);
 		}
@@ -921,13 +1202,16 @@ static void request_after_create_server_connect(void *ctx)
 		} else {
 			debug("receive header response successful!");
 			_hexdump("response header", (const char *)net_client_info->recv_message_buffer.buffer, ret);
-			debug("response header:\n\'%s\'", net_client_info->send_message_buffer.buffer);
+			debug("response header:\n\'%s\'", net_client_info->recv_message_buffer.buffer);
 
 			if(ws_match_response_header((char *)net_client_info->recv_message_buffer.buffer, NULL) != 0) {
 				debug("match header response failed!");
 				set_client_state(net_client_info, CLIENT_RESET);
 			} else {
 				debug("match header response successful!");
+
+				net_client_data_ctx->device_cmd_ctx[NET_CLIENT_DEVICE_COMMAND_LOGIN].available = 1;
+				net_client_data_ctx->device_cmd_ctx[NET_CLIENT_DEVICE_COMMAND_LOGIN].state = COMMAND_STATE_REQUEST;
 			}
 		}
 	} else {
@@ -945,31 +1229,40 @@ static void request_after_close_server_connect(void *ctx)
 	debug("");
 }
 
-static void request_parse(void *ctx, char *buffer, size_t size, size_t max_request_size, char **prequest, size_t *request_size)
+static void request_parse(void *ctx, char *buffer, size_t size, size_t max_request_size, char **prequest, size_t *prequest_size)
 {
-	char *request = NULL;
+	char *out = NULL;
+	size_t out_size;
 	uint8_t fin = 0;
 	ws_opcode_t opcode;
 	int ret;
 
 	//_hexdump("request_parse", (const char *)buffer, size);
 
-	ret = ws_decode((uint8_t *)buffer, size, (uint8_t **)&request, &size, &fin, &opcode);
+	*prequest = NULL;
+	*prequest_size = 0;
+
+	ret = ws_decode((uint8_t *)buffer, size, (uint8_t **)&out, &out_size, &fin, &opcode, 1);
 
 	if(ret == 0) {
 		debug("fin:%d", fin);
 		debug("opcode:%s", get_ws_opcode_des(opcode));
-		debug("size:%d", size);
+		debug("out_size:%d", out_size);
+
+		*prequest = buffer;
+		*prequest_size = (out + out_size) - buffer;
 	} else {
 		debug("ws_decode failed!");
 
-		if(size >= max_request_size) {
-			request = NULL;
+		if(out != NULL) {
+			if(out_size >= max_request_size) {
+				out = NULL;
+			} else {
+				*prequest = buffer;
+			}
+		} else {
 		}
 	}
-
-	*prequest = request;
-	*request_size = size;
 
 	return;
 }
@@ -979,7 +1272,7 @@ static char *get_net_client_cmd_device_des(net_client_device_command_t cmd)
 	char *des = "unknow";
 
 	switch(cmd) {
-			add_des_case(NET_CLIENT_DEVICE_COMMAND_NONE);
+			add_des_case(NET_CLIENT_DEVICE_COMMAND_LOGIN);
 
 		default: {
 		}
@@ -1013,59 +1306,96 @@ static void ocpp_1_6_response(void *ctx, uint8_t *request, uint16_t request_size
 	//ocpp_1_6_frame_header_t *ocpp_1_6_frame_header = (ocpp_1_6_frame_header_t *)request;
 	net_client_info_t *net_client_info = (net_client_info_t *)ctx;
 	command_status_t *device_cmd_ctx = net_client_data_ctx->device_cmd_ctx;
-	net_client_channel_data_ctx_t *channel_data_ctx = net_client_data_ctx->channel_data_ctx;
 	uint8_t handled = 0;
 	channels_info_t *channels_info = net_client_data_ctx->channels_info;
+	cJSON *root = cJSON_Parse((const char *)request);
+	ocpp_msg_type_t ocpp_msg_type;
+	char *unique_id;
+	uint32_t unique_id_hash;
+	char *ocpp_cmd = NULL;
+	uint32_t ocpp_cmd_hash = 0;
+	cJSON *payload = NULL;
+	char *error_code = NULL;
+	char *error_des = NULL;
+	int root_size = 0;
 
-	for(i = 0; i < ARRAY_SIZE(net_client_command_item_device_table); i++) {
-		net_client_command_item_t *item = net_client_command_item_device_table[i];
-
-		if(device_cmd_ctx[item->cmd].available == 1) {
-			continue;
-		}
-
-		//if(item->frame != ocpp_1_6_frame_header->cmd.cmd) {
-		//	continue;
-		//}
-
-		net_client_data_ctx->request_timeout = 0;
-
-		if(item->response_callback == NULL) {
-			debug("");
-			continue;
-		}
-
-		ret = item->response_callback(net_client_info, item, 0, request, request_size, send_buffer, send_buffer_size);
-
-		if(ret != 0) {
-			if(ret == 1) {//ignore
-			} else {
-				debug("device cmd %d(%s) response error!", item->cmd, get_net_client_cmd_channel_des(item->cmd));
-				handled = 1;
-			}
-		} else {
-			debug("device cmd:%d(%s) response", item->cmd, get_net_client_cmd_device_des(item->cmd));
-			handled = 1;
-		}
-	}
-
-	if(handled == 1) {
+	if(root == NULL) {
+		debug("");
 		return;
 	}
 
-	for(j = 0; j < channels_info->channel_number; j++) {
-		command_status_t *channel_cmd_ctx = channel_data_ctx[j].channel_cmd_ctx;
+	do {
+		if(!cJSON_IsArray(root)) {
+			break;
+		}
 
-		for(i = 0; i < ARRAY_SIZE(net_client_command_item_channel_table); i++) {
-			net_client_command_item_t *item = net_client_command_item_channel_table[i];
+		unique_id = cJSON_GetStringValue(cJSON_GetArrayItem(root, 1));
+		unique_id_hash = str_hash(unique_id);
 
-			if(channel_cmd_ctx[item->cmd].available == 1) {
+		ocpp_msg_type = (int)cJSON_GetNumberValue(cJSON_GetArrayItem(root, 0));
+
+		root_size = cJSON_GetArraySize(root);
+
+		switch(ocpp_msg_type) {
+			case OCPP_MSG_TYPE_CALL: {
+				if(root_size == 4) {
+					ocpp_cmd = cJSON_GetStringValue(cJSON_GetArrayItem(root, 2));
+					ocpp_cmd_hash = str_hash(ocpp_cmd);
+					payload = cJSON_GetArrayItem(root, 3);
+				}
+			}
+			break;
+
+			case OCPP_MSG_TYPE_CALL_RESULT: {
+				if(root_size == 3) {
+					payload = cJSON_GetArrayItem(root, 2);
+				}
+			}
+			break;
+
+			case OCPP_MSG_TYPE_CALL_ERROR: {
+				if(root_size == 5) {
+					error_code = cJSON_GetStringValue(cJSON_GetArrayItem(root, 2));
+					error_des = cJSON_GetStringValue(cJSON_GetArrayItem(root, 3));
+					payload = cJSON_GetArrayItem(root, 4);
+				}
+			}
+			break;
+
+			default: {
+			}
+			break;
+		}
+
+		if(payload == NULL) {
+			debug("");
+			break;
+		}
+
+		for(i = 0; i < ARRAY_SIZE(net_client_command_item_device_table); i++) {
+			net_client_command_item_t *item = net_client_command_item_device_table[i];
+
+			if(device_cmd_ctx[item->cmd].available == 0) {
 				continue;
 			}
 
-			//if(item->frame != ocpp_1_6_frame_header->cmd.cmd) {
-			//	continue;
-			//}
+			if(ocpp_msg_type == OCPP_MSG_TYPE_CALL) {
+				if(item->ocpp_cmd_hash != ocpp_cmd_hash) {
+					continue;
+				}
+
+				if(strcmp(ocpp_cmd, get_ocpp_command_name(item->ocpp_cmd)) != 0) {
+					continue;
+				}
+			} else {
+				if(net_client_data_ctx->ocpp_unique_id[item->cmd].id_hash != unique_id_hash) {
+					continue;
+				}
+
+				if(strcmp(net_client_data_ctx->ocpp_unique_id[item->cmd].id, unique_id) != 0) {
+					continue;
+				}
+			}
 
 			net_client_data_ctx->request_timeout = 0;
 
@@ -1074,33 +1404,123 @@ static void ocpp_1_6_response(void *ctx, uint8_t *request, uint16_t request_size
 				continue;
 			}
 
-			ret = item->response_callback(net_client_info, item, j, request, request_size, send_buffer, send_buffer_size);
+			ret = item->response_callback(net_client_info, item, 0, payload, ocpp_msg_type, unique_id, error_code, error_des, send_buffer, send_buffer_size);
 
 			if(ret != 0) {
-				if(ret == 1) {
+				if(ret == 1) {//ignore
 				} else {
-					debug("channel %d cmd %d(%s) response error!", j, item->cmd, get_net_client_cmd_channel_des(item->cmd));
+					debug("device cmd %d(%s) response error!", item->cmd, get_net_client_cmd_device_des(item->cmd));
+					handled = 1;
 				}
 			} else {
-				debug("channel %d cmd:%d(%s) response", j, item->cmd, get_net_client_cmd_channel_des(item->cmd));
+				debug("device cmd:%d(%s) response", item->cmd, get_net_client_cmd_device_des(item->cmd));
 				handled = 1;
-				break;
 			}
 		}
 
 		if(handled == 1) {
 			break;
 		}
-	}
+
+		for(j = 0; j < channels_info->channel_number; j++) {
+			net_client_channel_data_ctx_t *channel_data_ctx = net_client_data_ctx->channel_data_ctx + j;
+			command_status_t *channel_cmd_ctx = channel_data_ctx->channel_cmd_ctx;
+
+			for(i = 0; i < ARRAY_SIZE(net_client_command_item_channel_table); i++) {
+				net_client_command_item_t *item = net_client_command_item_channel_table[i];
+
+				if(channel_cmd_ctx[item->cmd].available == 0) {
+					continue;
+				}
+
+				if(ocpp_msg_type == OCPP_MSG_TYPE_CALL) {
+					if(item->ocpp_cmd_hash != ocpp_cmd_hash) {
+						continue;
+					}
+
+					if(strcmp(ocpp_cmd, get_ocpp_command_name(item->ocpp_cmd)) != 0) {
+						continue;
+					}
+				} else {
+					if(channel_data_ctx->ocpp_unique_id[item->cmd].id_hash != unique_id_hash) {
+						continue;
+					}
+
+					if(strcmp(channel_data_ctx->ocpp_unique_id[item->cmd].id, unique_id) != 0) {
+						continue;
+					}
+				}
+
+				net_client_data_ctx->request_timeout = 0;
+
+				if(item->response_callback == NULL) {
+					debug("");
+					continue;
+				}
+
+				ret = item->response_callback(net_client_info, item, j, payload, ocpp_msg_type, unique_id, error_code, error_des, send_buffer, send_buffer_size);
+
+				if(ret != 0) {
+					if(ret == 1) {
+					} else {
+						debug("channel %d cmd %d(%s) response error!", j, item->cmd, get_net_client_cmd_channel_des(item->cmd));
+					}
+				} else {
+					debug("channel %d cmd:%d(%s) response", j, item->cmd, get_net_client_cmd_channel_des(item->cmd));
+					handled = 1;
+					break;
+				}
+			}
+
+			if(handled == 1) {
+				break;
+			}
+		}
+	} while(0);
+
+	cJSON_Delete(root);
 
 	return;
 }
 
 static void request_process(void *ctx, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)
 {
+	int ret;
+	char *out = NULL;
+	size_t out_size;
+	uint8_t fin = 0;
+	ws_opcode_t opcode;
+	net_client_info_t *net_client_info = (net_client_info_t *)ctx;
+
 	//_hexdump("request_process", (const char *)request, request_size);
 
-	ocpp_1_6_response(ctx, request, request_size, send_buffer, send_buffer_size);
+	ret = ws_decode((uint8_t *)request, request_size, (uint8_t **)&out, &out_size, &fin, &opcode, 0);
+	OS_ASSERT(ret == 0);
+	debug("fin:%d", fin);
+	debug("opcode:%s", get_ws_opcode_des(opcode));
+	//_hexdump("process request data", (const char *)out, out_size);
+
+	switch(opcode) {
+		case WS_OPCODE_TXT: {
+			debug("out:%s", out);
+			ocpp_1_6_response(ctx, (uint8_t *)out, out_size, send_buffer, send_buffer_size);
+		}
+		break;
+
+		case WS_OPCODE_DISCONN: {
+			set_client_state(net_client_info, CLIENT_RESET);
+		}
+		break;
+
+		case WS_OPCODE_PING: {
+			send_frame(net_client_info, (uint8_t *)out, out_size, send_buffer, send_buffer_size, WS_OPCODE_PONG);
+		}
+		break;
+
+		default: {
+		}
+		break;
+	}
 }
 
 #define RESPONSE_TIMEOUT_DURATOIN (3 * 1000)
@@ -1270,7 +1690,6 @@ static void request_periodic(void *ctx, uint8_t *send_buffer, uint16_t send_buff
 	uint32_t ticks = osKernelSysTick();
 	static uint32_t send_stamp = 0;
 	net_client_info_t *net_client_info = (net_client_info_t *)ctx;
-	char *s = "xiaofei";
 
 	if(ticks_duration(ticks, send_stamp) < 3000) {
 		return;
@@ -1278,15 +1697,11 @@ static void request_periodic(void *ctx, uint8_t *send_buffer, uint16_t send_buff
 
 	send_stamp = ticks;
 
-	debug("%s", get_ocpp_measurand_name(enum_ocpp_measurand4(Energy, Active, Export, Register)));
-
 	if(get_client_state(net_client_info) != CLIENT_CONNECTED) {
 		//debug("");
 		return;
 	}
 
-	memset(send_buffer, 0, send_buffer_size);
-	send_frame(net_client_info, (uint8_t *)s, strlen(s), send_buffer, send_buffer_size);
 	ocpp_1_6_periodic(net_client_info);
 	request_process_request(net_client_info, send_buffer, send_buffer_size);
 }

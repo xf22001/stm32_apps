@@ -6,7 +6,7 @@
  *   文件名称：websocket.h
  *   创 建 者：肖飞
  *   创建日期：2021年07月09日 星期五 15时45分05秒
- *   修改日期：2021年07月10日 星期六 13时47分10秒
+ *   修改日期：2021年07月14日 星期三 10时28分57秒
  *   描    述：
  *
  *================================================================*/
@@ -41,6 +41,6 @@ int ws_build_key(char *in, size_t in_len, uint8_t do_random, char *key, size_t *
 int ws_build_header(char *header, size_t size, char *host, char *port, char *path, char *key, char *content);
 int ws_match_response_header(char *header, char *match_str);
 int ws_encode(uint8_t *in, size_t in_len, uint8_t *out, size_t *out_len, uint8_t fin, ws_opcode_t opcode, uint8_t mask);
-int ws_decode(uint8_t *in, size_t in_len, uint8_t **out, size_t *out_len, uint8_t *fin, ws_opcode_t *opcode);
+int ws_decode(uint8_t *in, size_t in_len, uint8_t **out, size_t *out_len, uint8_t *fin, ws_opcode_t *opcode, uint8_t probe);
 
 #endif //_WEBSOCKET_H

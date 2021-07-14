@@ -6,7 +6,7 @@
  *   文件名称：request_default.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月05日 星期四 10时09分49秒
- *   修改日期：2021年06月04日 星期五 10时44分36秒
+ *   修改日期：2021年07月14日 星期三 10时11分52秒
  *   描    述：
  *
  *================================================================*/
@@ -76,9 +76,9 @@ static void request_after_close_server_connect(void *ctx)
 	debug("");
 }
 
-static void request_parse(void *ctx, char *buffer, size_t size, size_t max_request_size, char **prequest, size_t *request_size)
+static void request_parse(void *ctx, char *buffer, size_t size, size_t max_request_size, char **prequest, size_t *prequest_size)
 {
-	request_decode((char *)buffer, size, max_request_size, prequest, request_size);
+	request_decode((char *)buffer, size, max_request_size, prequest, prequest_size);
 }
 
 static void request_process(void *ctx, uint8_t *request, uint16_t request_size, uint8_t *send_buffer, uint16_t send_buffer_size)

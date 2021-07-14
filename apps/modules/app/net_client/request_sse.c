@@ -6,7 +6,7 @@
  *   文件名称：request_sse.c
  *   创 建 者：肖飞
  *   创建日期：2021年05月27日 星期四 13时09分48秒
- *   修改日期：2021年07月10日 星期六 13时31分24秒
+ *   修改日期：2021年07月14日 星期三 16时43分02秒
  *   描    述：
  *
  *================================================================*/
@@ -1202,8 +1202,11 @@ static int request_callback_report(net_client_info_t *net_client_info, void *_co
 	int i;
 	uint8_t *channel_report_start;
 	size_t size = 0;
+	app_info_t *app_info = get_app_info();
 
-	snprintf((char *)sse_0x00_request_report->device_id, 32, "%s", channels_settings->device_id);
+	OS_ASSERT(app_info != NULL);
+
+	snprintf((char *)sse_0x00_request_report->device_id, 32, "%s", app_info->mechine_info.device_id);
 	sse_0x00_request_report->device_type = get_device_type(channels_info);
 	memset(sse_0x00_request_report->date_time, 0xff, sizeof(sse_0x00_request_report->date_time));
 	strftime(dt, sizeof(dt), "%Y%m%d%H%M%S", tm);
@@ -1427,11 +1430,14 @@ static int request_callback_event_fault(net_client_info_t *net_client_info, void
 	sse_0x01_request_event_t *sse_0x01_request_event = (sse_0x01_request_event_t *)(sse_frame_header + 1);
 	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
 	channels_info_t *channels_info = net_client_data_ctx->channels_info;
-	channels_settings_t *channels_settings = &net_client_data_ctx->channels_info->channels_settings;
+	//channels_settings_t *channels_settings = &net_client_data_ctx->channels_info->channels_settings;
 	sse_request_event_fault_t *sse_request_event_fault = (sse_request_event_fault_t *)sse_0x01_request_event->event_info;
 	size_t size = (uint8_t *)(sse_request_event_fault + 1) - (uint8_t *)sse_0x01_request_event;
+	app_info_t *app_info = get_app_info();
 
-	snprintf((char *)sse_0x01_request_event->device_id, 32, "%s", channels_settings->device_id);
+	OS_ASSERT(app_info != NULL);
+
+	snprintf((char *)sse_0x01_request_event->device_id, 32, "%s", app_info->mechine_info.device_id);
 	sse_0x01_request_event->device_type = get_device_type(channels_info);
 	sse_0x01_request_event->float_percision = (channels_info->channels_settings.magnification == 0) ? 2 : 3;
 	sse_0x01_request_event->event_type = 0x02;
@@ -1451,15 +1457,18 @@ static int response_callback_event_fault(net_client_info_t *net_client_info, voi
 	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)request;
 	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
 	sse_0x01_response_event_t *sse_0x01_response_event = (sse_0x01_response_event_t *)(sse_frame_header + 1);
-	channels_info_t *channels_info = net_client_data_ctx->channels_info;
-	channels_settings_t *channels_settings = &channels_info->channels_settings;
+	//channels_info_t *channels_info = net_client_data_ctx->channels_info;
+	//channels_settings_t *channels_settings = &channels_info->channels_settings;
+	app_info_t *app_info = get_app_info();
+
+	OS_ASSERT(app_info != NULL);
 
 	if(sse_0x01_response_event->event_type != 0x02) {
 		ret = 1;
 		return ret;
 	}
 
-	if(strncmp((const char *)sse_0x01_response_event->device_id, (const char *)channels_settings->device_id, 32) == 0) {//设备号不对,返回出错
+	if(strncmp((const char *)sse_0x01_response_event->device_id, (const char *)app_info->mechine_info.device_id, 32) == 0) {//设备号不对,返回出错
 		return ret;
 	}
 
@@ -1492,7 +1501,7 @@ static int request_callback_event_upload_record(net_client_info_t *net_client_in
 	sse_0x01_request_event_t *sse_0x01_request_event = (sse_0x01_request_event_t *)(sse_frame_header + 1);
 	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
 	channels_info_t *channels_info = net_client_data_ctx->channels_info;
-	channels_settings_t *channels_settings = &net_client_data_ctx->channels_info->channels_settings;
+	//channels_settings_t *channels_settings = &net_client_data_ctx->channels_info->channels_settings;
 	sse_request_event_record_t *sse_request_event_record = (sse_request_event_record_t *)sse_0x01_request_event->event_info;
 	channel_record_task_info_t *channel_record_task_info = get_or_alloc_channel_record_task_info(0);
 	char dt[20];
@@ -1502,8 +1511,11 @@ static int request_callback_event_upload_record(net_client_info_t *net_client_in
 	uint8_t stop_seg_index;
 	int i;
 	sse_record_section_t *sse_record_section = sse_request_event_record->sse_record_section;
+	app_info_t *app_info = get_app_info();
 
-	snprintf((char *)sse_0x01_request_event->device_id, 32, "%s", channels_settings->device_id);
+	OS_ASSERT(app_info != NULL);
+
+	snprintf((char *)sse_0x01_request_event->device_id, 32, "%s", app_info->mechine_info.device_id);
 	sse_0x01_request_event->device_type = get_device_type(channels_info);
 	sse_0x01_request_event->float_percision = (channels_info->channels_settings.magnification == 0) ? 2 : 3;
 	sse_0x01_request_event->event_type = 0x03;
@@ -1571,15 +1583,18 @@ static int response_callback_event_upload_record(net_client_info_t *net_client_i
 	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)request;
 	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
 	sse_0x01_response_event_t *sse_0x01_response_event = (sse_0x01_response_event_t *)(sse_frame_header + 1);
-	channels_settings_t *channels_settings = &net_client_data_ctx->channels_info->channels_settings;
+	//channels_settings_t *channels_settings = &net_client_data_ctx->channels_info->channels_settings;
 	uint8_t upload = 1;
+	app_info_t *app_info = get_app_info();
+
+	OS_ASSERT(app_info != NULL);
 
 	if(sse_0x01_response_event->event_type != 0x03) {
 		ret = 1;
 		return ret;
 	}
 
-	if(strncmp((const char *)sse_0x01_response_event->device_id, (const char *)channels_settings->device_id, 32) == 0) {//设备号不对,返回出错
+	if(strncmp((const char *)sse_0x01_response_event->device_id, (const char *)app_info->mechine_info.device_id, 32) == 0) {//设备号不对,返回出错
 		return ret;
 	}
 
@@ -1793,16 +1808,19 @@ static int request_callback_query_device_message(net_client_info_t *net_client_i
 	sse_0x02_request_query_t *sse_0x02_request_query = (sse_0x02_request_query_t *)(sse_frame_header + 1);
 	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
 	//channels_info_t *channels_info = net_client_data_ctx->channels_info;
-	channels_settings_t *channels_settings = &net_client_data_ctx->channels_info->channels_settings;
+	//channels_settings_t *channels_settings = &net_client_data_ctx->channels_info->channels_settings;
 	uint8_t *data = sse_0x02_request_query->query;
 	size_t size;
+	app_info_t *app_info = get_app_info();
+
+	OS_ASSERT(app_info != NULL);
 
 	sse_0x02_request_query->type = 1;
 	sse_0x02_request_query->id = net_client_data_ctx->query_device_info_id;
 
 	if((sse_0x02_request_query->id == 0) || (sse_0x02_request_query->id == 0xff)) {
 		uint8_t *device_id = (uint8_t *)data;
-		snprintf((char *)device_id, 32, "%s", channels_settings->device_id);
+		snprintf((char *)device_id, 32, "%s", app_info->mechine_info.device_id);
 
 		data += 32;
 	}
@@ -1936,11 +1954,14 @@ static int request_callback_query_card_account(net_client_info_t *net_client_inf
 	channels_settings_t *channels_settings = &channels_info->channels_settings;
 	sse_query_card_account_info_t *sse_query_card_account_info = (sse_query_card_account_info_t *)sse_0x02_request_query->query;
 	size_t size;
+	app_info_t *app_info = get_app_info();
+
+	OS_ASSERT(app_info != NULL);
 
 	sse_0x02_request_query->type = 2;
 	sse_0x02_request_query->id = 0;
 
-	snprintf((char *)sse_query_card_account_info->device_id, 32, "%s", (char *)channels_settings->device_id);
+	snprintf((char *)sse_query_card_account_info->device_id, 32, "%s", (char *)app_info->mechine_info.device_id);
 	snprintf((char *)sse_query_card_account_info->card_id, 32, "%s", (char *)net_client_data_ctx->card_id);
 	snprintf((char *)sse_query_card_account_info->card_password, 32, "%s", (char *)net_client_data_ctx->card_password);
 	sse_query_card_account_info->withholding = channels_settings->withholding;
@@ -2264,8 +2285,11 @@ static int response_callback_remote_device(net_client_info_t *net_client_info, v
 	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)request;
 	sse_0x04_response_remote_t *sse_0x04_response_remote = (sse_0x04_response_remote_t *)(sse_frame_header + 1);
 	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
-	channels_settings_t *channels_settings = &net_client_data_ctx->channels_info->channels_settings;
+	//channels_settings_t *channels_settings = &net_client_data_ctx->channels_info->channels_settings;
 	sse_remote_ad_on_off_t *sse_remote_ad_on_off = (sse_remote_ad_on_off_t *)sse_0x04_response_remote->remote;
+	app_info_t *app_info = get_app_info();
+
+	OS_ASSERT(app_info != NULL);
 
 	if(sse_frame_header->cmd.type == 1) {
 		ret = 1;
@@ -2277,7 +2301,7 @@ static int response_callback_remote_device(net_client_info_t *net_client_info, v
 		return ret;
 	}
 
-	if(strncmp((const char *)sse_remote_ad_on_off->device_id, (const char *)channels_settings->device_id, 32) == 0) {//设备号不对,返回出错
+	if(strncmp((const char *)sse_remote_ad_on_off->device_id, (const char *)app_info->mechine_info.device_id, 32) == 0) {//设备号不对,返回出错
 		return ret;
 	}
 
@@ -2391,7 +2415,7 @@ static int request_callback_event_start(net_client_info_t *net_client_info, void
 	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)send_buffer;
 	sse_0x01_request_event_t *sse_0x01_request_event = (sse_0x01_request_event_t *)(sse_frame_header + 1);
 	channels_info_t *channels_info = net_client_data_ctx->channels_info;
-	channels_settings_t *channels_settings = &channels_info->channels_settings;
+	//channels_settings_t *channels_settings = &channels_info->channels_settings;
 	channel_info_t *channel_info = channels_info->channel_info + channel_id;
 	charger_info_t *charger_info = (charger_info_t *)channel_info->charger_info;
 	net_client_channel_data_ctx_t *channel_data_ctx = net_client_data_ctx->channel_data_ctx + channel_id;
@@ -2400,8 +2424,11 @@ static int request_callback_event_start(net_client_info_t *net_client_info, void
 	char dt[20];
 	struct tm *tm;
 	size_t size = (uint8_t *)(sse_request_event_start_charge + 1) - (uint8_t *)sse_0x01_request_event;
+	app_info_t *app_info = get_app_info();
 
-	snprintf((char *)sse_0x01_request_event->device_id, 32, "%s", channels_settings->device_id);
+	OS_ASSERT(app_info != NULL);
+
+	snprintf((char *)sse_0x01_request_event->device_id, 32, "%s", app_info->mechine_info.device_id);
 	sse_0x01_request_event->device_type = get_device_type(channels_info);
 	sse_0x01_request_event->float_percision = (channels_info->channels_settings.magnification == 0) ? 2 : 3;
 	sse_0x01_request_event->event_type = 0x00;
@@ -2439,9 +2466,12 @@ static int response_callback_event_start(net_client_info_t *net_client_info, voi
 	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)request;
 	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
 	sse_0x01_response_event_t *sse_0x01_response_event = (sse_0x01_response_event_t *)(sse_frame_header + 1);
-	channels_info_t *channels_info = net_client_data_ctx->channels_info;
-	channels_settings_t *channels_settings = &channels_info->channels_settings;
+	//channels_info_t *channels_info = net_client_data_ctx->channels_info;
+	//channels_settings_t *channels_settings = &channels_info->channels_settings;
 	net_client_channel_data_ctx_t *channel_data_ctx = net_client_data_ctx->channel_data_ctx + channel_id;
+	app_info_t *app_info = get_app_info();
+
+	OS_ASSERT(app_info != NULL);
 
 	if(sse_frame_header->cmd.type == 0) {//非回复,忽略
 		ret = 1;
@@ -2461,7 +2491,7 @@ static int response_callback_event_start(net_client_info_t *net_client_info, voi
 	if(sse_0x01_response_event->status == 0) {
 	}
 
-	if(strncmp((const char *)sse_0x01_response_event->device_id, (const char *)channels_settings->device_id, 32) == 0) {//设备号不对,返回出错
+	if(strncmp((const char *)sse_0x01_response_event->device_id, (const char *)app_info->mechine_info.device_id, 32) == 0) {//设备号不对,返回出错
 		return ret;
 	}
 
@@ -2508,11 +2538,14 @@ static int request_callback_query_qr_code(net_client_info_t *net_client_info, vo
 	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
 	sse_query_qr_code_info_t *sse_query_qr_code_info = (sse_query_qr_code_info_t *)sse_0x02_request_query->query;
 	size_t size = (uint8_t *)(sse_query_qr_code_info + 1) - (uint8_t *)sse_0x02_request_query;
+	app_info_t *app_info = get_app_info();
+
+	OS_ASSERT(app_info != NULL);
 
 	sse_0x02_request_query->type = 3;
 	sse_0x02_request_query->id = 0;
 
-	snprintf((char *)sse_query_qr_code_info->device_id, 32, "%s", channels_settings->device_id);
+	snprintf((char *)sse_query_qr_code_info->device_id, 32, "%s", app_info->mechine_info.device_id);
 	sse_query_qr_code_info->channel_id = channel_id + 1;
 	sse_query_qr_code_info->withholding = channels_settings->withholding;
 
@@ -2591,11 +2624,14 @@ static int request_callback_remote_start_stop(net_client_info_t *net_client_info
 	net_client_command_item_t *item = (net_client_command_item_t *)_command_item;
 	sse_query_qr_code_info_t *sse_query_qr_code_info = (sse_query_qr_code_info_t *)sse_0x02_request_query->query;
 	size_t size = (uint8_t *)(sse_query_qr_code_info + 1) - (uint8_t *)sse_0x02_request_query;
+	app_info_t *app_info = get_app_info();
+
+	OS_ASSERT(app_info != NULL);
 
 	sse_0x02_request_query->type = 3;
 	sse_0x02_request_query->id = 0;
 
-	snprintf((char *)sse_query_qr_code_info->device_id, 32, "%s", channels_settings->device_id);
+	snprintf((char *)sse_query_qr_code_info->device_id, 32, "%s", app_info->mechine_info.device_id);
 	sse_query_qr_code_info->channel_id = channel_id + 1;
 	sse_query_qr_code_info->withholding = channels_settings->withholding;
 
@@ -2824,13 +2860,13 @@ static void request_after_close_server_connect(void *ctx)
 	debug("");
 }
 
-static void request_parse(void *ctx, char *buffer, size_t size, size_t max_request_size, char **prequest, size_t *request_size)
+static void request_parse(void *ctx, char *buffer, size_t size, size_t max_request_size, char **prequest, size_t *prequest_size)
 {
 	sse_frame_header_t *sse_frame_header = (sse_frame_header_t *)buffer;
 	sse_frame_crc_t *sse_frame_crc;
 
 	*prequest = NULL;
-	*request_size = 0;
+	*prequest_size = 0;
 
 	if(sse_frame_header->magic != 0xf5aa) {//无效包
 		return;
@@ -2853,7 +2889,7 @@ static void request_parse(void *ctx, char *buffer, size_t size, size_t max_reque
 	}
 
 	*prequest = buffer;
-	*request_size = sse_frame_header->frame_len;
+	*prequest_size = sse_frame_header->frame_len;
 	return;
 }
 
@@ -2869,49 +2905,11 @@ static void sse_response(void *ctx, uint8_t *request, uint16_t request_size, uin
 	uint8_t handled = 0;
 	channels_info_t *channels_info = net_client_data_ctx->channels_info;
 
-	for(i = 0; i < ARRAY_SIZE(net_client_command_item_device_table); i++) {
-		net_client_command_item_t *item = net_client_command_item_device_table[i];
+	do {
+		for(i = 0; i < ARRAY_SIZE(net_client_command_item_device_table); i++) {
+			net_client_command_item_t *item = net_client_command_item_device_table[i];
 
-		if(device_cmd_ctx[item->cmd].available == 1) {
-			continue;
-		}
-
-		if(item->frame != sse_frame_header->cmd.cmd) {
-			continue;
-		}
-
-		net_client_data_ctx->request_timeout = 0;
-
-		if(item->response_callback == NULL) {
-			debug("");
-			continue;
-		}
-
-		ret = item->response_callback(net_client_info, item, 0, request, request_size, send_buffer, send_buffer_size);
-
-		if(ret != 0) {
-			if(ret == 1) {//ignore
-			} else {
-				debug("device cmd %d(%s) response error!", item->cmd, get_net_client_cmd_channel_des(item->cmd));
-				handled = 1;
-			}
-		} else {
-			debug("device cmd:%d(%s) response", item->cmd, get_net_client_cmd_device_des(item->cmd));
-			handled = 1;
-		}
-	}
-
-	if(handled == 1) {
-		return;
-	}
-
-	for(j = 0; j < channels_info->channel_number; j++) {
-		command_status_t *channel_cmd_ctx = channel_data_ctx[j].channel_cmd_ctx;
-
-		for(i = 0; i < ARRAY_SIZE(net_client_command_item_channel_table); i++) {
-			net_client_command_item_t *item = net_client_command_item_channel_table[i];
-
-			if(channel_cmd_ctx[item->cmd].available == 1) {
+			if(device_cmd_ctx[item->cmd].available == 1) {
 				continue;
 			}
 
@@ -2926,24 +2924,64 @@ static void sse_response(void *ctx, uint8_t *request, uint16_t request_size, uin
 				continue;
 			}
 
-			ret = item->response_callback(net_client_info, item, j, request, request_size, send_buffer, send_buffer_size);
+			ret = item->response_callback(net_client_info, item, 0, request, request_size, send_buffer, send_buffer_size);
 
 			if(ret != 0) {
-				if(ret == 1) {
+				if(ret == 1) {//ignore
 				} else {
-					debug("channel %d cmd %d(%s) response error!", j, item->cmd, get_net_client_cmd_channel_des(item->cmd));
+					debug("device cmd %d(%s) response error!", item->cmd, get_net_client_cmd_device_des(item->cmd));
+					handled = 1;
 				}
 			} else {
-				debug("channel %d cmd:%d(%s) response", j, item->cmd, get_net_client_cmd_channel_des(item->cmd));
+				debug("device cmd:%d(%s) response", item->cmd, get_net_client_cmd_device_des(item->cmd));
 				handled = 1;
-				break;
 			}
 		}
 
 		if(handled == 1) {
 			break;
 		}
-	}
+
+		for(j = 0; j < channels_info->channel_number; j++) {
+			command_status_t *channel_cmd_ctx = channel_data_ctx[j].channel_cmd_ctx;
+
+			for(i = 0; i < ARRAY_SIZE(net_client_command_item_channel_table); i++) {
+				net_client_command_item_t *item = net_client_command_item_channel_table[i];
+
+				if(channel_cmd_ctx[item->cmd].available == 1) {
+					continue;
+				}
+
+				if(item->frame != sse_frame_header->cmd.cmd) {
+					continue;
+				}
+
+				net_client_data_ctx->request_timeout = 0;
+
+				if(item->response_callback == NULL) {
+					debug("");
+					continue;
+				}
+
+				ret = item->response_callback(net_client_info, item, j, request, request_size, send_buffer, send_buffer_size);
+
+				if(ret != 0) {
+					if(ret == 1) {
+					} else {
+						debug("channel %d cmd %d(%s) response error!", j, item->cmd, get_net_client_cmd_channel_des(item->cmd));
+					}
+				} else {
+					debug("channel %d cmd:%d(%s) response", j, item->cmd, get_net_client_cmd_channel_des(item->cmd));
+					handled = 1;
+					break;
+				}
+			}
+
+			if(handled == 1) {
+				break;
+			}
+		}
+	} while(0);
 
 	return;
 }

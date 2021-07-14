@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2021年07月11日 星期日 16时25分26秒
+ *   修改日期：2021年07月14日 星期三 10时11分05秒
  *   描    述：
  *
  *================================================================*/
@@ -396,7 +396,7 @@ static void default_after_close_server_connect(net_client_info_t *net_client_inf
 	}
 }
 
-static void default_parse(net_client_info_t *net_client_info, char *buffer, size_t size, size_t max_request_size, char **prequest, size_t *request_size)
+static void default_parse(net_client_info_t *net_client_info, char *buffer, size_t size, size_t max_request_size, char **prequest, size_t *prequest_size)
 {
 	if(net_client_info == NULL) {
 		debug("");
@@ -404,10 +404,10 @@ static void default_parse(net_client_info_t *net_client_info, char *buffer, size
 	}
 
 	if(net_client_info->request_callback->parse != NULL) {
-		net_client_info->request_callback->parse(net_client_info, buffer, size, max_request_size, prequest, request_size);
+		net_client_info->request_callback->parse(net_client_info, buffer, size, max_request_size, prequest, prequest_size);
 	} else {
 		*prequest = buffer;
-		*request_size = size;
+		*prequest_size = size;
 		debug("");
 	}
 }
@@ -610,7 +610,7 @@ static void process_server_message(net_client_info_t *net_client_info, net_messa
 	char *request = NULL;
 	size_t request_size = 0;
 	size_t left = recv->used;
-	uint8_t *buffer = recv->buffer;
+	char *buffer = (char *)recv->buffer;
 
 	debug("net client %d bytes available", left);
 	//_hexdump(NULL, (const char *)buffer, left);
@@ -619,16 +619,22 @@ static void process_server_message(net_client_info_t *net_client_info, net_messa
 		default_parse(net_client_info, (char *)buffer, left, NET_MESSAGE_BUFFER_SIZE, &request, &request_size);
 
 		if(request != NULL) {//可能有效包
-			if(request_size != 0) {//有效包
-				uint8_t skipped = request - (char *)buffer;
+			uint8_t skipped = request - buffer;
 
-				OS_ASSERT(skipped + request_size <= left);
+			OS_ASSERT(request >= buffer);
+			OS_ASSERT(skipped + request_size <= left);
+
+			if(skipped > 0) {
 				debug("net client skipped %d bytes", skipped);
+			}
+
+			buffer += skipped + request_size;
+			left -= skipped + request_size;
+
+			if(request_size != 0) {//有效包
 				debug("net client process %d bytes", request_size);
 				blink_led_lan(net_client_info, 0);
 				default_process(net_client_info, (uint8_t *)request, (uint16_t)request_size, send->buffer, NET_MESSAGE_BUFFER_SIZE);
-				buffer += skipped + request_size;
-				left -= skipped + request_size;
 			} else {//还要收,退出包处理
 				break;
 			}
