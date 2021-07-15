@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2021年07月15日 星期四 11时19分28秒
+ *   修改日期：2021年07月15日 星期四 11时34分25秒
  *   描    述：
  *
  *================================================================*/
@@ -248,7 +248,7 @@ static void get_addr_info(net_client_info_t *net_client_info)
 	}
 }
 
-static void set_system_net_info(uint16_t info)
+static void set_system_net_info(uint8_t info)
 {
 }
 
@@ -661,6 +661,7 @@ static void net_client_handler(void *ctx)
 				poll_ctx->poll_fd.config.s.poll_out = 0;
 				poll_ctx->poll_fd.config.s.poll_in = 1;
 				set_client_state(net_client_info, CLIENT_CONNECTED);
+				set_system_net_info(1);
 			} else {
 				set_client_state(net_client_info, CLIENT_RESET);
 			}
