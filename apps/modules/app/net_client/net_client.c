@@ -6,7 +6,7 @@
  *   文件名称：net_client.c
  *   创 建 者：肖飞
  *   创建日期：2019年09月04日 星期三 08时37分38秒
- *   修改日期：2021年07月14日 星期三 10时11分05秒
+ *   修改日期：2021年07月15日 星期四 11时19分28秒
  *   描    述：
  *
  *================================================================*/
@@ -513,23 +513,9 @@ static int close_server_connect(net_client_info_t *net_client_info)
 
 static int before_create_server_connect(net_client_info_t *net_client_info)
 {
-	int ret = -1;
-	uint32_t ticks = osKernelSysTick();
-
-	if(net_client_info == NULL) {
-		debug("");
-		return ret;
-	}
-
-	if(ticks_duration(ticks, net_client_info->connect_stamp) >= TASK_NET_CLIENT_CONNECT_PERIODIC) {
-		ret = 0;
-		net_client_info->connect_stamp = ticks;
-
-		default_before_create_server_connect(net_client_info);
-		set_system_net_info(0);
-	} else {
-		ret = -1;
-	}
+	int ret = 0;
+	default_before_create_server_connect(net_client_info);
+	set_system_net_info(0);
 
 	return ret;
 }
@@ -542,6 +528,13 @@ static void after_create_server_connect(net_client_info_t *net_client_info)
 static int create_connect(net_client_info_t *net_client_info)
 {
 	int ret = -1;
+	uint32_t ticks = osKernelSysTick();
+
+	if(ticks_duration(ticks, net_client_info->connect_stamp) < TASK_NET_CLIENT_CONNECT_PERIODIC) {
+		return ret;
+	}
+
+	net_client_info->connect_stamp = ticks;
 
 	ret = before_create_server_connect(net_client_info);
 
@@ -648,7 +641,7 @@ static void process_server_message(net_client_info_t *net_client_info, net_messa
 	debug("net client left %d bytes", left);
 
 	if(left > 0) {
-		if(recv->buffer != buffer) {
+		if((char *)recv->buffer != buffer) {
 			memmove(recv->buffer, buffer, left);
 		}
 	}
